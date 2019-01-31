@@ -9,6 +9,7 @@ type Vertex struct {
 	Degree    int       // vertex degree
 	Neighbors []*Vertex // neighbor list
 	Location  Point
+	Parent    string
 }
 
 // Edge defines a struct type for basic edges in a graph

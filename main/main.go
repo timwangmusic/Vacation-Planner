@@ -30,21 +30,8 @@ func main() {
 	sd.Key = sd.Dist(&sd)
 	la.Key = la.Dist(&sd)
 
-	/*
-		q := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0), Size: 0}
-
-		q.Insert(sd)
-		q.Insert(sf)
-		q.Insert(la)
-
-		fmt.Println("The distances to major city in California to San Diego are:")
-		for i := 0; i < 3; i++ {
-			cur := q.ExtractMin()
-			fmt.Println(cur.Name, cur.Key)
-		}
-	*/
-	// nodes := []*graph.Vertex{&sf, &sd}
-	nodes := []graph.Vertex{sf, sd}
+	nodes := []*graph.Vertex{&sf, &sd, &la}
+	// nodes := []graph.Vertex{sf, sd}
 
 	// fmt.Println("after processing...")
 
@@ -53,9 +40,22 @@ func main() {
 	for _, node := range nodes {
 		fmt.Println(node.Neighbors[0].Name)
 	}
-	// mst := graph.MinSpanningTree{}
 
-	// root := graph.TreeNode{Self: &sf}
-	// mst.Init(&root)
-	// mst.Construct(nodes)
+	mst := graph.MinSpanningTree{Root: &sf}
+	m := mst.Construct(nodes)
+	for k, v := range m {
+		fmt.Println(k, v.Parent)
+	}
+}
+
+func testPriorityQueue(nodes []graph.Vertex) {
+	q := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0), Size: 0}
+	for _, node := range nodes {
+		q.Insert(node)
+	}
+
+	for i := 0; i < 3; i++ {
+		cur := q.ExtractMin()
+		fmt.Println(cur)
+	}
 }

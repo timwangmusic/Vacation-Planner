@@ -14,8 +14,7 @@ type MinPriorityQueue struct {
 	Size  int
 }
 
-// Insert is a method for inserting a Node to priority queue and maintaining
-// the priority
+// Insert is a method for inserting a Node to priority queue and maintaining priority
 func (h *MinPriorityQueue) Insert(n Vertex) {
 	if n.Key < 0 {
 		return
@@ -27,12 +26,12 @@ func (h *MinPriorityQueue) Insert(n Vertex) {
 
 // ExtractMin is a method for min-priorityQueue to find element with minimum Key
 // Returns node with minimum Key. If queue is empty, returns a fake node with Key = -1
-func (h *MinPriorityQueue) ExtractMin() Vertex {
+func (h *MinPriorityQueue) ExtractMin() string {
 	if h.Size == 0 {
-		return Vertex{Key: -1}
+		return ""
 	}
 	last := h.Size - 1
-	res := h.Nodes[0]
+	res := h.Nodes[0].Name
 	h.Nodes[0] = h.Nodes[last]
 
 	// remove last Node
