@@ -9,42 +9,38 @@ import (
 func main() {
 	fmt.Println("welcome to use the Vacation Planner")
 
-	// San Franisco
+	// San Francisco
 	l1 := graph.Point{Lat: 37.773972, Long: -122.431297}
 	sf := graph.Vertex{Name: "San Francisco", Location: l1}
 
-	// San Diego
+	// // San Diego
 	l2 := graph.Point{Lat: 32.715736, Long: -117.161087}
 	sd := graph.Vertex{Name: "San Diego", Location: l2}
-
-	// fmt.Println("the distance between sd and sf is:", sf.Dist(&sd), "meters")
 
 	locations := city.GetLocations()
 
 	l3 := locations["Los Angeles"]
 	la := graph.Vertex{Location: l3, Name: "Los Angeles"}
 
-	// fmt.Println("the distance between la and sd is:", la.Dist(&sd))
-
-	sf.Key = sf.Dist(&sd)
-	sd.Key = sd.Dist(&sd)
-	la.Key = la.Dist(&sd)
-
 	nodes := []*graph.Vertex{&sf, &sd, &la}
-	// nodes := []graph.Vertex{sf, sd}
-
-	// fmt.Println("after processing...")
-
-	graph.GenerateGraph(nodes)
-
-	for _, node := range nodes {
-		fmt.Println(node.Neighbors[0].Name)
-	}
 
 	mst := graph.MinSpanningTree{Root: &sf}
+
+	graph.GenerateGraph(nodes, false)
+
 	m := mst.Construct(nodes)
-	for k, v := range m {
-		fmt.Println(k, v.Parent)
+
+	fmt.Println(mst.PreOrderTraversal(m))
+
+}
+
+func testMinSpanningTree(nodes []*graph.Vertex, limited bool) {
+	graph.GenerateGraph(nodes, limited)
+
+	tree := graph.MinSpanningTree{Root: nodes[0]}
+	res := tree.Construct(nodes)
+	for k, p := range res {
+		fmt.Println(k, p.Parent)
 	}
 }
 
@@ -54,8 +50,8 @@ func testPriorityQueue(nodes []graph.Vertex) {
 		q.Insert(node)
 	}
 
-	for i := 0; i < 3; i++ {
-		cur := q.ExtractMin()
+	for i := 0; i < len(nodes); i++ {
+		cur := q.ExtractMin() // node name
 		fmt.Println(cur)
 	}
 }

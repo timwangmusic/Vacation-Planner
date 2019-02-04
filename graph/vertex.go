@@ -8,14 +8,8 @@ type Vertex struct {
 	Name      string    // vertex name
 	Degree    int       // vertex degree
 	Neighbors []*Vertex // neighbor list
-	Location  Point
-	Parent    string
-}
-
-// Edge defines a struct type for basic edges in a graph
-type edge struct {
-	V Vertex
-	W Vertex
+	Location  Point     // geo-location
+	Parent    string    // parent name
 }
 
 // Point defines a location with latitude and longtitude
@@ -41,7 +35,7 @@ func (p Point) dist(n Point) float64 {
 	lat2 = n.Lat * math.Pi / 180
 	long2 = n.Long * math.Pi / 180
 
-	// radius of earch in meters
+	// radius of Earth in meters
 	rEearth := 6378100.0
 
 	// calculate haversine of central angle of the given two points
