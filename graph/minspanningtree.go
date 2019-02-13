@@ -85,6 +85,7 @@ func (tree *MinSpanningTree) Construct(nodes []*Vertex) map[string]*Vertex {
 
 	queue := MinPriorityQueue{Nodes: make([]Vertex, 0), Size: 0}
 
+	// init cost estimate for each vertex
 	for _, node := range nodes {
 		name := node.Name
 		nodeMap[name] = node
