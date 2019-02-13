@@ -6,32 +6,58 @@ import (
 	"fmt"
 )
 
+/*
+	The main function opens locations.csv file (used as a database) and close it after it finishes.
+	If new locations are added to locations pool, they are written to csv as well.
+	Currently no location deletion is supported.
+*/
 func main() {
-	fmt.Println("welcome to use the Vacation Planner")
+	fmt.Println("Welcome to use the Vacation Planner!")
 
-	// San Francisco
-	l1 := graph.Point{Lat: 37.773972, Long: -122.431297}
-	sf := graph.Vertex{Name: "San Francisco", Location: l1}
+	// locations data
+	SanFrancisco := graph.Point{Lat: 37.773972, Long: -122.431297}
+	SanDiego := graph.Point{Lat: 32.715736, Long: -117.161087}
+	LosAngeles := graph.Point{Lat: 34.052235, Long: -118.243683}
+	LasVagas := graph.Point{Lat: 36.169941, Long: -115.139832}
+	BuenosAires := graph.Point{Lat: -34.603683, Long: -58.381557}
+	nyc := graph.Point{Lat:40.712776, Long:-74.005974}
+	Boston := graph.Point{Lat:42.360081, Long:-71.058884}
+	Pittsburg := graph.Point{Lat:40.440624, Long: -79.995888}
 
-	// // San Diego
-	l2 := graph.Point{Lat: 32.715736, Long: -117.161087}
-	sd := graph.Vertex{Name: "San Diego", Location: l2}
+	locations := make(map[string]graph.Point)
 
-	locations := city.GetLocations()
+	// fill data structure
+	locations["New York City"] = nyc
+	locations["Boston"] = Boston
+	locations["San Francisco"] = SanFrancisco
+	locations["San Diego"] = SanDiego
+	locations["Los Angeles"] = LosAngeles
+	locations["Las Vagas"] = LasVagas
+	locations["Brenos Aires"] = BuenosAires
+	locations["Pittsburg"] = Pittsburg
 
-	l3 := locations["Los Angeles"]
-	la := graph.Vertex{Location: l3, Name: "Los Angeles"}
+	// write to csv file, which serves as a basic data store
+	city.WriteLocationsToCsv("locations.csv", locations)
 
-	nodes := []*graph.Vertex{&sf, &sd, &la}
+	fmt.Println("Printing some major cities and their locations...")
+	for name, point := range city.GetLocationsFromCsv("locations.csv"){
+		fmt.Println(name, " ", point)
+	}
 
-	mst := graph.MinSpanningTree{Root: &sf}
+	//pitt := graph.Vertex{Location:Pittsburg, Name:"Pitt"}
+	//sd := graph.Vertex{Location:SanDiego, Name:"SD"}
+	//vertexes := []*graph.Vertex{&pitt, &sd}
+	//testTreeTraversal(&sd, vertexes)
+}
+
+func testTreeTraversal(root *graph.Vertex, nodes []*graph.Vertex){
+	mst := graph.MinSpanningTree{Root: root}
 
 	graph.GenerateGraph(nodes, false)
 
 	m := mst.Construct(nodes)
 
 	fmt.Println(mst.PreOrderTraversal(m))
-
 }
 
 func testMinSpanningTree(nodes []*graph.Vertex, limited bool) {
