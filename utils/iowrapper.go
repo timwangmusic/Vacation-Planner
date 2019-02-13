@@ -1,20 +1,71 @@
 package utils
 
 import (
+	"bufio"
 	"encoding/csv"
+	"io"
 	"log"
 	"os"
 )
 
-// WriteCsv wraps around writter facilities in csv module
-func WriteCsv(records [][]string) {
-	w := csv.NewWriter(os.Stdout)
+// ReadCsv ...
+// input a file name and get a slice of string slices...
+func ReadCsv(filename string) (res [][]string){
+	if !checkExist(filename){
+		return
+	}
+	csvFile, err := os.Open(filename)
+	checkErr(err)
 
-	for _, record := range records {
-		if err := w.Write(record); err != nil {
-			log.Fatalln("error writing the record", err)
+	defer csvFile.Close()
+
+	reader := csv.NewReader(bufio.NewReader(csvFile))
+	for {
+		line, err := reader.Read()
+		if err == io.EOF{
+			break
+		} else if err != nil{
+			log.Fatal(err)
+		} else{
+			res = append(res, line)
 		}
 	}
+	return
+}
 
-	w.Flush()
+// WriteCsv...
+// write a slice of string slices to specified file
+func WriteCsv(filename string, records [][]string){
+	if !checkExist(filename){
+		_, err := os.Create(filename)
+		checkErr(err)
+	}
+	file, err := os.OpenFile(filename, os.O_APPEND | os.O_WRONLY, os.ModeAppend)
+	checkErr(err)
+
+	// close file after writing is done
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	// flush before closing the file
+	defer writer.Flush()
+
+	for _, line := range records{
+		err := writer.Write(line)
+		checkErr(err)
+	}
+}
+
+func checkErr(err error){
+	if err != nil{
+		log.Fatal(err)
+	}
+}
+
+func checkExist(filename string) bool{
+	info, err := os.Stat(filename)
+	if err != nil{
+		return false
+	}
+	return !info.IsDir() // false if directory
 }

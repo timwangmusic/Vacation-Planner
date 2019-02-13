@@ -4,27 +4,33 @@ import (
 	"Vacation-planner/graph"
 	"Vacation-planner/utils"
 	"fmt"
+	"strconv"
 )
 
-// GetLocations return location constant for cities
-func GetLocations() map[string]graph.Point {
-	SanFrancisco := graph.Point{Lat: 37.773972, Long: -122.431297}
-	SanDiego := graph.Point{Lat: 32.715736, Long: -117.161087}
-	LosAngeles := graph.Point{Lat: 34.052235, Long: -118.243683}
-	LasVagas := graph.Point{Lat: 36.169941, Long: -115.139832}
-	BuenosAires := graph.Point{Lat: -34.603683, Long: -58.381557}
-
-	var locations map[string]graph.Point
-
-	locations = make(map[string]graph.Point)
-
-	locations["San Francisco"] = SanFrancisco
-	locations["San Diego"] = SanDiego
-	locations["Los Angeles"] = LosAngeles
-	locations["Las Vagas"] = LasVagas
-	locations["Brenos Aires"] = BuenosAires
-
+// GetLocationsFromCsv...
+// Current format specifies that each line contain 3 fields: location name, latitude, longitude
+func GetLocationsFromCsv(filename string) map[string]graph.Point{
+	locations := make(map[string]graph.Point, 0)
+	locationsData := utils.ReadCsv(filename)
+	for _, location := range locationsData{
+		name := location[0]
+		lat, _ := strconv.ParseFloat(location[1], 64)
+		lng, _ := strconv.ParseFloat(location[2], 64)
+		_, exist := locations[name]
+		if !exist{	// dedupe
+			locations[name] = graph.Point{Lat:lat, Long:lng}
+		}
+	}
 	return locations
+}
+
+// WriteLocationsToCsv writes the whole point collection to csv file
+func WriteLocationsToCsv(filename string, locations map[string]graph.Point) {
+	records := make([][]string, 0)
+	for name, location := range locations {
+		records = append(records, locationToStringSlice(name, location))
+	}
+	utils.WriteCsv(filename, records)
 }
 
 // convert an object of type location to a slice of string
@@ -34,13 +40,4 @@ func locationToStringSlice(name string, point graph.Point) []string {
 	res[1] = fmt.Sprintf("%f", point.Lat)
 	res[2] = fmt.Sprintf("%f", point.Long)
 	return res
-}
-
-// WriteLocationsCsv writes the whole point collection to csv file
-func WriteLocationsCsv(locations map[string]graph.Point) {
-	records := make([][]string, 0)
-	for name, location := range locations {
-		records = append(records, locationToStringSlice(name, location))
-	}
-	utils.WriteCsv(records)
 }
