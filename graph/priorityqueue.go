@@ -3,15 +3,33 @@
 	Interfaces:
 		Insert(Vertex) void
 
-		ExtractMin() Vertex
+		ExtractTop() Vertex
 */
 
 package graph
 
+// PriorityQueue defines a general interface for all sorts of priority queue with
+// different definitions, sharing the same methods.
+type PriorityQueue interface {
+	Insert(Vertex)
+	ExtractTop() string
+	Size() int
+	GetRoot() Vertex
+}
+
+
 // MinPriorityQueue defines struct for min-priorityQueue
 type MinPriorityQueue struct {
 	Nodes []Vertex
-	Size  int
+	size  int
+}
+
+func (h* MinPriorityQueue) GetRoot() Vertex{
+	return h.Nodes[0]
+}
+
+func (h *MinPriorityQueue) Size() int{
+	return h.size
 }
 
 // Insert is a method for inserting a Node to priority queue and maintaining priority
@@ -20,23 +38,23 @@ func (h *MinPriorityQueue) Insert(n Vertex) {
 		return
 	}
 	h.Nodes = append(h.Nodes, n)
-	h.Size++
-	h.percolateUp(h.Size - 1)
+	h.size++
+	h.percolateUp(h.size - 1)
 }
 
-// ExtractMin is a method for min-priorityQueue to find element with minimum Key
+// ExtractTop is a method for min-priorityQueue to find element with minimum Key
 // Returns node with minimum Key. If queue is empty, returns a fake node with Key = -1
-func (h *MinPriorityQueue) ExtractMin() string {
-	if h.Size == 0 {
+func (h *MinPriorityQueue) ExtractTop() string {
+	if h.size == 0 {
 		return ""
 	}
-	last := h.Size - 1
+	last := h.size - 1
 	res := h.Nodes[0].Name
 	h.Nodes[0] = h.Nodes[last]
 
 	// remove last Node
 	h.Nodes = h.Nodes[:last]
-	h.Size--
+	h.size--
 
 	h.percolateDown(0)
 	return res
@@ -45,10 +63,10 @@ func (h *MinPriorityQueue) ExtractMin() string {
 func (h *MinPriorityQueue) findChildrenIndex(idx int) int {
 	leftIdx := idx*2 + 1
 	rightIdx := idx*2 + 1
-	if leftIdx < h.Size && h.Nodes[leftIdx].Key < h.Nodes[idx].Key {
+	if leftIdx < h.size && h.Nodes[leftIdx].Key < h.Nodes[idx].Key {
 		return leftIdx
 	}
-	if (rightIdx) < h.Size && h.Nodes[rightIdx].Key < h.Nodes[idx].Key {
+	if (rightIdx) < h.size && h.Nodes[rightIdx].Key < h.Nodes[idx].Key {
 		return rightIdx
 	}
 	return -1
