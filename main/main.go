@@ -1,7 +1,6 @@
 package main
 
 import (
-	"Vacation-planner/constants/city"
 	"Vacation-planner/graph"
 	"fmt"
 )
@@ -23,6 +22,7 @@ func main() {
 	nyc := graph.Point{Lat:40.712776, Long:-74.005974}
 	Boston := graph.Point{Lat:42.360081, Long:-71.058884}
 	Pittsburg := graph.Point{Lat:40.440624, Long: -79.995888}
+	MET := graph.Point{Lat: 40.779079, Long: -73.962578}
 
 	locations := make(map[string]graph.Point)
 
@@ -36,18 +36,28 @@ func main() {
 	locations["Brenos Aires"] = BuenosAires
 	locations["Pittsburg"] = Pittsburg
 
+	locations["metropolitan museum of art"] = MET
+
 	// write to csv file, which serves as a basic data store
-	city.WriteLocationsToCsv("locations.csv", locations)
+	//city.WriteLocationsToCsv("locations.csv", locations)
+	//
+	//fmt.Println("Printing some major cities and their locations...")
+	//for name, point := range city.GetLocationsFromCsv("locations.csv"){
+	//	fmt.Println(name, " ", point)
+	//}
 
-	fmt.Println("Printing some major cities and their locations...")
-	for name, point := range city.GetLocationsFromCsv("locations.csv"){
-		fmt.Println(name, " ", point)
-	}
-
-	//pitt := graph.Vertex{Location:Pittsburg, Name:"Pitt"}
-	//sd := graph.Vertex{Location:SanDiego, Name:"SD"}
-	//vertexes := []*graph.Vertex{&pitt, &sd}
+	pitt := graph.Vertex{Location:Pittsburg, Name:"Pitt"}
+	sd := graph.Vertex{Location:SanDiego, Name:"SD"}
+	lv := graph.Vertex{Location:LasVagas, Name: "Las Vagas"}
+	Nyc := graph.Vertex{Location:nyc, Name: "New York City"}
+	//vertexes := []*graph.Vertex{&pitt, &sd, &lv, &Nyc}
 	//testTreeTraversal(&sd, vertexes)
+
+	// test priority queue interface
+	nodes := []graph.Vertex{pitt, sd, lv, Nyc}
+	pq := graph.MinPriorityQueue{}
+
+	testPriorityQueueInterface(&pq, nodes)
 }
 
 func testTreeTraversal(root *graph.Vertex, nodes []*graph.Vertex){
@@ -70,14 +80,27 @@ func testMinSpanningTree(nodes []*graph.Vertex, limited bool) {
 	}
 }
 
-func testPriorityQueue(nodes []graph.Vertex) {
-	q := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0), Size: 0}
+func testMinPriorityQueue(nodes []graph.Vertex) {
+	q := graph.MinPriorityQueue{}
 	for _, node := range nodes {
 		q.Insert(node)
 	}
 
 	for i := 0; i < len(nodes); i++ {
-		cur := q.ExtractMin() // node name
+		cur := q.ExtractTop() // node name
+		fmt.Println(cur)
+	}
+}
+
+func testPriorityQueueInterface(pq graph.PriorityQueue, nodes []graph.Vertex){
+	for _, node := range nodes{
+		pq.Insert(node)
+	}
+
+	fmt.Println("root is: ", pq.GetRoot().Name)
+
+	for i:=0; i < len(nodes); i++{
+		cur := pq.ExtractTop()
 		fmt.Println(cur)
 	}
 }
