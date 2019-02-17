@@ -32,9 +32,9 @@ func main() {
 	locations["San Francisco"] = SanFrancisco
 	locations["San Diego"] = SanDiego
 	locations["Los Angeles"] = LosAngeles
-	locations["Las Vagas"] = LasVagas
+	locations["Las Vegas"] = LasVagas
 	locations["Brenos Aires"] = BuenosAires
-	locations["Pittsburg"] = Pittsburg
+	locations["Pittsburgh"] = Pittsburg
 
 	locations["metropolitan museum of art"] = MET
 
@@ -50,46 +50,12 @@ func main() {
 	sd := graph.Vertex{Location:SanDiego, Name:"SD"}
 	lv := graph.Vertex{Location:LasVagas, Name: "Las Vagas"}
 	Nyc := graph.Vertex{Location:nyc, Name: "New York City"}
-	//vertexes := []*graph.Vertex{&pitt, &sd, &lv, &Nyc}
-	//testTreeTraversal(&sd, vertexes)
 
 	// test priority queue interface
 	nodes := []graph.Vertex{pitt, sd, lv, Nyc}
 	pq := graph.MinPriorityQueue{}
 
 	testPriorityQueueInterface(&pq, nodes)
-}
-
-func testTreeTraversal(root *graph.Vertex, nodes []*graph.Vertex){
-	mst := graph.MinSpanningTree{Root: root}
-
-	graph.GenerateGraph(nodes, false)
-
-	m := mst.Construct(nodes)
-
-	fmt.Println(mst.PreOrderTraversal(m))
-}
-
-func testMinSpanningTree(nodes []*graph.Vertex, limited bool) {
-	graph.GenerateGraph(nodes, limited)
-
-	tree := graph.MinSpanningTree{Root: nodes[0]}
-	res := tree.Construct(nodes)
-	for k, p := range res {
-		fmt.Println(k, p.Parent)
-	}
-}
-
-func testMinPriorityQueue(nodes []graph.Vertex) {
-	q := graph.MinPriorityQueue{}
-	for _, node := range nodes {
-		q.Insert(node)
-	}
-
-	for i := 0; i < len(nodes); i++ {
-		cur := q.ExtractTop() // node name
-		fmt.Println(cur)
-	}
 }
 
 func testPriorityQueueInterface(pq graph.PriorityQueue, nodes []graph.Vertex){
