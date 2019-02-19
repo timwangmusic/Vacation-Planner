@@ -81,9 +81,9 @@ func findChildren(m map[string]*Vertex) map[string]*treeNode {
 func (tree *MinSpanningTree) Construct(nodes []*Vertex) map[string]*Vertex {
 	N := len(nodes)
 	addedNodes := make(map[string]int)  // used as a Set to check if nodes are added
-	nodeMap := make(map[string]*Vertex) // maps name to Vertex pointer
+	nodeMap := make(map[string]*Vertex) // maps name to Vertex pointer. Data structure for other functions.
 
-	queue := MinPriorityQueue{Nodes: make([]Vertex, 0), Size: 0}
+	queue := MinPriorityQueue{Nodes: make([]Vertex, 0), size: 0}
 
 	// init cost estimate for each vertex
 	for _, node := range nodes {
@@ -96,12 +96,12 @@ func (tree *MinSpanningTree) Construct(nodes []*Vertex) map[string]*Vertex {
 	queue.Insert(*tree.Root)
 
 	for len(addedNodes) < N {
-		curVertexName := queue.ExtractMin() // get current node name
+		curVertexName := queue.ExtractTop() // get current node name
 		curNode := nodeMap[curVertexName]
 
 		addedNodes[curVertexName] = 1 // add current node
 		for _, w := range curNode.Neighbors {
-			dw := curNode.Dist(w)
+			dw := curNode.Dist(*w)
 			neighborName := w.Name
 			if _, existed := addedNodes[neighborName]; existed {
 				continue

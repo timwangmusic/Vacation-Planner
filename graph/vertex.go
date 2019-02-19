@@ -19,7 +19,7 @@ type Point struct {
 }
 
 // Dist calculates distance between two Vertexes
-func (v *Vertex) Dist(neighbor *Vertex) float64 {
+func (v *Vertex) Dist(neighbor Vertex) float64 {
 	return v.Location.dist(neighbor.Location)
 }
 
