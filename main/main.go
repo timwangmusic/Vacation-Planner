@@ -5,11 +5,6 @@ import (
 	"fmt"
 )
 
-/*
-	The main function opens locations.csv file (used as a database) and close it after it finishes.
-	If new locations are added to locations pool, they are written to csv as well.
-	Currently no location deletion is supported.
-*/
 func main() {
 	fmt.Println("Welcome to use the Vacation Planner!")
 
@@ -23,7 +18,6 @@ func main() {
 	Pittsburg := graph.Point{Lat:40.440624, Long: -79.995888}
 	MET := graph.Point{Lat: 40.779079, Long: -73.962578}
 	//BuenosAires := graph.Point{Lat: -34.603683, Long: -58.381557}
-
 
 	pitt := graph.Vertex{Location:Pittsburg, Name:"Pittsburgh"}
 	sd := graph.Vertex{Location:SanDiego, Name:"San Diego"}

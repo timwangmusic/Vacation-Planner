@@ -19,7 +19,6 @@ func TestMinSpanningTree(t *testing.T){
 
 	// pass by pointer
 	cities := []*graph.Vertex{&nyc, &la, &lv, &pitt, &sf, &boston, &met, &sd}
-
 	mst := graph.MinSpanningTree{Root: &nyc}
 
 	// connect cities
