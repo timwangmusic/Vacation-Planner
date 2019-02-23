@@ -1,7 +1,6 @@
-package city
+package graph
 
 import (
-	"Vacation-planner/graph"
 	"Vacation-planner/utils"
 	"fmt"
 	"strconv"
@@ -9,8 +8,8 @@ import (
 
 // GetLocationsFromCsv...
 // Current format specifies that each line contain 3 fields: location name, latitude, longitude
-func GetLocationsFromCsv(filename string) map[string]graph.Point{
-	locations := make(map[string]graph.Point, 0)
+func GetLocationsFromCsv(filename string) map[string]Point{
+	locations := make(map[string]Point, 0)
 	locationsData := utils.ReadCsv(filename)
 	for _, location := range locationsData{
 		name := location[0]
@@ -18,14 +17,14 @@ func GetLocationsFromCsv(filename string) map[string]graph.Point{
 		lng, _ := strconv.ParseFloat(location[2], 64)
 		_, exist := locations[name]
 		if !exist{	// dedupe
-			locations[name] = graph.Point{Lat:lat, Long:lng}
+			locations[name] = Point{Lat:lat, Long:lng}
 		}
 	}
 	return locations
 }
 
 // WriteLocationsToCsv writes the whole point collection to csv file
-func WriteLocationsToCsv(filename string, locations map[string]graph.Point) {
+func WriteLocationsToCsv(filename string, locations map[string]Point) {
 	records := make([][]string, 0)
 	for name, location := range locations {
 		records = append(records, locationToStringSlice(name, location))
@@ -34,7 +33,7 @@ func WriteLocationsToCsv(filename string, locations map[string]graph.Point) {
 }
 
 // convert an object of type location to a slice of string
-func locationToStringSlice(name string, point graph.Point) []string {
+func locationToStringSlice(name string, point Point) []string {
 	res := make([]string, 3)
 	res[0] = name
 	res[1] = fmt.Sprintf("%f", point.Lat)

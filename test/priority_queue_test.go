@@ -15,19 +15,23 @@ func TestMinPriorityQueue(t *testing.T){
 	la := graph.Vertex{Location: graph.Point{Lat: 34.052235, Long: -118.243683}, Name: "Los Angeles"}
 	lv := graph.Vertex{Location: graph.Point{Lat: 36.169941, Long: -115.139832}, Name: "Las Vegas"}
 	pitt := graph.Vertex{Location: graph.Point{Lat:40.440624, Long: -79.995888}, Name: "Pittsburgh"}
+	boston := graph.Vertex{Location: graph.Point{Lat:42.360081, Long:-71.058884}, Name: "Boston"}
 
-	origin := nyc
+	lv.Key = lv.Dist(pitt)
+	nyc.Key = nyc.Dist(pitt)
+	boston.Key = boston.Dist(pitt)
+	la.Key = la.Dist(pitt)
 
-	// pass by value
-	cities := []graph.Vertex{nyc, la, lv, pitt}
+	cities := []*graph.Vertex{&pitt, &lv, &nyc, &boston, &la}
 
 	for _, city := range cities{
-		city.Key = origin.Dist(city)
-		pq.Insert(city)
+		pq.Insert(*city)
 	}
 
-	expected := []string{nyc.Name,
+	expected := []string{
 		pitt.Name,
+		nyc.Name,
+		boston.Name,
 		lv.Name,
 		la.Name,
 	}
