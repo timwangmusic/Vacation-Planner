@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+const(
+	DATE_SUNDAY = iota
+	DATE_MONDAY
+	DATE_TUESDAY
+	DATE_WEDNESDAY
+	DATE_THURSAY
+	DATE_FRIDAY
+	DATE_SATURDAY
+)
+
 type Place struct {
 	hours [7]string
 	name string
@@ -15,11 +25,12 @@ type Place struct {
 }
 
 type address struct{
-	street string
-	city string
-	country string
+	street1     string
+	street2     string
+	city        string
+	country     string
 	countryCode int
-	zipCode string
+	zipCode     string
 }
 
 func (v *Place) GetName() string{
@@ -40,7 +51,7 @@ func (v *Place) GetID() string {
 
 func (v *Place) GetAddress() string{
 	addr := v.address
-	return strings.Join([]string{addr.street, addr.city, addr.country, addr.zipCode}, ", ")
+	return strings.Join([]string{addr.street1, addr.city, addr.country, addr.zipCode}, ", ")
 }
 
 func (v *Place) GetLocation() [2]float64{
@@ -56,8 +67,25 @@ func (v *Place) SetType(t string){
 	v.locationType = t
 }
 // Set time if POI opening hour changed for some day in a week
-func (v *Place) SetHour(day int, hour string){
-	v.hours[day] = hour
+func (v *Place) SetHour(day uint8, hour string){
+	switch day {
+	case DATE_SUNDAY:
+		v.hours[day] = hour
+	case DATE_MONDAY:
+		v.hours[day] = hour
+	case DATE_TUESDAY:
+		v.hours[day] = hour
+	case DATE_WEDNESDAY:
+		v.hours[day] = hour
+	case DATE_THURSAY:
+		v.hours[day] = hour
+	case DATE_FRIDAY:
+		v.hours[day] = hour
+	case DATE_SATURDAY:
+		v.hours[day] = hour
+	default:
+		log.Fatalf("day specified (%d) is not in range of 0-6", day)
+	}
 }
 
 func (v *Place) SetID(id string){
@@ -65,12 +93,12 @@ func (v *Place) SetID(id string){
 }
 
 func (v *Place) SetAddress(addr string){
-	// expected addr format: "street, city, country, zipCode"
+	// expected addr format: "street1, city, country, zipCode"
 	fields := strings.Split(addr, ", ")
 	if len(fields) != 4{
 		log.Fatalf("Wrong address format, expected 4 fields, got %d fields", len(fields))
 	}
-	v.address.street = fields[0]
+	v.address.street1 = fields[0]
 	v.address.city = fields[1]
 	v.address.country = fields[2]
 	v.address.zipCode = fields[3]

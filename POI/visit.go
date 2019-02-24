@@ -8,7 +8,8 @@ import (
 func CreateVisitLocation(name string, location string, addr string) (visitLocation Place){
 	visitLocation.SetType(VISIT)
 	visitLocation.SetName(name)
-	for i:=0; i<7; i++{
+	var i uint8
+	for i=DATE_SUNDAY; i<DATE_SATURDAY; i++{
 		visitLocation.SetHour(i, "10 am - 9 pm")
 	}
 
