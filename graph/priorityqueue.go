@@ -62,11 +62,11 @@ func (h *MinPriorityQueue) ExtractTop() string {
 
 func (h *MinPriorityQueue) findChildrenIndex(idx int) int {
 	leftIdx := idx*2 + 1
-	rightIdx := idx*2 + 1
+	rightIdx := idx*2 + 2
 	if leftIdx < h.size && h.Nodes[leftIdx].Key < h.Nodes[idx].Key {
 		return leftIdx
 	}
-	if (rightIdx) < h.size && h.Nodes[rightIdx].Key < h.Nodes[idx].Key {
+	if rightIdx < h.size && h.Nodes[rightIdx].Key < h.Nodes[idx].Key {
 		return rightIdx
 	}
 	return -1
@@ -76,7 +76,7 @@ func (h *MinPriorityQueue) findChildrenIndex(idx int) int {
 func (h *MinPriorityQueue) percolateDown(idx int) {
 	childIdx := h.findChildrenIndex(idx)
 	if childIdx == -1 {
-		// leaf Node
+		// leaf Node or no need to swap
 		return
 	}
 

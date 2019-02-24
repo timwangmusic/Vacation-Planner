@@ -40,9 +40,9 @@ func dfs(subtree *treeNode, m map[string]*treeNode) string {
 	}
 	var b bytes.Buffer
 
-	b.WriteString(subtree.name + "->")
+	b.WriteString(subtree.name)
 	for _, child := range subtree.Children {
-		b.WriteString(dfs(m[child], m) + "->")
+		b.WriteString("->" + dfs(m[child], m))
 	}
 
 	return b.String()
