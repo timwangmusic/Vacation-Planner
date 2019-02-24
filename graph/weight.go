@@ -1,4 +1,5 @@
 package graph
+<<<<<<< HEAD
 const(
 	PRIORITY_TIME=iota
 	PRIORITY_BUDGET
@@ -77,3 +78,5 @@ func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool {
 		}
 	}
 }
+=======
+>>>>>>> b502a47... added weight types and functions
