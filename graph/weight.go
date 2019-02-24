@@ -77,7 +77,4 @@ func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool {
 		}
 	}
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> bd760c1... mx update 2
