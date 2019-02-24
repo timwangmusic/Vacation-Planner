@@ -79,4 +79,3 @@ func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool{
 		}
 	}
 }
-
