@@ -7,7 +7,7 @@
 
 ## Point of Interests (POI)
 * In travel, we consider POI as places travelers spend quality time. As such, POI include the following categories. 
-    * Visit: museums, parks, theme parks, etc
+    * Visit: museums, art gallery, amusement park, etc
     * Eat: restaurants, cafe, coffee shops, etc
     * Stay: hotel, airbnb, etc
 * We collect following information using Google maps API.

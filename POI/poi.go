@@ -7,10 +7,12 @@ Also this package uses services such as io wrappers in utils.
 
 package POI
 
+type PlaceCategory string
+
 const (
-	VISIT = "visit"
-	STAY = "stay"
-	EATERY = "eatery"
+	PlaceCategoryVisit = PlaceCategory("visit")
+	PlaceCategoryStay = PlaceCategory("stay")
+	PlaceCategoryEatery = PlaceCategory("eatery")
 )
 
 type POI interface {

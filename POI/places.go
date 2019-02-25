@@ -96,7 +96,9 @@ func (v *Place) SetAddress(addr string){
 	// expected addr format: "street1, city, country, zipCode"
 	fields := strings.Split(addr, ", ")
 	if len(fields) != 4{
-		log.Fatalf("Wrong address format, expected 4 fields, got %d fields", len(fields))
+		v.address.street1 = addr
+		return
+		//log.Fatalf("Wrong address format, expected 4 fields, got %d fields", len(fields))
 	}
 	v.address.street1 = fields[0]
 	v.address.city = fields[1]
