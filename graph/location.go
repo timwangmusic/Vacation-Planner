@@ -17,7 +17,7 @@ func GetLocationsFromCsv(filename string) map[string]Point{
 		lng, _ := strconv.ParseFloat(location[2], 64)
 		_, exist := locations[name]
 		if !exist{	// dedupe
-			locations[name] = Point{Lat:lat, Long:lng}
+			locations[name] = Point{Lat:lat, Lng:lng}
 		}
 	}
 	return locations
@@ -37,6 +37,6 @@ func locationToStringSlice(name string, point Point) []string {
 	res := make([]string, 3)
 	res[0] = name
 	res[1] = fmt.Sprintf("%f", point.Lat)
-	res[2] = fmt.Sprintf("%f", point.Long)
+	res[2] = fmt.Sprintf("%f", point.Lng)
 	return res
 }

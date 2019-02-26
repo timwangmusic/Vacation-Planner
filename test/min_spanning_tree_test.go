@@ -8,14 +8,14 @@ import (
 // Set a root vertex and start constructing the min spanning tree.
 // Verify that the parent of each vertex is correct and the traversal string is correct
 func TestMinSpanningTree(t *testing.T){
-	nyc := graph.Vertex{Location:graph.Point{Lat:40.712776, Long:-74.005974}, Name: "New York"}
-	la := graph.Vertex{Location: graph.Point{Lat: 34.052235, Long: -118.243683}, Name: "Los Angeles"}
-	lv := graph.Vertex{Location: graph.Point{Lat: 36.169941, Long: -115.139832}, Name: "Las Vegas"}
-	pitt := graph.Vertex{Location: graph.Point{Lat:40.440624, Long: -79.995888}, Name: "Pittsburgh"}
-	boston := graph.Vertex{Location: graph.Point{Lat:42.360081, Long:-71.058884}, Name: "Boston"}
-	met := graph.Vertex{Location:graph.Point{Lat: 40.779079, Long: -73.962578}, Name: "The Met"}
-	sd := graph.Vertex{Location:graph.Point{Lat: 32.715736, Long: -117.161087}, Name: "San Diego"}
-	sf :=graph.Vertex{Location:graph.Point{Lat: 37.773972, Long: -122.431297}, Name: "San Francisco"}
+	nyc := graph.Vertex{Location:graph.Point{Lat:40.712776, Lng:-74.005974}, Name: "New York"}
+	la := graph.Vertex{Location: graph.Point{Lat: 34.052235, Lng: -118.243683}, Name: "Los Angeles"}
+	lv := graph.Vertex{Location: graph.Point{Lat: 36.169941, Lng: -115.139832}, Name: "Las Vegas"}
+	pitt := graph.Vertex{Location: graph.Point{Lat:40.440624, Lng: -79.995888}, Name: "Pittsburgh"}
+	boston := graph.Vertex{Location: graph.Point{Lat:42.360081, Lng:-71.058884}, Name: "Boston"}
+	met := graph.Vertex{Location:graph.Point{Lat: 40.779079, Lng: -73.962578}, Name: "The Met"}
+	sd := graph.Vertex{Location:graph.Point{Lat: 32.715736, Lng: -117.161087}, Name: "San Diego"}
+	sf :=graph.Vertex{Location:graph.Point{Lat: 37.773972, Lng: -122.431297}, Name: "San Francisco"}
 
 	// pass by pointer
 	cities := []*graph.Vertex{&nyc, &la, &lv, &pitt, &sf, &boston, &met, &sd}
