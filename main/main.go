@@ -1,12 +1,10 @@
 package main
 
 import (
+	"Vacation-planner/POI"
 	"Vacation-planner/graph"
-	"Vacation-planner/utils"
+	"Vacation-planner/iowrappers"
 	"fmt"
-	"github.com/mmcloughlin/geohash"
-	"github.com/mpraski/clusters"
-	"googlemaps.github.io/maps"
 )
 
 func main() {
@@ -44,34 +42,10 @@ func main() {
 
 	//test priority queue interface
 	pq := graph.MinPriorityQueue{}
-	//
 	testPriorityQueueInterface(&pq, nodes)
 
-	location := "40.779079,-73.962578"
-	parsed_location, _ := maps.ParseLatLng(location)
-	code1 := geohash.Encode(parsed_location.Lat, parsed_location.Lng)
-	fmt.Println(code1)
-	fmt.Println(geohash.Neighbors(code1))
-
-	location2 := "32.715736,-117.161087"
-	parsed_location_2, _ := maps.ParseLatLng(location2)
-	code2 := geohash.Encode(parsed_location_2.Lat, parsed_location_2.Lng)
-	fmt.Println(code2)
-	fmt.Println(geohash.Neighbors(code2))
-
-	data := [][]float64{{37.773972, -122.431297},
-		{32.715736, -117.161087},
-		{36.169941, -115.139832},
-		{40.779079, -73.962578},
-	}
-
-	//observation := []float64{34.052235, -118.243683}
-	observation := []float64{42.360081, -71.058884}
-	c, _ := clusters.KMeans(100,2, utils.HaversineDist)
-
-	c.Learn(data)
-
-	fmt.Println(c.Predict(observation))
+	// test clustering
+	testClustering("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY", "eatery")
 }
 
 func testPriorityQueueInterface(pq graph.PriorityQueue, nodes []*graph.Vertex){
@@ -84,5 +58,20 @@ func testPriorityQueueInterface(pq graph.PriorityQueue, nodes []*graph.Vertex){
 	for i:=0; i < len(nodes); i++{
 		cur := pq.ExtractTop()
 		fmt.Println(cur)
+	}
+}
+
+func testClustering(apiKey string, placeCat POI.PlaceCategory){
+	mapClient := iowrappers.MapsClient{}
+	mapClient.CreateClient(apiKey)
+
+	clusterManager := graph.ClustersManager{PlaceCat:placeCat, Client: &mapClient}
+
+	locationData := clusterManager.GetGeoLocationData("40.779079,-73.962578", 500)
+
+	clusterManager.Clustering(&locationData, 3)
+
+	for k, cluster := range clusterManager.PlaceClusters.Clusters{
+		fmt.Printf("The size of cluster %d is %d \n", k, cluster.Size())
 	}
 }

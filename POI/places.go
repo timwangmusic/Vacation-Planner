@@ -20,7 +20,7 @@ type Place struct {
 	name string
 	locationType string
 	address address
-	location [2]float64
+	location [2]float64	// geolocation coordinates
 	id string
 }
 
