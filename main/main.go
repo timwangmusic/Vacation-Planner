@@ -1,7 +1,9 @@
 package main
 
 import (
+	"Vacation-planner/POI"
 	"Vacation-planner/graph"
+	"Vacation-planner/iowrappers"
 	"fmt"
 )
 
@@ -9,15 +11,15 @@ func main() {
 	fmt.Println("Welcome to use the Vacation Planner!")
 
 	// locations data
-	SanFrancisco := graph.Point{Lat: 37.773972, Long: -122.431297}
-	SanDiego := graph.Point{Lat: 32.715736, Long: -117.161087}
-	LosAngeles := graph.Point{Lat: 34.052235, Long: -118.243683}
-	LasVagas := graph.Point{Lat: 36.169941, Long: -115.139832}
-	nyc := graph.Point{Lat:40.712776, Long:-74.005974}
-	Boston := graph.Point{Lat:42.360081, Long:-71.058884}
-	Pittsburg := graph.Point{Lat:40.440624, Long: -79.995888}
-	MET := graph.Point{Lat: 40.779079, Long: -73.962578}
-	//BuenosAires := graph.Point{Lat: -34.603683, Long: -58.381557}
+	SanFrancisco := graph.Point{Lat: 37.773972, Lng: -122.431297}
+	SanDiego := graph.Point{Lat: 32.715736, Lng: -117.161087}
+	LosAngeles := graph.Point{Lat: 34.052235, Lng: -118.243683}
+	LasVagas := graph.Point{Lat: 36.169941, Lng: -115.139832}
+	nyc := graph.Point{Lat:40.712776, Lng:-74.005974}
+	Boston := graph.Point{Lat:42.360081, Lng:-71.058884}
+	Pittsburg := graph.Point{Lat:40.440624, Lng: -79.995888}
+	MET := graph.Point{Lat: 40.779079, Lng: -73.962578}
+	//BuenosAires := graph.Point{Lat: -34.603683, Lng: -58.381557}
 
 	pitt := graph.Vertex{Location:Pittsburg, Name:"Pittsburgh"}
 	sd := graph.Vertex{Location:SanDiego, Name:"San Diego"}
@@ -40,8 +42,10 @@ func main() {
 
 	//test priority queue interface
 	pq := graph.MinPriorityQueue{}
-	//
 	testPriorityQueueInterface(&pq, nodes)
+
+	// test clustering
+	testClustering("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY", "eatery")
 }
 
 func testPriorityQueueInterface(pq graph.PriorityQueue, nodes []*graph.Vertex){
@@ -54,5 +58,20 @@ func testPriorityQueueInterface(pq graph.PriorityQueue, nodes []*graph.Vertex){
 	for i:=0; i < len(nodes); i++{
 		cur := pq.ExtractTop()
 		fmt.Println(cur)
+	}
+}
+
+func testClustering(apiKey string, placeCat POI.PlaceCategory){
+	mapClient := iowrappers.MapsClient{}
+	mapClient.CreateClient(apiKey)
+
+	clusterManager := graph.ClustersManager{PlaceCat:placeCat, Client: &mapClient}
+
+	locationData := clusterManager.GetGeoLocationData("40.779079,-73.962578", 500)
+
+	clusterManager.Clustering(&locationData, 3)
+
+	for k, cluster := range clusterManager.PlaceClusters.Clusters{
+		fmt.Printf("The size of cluster %d is %d \n", k, cluster.Size())
 	}
 }

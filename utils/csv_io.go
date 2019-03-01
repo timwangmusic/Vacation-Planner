@@ -15,7 +15,7 @@ func ReadCsv(filename string) (res [][]string){
 		return
 	}
 	csvFile, err := os.Open(filename)
-	checkErr(err)
+	CheckErr(err)
 
 	defer csvFile.Close()
 
@@ -38,10 +38,10 @@ func ReadCsv(filename string) (res [][]string){
 func WriteCsv(filename string, records [][]string){
 	if !checkExist(filename){
 		_, err := os.Create(filename)
-		checkErr(err)
+		CheckErr(err)
 	}
 	file, err := os.OpenFile(filename, os.O_APPEND | os.O_WRONLY, os.ModeAppend)
-	checkErr(err)
+	CheckErr(err)
 
 	// close file after writing is done
 	defer file.Close()
@@ -52,13 +52,7 @@ func WriteCsv(filename string, records [][]string){
 
 	for _, line := range records{
 		err := writer.Write(line)
-		checkErr(err)
-	}
-}
-
-func checkErr(err error){
-	if err != nil{
-		log.Fatal(err)
+		CheckErr(err)
 	}
 }
 
