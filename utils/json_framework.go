@@ -13,6 +13,7 @@ Objects.
  */
 
 type PlaceInfo struct{
+
 	/*FIXME: Need to set private variables and did
 	tedious set/get functions?
 	*/
@@ -47,6 +48,7 @@ func ReadFromFile(fname string, ptr interface{}) error{
 	}
 	return nil
 }
+
 
 
 

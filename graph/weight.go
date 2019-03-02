@@ -23,27 +23,6 @@ func (l SimpleWeight) Compare(r SimpleWeight) bool {
 }
 
 
-func (this SimpleBaseWeight) SetWeight(timeInMin uint32, budget float64){
-	this.timeInMin = timeInMin
-	this.budget = budget}
-func (this SimpleBaseWeight) GetWeight() (uint32, float64) {
-	return this.timeInMin, this.budget
-}
-func (this SimpleBaseWeight) SetCmpFlag( flag uint8) bool {
-	switch flag {
-	case PRIORITY_BUDGET:
-		this.cmpflag = flag
-		return true
-	case PRIORITY_TIME:
-		this.cmpflag = flag
-		return true
-	default:
-		return false
-	}
-}
-func (this SimpleBaseWeight) GetCmpFlag() uint8 {
-	return this.cmpflag
-}
 
 /*
 FIXME: The priority of configuration is based only on the cmpflag
@@ -69,6 +48,7 @@ func (v SimpleBaseWeight) Setcmpflag(cmpflag uint8){
 func (v SimpleBaseWeight) Getcmpflag() uint8{
 	return v.cmpflag
 }
+
 /*
 FIXME: The priority of configuration is based only on the cmpflag
 of the object calling the compare function. This configuration must
@@ -76,8 +56,8 @@ be used with care.
  */
 func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool{
 	switch l.cmpflag {
-	case PRIORITY_TIME :
-		if(l.timeInMin <=r.timeInMin){
+	case PRIORITY_TIME:
+		if l.timeInMin <= r.timeInMin {
 			return true
 		} else {
 			return false
@@ -99,3 +79,4 @@ func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool{
 		}
 	}
 }
+
