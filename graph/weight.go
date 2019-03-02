@@ -13,7 +13,7 @@ func (this SimpleWeight) GetWeight(weight uint32) uint32{
 	return this.w
 }
 func (l SimpleWeight) Compare(r SimpleWeight) bool{
-	if(l.w <= r.w){
+	if l.w <= r.w{
 		return true
 	} else {
 		return false
