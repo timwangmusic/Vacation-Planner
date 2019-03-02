@@ -34,7 +34,7 @@ type ClustersManager struct{
 
 // call Google API to obtain nearby places and extract location data
 func (placeManager *ClustersManager) GetGeoLocationData(location string, searchRadius uint) [][]float64{
-	places := placeManager.Client.SimpleNearbySearch(location, placeManager.PlaceCat, searchRadius)
+	places := placeManager.Client.SimpleNearbySearch(location, placeManager.PlaceCat, searchRadius, "")
 	placeManager.places = places
 	locationData := make([][]float64, len(places))
 	for idx, place := range places{
