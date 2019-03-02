@@ -28,11 +28,15 @@ type POI interface {
 	GetLocation() [2]float64
 	// opening hours of the specified day in a week
 	GetHour(int) string
+	// price range
+	GetPriceLevel() int
 
-	// re-set name if POI name changed
+	// set POI name
 	SetName(string)
-	// re-set type if POI type changed
+	// set POI type
 	SetType(string)
-	// re-set time if POI opening hour changed for some day in a week
+	// set POI opening hour for some day in a week
 	SetHour(int, string)
+	// set price range
+	SetPriceLevel(int)
 }

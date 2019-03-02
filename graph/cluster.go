@@ -33,18 +33,26 @@ type ClustersManager struct{
 }
 
 // call Google API to obtain nearby places and extract location data
-func (placeManager *ClustersManager) GetGeoLocationData(location string, searchRadius uint) [][]float64{
-	places := placeManager.Client.SimpleNearbySearch(location, placeManager.PlaceCat, searchRadius, "")
+func (placeManager *ClustersManager) GetGeoLocationData(location string, searchRadius uint, searchType string) [][]float64 {
+	var places []POI.Place
+	if searchType == ""{
+		places = placeManager.Client.SimpleNearbySearch(location, placeManager.PlaceCat, searchRadius, "")
+	} else{
+		places = placeManager.Client.ExtensiveNearbySearch(location, placeManager.PlaceCat,
+			searchRadius, "", 100, 3)
+	}
+
 	placeManager.places = places
 	locationData := make([][]float64, len(places))
 	for idx, place := range places{
-		latlng := place.GetLocation()
-		locationData[idx] = []float64{latlng[0], latlng[1]}
+		latLng := place.GetLocation()
+		locationData[idx] = []float64{latLng[0], latLng[1]}
 	}
 	return locationData
 }
 
 // train clustering model and assign places to clusters
+// numClusters specifies number of clusters
 func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, numClusters int){
 	// obtain clusterer with number of clusters and distance function
 	hardCluster, err := clusters.KMeans(1000, numClusters, utils.HaversineDist)

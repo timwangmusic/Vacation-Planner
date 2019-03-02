@@ -144,7 +144,8 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType Loca
 		location := strings.Join([]string{lat, lng}, ",")
 		addr := res.FormattedAddress
 		id := res.PlaceID
-		places = append(places, POI.CreatePlace(name, location, addr, string(locationType), id))
+		priceLevel := res.PriceLevel
+		places = append(places, POI.CreatePlace(name, location, addr, string(locationType), id, priceLevel))
 	}
 	return
 }

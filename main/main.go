@@ -45,7 +45,17 @@ func main() {
 	testPriorityQueueInterface(&pq, nodes)
 
 	// test clustering
-	testClustering("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY", "eatery")
+	testClustering("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY", "visit")
+
+	//mapclient := iowrappers.MapsClient{}
+	//mapclient.CreateClient("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY")
+	//places := mapclient.ExtensiveNearbySearch("34.052235,-118.243683", "visit", 10000,
+	//	"", 200, 10)
+	//
+	//fmt.Printf("number of places obtained is %d \n", len(places))
+	//for _, place := range places{
+	//	fmt.Println(place.GetName())
+	//}
 }
 
 func testPriorityQueueInterface(pq graph.PriorityQueue, nodes []*graph.Vertex){
@@ -67,7 +77,7 @@ func testClustering(apiKey string, placeCat POI.PlaceCategory){
 
 	clusterManager := graph.ClustersManager{PlaceCat:placeCat, Client: &mapClient}
 
-	locationData := clusterManager.GetGeoLocationData("40.779079,-73.962578", 500)
+	locationData := clusterManager.GetGeoLocationData("40.779079,-73.962578", 500, "extensive")
 
 	clusterManager.Clustering(&locationData, 3)
 

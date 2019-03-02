@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func CreatePlace(name string, location string, addr string, locationType string, placeID string) (place Place) {
+func CreatePlace(name string, location string, addr string, locationType string, placeID string, priceLevel int) (place Place) {
 	place.SetType(locationType)
 	place.SetName(name)
 	place.SetID(placeID)
@@ -20,5 +20,6 @@ func CreatePlace(name string, location string, addr string, locationType string,
 	lng_f, _ := strconv.ParseFloat(lng, 64)
 	place.SetLocation([2]float64{lat_f, lng_f})
 	place.SetAddress(addr)
+	place.SetPriceLevel(priceLevel)
 	return
 }

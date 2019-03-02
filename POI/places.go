@@ -16,12 +16,13 @@ const(
 )
 
 type Place struct {
-	hours [7]string
-	name string
+	hours        [7]string
+	name         string
 	locationType string
-	address address
-	location [2]float64	// geolocation coordinates
-	id string
+	address      address
+	location     [2]float64	// geolocation coordinates
+	id           string
+	priceLevel   int
 }
 
 type address struct{
@@ -56,6 +57,10 @@ func (v *Place) GetAddress() string{
 
 func (v *Place) GetLocation() [2]float64{
 	return v.location
+}
+
+func (v *Place) GetPriceLevel() int{
+	return v.priceLevel
 }
 
 // Set name if POI name changed
@@ -108,4 +113,8 @@ func (v *Place) SetAddress(addr string){
 
 func (v *Place) SetLocation(location [2]float64){
 	v.location = location
+}
+
+func (v *Place) SetPriceLevel(priceRange int){
+	v.priceLevel = priceRange
 }
