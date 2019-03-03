@@ -2,8 +2,11 @@ package iowrappers
 
 import (
 	"Vacation-planner/POI"
+	"Vacation-planner/utils"
 	"context"
+	"flag"
 	"fmt"
+	"github.com/pkg/errors"
 	"googlemaps.github.io/maps"
 	"log"
 	"strings"
@@ -24,6 +27,8 @@ const(
 const(
 	GOOGLE_NEARBY_SEARCH_DELAY = time.Duration(2 * time.Second)
 )
+
+var detailedSearchFields = flag.String("fields", "opening_hours", "a list of comma-separated fields")
 
 type PlaceSearchRequest struct{
 	// "lat,lng"
@@ -86,6 +91,14 @@ func (c *MapsClient) SimpleNearbySearch(centerLocation string, placeCat POI.Plac
 			RankBy:	   rankBy,
 		}
 		searchResp := NearbySearchSDK(*c, req)
+
+		for k, res := range searchResp.Results{
+			if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil{
+				detailedSearchRes, _ := c.PlaceDetailedSearch(res.PlaceID)
+				searchResp.Results[k].OpeningHours = detailedSearchRes.OpeningHours
+			}
+		}
+
 		places = append(places, parsePlacesSearchResponse(searchResp, placeType)...)
 	}
 	return
@@ -135,6 +148,29 @@ func (c *MapsClient) ExtensiveNearbySearch(centerLocation string, placeCat POI.P
 	return
 }
 
+func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResult, error){
+	if c.client == nil{
+		return maps.PlaceDetailsResult{}, errors.New("client does not exist")
+	}
+	flag.Parse()	// parse detailed search fields
+
+	req := &maps.PlaceDetailsRequest{
+		PlaceID: placeId,
+	}
+
+	if *detailedSearchFields != ""{
+		fieldMask, err := parseFields(*detailedSearchFields)
+		utils.CheckErr(err)
+		req.Fields = fieldMask
+	}
+
+	resp, err := c.client.PlaceDetails(context.Background(), req)
+
+	utils.CheckErr(err)
+
+	return resp, nil
+}
+
 func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType LocationType) (places []POI.Place){
 	searchRes := resp.Results
 	for _, res := range searchRes{
@@ -161,4 +197,15 @@ func getTypes (placeCat POI.PlaceCategory) (placeTypes []LocationType){
 			[]LocationType{LocationTypeCafe, LocationTypeRestaurant}...)
 	}
 	return
+}
+
+// refs: maps/examples/places/placedetails/placedetails.go
+func parseFields(fields string) ([]maps.PlaceDetailsFieldMask, error) {
+	var res []maps.PlaceDetailsFieldMask
+	for _, s := range strings.Split(fields, ",") {
+		f, err := maps.ParsePlaceDetailsFieldMask(s)
+		check(err)
+		res = append(res, f)
+	}
+	return res, nil
 }

@@ -33,10 +33,10 @@ func main() {
 	sd.Key = sd.Dist(pitt)
 	lv.Key = lv.Dist(pitt)
 	Nyc.Key = Nyc.Dist(pitt)
-    boston.Key = boston.Dist(pitt)
-    la.Key = la.Dist(pitt)
-    sf.Key = sf.Dist(pitt)
-    met.Key = met.Dist(pitt)
+	boston.Key = boston.Dist(pitt)
+	la.Key = la.Dist(pitt)
+	sf.Key = sf.Dist(pitt)
+	met.Key = met.Dist(pitt)
 
 	nodes := []*graph.Vertex{&pitt, &la, &sd, &sf, &lv, &Nyc, &boston, &met}
 
@@ -77,7 +77,7 @@ func testClustering(apiKey string, placeCat POI.PlaceCategory){
 
 	clusterManager := graph.ClustersManager{PlaceCat:placeCat, Client: &mapClient}
 
-	locationData := clusterManager.GetGeoLocationData("40.779079,-73.962578", 500, "extensive")
+	locationData := clusterManager.GetGeoLocationData("40.779079,-73.962578", 500, "")
 
 	clusterManager.Clustering(&locationData, 3)
 
