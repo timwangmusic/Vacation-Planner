@@ -52,7 +52,7 @@ func main() {
 	Test of Json functions
 	 */
 
-	var placeData utils.Place
+	var placeData utils.PlaceInfo
 	err := utils.ReadFromFile("", &placeData)
 	if err != nil {
 		log.Fatal("Unable to read Json file for this test case.")

@@ -12,7 +12,7 @@ Base interface, can be extended to arbitrary structs/Json
 Objects.
  */
 
-type Place struct{
+type PlaceInfo struct{
 	/*FIXME: Need to set private variables and did
 	tedious set/get functions?
 	*/
