@@ -1,10 +1,12 @@
 package main
 
 import (
+	"Vacation-planner/utils"
 	"Vacation-planner/POI"
 	"Vacation-planner/graph"
 	"Vacation-planner/iowrappers"
 	"fmt"
+	"log"
 )
 
 func main() {
@@ -45,8 +47,22 @@ func main() {
 	testPriorityQueueInterface(&pq, nodes)
 
 	// test clustering
-	testClustering("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY", "visit")
+	//testClustering("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY", "visit")
+	/*
+	Test of Json functions
+	 */
 
+	var placeData utils.Place
+	err := utils.ReadFromFile("", &placeData)
+	if err != nil {
+		log.Fatal("Unable to read Json file for this test case.")
+	}
+	if placeData.Name == "" {
+		log.Fatal("Name not read at all.")
+	}
+	place := POI.CreatePlace(placeData.Name, placeData.Location, placeData.Addr,
+		placeData.LocationType, placeData.PlaceId, placeData.PriceLevel)
+	fmt.Println(place.GetAddress())
 	//mapclient := iowrappers.MapsClient{}
 	//mapclient.CreateClient("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY")
 	//places := mapclient.ExtensiveNearbySearch("34.052235,-118.243683", "visit", 10000,
