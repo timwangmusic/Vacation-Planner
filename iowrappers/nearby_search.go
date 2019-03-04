@@ -6,11 +6,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/pkg/errors"
+	"errors"
 	"googlemaps.github.io/maps"
-	"log"
 	"strings"
 	"time"
+	log "github.com/sirupsen/logrus"
 )
 
 type LocationType string
@@ -67,10 +67,25 @@ func NearbySearchSDK (c MapsClient, req PlaceSearchRequest) (resp maps.PlacesSea
 }
 
 // create google maps client with api key
-func (c *MapsClient) CreateClient (apiKey string){
+func (c *MapsClient) CreateClient(apiKey string, logFormatter string) {
 	var err error
 	c.client, err = maps.NewClient(maps.WithAPIKey(apiKey))
 	check(err)
+	c.createLogger(logFormatter)
+}
+
+func (c *MapsClient) createLogger (formatterSelection string){
+	c.logger = log.New()
+	if formatterSelection == "JSON"{	// TextFormatter by default
+		c.logger.Formatter = &log.JSONFormatter{
+			PrettyPrint: true,
+		}
+	} else {
+		c.logger.Formatter = &log.TextFormatter{
+			DisableColors: false,
+			FullTimestamp: true,
+		}
+	}
 }
 
 // SimpleNearbySearch searches results from a place category once for each location type in the category
@@ -82,6 +97,8 @@ func (c *MapsClient) SimpleNearbySearch(centerLocation string, placeCat POI.Plac
 	}
 
 	placeTypes := getTypes(placeCat)
+
+	searchStartTime := time.Now()
 
 	for _, placeType := range placeTypes{
 		req := PlaceSearchRequest{
@@ -100,6 +117,20 @@ func (c *MapsClient) SimpleNearbySearch(centerLocation string, placeCat POI.Plac
 		}
 
 		places = append(places, parsePlacesSearchResponse(searchResp, placeType)...)
+	}
+
+	searchDuration := time.Since(searchStartTime)
+
+	// logging
+	c.logger.WithFields(log.Fields{
+		"center location": centerLocation,
+		"place category": placeCat,
+		"Maps API call time": searchDuration,
+	}).Info("Logging simple nearby search")
+
+	// warn if search takes too long
+	if searchDuration > time.Duration(5*time.Second){
+		c.logger.Warn("simple nearby search takes too long")
 	}
 	return
 }
@@ -124,6 +155,8 @@ func (c *MapsClient) ExtensiveNearbySearch(centerLocation string, placeCat POI.P
 	var reqTimes uint = 0		// number of queries for each location type
 	var totalResult uint= 0	// number of results so far
 
+	searchStartTime := time.Now()
+
 	for totalResult <= maxRequestTimes && reqTimes < maxRequestTimes{
 		for _, placeType := range placeTypes{
 			if reqTimes > 0 && nextPageTokenMap[placeType] == ""{	// no more result for this location type
@@ -145,6 +178,17 @@ func (c *MapsClient) ExtensiveNearbySearch(centerLocation string, placeCat POI.P
 		reqTimes++
 		time.Sleep(GOOGLE_NEARBY_SEARCH_DELAY)	// sleep to make sure new next page token comes to effect
 	}
+
+	searchDuration := time.Since(searchStartTime)
+
+	// logging
+	c.logger.WithFields(log.Fields{
+		"center location": centerLocation,
+		"place category": placeCat,
+		"total results": totalResult,
+		"Maps API call time": searchDuration,
+	}).Info("Logging extensive nearby search")
+
 	return
 }
 
@@ -164,7 +208,17 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 		req.Fields = fieldMask
 	}
 
+	startSearchTime := time.Now()
+
 	resp, err := c.client.PlaceDetails(context.Background(), req)
+
+	searchDuration := time.Since(startSearchTime)
+
+	// logging
+	c.logger.WithFields(log.Fields{
+		"place name": resp.Name,
+		"Maps API call time": searchDuration,
+	}).Info("Logging detailed place search")
 
 	utils.CheckErr(err)
 
