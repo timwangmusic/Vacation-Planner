@@ -8,12 +8,12 @@ import (
 )
 
 type Cluster struct{
-	places []POI.Place
+	Places []POI.Place
 }
 
-// Size of Cluster returns number of places in a cluster
+// Size of Cluster returns number of Places in a cluster
 func (cluster *Cluster) Size() int{
-	return len(cluster.places)
+	return len(cluster.Places)
 }
 
 type PlaceClusters struct{
@@ -32,7 +32,7 @@ type ClustersManager struct{
 	PlaceCat      POI.PlaceCategory
 }
 
-// call Google API to obtain nearby places and extract location data
+// call Google API to obtain nearby Places and extract location data
 func (placeManager *ClustersManager) GetGeoLocationData(location string, searchRadius uint, searchType string) [][]float64 {
 	var places []POI.Place
 	if searchType == ""{
@@ -69,6 +69,6 @@ func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, nu
 	// save membership info
 	for locationIdx, clusterIdx := range hardCluster.Guesses(){
 		curCluster := &placeManager.PlaceClusters.Clusters[clusterIdx-1]
-		curCluster.places = append(curCluster.places, placeManager.places[locationIdx])
+		curCluster.Places = append(curCluster.Places, placeManager.places[locationIdx])
 	}
 }

@@ -14,7 +14,7 @@ type Vertex struct {
 	Parent    string    // parent name
 }
 
-// Point defines a location with latitude and longtitude
+// Point defines a location with latitude and longitude
 type Point struct {
 	Lat float64
 	Lng float64
