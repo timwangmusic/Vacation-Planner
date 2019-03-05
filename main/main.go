@@ -1,10 +1,12 @@
 package main
 
 import (
+	"Vacation-planner/utils"
 	"Vacation-planner/POI"
 	"Vacation-planner/graph"
 	"Vacation-planner/iowrappers"
 	"fmt"
+	"log"
 )
 
 func main() {
@@ -45,8 +47,22 @@ func main() {
 	testPriorityQueueInterface(&pq, nodes)
 
 	// test clustering
-	testClustering("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY", "visit")
+	//testClustering("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY", "visit")
+	/*
+	Test of Json functions
+	 */
 
+	var placeData utils.PlaceInfo
+	err := utils.ReadFromFile("", &placeData)
+	if err != nil {
+		log.Fatal("Unable to read Json file for this test case.")
+	}
+	if placeData.Name == "" {
+		log.Fatal("Name not read at all.")
+	}
+	place := POI.CreatePlace(placeData.Name, placeData.Location, placeData.Addr,
+		placeData.LocationType, placeData.PlaceId, placeData.PriceLevel)
+	fmt.Println(place.GetAddress())
 	//mapclient := iowrappers.MapsClient{}
 	//mapclient.CreateClient("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY")
 	//places := mapclient.ExtensiveNearbySearch("34.052235,-118.243683", "visit", 10000,
@@ -56,6 +72,42 @@ func main() {
 	//for _, place := range places{
 	//	fmt.Println(place.GetName())
 	//}
+
+	//pitt := graph.Vertex{Location:Pittsburg, Name:"Pitt"}
+	//sd := graph.Vertex{Location:SanDiego, Name:"SD"}
+	//vertexes := []*graph.Vertex{&pitt, &sd}
+	//testTreeTraversal(&sd, vertexes)
+
+
+	//Test MX
+
+	sw1:=graph.SimpleWeight{}
+	sw2:=graph.SimpleWeight{}
+	sw1.SetWeight(5)
+	sw2.SetWeight(6)
+	if sw1.Compare(sw2){
+		fmt.Println("Simple: Left is NMT Right.")
+	} else {
+		fmt.Print("Simple: Right is NMR Left")
+	}
+	//FIXME: graph function mismatch, version control problems
+	sbw1 := graph.SimpleBaseWeight{}
+	sbw2 := graph.SimpleBaseWeight{}
+	sbw1.SetWeight(50, 100.25)
+	sbw2.SetWeight(60, 99)
+	sbw1.Setcmpflag(graph.PRIORITY_TIME)
+	sbw2.Setcmpflag(graph.PRIORITY_BUDGET)
+	if sw1.Compare(sw2){
+		fmt.Println("Base_Time: Left is NMT Right.")
+	} else {
+		fmt.Print("Base_Time: Right is NMR Left")
+	}
+
+	if sw2.Compare(sw1){
+		fmt.Println("Base_Budget: Right is NMT Left.")
+	} else {
+		fmt.Print("Base_Budget: Left is NMR Right")
+	}
 }
 
 func testPriorityQueueInterface(pq graph.PriorityQueue, nodes []*graph.Vertex){

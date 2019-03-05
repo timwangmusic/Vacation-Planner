@@ -1,4 +1,5 @@
 package graph
+
 const(
 	PRIORITY_TIME=iota
 	PRIORITY_BUDGET
@@ -12,13 +13,16 @@ func (this SimpleWeight) SetWeight(weight uint32){
 func (this SimpleWeight) GetWeight(weight uint32) uint32{
 	return this.w
 }
-func (l SimpleWeight) Compare(r SimpleWeight) bool{
-	if(l.w <= r.w){
+
+func (l SimpleWeight) Compare(r SimpleWeight) bool {
+	if l.w <= r.w{
+
 		return true
 	} else {
 		return false
 	}
 }
+
 
 type SimpleBaseWeight struct {
 	timeInMin uint32
@@ -52,10 +56,24 @@ FIXME: The priority of configuration is based only on the cmpflag
 of the object calling the compare function. This configuration must
 be used with care.
  */
-func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool {
+
+
+func (v SimpleBaseWeight) Setcmpflag(cmpflag uint8){
+	/*
+	Need to perform validity check of input values
+	will change function signiture to bool after then
+	 */
+	v.cmpflag = cmpflag
+}
+func (v SimpleBaseWeight) Getcmpflag() uint8{
+	return v.cmpflag
+}
+
+func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool{
 	switch l.cmpflag {
-	case PRIORITY_TIME:
-		if l.timeInMin <= r.timeInMin {
+	case PRIORITY_TIME :
+		if(l.timeInMin <=r.timeInMin){
+
 			return true
 		} else {
 			return false
