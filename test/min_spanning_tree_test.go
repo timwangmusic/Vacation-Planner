@@ -1,7 +1,7 @@
 package test
 
 import (
-	"Vacation-Planner/graph"
+	"Vacation-planner/graph"
 	"testing"
 )
 
