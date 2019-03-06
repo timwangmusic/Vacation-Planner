@@ -53,7 +53,7 @@ func (placeManager *ClustersManager) GetGeoLocationData(location string, searchR
 
 // train clustering model and assign places to clusters
 // numClusters specifies number of clusters
-func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, numClusters int){
+func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, numClusters int) (clusterResult []int, clusterSizes []int){
 	// obtain clusterer with number of clusters and distance function
 	hardCluster, err := clusters.KMeans(1000, numClusters, utils.HaversineDist)
 	utils.CheckErr(err)
@@ -71,4 +71,30 @@ func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, nu
 		curCluster := &placeManager.PlaceClusters.Clusters[clusterIdx-1]
 		curCluster.Places = append(curCluster.Places, placeManager.places[locationIdx])
 	}
+
+	clusterResult = hardCluster.Guesses()
+	clusterSizes = hardCluster.Sizes()
+	return
+}
+
+func (placeManager *ClustersManager) FindClusterCenter(geoLocationData *[][]float64, clusterResult *[]int,
+	clusterSizes *[]int) [][]float64{
+	clusterCenters := make([][]float64, placeManager.PlaceClusters.Size())
+
+	groups := make([][][]float64, placeManager.PlaceClusters.Size())
+
+	for i:=0; i<placeManager.PlaceClusters.Size(); i++{
+		groups[i] = [][]float64{}
+	}
+
+	for k, cluster := range *clusterResult{
+		groups[cluster] = append(groups[cluster], (*geoLocationData)[k])
+	}
+
+	for i:=0; i<placeManager.PlaceClusters.Size(); i++{
+		center, err := utils.FindCenter(groups[i])
+		utils.CheckErr(err)
+		clusterCenters[i] = center
+	}
+	return clusterCenters
 }
