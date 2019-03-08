@@ -30,6 +30,7 @@ type ClustersManager struct{
 	PlaceClusters *PlaceClusters
 	places        []POI.Place
 	PlaceCat      POI.PlaceCategory
+	ClusterCenters *[][]float64
 }
 
 // call Google API to obtain nearby Places and extract location data
@@ -83,18 +84,19 @@ func (placeManager *ClustersManager) FindClusterCenter(geoLocationData *[][]floa
 
 	groups := make([][][]float64, placeManager.PlaceClusters.Size())
 
-	for i:=0; i<placeManager.PlaceClusters.Size(); i++{
+	for i := 0; i < placeManager.PlaceClusters.Size(); i++{
 		groups[i] = [][]float64{}
 	}
 
 	for k, cluster := range *clusterResult{
-		groups[cluster] = append(groups[cluster], (*geoLocationData)[k])
+		groups[cluster-1] = append(groups[cluster-1], (*geoLocationData)[k])
 	}
 
-	for i:=0; i<placeManager.PlaceClusters.Size(); i++{
+	for i := 0; i < placeManager.PlaceClusters.Size(); i++{
 		center, err := utils.FindCenter(groups[i])
 		utils.CheckErr(err)
 		clusterCenters[i] = center
 	}
+	placeManager.ClusterCenters = &clusterCenters
 	return clusterCenters
 }
