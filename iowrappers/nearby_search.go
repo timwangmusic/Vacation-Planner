@@ -28,7 +28,7 @@ const(
 	GOOGLE_NEARBY_SEARCH_DELAY = time.Duration(2 * time.Second)
 )
 
-var detailedSearchFields = flag.String("fields", "opening_hours", "a list of comma-separated fields")
+var detailedSearchFields = flag.String("fields", "name,opening_hours", "a list of comma-separated fields")
 
 type PlaceSearchRequest struct{
 	// "lat,lng"
