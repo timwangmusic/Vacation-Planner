@@ -18,7 +18,7 @@ func TestFindClusterCenter (t *testing.T){
 	}
 
 	mgr := graph.ClustersManager{}
-	clusterResult := []int{0, 1, 2, 0, 2, 1, 0}
+	clusterResult := []int{1, 2, 3, 1, 3, 2, 1}
 	clusterSizes := []int{3, 2, 2}
 
 	placeClusters := graph.PlaceClusters{}
