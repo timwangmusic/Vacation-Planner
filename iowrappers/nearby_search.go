@@ -235,7 +235,11 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType Loca
 		addr := res.FormattedAddress
 		id := res.PlaceID
 		priceLevel := res.PriceLevel
-		places = append(places, POI.CreatePlace(name, location, addr, string(locationType), id, priceLevel))
+		h := &POI.OpeningHours{}
+		if res.OpeningHours != nil && res.OpeningHours.WeekdayText != nil && len(res.OpeningHours.WeekdayText) > 0{
+			h.Hours = append(h.Hours, res.OpeningHours.WeekdayText...)
+		}
+		places = append(places, POI.CreatePlace(name, location, addr, string(locationType), h, id, priceLevel))
 	}
 	return
 }

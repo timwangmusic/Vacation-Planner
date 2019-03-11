@@ -27,7 +27,7 @@ type POI interface {
 	// lat, lng
 	GetLocation() [2]float64
 	// opening hours of the specified day in a week
-	GetHour(int) string
+	GetHour(uint8) string
 	// price range
 	GetPriceLevel() int
 
@@ -36,7 +36,7 @@ type POI interface {
 	// set POI type
 	SetType(string)
 	// set POI opening hour for some day in a week
-	SetHour(int, string)
+	SetHour(uint8, string)
 	// set price range
 	SetPriceLevel(int)
 }
