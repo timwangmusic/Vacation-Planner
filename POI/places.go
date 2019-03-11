@@ -6,13 +6,13 @@ import (
 )
 
 const(
-	DATE_SUNDAY = iota
-	DATE_MONDAY
+	DATE_MONDAY = iota
 	DATE_TUESDAY
 	DATE_WEDNESDAY
 	DATE_THURSAY
 	DATE_FRIDAY
 	DATE_SATURDAY
+	DATE_SUNDAY
 )
 
 type Place struct {
@@ -42,7 +42,7 @@ func (v *Place) GetType() string{
 	return v.locationType
 }
 
-func (v *Place) GetHour(day int) string{
+func (v *Place) GetHour(day uint8) string {
 	return v.hours[day]
 }
 
