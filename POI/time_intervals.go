@@ -1,7 +1,11 @@
 package POI
 
 import (
+	"Vacation-planner/utils"
 	"errors"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 type Hour uint8
@@ -58,4 +62,35 @@ func (timeIntervals *GoogleMapsTimeIntervals) InsertTimeInterval(interval TimeIn
 
 func (timeIntervals *GoogleMapsTimeIntervals) NumIntervals() int{
 	return timeIntervals.numIntervals
+}
+
+func ParseTimeInterval(openingHour string) (interval TimeInterval){
+	closed, _ := regexp.Match(`Closed`, []byte(openingHour))
+	if closed{
+		interval.Start = 255
+		interval.End = 255
+		return
+	}
+	hour_re := regexp.MustCompile(`[\d]{2}:[\d]{2}`)
+	hours := hour_re.FindAll([]byte(openingHour), -1)
+
+	am_pm_re := regexp.MustCompile(`[AP]M`)
+	am_pm := am_pm_re.FindAll([]byte(openingHour), -1)
+
+	interval.Start = Hour(calculateHour(string(hours[0]), string(am_pm[0])))
+	interval.End = Hour(calculateHour(string(hours[1]), string(am_pm[1])))
+
+	return
+}
+
+func calculateHour(time string, am_pm string) uint8{
+	t := strings.Split(time, ":")
+	hour, err := strconv.ParseUint(t[0], 10, 8)
+	utils.CheckErr(err)
+
+	if am_pm == "AM"{
+		return uint8(hour)
+	} else{
+		return uint8(hour) + 12
+	}
 }
