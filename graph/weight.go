@@ -21,7 +21,6 @@ func (l SimpleWeight) Compare(r SimpleWeight) bool {
 		return false
 	}
 }
-
 type SimpleBaseWeight struct {
 	timeInMin uint32
 	budget	float64
