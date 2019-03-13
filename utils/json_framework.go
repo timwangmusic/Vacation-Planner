@@ -2,10 +2,10 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"os"
-	"errors"
+	"src/github.com/sirupsen/logrus"
 )
 
 /*
@@ -32,8 +32,7 @@ func ReadFromFile(fname string, ptr interface{}) error{
 	}
 	jsonFile, err := os.Open(fname)
 	if err != nil {
-		/*TODO: Need to be integrated to native log functions*/
-		fmt.Println(err)
+		logrus.Error(err.Error())
 		return err
 	}
 	/*TODO: How to handle this error*/
@@ -42,8 +41,7 @@ func ReadFromFile(fname string, ptr interface{}) error{
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	err = json.Unmarshal(byteValue, ptr)
 	if err != nil {
-		/*TODO: Need to be integrated to native log functions*/
-		fmt.Println(err)
+		logrus.Error(err.Error())
 		return err
 	}
 	return nil
@@ -51,21 +49,25 @@ func ReadFromFile(fname string, ptr interface{}) error{
 
 func WriteJsonToFile(fname string, ptr interface{}) error{
 	if fname == "" {
-		return errors.New("file name can't be empty")
+		err := errors.New("file name can't be empty")
+		logrus.Error(err.Error())
+		return err
 	}
 	//check directory usable?
 	if _, err := os.Stat(fname); err == nil {
-		return errors.New("json target file already exists")
+		err := errors.New("json target file already exists")
+		logrus.Error(err.Error())
+		return err
 	}
 	byteValue, err := json.Marshal(ptr)
 	if err != nil {
+		logrus.Error(err.Error())
 		return err
 	}
 	err = ioutil.WriteFile(fname, byteValue, 0644)
 	if err != nil {
+		logrus.Error(err.Error())
 		return err
 	}
 	return nil
 }
-
-

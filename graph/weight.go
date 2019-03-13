@@ -7,23 +7,20 @@ const(
 type SimpleWeight struct{
 	w uint32
 }
-func (this SimpleWeight) SetWeight(weight uint32){
+func (this *SimpleWeight) SetWeight(weight uint32){
 	this.w = weight
 }
-func (this SimpleWeight) GetWeight(weight uint32) uint32{
+func (this *SimpleWeight) GetWeight(weight uint32) uint32{
 	return this.w
 }
 
 func (l SimpleWeight) Compare(r SimpleWeight) bool {
 	if l.w <= r.w{
-
 		return true
 	} else {
 		return false
 	}
 }
-
-
 type SimpleBaseWeight struct {
 	timeInMin uint32
 	budget	float64
