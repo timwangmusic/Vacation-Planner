@@ -15,6 +15,18 @@ type TimeInterval struct {
 	End   Hour
 }
 
+func (interval *TimeInterval) Serialize() string{
+	return strconv.FormatUint(uint64(interval.Start), 10) + "_" + strconv.FormatUint(uint64(interval.End), 10)
+}
+
+// returns true if two time intervals intersect
+func (interval *TimeInterval) Intersect(newInterval *TimeInterval) bool{
+	if interval.End < newInterval.Start || interval.Start > newInterval.End{
+		return false
+	}
+	return true
+}
+
 // an interface for handling interval-like data structure
 type TimeIntervals interface {
 	NumIntervals() int                     // get number of time intervals
@@ -64,21 +76,30 @@ func (timeIntervals *GoogleMapsTimeIntervals) NumIntervals() int{
 	return timeIntervals.numIntervals
 }
 
-func ParseTimeInterval(openingHour string) (interval TimeInterval){
+// given a string of form "Monday: 10:45 PM - 11:78 AM", return a TimeInterval with start and end hour in [0-24]
+func ParseTimeInterval(openingHour string) (interval TimeInterval, err error){
 	closed, _ := regexp.Match(`Closed`, []byte(openingHour))
 	if closed{
 		interval.Start = 255
 		interval.End = 255
 		return
 	}
-	hour_re := regexp.MustCompile(`[\d]{2}:[\d]{2}`)
+	hour_re := regexp.MustCompile(`[\d]{1,2}:[\d]{2}`)
 	hours := hour_re.FindAll([]byte(openingHour), -1)
 
-	am_pm_re := regexp.MustCompile(`[AP]M`)
+	am_pm_re := regexp.MustCompile(`[apAP][mM]`)
 	am_pm := am_pm_re.FindAll([]byte(openingHour), -1)
+
+	if len(hours) < 2 || len(am_pm) < 2{
+		return TimeInterval{}, errors.New("cannot parse opening hour")
+	}
 
 	interval.Start = Hour(calculateHour(string(hours[0]), string(am_pm[0])))
 	interval.End = Hour(calculateHour(string(hours[1]), string(am_pm[1])))
+
+	if interval.Start > interval.End{	// late night hours
+		interval.End = 24
+	}
 
 	return
 }
@@ -88,9 +109,10 @@ func calculateHour(time string, am_pm string) uint8{
 	hour, err := strconv.ParseUint(t[0], 10, 8)
 	utils.CheckErr(err)
 
-	if am_pm == "AM"{
+	if am_pm == "AM" || am_pm == "am"{
 		return uint8(hour)
-	} else{
+	} else if am_pm == "PM" || am_pm == "pm"{
 		return uint8(hour) + 12
 	}
+	return 255	// err
 }
