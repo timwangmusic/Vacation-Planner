@@ -20,7 +20,7 @@ type PlaceClusters struct{
 	Clusters []Cluster
 }
 
-// Size of PlaceClusters returns number of clusters in a zone
+// Size of PlaceClusters returns number of Clusters in a zone
 func (placeClusters *PlaceClusters) Size() int{
 	return len(placeClusters.Clusters)
 }
@@ -52,10 +52,10 @@ func (placeManager *ClustersManager) GetGeoLocationData(location string, searchR
 	return locationData
 }
 
-// train clustering model and assign places to clusters
-// numClusters specifies number of clusters
+// train clustering model and assign places to Clusters
+// numClusters specifies number of Clusters
 func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, numClusters int) (clusterResult []int, clusterSizes []int){
-	// obtain clusterer with number of clusters and distance function
+	// obtain clusterer with number of Clusters and distance function
 	hardCluster, err := clusters.KMeans(1000, numClusters, utils.HaversineDist)
 	utils.CheckErr(err)
 
