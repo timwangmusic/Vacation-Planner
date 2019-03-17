@@ -52,7 +52,7 @@ func (placeManager *ClustersManager) GetGeoLocationData(location string, searchR
 	return locationData
 }
 
-// train clustering model and assign places to Clusters
+// train clustering model and assign Places to Clusters
 // numClusters specifies number of Clusters
 func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, numClusters int) (clusterResult []int, clusterSizes []int){
 	// obtain clusterer with number of Clusters and distance function

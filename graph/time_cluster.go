@@ -1,9 +1,9 @@
 // This file defines TimeClusters architecture.
 // One TimeClusters consists of multiple TimeCluster and time intervals.
-// One TimeCluster consists of a set of places and a time interval.
+// One TimeCluster consists of a set of Places and a time interval.
 // All TimeClusters are controlled by TimeClustersManager.
 // One TimeClustersManager manages one TimeClusters.
-// TimeClustersManager representation contains a set of places for ease of data containment.
+// TimeClustersManager representation contains a set of Places for ease of data containment.
 package graph
 
 import (
@@ -11,15 +11,15 @@ import (
 	"Vacation-planner/iowrappers"
 )
 
-// TimeCluster consists of a set of places and a time interval
+// TimeCluster consists of a set of Places and a time interval
 type TimeCluster struct {
-	places []POI.Place
-	timeInterval POI.TimeInterval
+	Places       []POI.Place
+	TimeInterval POI.TimeInterval
 }
 
-// returns number of places in a time cluster
+// returns number of Places in a time cluster
 func (cls *TimeCluster) Size() int{
-	return len(cls.places)
+	return len(cls.Places)
 }
 
 // TimeClusters consists of multiple TimeCluster
@@ -34,26 +34,28 @@ func (cls *TimeClusters) Size() int{
 }
 
 //TimeClustersManager
-//To use a TimeClustersManager, fetch places data using GetPlaces and then time clustering with TimeClustering method.
+//To use a TimeClustersManager, fetch Places data using GetPlaces and then time clustering with TimeClustering method.
 type TimeClustersManager struct{
 	Client        *iowrappers.MapsClient
 	TimeClusters  *TimeClusters
 	places        []POI.Place
 	PlaceCat      POI.PlaceCategory
+	Weekday		  POI.Weekday
 }
 
 // TimeClusterManager initialization
 func (placeManager *TimeClustersManager) Init(client *iowrappers.MapsClient, placeCat POI.PlaceCategory,
-	timeIntervals []POI.TimeInterval){
+	timeIntervals []POI.TimeInterval, day POI.Weekday){
 	placeManager.Client = client
 	placeManager.PlaceCat = placeCat
+	placeManager.Weekday = day
 	placeManager.TimeClusters = &TimeClusters{Clusters: make(map[string]*TimeCluster, 0)}
 	placeManager.TimeClusters.TimeIntervals = POI.GoogleMapsTimeIntervals{}
 	for _, interval := range timeIntervals{
 		clusterKey := interval.Serialize()
 		placeManager.TimeClusters.TimeIntervals.InsertTimeInterval(interval)
-		placeManager.TimeClusters.Clusters[clusterKey] = &TimeCluster{timeInterval: interval}
-		placeManager.TimeClusters.Clusters[clusterKey].places = make([]POI.Place, 0)
+		placeManager.TimeClusters.Clusters[clusterKey] = &TimeCluster{TimeInterval: interval}
+		placeManager.TimeClusters.Clusters[clusterKey].Places = make([]POI.Place, 0)
 	}
 }
 
@@ -69,15 +71,15 @@ func (placeManager *TimeClustersManager) GetPlaces(location string, searchRadius
 	placeManager.places = places
 }
 
-// assign places to time Clusters using their time interval info
-func (placeManager *TimeClustersManager) TimeClustering(){
+// assign Places to time Clusters using their time interval info
+func (placeManager *TimeClustersManager) TimeClustering(day POI.Weekday) {
 	for _, place := range placeManager.places{
-		placeManager.assign(&place)
+		placeManager.assign(&place, day)
 	}
 }
 
-func (placeManager *TimeClustersManager) assign(place *POI.Place){
-	openingHour := place.GetHour(POI.DATE_THURSAY)		// get Thursday opening hour
+func (placeManager *TimeClustersManager) assign(place *POI.Place, day POI.Weekday) {
+	openingHour := place.GetHour(day)		// get opening hour for a weekday
 	openingInterval, err := POI.ParseTimeInterval(openingHour)
 	if err != nil{
 		return
@@ -85,7 +87,7 @@ func (placeManager *TimeClustersManager) assign(place *POI.Place){
 	for _, interval := range *placeManager.TimeClusters.TimeIntervals.GetAllIntervals(){
 		if openingInterval.Intersect(&interval){
 			clusterKey := interval.Serialize()
-			clusterPlaces := &placeManager.TimeClusters.Clusters[clusterKey].places
+			clusterPlaces := &placeManager.TimeClusters.Clusters[clusterKey].Places
 			*clusterPlaces = append(*clusterPlaces, *place)
 		}
 	}

@@ -14,9 +14,9 @@ func CreatePlace(name string, location string, addr string, locationType string,
 	place.SetType(locationType)
 	place.SetName(name)
 	place.SetID(placeID)
-	var i uint8
+	var i Weekday
 	if openingHours != nil && openingHours.Hours != nil{
-		for i = DATE_MONDAY; i<= DATE_SUNDAY && i < uint8(len(openingHours.Hours)); i++{
+		for i = DATE_MONDAY; i<= DATE_SUNDAY; i++{
 			place.SetHour(i, openingHours.Hours[i])
 		}
 	}
