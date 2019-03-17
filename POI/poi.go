@@ -31,12 +31,18 @@ type POI interface {
 	// price range
 	GetPriceLevel() int
 
+	// set POI id
+	SetID(id string)
 	// set POI name
 	SetName(string)
 	// set POI type
 	SetType(string)
-	// set POI opening hour for some day in a week
+	// set POI location
+	SetLocation(location [2]float64)
+	// set POI opening hour for a weekday
 	SetHour(Weekday, string)
-	// set price range
+	// set POI price range
 	SetPriceLevel(int)
+	// set POI address
+	SetAddress(addr string)
 }
