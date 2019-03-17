@@ -5,8 +5,10 @@ import (
 	"strings"
 )
 
+type Weekday uint8
+
 const(
-	DATE_MONDAY = iota
+	DATE_MONDAY Weekday= iota
 	DATE_TUESDAY
 	DATE_WEDNESDAY
 	DATE_THURSAY
@@ -42,7 +44,7 @@ func (v *Place) GetType() string{
 	return v.locationType
 }
 
-func (v *Place) GetHour(day uint8) string {
+func (v *Place) GetHour(day Weekday) string {
 	return v.hours[day]
 }
 
@@ -72,7 +74,7 @@ func (v *Place) SetType(t string){
 	v.locationType = t
 }
 // Set time if POI opening hour changed for some day in a week
-func (v *Place) SetHour(day uint8, hour string){
+func (v *Place) SetHour(day Weekday, hour string){
 	switch day {
 	case DATE_SUNDAY:
 		v.hours[day] = hour

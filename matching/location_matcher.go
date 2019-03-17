@@ -6,31 +6,26 @@ import (
 	"Vacation-planner/utils"
 )
 
-/*
-	The primary functionality of this package is using support from graph package
-to find visit-eatery pairs from results obtained by nearby search.
-	Matchers uses service of cluster managers to search nearby places.
-Then it returns a list of PlacePair triples (one for each time slot) to planner.
-*/
-
+//location-based clustering, can be extended to matcher for multi-city planning
 type PlacePair struct{
 	VisitName string
 	EateryName string
 	PairPrice int
 }
 
-type Matcher struct {
+type LocationMatcher struct {
 	EateryClusterMgr *graph.ClustersManager
 	VisitClusterMgr  *graph.ClustersManager
 }
 
-func (m *Matcher) Matching (location string, radius uint) (placePairs []PlacePair){
+func (m *LocationMatcher) Matching (location string, radius uint) (placePairs []PlacePair){
 	//m.createClusterManager()
 
 	/*
 		1) get geo location data
 		2) clustering
 		3) calculate cluster centers
+		4) generate place pairs
 	*/
 	m.clustering(location, radius, 3)
 
@@ -45,7 +40,7 @@ func (m *Matcher) Matching (location string, radius uint) (placePairs []PlacePai
 	return
 }
 
-func (m *Matcher) genPlacePairs(clusterPair *clusterCenterPair) (placePairs []PlacePair){
+func (m *LocationMatcher) genPlacePairs(clusterPair *clusterCenterPair) (placePairs []PlacePair){
 	visitCluster := m.VisitClusterMgr.PlaceClusters.Clusters[clusterPair.VisitIdx]
 	eateryCluster := m.EateryClusterMgr.PlaceClusters.Clusters[clusterPair.EateryIdx]
 
@@ -60,12 +55,12 @@ func (m *Matcher) genPlacePairs(clusterPair *clusterCenterPair) (placePairs []Pl
 	return
 }
 
-func (m *Matcher) createClusterManager(){
+func (m *LocationMatcher) createClusterManager(){
 	m.EateryClusterMgr = &graph.ClustersManager{PlaceCat: POI.PlaceCategoryEatery}
 	m.VisitClusterMgr = &graph.ClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 }
 
-func (m *Matcher) clustering(location string, searchRadius uint, numClusters int){
+func (m *LocationMatcher) clustering(location string, searchRadius uint, numClusters int){
 	// get geolocation data for visit places
 	visitData := m.VisitClusterMgr.GetGeoLocationData(location, searchRadius, "simple")
 	// clustering for visit places
