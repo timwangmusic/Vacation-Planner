@@ -26,13 +26,13 @@ type SimpleBaseWeight struct {
 	budget	float64
 	cmpflag	uint8
 }
-func (this SimpleBaseWeight) SetWeight(timeInMin uint32, budget float64){
+func (this *SimpleBaseWeight) SetWeight(timeInMin uint32, budget float64){
 	this.timeInMin = timeInMin
 	this.budget = budget}
-func (this SimpleBaseWeight) GetWeight() (uint32, float64) {
+func (this *SimpleBaseWeight) GetWeight() (uint32, float64) {
 	return this.timeInMin, this.budget
 }
-func (this SimpleBaseWeight) SetCmpFlag( flag uint8) bool {
+func (this *SimpleBaseWeight) SetCmpFlag( flag uint8) bool {
 	switch flag {
 	case PRIORITY_BUDGET:
 		this.cmpflag = flag
@@ -44,7 +44,7 @@ func (this SimpleBaseWeight) SetCmpFlag( flag uint8) bool {
 		return false
 	}
 }
-func (this SimpleBaseWeight) GetCmpFlag() uint8 {
+func (this *SimpleBaseWeight) GetCmpFlag() uint8 {
 	return this.cmpflag
 }
 
