@@ -92,6 +92,7 @@ func (c *MapsClient) createLogger (formatterSelection string){
 // Search each location type exactly once
 func (c *MapsClient) SimpleNearbySearch(centerLocation string, placeCat POI.PlaceCategory,
 	radius uint, rankBy string)(places []POI.Place){
+	// TODO: check if c.client is valid
 	if rankBy == ""{
 		rankBy = "prominence"	// default rankBy value
 	}
@@ -141,6 +142,7 @@ func (c *MapsClient) SimpleNearbySearch(centerLocation string, placeCat POI.Plac
 // having maxRequestTimes provides Google API call protection
 func (c *MapsClient) ExtensiveNearbySearch(centerLocation string, placeCat POI.PlaceCategory,
 	radius uint, rankBy string, maxResult uint, maxRequestTimes uint)(places []POI.Place){
+	// TODO: check if c.client is valid
 	if rankBy == ""{
 		rankBy = "prominence"	// default rankBy value
 	}

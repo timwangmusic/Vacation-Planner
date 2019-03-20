@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"src/github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -59,7 +59,7 @@ func WriteJsonToFile(fname string, ptr interface{}) error{
 		logrus.Error(err.Error())
 		return err
 	}
-	byteValue, err := json.Marshal(ptr)
+	byteValue, err := json.MarshalIndent(ptr, "", "    ")
 	if err != nil {
 		logrus.Error(err.Error())
 		return err
