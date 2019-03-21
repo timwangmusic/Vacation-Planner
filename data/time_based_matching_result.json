@@ -1,0 +1,1148 @@
+[
+    {
+        "Places": [
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
+                "Name": "Cafe Nine",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
+                "Name": "Homeboy Diner",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
+                "Name": "Cherry Pick Cafe",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
+                "Name": "Normandie Bakery Cafe \u0026 Catering",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
+                "Name": "MILK+T",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
+                "Name": "Bäco Mercat",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
+                "Name": "Mendocino Farms",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
+                "Name": "Kendall's Brasserie",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
+                "Name": "Daikokuya",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
+                "Name": "Bar Amá",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoAR9O-lN9DuOJc",
+                "Name": "Sushi Go 55",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
+                "Name": "Cafe Nine",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
+                "Name": "Homeboy Diner",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
+                "Name": "Cherry Pick Cafe",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
+                "Name": "Normandie Bakery Cafe \u0026 Catering",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
+                "Name": "MILK+T",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
+                "Name": "Bäco Mercat",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
+                "Name": "Mendocino Farms",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
+                "Name": "Kendall's Brasserie",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
+                "Name": "Daikokuya",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
+                "Name": "Bar Amá",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoAR9O-lN9DuOJc",
+                "Name": "Sushi Go 55",
+                "Address": ", , , ",
+                "Price": 30
+            }
+        ],
+        "Slot": {
+            "Slot": {
+                "Start": 8,
+                "End": 12
+            }
+        }
+    },
+    {
+        "Places": [
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
+                "Name": "Cafe Nine",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
+                "Name": "Homeboy Diner",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
+                "Name": "Cherry Pick Cafe",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
+                "Name": "Normandie Bakery Cafe \u0026 Catering",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
+                "Name": "MILK+T",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
+                "Name": "Bäco Mercat",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
+                "Name": "Mendocino Farms",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
+                "Name": "Kendall's Brasserie",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
+                "Name": "Perch",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
+                "Name": "Daikokuya",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
+                "Name": "Bar Amá",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
+                "Name": "Far Bar",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoAR9O-lN9DuOJc",
+                "Name": "Sushi Go 55",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
+                "Name": "Cafe Nine",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
+                "Name": "Homeboy Diner",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
+                "Name": "Cherry Pick Cafe",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
+                "Name": "Normandie Bakery Cafe \u0026 Catering",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
+                "Name": "MILK+T",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
+                "Name": "Bäco Mercat",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
+                "Name": "Mendocino Farms",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
+                "Name": "Kendall's Brasserie",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
+                "Name": "Perch",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
+                "Name": "Daikokuya",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
+                "Name": "Bar Amá",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
+                "Name": "Far Bar",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoAR9O-lN9DuOJc",
+                "Name": "Sushi Go 55",
+                "Address": ", , , ",
+                "Price": 30
+            }
+        ],
+        "Slot": {
+            "Slot": {
+                "Start": 12,
+                "End": 17
+            }
+        }
+    },
+    {
+        "Places": [
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
+                "Name": "MILK+T",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
+                "Name": "Perch",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
+                "Name": "Far Bar",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
+                "Name": "MILK+T",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "Address": ", , , ",
+                "Price": 10
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
+                "Name": "Perch",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
+                "Name": "Far Bar",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "Address": ", , , ",
+                "Price": 30
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "Address": ", , , ",
+                "Price": 50
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "Address": ", , , ",
+                "Price": 0
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "Address": ", , , ",
+                "Price": 30
+            }
+        ],
+        "Slot": {
+            "Slot": {
+                "Start": 17,
+                "End": 22
+            }
+        }
+    }
+]
