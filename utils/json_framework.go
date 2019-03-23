@@ -24,6 +24,9 @@ type PlaceInfo struct{
 	PlaceId	string `json:placeid`
 	PriceLevel int	`json:pricelevel`
 }
+type PlaceArray struct{
+
+}
 
 func ReadFromFile(fname string, ptr interface{}) error{
 	if fname == "" {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"Vacation-planner/POI"
 	"Vacation-planner/graph"
 	"Vacation-planner/utils"
 	"fmt"
@@ -61,14 +60,14 @@ func main() {
 	if placeData.Name == "" {
 		log.Fatal("Name not read at all.")
 	}
-	/*err = utils.WriteJsonToFile("testjson_001.json", &placeData)
+	err = utils.WriteJsonToFile("testjson_002.json", &placeData)
 	if err != nil {
 		log.Fatal("Unable to write json to target file")
-	}*/
+	}
 
-	place := POI.CreatePlace(placeData.Name, placeData.Location, placeData.Addr,
-		placeData.LocationType, placeData.PlaceId, placeData.PriceLevel)
-	fmt.Println(place.GetAddress())
+	//place := POI.CreatePlace(placeData.Name, placeData.Location, placeData.Addr,
+	//	placeData.LocationType, placeData.PlaceId, placeData.PriceLevel)
+	//fmt.Println(place.GetAddress())
 	//mapclient := iowrappers.MapsClient{}
 	//mapclient.CreateClient("AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY")
 	//places := mapclient.ExtensiveNearbySearch("34.052235,-118.243683", "visit", 10000,
