@@ -22,6 +22,7 @@ type Place struct {
 	name         string
 	locationType string
 	address      address
+	formattedAddress string
 	location     [2]float64	// geolocation coordinates
 	id           string
 	priceLevel   int
@@ -57,6 +58,10 @@ func (v *Place) GetAddress() string{
 	return strings.Join([]string{addr.street1, addr.city, addr.country, addr.zipCode}, ", ")
 }
 
+func (v *Place) GetFormattedAddress() string{
+	return v.formattedAddress
+}
+
 func (v *Place) GetLocation() [2]float64{
 	return v.location
 }
@@ -69,6 +74,12 @@ func (v *Place) GetPriceLevel() int{
 func (v *Place) SetName(name string){
 	v.name = name
 }
+
+// Set human-readable address of this place
+func (v *Place) SetFormattedAddress(formattedAddress string){
+	v.formattedAddress = formattedAddress
+}
+
 // Set type if POI type changed
 func (v *Place) SetType(t string){
 	v.locationType = t

@@ -28,7 +28,7 @@ const(
 	GOOGLE_NEARBY_SEARCH_DELAY = time.Duration(2 * time.Second)
 )
 
-var detailedSearchFields = flag.String("fields", "name,opening_hours", "a list of comma-separated fields")
+var detailedSearchFields = flag.String("fields", "name,opening_hours,formatted_address,adr_address", "a list of comma-separated fields")
 
 type PlaceSearchRequest struct{
 	// "lat,lng"
@@ -89,7 +89,7 @@ func (c *MapsClient) createLogger (formatterSelection string){
 }
 
 // SimpleNearbySearch searches results from a place category once for each location type in the category
-// Search each location type exactly once
+// Searches each location type exactly once
 func (c *MapsClient) SimpleNearbySearch(centerLocation string, placeCat POI.PlaceCategory,
 	radius uint, rankBy string)(places []POI.Place){
 	// TODO: check if c.client is valid
@@ -114,6 +114,7 @@ func (c *MapsClient) SimpleNearbySearch(centerLocation string, placeCat POI.Plac
 			if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil{
 				detailedSearchRes, _ := c.PlaceDetailedSearch(res.PlaceID)
 				searchResp.Results[k].OpeningHours = detailedSearchRes.OpeningHours
+				searchResp.Results[k].FormattedAddress = detailedSearchRes.FormattedAddress
 			}
 		}
 
@@ -136,10 +137,8 @@ func (c *MapsClient) SimpleNearbySearch(centerLocation string, placeCat POI.Plac
 	return
 }
 
-// ExtensiveNearbySearch tries to find specified number of search results
-// from a place category once for each location type in the category
-// maxRequestTime specifies the number of times to query for each location type
-// having maxRequestTimes provides Google API call protection
+// ExtensiveNearbySearch tries to find a specified number of search results from a place category once for each location type in the category
+// maxRequestTime specifies the number of times to query for each location type having maxRequestTimes provides Google API call protection
 func (c *MapsClient) ExtensiveNearbySearch(centerLocation string, placeCat POI.PlaceCategory,
 	radius uint, rankBy string, maxResult uint, maxRequestTimes uint)(places []POI.Place){
 	// TODO: check if c.client is valid
@@ -219,6 +218,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 	// logging
 	c.logger.WithFields(log.Fields{
 		"place name": resp.Name,
+		"place formatted address": resp.FormattedAddress,
 		"Maps API call time": searchDuration,
 	}).Info("Logging detailed place search")
 
@@ -241,12 +241,12 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType Loca
 		if res.OpeningHours != nil && res.OpeningHours.WeekdayText != nil && len(res.OpeningHours.WeekdayText) > 0{
 			h.Hours = append(h.Hours, res.OpeningHours.WeekdayText...)
 		}
-		places = append(places, POI.CreatePlace(name, location, addr, string(locationType), h, id, priceLevel))
+		places = append(places, POI.CreatePlace(name, location, addr, res.FormattedAddress, string(locationType), h, id, priceLevel))
 	}
 	return
 }
 
-// Given a location type return a set of types defined in google maps API
+// Given a location type returns a set of types defined in google maps API
 func getTypes (placeCat POI.PlaceCategory) (placeTypes []LocationType){
 	switch placeCat{
 	case POI.PlaceCategoryVisit:
