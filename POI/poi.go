@@ -24,6 +24,8 @@ type POI interface {
 	GetType() string
 	// address
 	GetAddress() string
+	// address for user
+	GetFormattedAddress() string
 	// lat, lng
 	GetLocation() [2]float64
 	// opening hours of the specified day in a week
@@ -37,12 +39,14 @@ type POI interface {
 	SetName(string)
 	// set POI type
 	SetType(string)
+	// set POI formatted address
+	SetFormattedAddress(string)
+	// set POI address
+	SetAddress(addr string)
 	// set POI location
 	SetLocation(location [2]float64)
 	// set POI opening hour for a weekday
 	SetHour(Weekday, string)
-	// set POI price range
+	// set POI average price level
 	SetPriceLevel(int)
-	// set POI address
-	SetAddress(addr string)
 }

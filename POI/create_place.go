@@ -9,8 +9,8 @@ type OpeningHours struct {
 	Hours []string
 }
 
-func CreatePlace(name string, location string, addr string, locationType string, openingHours *OpeningHours,
-	placeID string, priceLevel int) (place Place) {
+func CreatePlace(name string, location string, addr string, formattedAddr string, locationType string,
+	openingHours *OpeningHours, placeID string, priceLevel int) (place Place) {
 	place.SetType(locationType)
 	place.SetName(name)
 	place.SetID(placeID)
@@ -32,6 +32,7 @@ func CreatePlace(name string, location string, addr string, locationType string,
 	lng_f, _ := strconv.ParseFloat(lng, 64)
 	place.SetLocation([2]float64{lat_f, lng_f})
 	place.SetAddress(addr)
+	place.SetFormattedAddress(formattedAddr)
 	place.SetPriceLevel(priceLevel)
 	return
 }
