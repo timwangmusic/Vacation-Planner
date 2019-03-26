@@ -2,7 +2,7 @@ package POI
 
 import (
 	"log"
-	"strings"
+	"regexp"
 )
 
 type Weekday uint8
@@ -29,12 +29,13 @@ type Place struct {
 }
 
 type address struct{
-	street1     string
-	street2     string
-	city        string
-	country     string
-	countryCode int
-	zipCode     string
+	PObox			string
+	ExtendedAddr	string
+	StreetAddr      string
+	Locality        string
+	Region 			string
+	PostalCode      string
+	Country			string
 }
 
 func (v *Place) GetName() string{
@@ -53,9 +54,13 @@ func (v *Place) GetID() string {
 	return v.id
 }
 
-func (v *Place) GetAddress() string{
-	addr := v.address
-	return strings.Join([]string{addr.street1, addr.city, addr.country, addr.zipCode}, ", ")
+//Sample address in adr micro-format
+//665 3rd St.
+//Suite 207
+//San Francisco, CA 94107
+//U.S.A.
+func (v *Place) GetAddress() address{
+	return v.address
 }
 
 func (v *Place) GetFormattedAddress() string{
@@ -111,17 +116,31 @@ func (v *Place) SetID(id string){
 }
 
 func (v *Place) SetAddress(addr string){
-	// expected addr format: "street1, city, country, zipCode"
-	fields := strings.Split(addr, ", ")
-	if len(fields) != 4{
-		v.address.street1 = addr
-		return
-		//log.Fatalf("Wrong address format, expected 4 fields, got %d fields", len(fields))
+	p := regexp.MustCompile(`<.*?>.*?<`)
+	pVal := regexp.MustCompile(`>.*<`)
+	pFieldName := regexp.MustCompile(`".*"`)
+	fields := p.FindAllString(addr, -1)
+	for _, field := range fields{
+		fieldName := pFieldName.FindString(field)
+		value := pVal.FindString(field)
+		val := value[1:len(value)-1]
+		switch fieldName{
+		case `"post-office-box"`:
+			v.address.PObox = val
+		case `"extended-address"`:
+			v.address.ExtendedAddr = val
+		case `"street-address"`:
+			v.address.StreetAddr = val
+		case `"locality"`:
+			v.address.Locality = val
+		case `"region"`:
+			v.address.Region = val
+		case `"postal-code"`:
+			v.address.PostalCode = val
+		case `"country-name"`:
+			v.address.Country = val
+		}
 	}
-	v.address.street1 = fields[0]
-	v.address.city = fields[1]
-	v.address.country = fields[2]
-	v.address.zipCode = fields[3]
 }
 
 func (v *Place) SetLocation(location [2]float64){
