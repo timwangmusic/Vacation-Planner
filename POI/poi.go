@@ -23,7 +23,7 @@ type POI interface {
 	// POI type
 	GetType() string
 	// address
-	GetAddress() string
+	GetAddress() address
 	// address for user
 	GetFormattedAddress() string
 	// lat, lng

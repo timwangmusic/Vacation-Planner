@@ -107,7 +107,7 @@ func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.P
 func (matcher *TimeMatcher) createPlace(place POI.Place) Place{
 	Place_ := Place{}
 	Place_.PlaceId = place.GetID()
-	Place_.Address = place.GetAddress()
+	Place_.Address = place.GetFormattedAddress()
 	Place_.Name = place.GetName()
 	Place_.Price = checkPrice(place.GetPriceLevel())
 	return Place_

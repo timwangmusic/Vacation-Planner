@@ -21,7 +21,7 @@ func TestCreatePlace(t *testing.T){
 	if place.GetType() != "stay" {
 		t.Errorf("Type setting is not correct.")
 	}
-	if place.GetAddress() != addr{
+	if place.GetFormattedAddress() != addr{
 		t.Errorf("Address setting is not correct. \n Expected: %s \n Got: %s",
 			addr, place.GetAddress())
 	}
