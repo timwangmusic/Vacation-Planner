@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"Vacation-Planner/POI"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -25,7 +26,7 @@ type PlaceInfo struct{
 	PriceLevel int	`json:pricelevel`
 }
 type PlaceArray struct{
-
+	PlaceArray []POI.Place
 }
 
 func ReadFromFile(fname string, ptr interface{}) error{
