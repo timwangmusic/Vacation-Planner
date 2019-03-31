@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"github.com/sirupsen/logrus"
+	"src/github.com/sirupsen/logrus"
 )
 
 /*
