@@ -61,14 +61,18 @@ func (placeManager *TimeClustersManager) Init(client *iowrappers.MapsClient, pla
 
 // call Google API to obtain nearby Places and extract location data
 func (placeManager *TimeClustersManager) GetPlaces(location string, searchRadius uint, searchType string){
-	var places []POI.Place
-	if searchType == ""{
-		places = placeManager.Client.SimpleNearbySearch(location, placeManager.PlaceCat, searchRadius, "")
-	} else{
-		places = placeManager.Client.ExtensiveNearbySearch(location, placeManager.PlaceCat,
-			searchRadius, "", 100, 3)
+	request := iowrappers.PlaceSearchRequest{
+		Location: location,
+		PlaceCat: placeManager.PlaceCat,
+		Radius: searchRadius,
+		RankBy: "prominence",
 	}
-	placeManager.places = places
+	if searchType == ""{
+		request.MaxNumResults = 20
+	} else{
+		request.MaxNumResults = 100
+	}
+	placeManager.places = placeManager.Client.NearbySearch(&request)
 }
 
 // assign Places to time Clusters using their time interval info

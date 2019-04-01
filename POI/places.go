@@ -18,17 +18,17 @@ const(
 )
 
 type Place struct {
-	hours        [7]string
-	name         string
-	locationType string
-	address      address
+	hours            [7]string
+	name             string
+	locationType     string
+	address          Address
 	formattedAddress string
-	location     [2]float64	// geolocation coordinates
-	id           string
-	priceLevel   int
+	location         [2]float64	// geolocation coordinates
+	id               string
+	priceLevel       int
 }
 
-type address struct{
+type Address struct{
 	PObox			string
 	ExtendedAddr	string
 	StreetAddr      string
@@ -54,12 +54,12 @@ func (v *Place) GetID() string {
 	return v.id
 }
 
-//Sample address in adr micro-format
+//Sample Address in adr micro-format
 //665 3rd St.
 //Suite 207
 //San Francisco, CA 94107
 //U.S.A.
-func (v *Place) GetAddress() address{
+func (v *Place) GetAddress() Address {
 	return v.address
 }
 
@@ -80,7 +80,7 @@ func (v *Place) SetName(name string){
 	v.name = name
 }
 
-// Set human-readable address of this place
+// Set human-readable Address of this place
 func (v *Place) SetFormattedAddress(formattedAddress string){
 	v.formattedAddress = formattedAddress
 }
@@ -116,6 +116,9 @@ func (v *Place) SetID(id string){
 }
 
 func (v *Place) SetAddress(addr string){
+	if addr == ""{
+		return
+	}
 	p := regexp.MustCompile(`<.*?>.*?<`)
 	pVal := regexp.MustCompile(`>.*<`)
 	pFieldName := regexp.MustCompile(`".*"`)

@@ -35,17 +35,21 @@ type ClustersManager struct{
 
 // call Google API to obtain nearby Places and extract location data
 func (placeManager *ClustersManager) GetGeoLocationData(location string, searchRadius uint, searchType string) [][]float64 {
-	var places []POI.Place
-	if searchType == ""{
-		places = placeManager.Client.SimpleNearbySearch(location, placeManager.PlaceCat, searchRadius, "")
-	} else{
-		places = placeManager.Client.ExtensiveNearbySearch(location, placeManager.PlaceCat,
-			searchRadius, "", 100, 3)
+	request := iowrappers.PlaceSearchRequest{
+		Location: location,
+		PlaceCat: placeManager.PlaceCat,
+		Radius: searchRadius,
+		RankBy: "prominence",
 	}
+	if searchType == ""{
+		request.MaxNumResults = 20
+	} else{
+		request.MaxNumResults = 100
+	}
+	placeManager.places = placeManager.Client.NearbySearch(&request)
 
-	placeManager.places = places
-	locationData := make([][]float64, len(places))
-	for idx, place := range places{
+	locationData := make([][]float64, len(placeManager.places))
+	for idx, place := range placeManager.places{
 		latLng := place.GetLocation()
 		locationData[idx] = []float64{latLng[0], latLng[1]}
 	}
