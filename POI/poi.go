@@ -22,9 +22,9 @@ type POI interface {
 	GetName() string
 	// POI type
 	GetType() string
-	// address
-	GetAddress() address
-	// address for user
+	// Address
+	GetAddress() Address
+	// Address for user
 	GetFormattedAddress() string
 	// lat, lng
 	GetLocation() [2]float64
@@ -39,9 +39,9 @@ type POI interface {
 	SetName(string)
 	// set POI type
 	SetType(string)
-	// set POI formatted address
+	// set POI formatted Address
 	SetFormattedAddress(string)
-	// set POI address
+	// set POI Address
 	SetAddress(addr string)
 	// set POI location
 	SetLocation(location [2]float64)
