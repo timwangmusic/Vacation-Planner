@@ -26,6 +26,7 @@ type Place struct {
 	location         [2]float64	// geolocation coordinates
 	id               string
 	priceLevel       int
+	rating			 float32
 }
 
 type Address struct{
@@ -73,6 +74,10 @@ func (v *Place) GetLocation() [2]float64{
 
 func (v *Place) GetPriceLevel() int{
 	return v.priceLevel
+}
+
+func (v *Place) GetRating() float32{
+	return v.rating
 }
 
 // Set name if POI name changed
@@ -152,4 +157,8 @@ func (v *Place) SetLocation(location [2]float64){
 
 func (v *Place) SetPriceLevel(priceRange int){
 	v.priceLevel = priceRange
+}
+
+func (v *Place) SetRating(rating float32){
+	v.rating = rating
 }
