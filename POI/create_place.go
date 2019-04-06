@@ -9,8 +9,7 @@ type OpeningHours struct {
 	Hours []string
 }
 
-func CreatePlace(name string, location string, addr string, formattedAddr string, locationType string,
-	openingHours *OpeningHours, placeID string, priceLevel int) (place Place) {
+func CreatePlace(name string, location string, addr string, formattedAddr string, locationType string, openingHours *OpeningHours, placeID string, priceLevel int, rating float32) (place Place) {
 	place.SetType(locationType)
 	place.SetName(name)
 	place.SetID(placeID)
@@ -34,5 +33,6 @@ func CreatePlace(name string, location string, addr string, formattedAddr string
 	place.SetAddress(addr)
 	place.SetFormattedAddress(formattedAddr)
 	place.SetPriceLevel(priceLevel)
+	place.SetRating(rating)
 	return
 }

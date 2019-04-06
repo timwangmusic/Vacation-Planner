@@ -32,6 +32,8 @@ type POI interface {
 	GetHour(Weekday) string
 	// price range
 	GetPriceLevel() int
+	// rating
+	GetRating() float32
 
 	// set POI id
 	SetID(id string)
@@ -49,4 +51,6 @@ type POI interface {
 	SetHour(Weekday, string)
 	// set POI average price level
 	SetPriceLevel(int)
+	// set rating
+	SetRating(float32)
 }
