@@ -106,8 +106,8 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			places = append(places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap)...)
 			totalResult += uint(len(searchResp.Results))
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
-			reqTimes++
 		}
+		reqTimes++
 		time.Sleep(GOOGLE_NEARBY_SEARCH_DELAY)	// sleep to make sure new next page token comes to effect
 	}
 
