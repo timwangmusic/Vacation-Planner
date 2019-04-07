@@ -10,7 +10,7 @@ import (
 type PlacePair struct{
 	VisitName string
 	EateryName string
-	PairPrice int
+	PairPrice float64
 }
 
 type LocationMatcher struct {
