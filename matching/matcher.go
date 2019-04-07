@@ -29,7 +29,7 @@ type Place struct{
 	PlaceId string	`json:id`
 	Name    string	`json:name`
 	Address string	`json:address`
-	Price   int		`json:price`
+	Price   float64 `json:price`
 }
 
 type PlaceCluster struct{
