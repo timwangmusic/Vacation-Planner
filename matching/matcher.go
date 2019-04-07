@@ -26,10 +26,12 @@ type TimeMatchingRequest struct {
 }
 
 type Place struct{
-	PlaceId string	`json:id`
-	Name    string	`json:name`
-	Address string	`json:address`
-	Price   float64 `json:price`
+	PlaceId 	string	`json:id`
+	Name    	string	`json:name`
+	Address 	string	`json:address`
+	Price   	float64 `json:price`
+	Rating  	float32 `json:rating`
+	Location    [2]float64 `json:geolocation`
 }
 
 type PlaceCluster struct{
@@ -110,5 +112,7 @@ func (matcher *TimeMatcher) createPlace(place POI.Place) Place{
 	Place_.Address = place.GetFormattedAddress()
 	Place_.Name = place.GetName()
 	Place_.Price = checkPrice(place.GetPriceLevel())
+	Place_.Rating = place.GetRating()
+	Place_.Location = place.GetLocation()
 	return Place_
 }
