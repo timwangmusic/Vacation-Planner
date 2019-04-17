@@ -8,6 +8,12 @@ import (
 )
 
 func Score(places []Place) float64{
+	if len(places) == 1{
+		if places[0].Price == 0{
+			return float64(places[0].Rating) / 5.0
+		}
+		return float64(places[0].Rating) / places[0].Price
+	}
 	distances := calDistances(&places)	// Haversine distances
 	maxDist := calMaxDistance(distances)	// maximum distance
 	avgDistance := stat.Mean(distances, nil) / maxDist // normalized average distance
