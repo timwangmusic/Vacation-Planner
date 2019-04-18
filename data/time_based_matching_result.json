@@ -2,400 +2,642 @@
     {
         "Places": [
             {
-                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
+                "Name": "Café Tortoni",
+                "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    -34.608653,
+                    -58.378212
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
+                "Name": "Places Coffee \u0026 Bar",
+                "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    -34.600169,
+                    -58.379546
+                ]
+            },
+            {
+                "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
+                "Name": "Il Gatto - Obelisco",
+                "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.603507,
+                    -58.380271
+                ]
+            },
+            {
+                "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
+                "Name": "Songs Rehearsal rooms",
+                "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.608813,
+                    -58.38292
+                ]
+            },
+            {
+                "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Reconquista 383, C1042AAC CABA, Argentina",
+                "Price": 50,
+                "Rating": 4.1,
+                "Location": [
+                    -34.603416,
+                    -58.372354
+                ]
             },
             {
-                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
-                "Name": "Cafe Nine",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
+                "Name": "The Cavern Buenos Aires",
+                "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604354,
+                    -58.390187
+                ]
             },
             {
-                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
+                "Price": 50,
+                "Rating": 4.2,
+                "Location": [
+                    -34.609549,
+                    -58.384778
+                ]
             },
             {
-                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
-                "Name": "Cafe Demitasse",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
+                "Name": "Café Martínez",
+                "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.597671,
+                    -58.385689
+                ]
             },
             {
-                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
-                "Name": "Cafe Dulce",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
+                "Name": "La Continental",
+                "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.609154,
+                    -58.386153
+                ]
             },
             {
-                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "PlaceId": "ChIJA4T3U83KvJURLuLowgonQRk",
+                "Name": "Alimentari",
+                "Address": "Sarmiento 372, C1041AAH CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604344,
+                    -58.371941
+                ]
+            },
+            {
+                "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
+                "Name": "Confitería La Pasta Frola",
+                "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    -34.603866,
+                    -58.386075
+                ]
+            },
+            {
+                "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
+                "Name": "La Paz",
+                "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604067,
+                    -58.389264
+                ]
+            },
+            {
+                "PlaceId": "ChIJQc4WrNPKvJURgYeA_FNuPWE",
+                "Name": "London City",
+                "Address": "Av. de Mayo 591, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.608506,
+                    -58.3749
+                ]
+            },
+            {
+                "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
+                "Name": "La Continental",
+                "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.596548,
+                    -58.385791
+                ]
+            },
+            {
+                "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
+                "Name": "Las Meninas",
+                "Address": "Libertad 849, C1012AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    -34.598734,
+                    -58.383965
+                ]
+            },
+            {
+                "PlaceId": "ChIJRctmp7_KvJUR9qGTOTGg9A4",
+                "Name": "Alimentari, Suc. Diagonal Norte",
+                "Address": "Av. Pres. Roque Sáenz Peña 892, C1035AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.9,
+                "Location": [
+                    -34.605158,
+                    -58.379215
+                ]
+            },
+            {
+                "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
+                "Name": "Bonafide",
+                "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604768,
+                    -58.37597
+                ]
+            },
+            {
+                "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
+                "Name": "Ligier Vinotecas",
+                "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    -34.606259,
+                    -58.375063
+                ]
+            },
+            {
+                "PlaceId": "ChIJKcGGWsHKvJUR-S4NlZQ4dW8",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Av. Corrientes 1612, C1042AAP CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604378,
+                    -58.389612
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
+                "Name": "Via Arriba B\u0026B",
+                "Address": "C1012 Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 4.7,
+                "Location": [
+                    -34.608544,
+                    -58.383857
+                ]
+            },
+            {
+                "PlaceId": "ChIJgV6J_MPKvJURejifigVjdQo",
+                "Name": "Pippo Paraná",
+                "Address": "Paraná 356, C1017 CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604726,
+                    -58.388052
+                ]
+            },
+            {
+                "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.6023,
+                    -58.37718
+                ]
+            },
+            {
+                "PlaceId": "ChIJL25pscXKvJURZ3947sk9Lvs",
+                "Name": "Club del Progreso Restaurante",
+                "Address": "Sarmiento 1334, C1001 CABA, Argentina",
+                "Price": 50,
+                "Rating": 3.9,
+                "Location": [
+                    -34.605315,
+                    -58.38548
+                ]
+            },
+            {
+                "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
+                "Name": "Piazzolla Tango",
+                "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    -34.606058,
+                    -58.37499
+                ]
+            },
+            {
+                "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
+                "Name": "Café Bar El Teatro",
+                "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.599013,
+                    -58.384392
+                ]
+            },
+            {
+                "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
+                "Name": "Café Finanzas",
+                "Address": "Lavalle 502, C1047AAL CABA, Argentina",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    -34.602135,
+                    -58.373936
+                ]
+            },
+            {
+                "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
+                "Name": "Granix Restaurant",
+                "Address": "Florida 165, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.606066,
+                    -58.375014
+                ]
+            },
+            {
+                "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
+                "Name": "Café Tortoni",
+                "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    -34.608653,
+                    -58.378212
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
+                "Name": "Places Coffee \u0026 Bar",
+                "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    -34.600169,
+                    -58.379546
+                ]
+            },
+            {
+                "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
+                "Name": "Il Gatto - Obelisco",
+                "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.603507,
+                    -58.380271
+                ]
+            },
+            {
+                "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
+                "Name": "Songs Rehearsal rooms",
+                "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.608813,
+                    -58.38292
+                ]
+            },
+            {
+                "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Reconquista 383, C1042AAC CABA, Argentina",
+                "Price": 50,
+                "Rating": 4.1,
+                "Location": [
+                    -34.603416,
+                    -58.372354
+                ]
             },
             {
-                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
-                "Name": "Homeboy Diner",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
+                "Name": "The Cavern Buenos Aires",
+                "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604354,
+                    -58.390187
+                ]
             },
             {
-                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
-                "Name": "Cherry Pick Cafe",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
-                "Name": "Trimana Restaurant",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
-                "Name": "Cafe Take 5",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
+                "Price": 50,
+                "Rating": 4.2,
+                "Location": [
+                    -34.609549,
+                    -58.384778
+                ]
             },
             {
-                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
+                "Name": "Café Martínez",
+                "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.597671,
+                    -58.385689
+                ]
             },
             {
-                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
-                "Name": "Spring For Coffee",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
+                "Name": "La Continental",
+                "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.609154,
+                    -58.386153
+                ]
             },
             {
-                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJA4T3U83KvJURLuLowgonQRk",
+                "Name": "Alimentari",
+                "Address": "Sarmiento 372, C1041AAH CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604344,
+                    -58.371941
+                ]
             },
             {
-                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
-                "Name": "Hecho Con Carino",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
+                "Name": "Confitería La Pasta Frola",
+                "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    -34.603866,
+                    -58.386075
+                ]
             },
             {
-                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
-                "Name": "Normandie Bakery Cafe \u0026 Catering",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
+                "Name": "La Paz",
+                "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604067,
+                    -58.389264
+                ]
             },
             {
-                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
-                "Name": "Cafecito Pura Vida",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJQc4WrNPKvJURgYeA_FNuPWE",
+                "Name": "London City",
+                "Address": "Av. de Mayo 591, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.608506,
+                    -58.3749
+                ]
             },
             {
-                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
-                "Name": "DRNK coffee + tea",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
+                "Name": "La Continental",
+                "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.596548,
+                    -58.385791
+                ]
             },
             {
-                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
-                "Name": "MILK+T",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
+                "Name": "Las Meninas",
+                "Address": "Libertad 849, C1012AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    -34.598734,
+                    -58.383965
+                ]
             },
             {
-                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
-                "Name": "Bäco Mercat",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJRctmp7_KvJUR9qGTOTGg9A4",
+                "Name": "Alimentari, Suc. Diagonal Norte",
+                "Address": "Av. Pres. Roque Sáenz Peña 892, C1035AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.9,
+                "Location": [
+                    -34.605158,
+                    -58.379215
+                ]
             },
             {
-                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
-                "Name": "Mendocino Farms",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
+                "Name": "Bonafide",
+                "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604768,
+                    -58.37597
+                ]
             },
             {
-                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
-                "Name": "Orochon Ramen",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
+                "Name": "Ligier Vinotecas",
+                "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    -34.606259,
+                    -58.375063
+                ]
             },
             {
-                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
-                "Name": "Spitz - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJKcGGWsHKvJUR-S4NlZQ4dW8",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Av. Corrientes 1612, C1042AAP CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604378,
+                    -58.389612
+                ]
             },
             {
-                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
-                "Name": "Kendall's Brasserie",
-                "Address": ", , , ",
-                "Price": 50
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
             },
             {
-                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
-                "Name": "Izakaya \u0026 Bar Fu-ga",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
+                "Name": "Via Arriba B\u0026B",
+                "Address": "C1012 Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 4.7,
+                "Location": [
+                    -34.608544,
+                    -58.383857
+                ]
             },
             {
-                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
-                "Name": "Daikokuya",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJgV6J_MPKvJURejifigVjdQo",
+                "Name": "Pippo Paraná",
+                "Address": "Paraná 356, C1017 CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604726,
+                    -58.388052
+                ]
             },
             {
-                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
-                "Name": "Bar Amá",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.6023,
+                    -58.37718
+                ]
             },
             {
-                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
-                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJL25pscXKvJURZ3947sk9Lvs",
+                "Name": "Club del Progreso Restaurante",
+                "Address": "Sarmiento 1334, C1001 CABA, Argentina",
+                "Price": 50,
+                "Rating": 3.9,
+                "Location": [
+                    -34.605315,
+                    -58.38548
+                ]
             },
             {
-                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
-                "Name": "Manna Korean BBQ",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
+                "Name": "Piazzolla Tango",
+                "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    -34.606058,
+                    -58.37499
+                ]
             },
             {
-                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
-                "Name": "Nick \u0026 Stef's Steakhouse",
-                "Address": ", , , ",
-                "Price": 50
+                "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
+                "Name": "Café Bar El Teatro",
+                "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.599013,
+                    -58.384392
+                ]
             },
             {
-                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
-                "Name": "Las Galas",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
+                "Name": "Café Finanzas",
+                "Address": "Lavalle 502, C1047AAL CABA, Argentina",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    -34.602135,
+                    -58.373936
+                ]
             },
             {
-                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
-                "Name": "The Redwood Bar \u0026 Grill",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJyy_0pjnGwoAR9O-lN9DuOJc",
-                "Name": "Sushi Go 55",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
-                "Name": "Cafe Nine",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
-                "Name": "Cafe Demitasse",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
-                "Name": "Cafe Dulce",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
-                "Name": "Homeboy Diner",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
-                "Name": "Cherry Pick Cafe",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
-                "Name": "Trimana Restaurant",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
-                "Name": "Cafe Take 5",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
-                "Name": "Spring For Coffee",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
-                "Name": "Hecho Con Carino",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
-                "Name": "Normandie Bakery Cafe \u0026 Catering",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
-                "Name": "Cafecito Pura Vida",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
-                "Name": "DRNK coffee + tea",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
-                "Name": "MILK+T",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
-                "Name": "Bäco Mercat",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
-                "Name": "Mendocino Farms",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
-                "Name": "Orochon Ramen",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
-                "Name": "Spitz - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
-                "Name": "Kendall's Brasserie",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
-                "Name": "Izakaya \u0026 Bar Fu-ga",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
-                "Name": "Daikokuya",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
-                "Name": "Bar Amá",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
-                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
-                "Name": "Manna Korean BBQ",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
-                "Name": "Nick \u0026 Stef's Steakhouse",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
-                "Name": "Las Galas",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
-                "Name": "The Redwood Bar \u0026 Grill",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJyy_0pjnGwoAR9O-lN9DuOJc",
-                "Name": "Sushi Go 55",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
+                "Name": "Granix Restaurant",
+                "Address": "Florida 165, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.606066,
+                    -58.375014
+                ]
             }
         ],
         "Slot": {
@@ -408,424 +650,642 @@
     {
         "Places": [
             {
-                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
+                "Name": "Café Tortoni",
+                "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    -34.608653,
+                    -58.378212
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
+                "Name": "Places Coffee \u0026 Bar",
+                "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    -34.600169,
+                    -58.379546
+                ]
+            },
+            {
+                "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
+                "Name": "Il Gatto - Obelisco",
+                "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.603507,
+                    -58.380271
+                ]
+            },
+            {
+                "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
+                "Name": "Songs Rehearsal rooms",
+                "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.608813,
+                    -58.38292
+                ]
+            },
+            {
+                "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Reconquista 383, C1042AAC CABA, Argentina",
+                "Price": 50,
+                "Rating": 4.1,
+                "Location": [
+                    -34.603416,
+                    -58.372354
+                ]
             },
             {
-                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
-                "Name": "Cafe Nine",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
+                "Name": "The Cavern Buenos Aires",
+                "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604354,
+                    -58.390187
+                ]
             },
             {
-                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
+                "Price": 50,
+                "Rating": 4.2,
+                "Location": [
+                    -34.609549,
+                    -58.384778
+                ]
             },
             {
-                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
-                "Name": "Cafe Demitasse",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
+                "Name": "Café Martínez",
+                "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.597671,
+                    -58.385689
+                ]
             },
             {
-                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
-                "Name": "Cafe Dulce",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
+                "Name": "La Continental",
+                "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.609154,
+                    -58.386153
+                ]
             },
             {
-                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "PlaceId": "ChIJA4T3U83KvJURLuLowgonQRk",
+                "Name": "Alimentari",
+                "Address": "Sarmiento 372, C1041AAH CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604344,
+                    -58.371941
+                ]
+            },
+            {
+                "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
+                "Name": "Confitería La Pasta Frola",
+                "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    -34.603866,
+                    -58.386075
+                ]
+            },
+            {
+                "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
+                "Name": "La Paz",
+                "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604067,
+                    -58.389264
+                ]
+            },
+            {
+                "PlaceId": "ChIJQc4WrNPKvJURgYeA_FNuPWE",
+                "Name": "London City",
+                "Address": "Av. de Mayo 591, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.608506,
+                    -58.3749
+                ]
+            },
+            {
+                "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
+                "Name": "La Continental",
+                "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.596548,
+                    -58.385791
+                ]
+            },
+            {
+                "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
+                "Name": "Las Meninas",
+                "Address": "Libertad 849, C1012AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    -34.598734,
+                    -58.383965
+                ]
+            },
+            {
+                "PlaceId": "ChIJRctmp7_KvJUR9qGTOTGg9A4",
+                "Name": "Alimentari, Suc. Diagonal Norte",
+                "Address": "Av. Pres. Roque Sáenz Peña 892, C1035AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.9,
+                "Location": [
+                    -34.605158,
+                    -58.379215
+                ]
+            },
+            {
+                "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
+                "Name": "Bonafide",
+                "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604768,
+                    -58.37597
+                ]
+            },
+            {
+                "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
+                "Name": "Ligier Vinotecas",
+                "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    -34.606259,
+                    -58.375063
+                ]
+            },
+            {
+                "PlaceId": "ChIJKcGGWsHKvJUR-S4NlZQ4dW8",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Av. Corrientes 1612, C1042AAP CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604378,
+                    -58.389612
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
+                "Name": "Via Arriba B\u0026B",
+                "Address": "C1012 Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 4.7,
+                "Location": [
+                    -34.608544,
+                    -58.383857
+                ]
+            },
+            {
+                "PlaceId": "ChIJgV6J_MPKvJURejifigVjdQo",
+                "Name": "Pippo Paraná",
+                "Address": "Paraná 356, C1017 CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604726,
+                    -58.388052
+                ]
+            },
+            {
+                "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.6023,
+                    -58.37718
+                ]
+            },
+            {
+                "PlaceId": "ChIJL25pscXKvJURZ3947sk9Lvs",
+                "Name": "Club del Progreso Restaurante",
+                "Address": "Sarmiento 1334, C1001 CABA, Argentina",
+                "Price": 50,
+                "Rating": 3.9,
+                "Location": [
+                    -34.605315,
+                    -58.38548
+                ]
+            },
+            {
+                "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
+                "Name": "Piazzolla Tango",
+                "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    -34.606058,
+                    -58.37499
+                ]
+            },
+            {
+                "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
+                "Name": "Café Bar El Teatro",
+                "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.599013,
+                    -58.384392
+                ]
+            },
+            {
+                "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
+                "Name": "Café Finanzas",
+                "Address": "Lavalle 502, C1047AAL CABA, Argentina",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    -34.602135,
+                    -58.373936
+                ]
+            },
+            {
+                "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
+                "Name": "Granix Restaurant",
+                "Address": "Florida 165, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.606066,
+                    -58.375014
+                ]
+            },
+            {
+                "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
+                "Name": "Café Tortoni",
+                "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    -34.608653,
+                    -58.378212
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
+                "Name": "Places Coffee \u0026 Bar",
+                "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    -34.600169,
+                    -58.379546
+                ]
+            },
+            {
+                "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
+                "Name": "Il Gatto - Obelisco",
+                "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.603507,
+                    -58.380271
+                ]
+            },
+            {
+                "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
+                "Name": "Songs Rehearsal rooms",
+                "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.608813,
+                    -58.38292
+                ]
+            },
+            {
+                "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Reconquista 383, C1042AAC CABA, Argentina",
+                "Price": 50,
+                "Rating": 4.1,
+                "Location": [
+                    -34.603416,
+                    -58.372354
+                ]
             },
             {
-                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
-                "Name": "Homeboy Diner",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
+                "Name": "The Cavern Buenos Aires",
+                "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604354,
+                    -58.390187
+                ]
             },
             {
-                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
-                "Name": "Cherry Pick Cafe",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
-                "Name": "Trimana Restaurant",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
-                "Name": "Cafe Take 5",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
+                "Price": 50,
+                "Rating": 4.2,
+                "Location": [
+                    -34.609549,
+                    -58.384778
+                ]
             },
             {
-                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
+                "Name": "Café Martínez",
+                "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.597671,
+                    -58.385689
+                ]
             },
             {
-                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
-                "Name": "Spring For Coffee",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
+                "Name": "La Continental",
+                "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.609154,
+                    -58.386153
+                ]
             },
             {
-                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJA4T3U83KvJURLuLowgonQRk",
+                "Name": "Alimentari",
+                "Address": "Sarmiento 372, C1041AAH CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604344,
+                    -58.371941
+                ]
             },
             {
-                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
-                "Name": "Hecho Con Carino",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
+                "Name": "Confitería La Pasta Frola",
+                "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    -34.603866,
+                    -58.386075
+                ]
             },
             {
-                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
-                "Name": "Normandie Bakery Cafe \u0026 Catering",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
+                "Name": "La Paz",
+                "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604067,
+                    -58.389264
+                ]
             },
             {
-                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
-                "Name": "Cafecito Pura Vida",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJQc4WrNPKvJURgYeA_FNuPWE",
+                "Name": "London City",
+                "Address": "Av. de Mayo 591, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.608506,
+                    -58.3749
+                ]
             },
             {
-                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
-                "Name": "DRNK coffee + tea",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
+                "Name": "La Continental",
+                "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.596548,
+                    -58.385791
+                ]
             },
             {
-                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
-                "Name": "MILK+T",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
+                "Name": "Las Meninas",
+                "Address": "Libertad 849, C1012AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    -34.598734,
+                    -58.383965
+                ]
             },
             {
-                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
-                "Name": "Bäco Mercat",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJRctmp7_KvJUR9qGTOTGg9A4",
+                "Name": "Alimentari, Suc. Diagonal Norte",
+                "Address": "Av. Pres. Roque Sáenz Peña 892, C1035AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.9,
+                "Location": [
+                    -34.605158,
+                    -58.379215
+                ]
             },
             {
-                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
-                "Name": "Mendocino Farms",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
+                "Name": "Bonafide",
+                "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604768,
+                    -58.37597
+                ]
             },
             {
-                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
-                "Name": "Orochon Ramen",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
+                "Name": "Ligier Vinotecas",
+                "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    -34.606259,
+                    -58.375063
+                ]
             },
             {
-                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
-                "Name": "Spitz - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJKcGGWsHKvJUR-S4NlZQ4dW8",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Av. Corrientes 1612, C1042AAP CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604378,
+                    -58.389612
+                ]
             },
             {
-                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
-                "Name": "Kendall's Brasserie",
-                "Address": ", , , ",
-                "Price": 50
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
             },
             {
-                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
-                "Name": "Perch",
-                "Address": ", , , ",
-                "Price": 50
+                "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
+                "Name": "Via Arriba B\u0026B",
+                "Address": "C1012 Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 4.7,
+                "Location": [
+                    -34.608544,
+                    -58.383857
+                ]
             },
             {
-                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
-                "Name": "Izakaya \u0026 Bar Fu-ga",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJgV6J_MPKvJURejifigVjdQo",
+                "Name": "Pippo Paraná",
+                "Address": "Paraná 356, C1017 CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604726,
+                    -58.388052
+                ]
             },
             {
-                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
-                "Name": "Daikokuya",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.6023,
+                    -58.37718
+                ]
             },
             {
-                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
-                "Name": "Bar Amá",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJL25pscXKvJURZ3947sk9Lvs",
+                "Name": "Club del Progreso Restaurante",
+                "Address": "Sarmiento 1334, C1001 CABA, Argentina",
+                "Price": 50,
+                "Rating": 3.9,
+                "Location": [
+                    -34.605315,
+                    -58.38548
+                ]
             },
             {
-                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
-                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
+                "Name": "Piazzolla Tango",
+                "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    -34.606058,
+                    -58.37499
+                ]
             },
             {
-                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
-                "Name": "Far Bar",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
+                "Name": "Café Bar El Teatro",
+                "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.599013,
+                    -58.384392
+                ]
             },
             {
-                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
-                "Name": "Manna Korean BBQ",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
+                "Name": "Café Finanzas",
+                "Address": "Lavalle 502, C1047AAL CABA, Argentina",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    -34.602135,
+                    -58.373936
+                ]
             },
             {
-                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
-                "Name": "Nick \u0026 Stef's Steakhouse",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
-                "Name": "Las Galas",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
-                "Name": "The Redwood Bar \u0026 Grill",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJyy_0pjnGwoAR9O-lN9DuOJc",
-                "Name": "Sushi Go 55",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
-                "Name": "Cafe Nine",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
-                "Name": "Cafe Demitasse",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
-                "Name": "Cafe Dulce",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
-                "Name": "Homeboy Diner",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
-                "Name": "Cherry Pick Cafe",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
-                "Name": "Trimana Restaurant",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
-                "Name": "Cafe Take 5",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
-                "Name": "Spring For Coffee",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
-                "Name": "Hecho Con Carino",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
-                "Name": "Normandie Bakery Cafe \u0026 Catering",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
-                "Name": "Cafecito Pura Vida",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
-                "Name": "DRNK coffee + tea",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
-                "Name": "MILK+T",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
-                "Name": "Bäco Mercat",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
-                "Name": "Mendocino Farms",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
-                "Name": "Orochon Ramen",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
-                "Name": "Spitz - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
-                "Name": "Kendall's Brasserie",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
-                "Name": "Perch",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
-                "Name": "Izakaya \u0026 Bar Fu-ga",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
-                "Name": "Daikokuya",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
-                "Name": "Bar Amá",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
-                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
-                "Name": "Far Bar",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
-                "Name": "Manna Korean BBQ",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
-                "Name": "Nick \u0026 Stef's Steakhouse",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
-                "Name": "Las Galas",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
-                "Name": "The Redwood Bar \u0026 Grill",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJyy_0pjnGwoAR9O-lN9DuOJc",
-                "Name": "Sushi Go 55",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
+                "Name": "Granix Restaurant",
+                "Address": "Florida 165, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.606066,
+                    -58.375014
+                ]
             }
         ],
         "Slot": {
@@ -838,304 +1298,510 @@
     {
         "Places": [
             {
-                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
+                "Name": "Café Tortoni",
+                "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    -34.608653,
+                    -58.378212
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
+                "Name": "Places Coffee \u0026 Bar",
+                "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    -34.600169,
+                    -58.379546
+                ]
+            },
+            {
+                "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
+                "Name": "Il Gatto - Obelisco",
+                "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.603507,
+                    -58.380271
+                ]
+            },
+            {
+                "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
+                "Name": "Songs Rehearsal rooms",
+                "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.608813,
+                    -58.38292
+                ]
+            },
+            {
+                "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Reconquista 383, C1042AAC CABA, Argentina",
+                "Price": 50,
+                "Rating": 4.1,
+                "Location": [
+                    -34.603416,
+                    -58.372354
+                ]
             },
             {
-                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
+                "Name": "The Cavern Buenos Aires",
+                "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604354,
+                    -58.390187
+                ]
+            },
+            {
+                "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
+                "Price": 50,
+                "Rating": 4.2,
+                "Location": [
+                    -34.609549,
+                    -58.384778
+                ]
             },
             {
-                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
-                "Name": "Cafe Demitasse",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
+                "Name": "Café Martínez",
+                "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.597671,
+                    -58.385689
+                ]
             },
             {
-                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
-                "Name": "Cafe Dulce",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
+                "Name": "La Continental",
+                "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.609154,
+                    -58.386153
+                ]
             },
             {
-                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
+                "Name": "Confitería La Pasta Frola",
+                "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    -34.603866,
+                    -58.386075
+                ]
+            },
+            {
+                "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
+                "Name": "La Paz",
+                "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604067,
+                    -58.389264
+                ]
+            },
+            {
+                "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
+                "Name": "La Continental",
+                "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.596548,
+                    -58.385791
+                ]
+            },
+            {
+                "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
+                "Name": "Las Meninas",
+                "Address": "Libertad 849, C1012AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    -34.598734,
+                    -58.383965
+                ]
+            },
+            {
+                "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
+                "Name": "Bonafide",
+                "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604768,
+                    -58.37597
+                ]
+            },
+            {
+                "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
+                "Name": "Ligier Vinotecas",
+                "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    -34.606259,
+                    -58.375063
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
+                "Name": "Via Arriba B\u0026B",
+                "Address": "C1012 Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 4.7,
+                "Location": [
+                    -34.608544,
+                    -58.383857
+                ]
+            },
+            {
+                "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.6023,
+                    -58.37718
+                ]
+            },
+            {
+                "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
+                "Name": "Piazzolla Tango",
+                "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    -34.606058,
+                    -58.37499
+                ]
+            },
+            {
+                "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
+                "Name": "Café Bar El Teatro",
+                "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.599013,
+                    -58.384392
+                ]
+            },
+            {
+                "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
+                "Name": "Café Finanzas",
+                "Address": "Lavalle 502, C1047AAL CABA, Argentina",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    -34.602135,
+                    -58.373936
+                ]
+            },
+            {
+                "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
+                "Name": "Granix Restaurant",
+                "Address": "Florida 165, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.606066,
+                    -58.375014
+                ]
+            },
+            {
+                "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
+                "Name": "Café Tortoni",
+                "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    -34.608653,
+                    -58.378212
+                ]
+            },
+            {
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
+            },
+            {
+                "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
+                "Name": "Places Coffee \u0026 Bar",
+                "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    -34.600169,
+                    -58.379546
+                ]
+            },
+            {
+                "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
+                "Name": "Il Gatto - Obelisco",
+                "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.603507,
+                    -58.380271
+                ]
+            },
+            {
+                "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
+                "Name": "Songs Rehearsal rooms",
+                "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.608813,
+                    -58.38292
+                ]
+            },
+            {
+                "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Reconquista 383, C1042AAC CABA, Argentina",
+                "Price": 50,
+                "Rating": 4.1,
+                "Location": [
+                    -34.603416,
+                    -58.372354
+                ]
             },
             {
-                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
-                "Name": "Trimana Restaurant",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
+                "Name": "The Cavern Buenos Aires",
+                "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.604354,
+                    -58.390187
+                ]
             },
             {
-                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
-                "Name": "Cafe Take 5",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
+                "Price": 50,
+                "Rating": 4.2,
+                "Location": [
+                    -34.609549,
+                    -58.384778
+                ]
             },
             {
-                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
+                "Name": "Café Martínez",
+                "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.597671,
+                    -58.385689
+                ]
             },
             {
-                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
-                "Name": "Spring For Coffee",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
+                "Name": "La Continental",
+                "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.609154,
+                    -58.386153
+                ]
             },
             {
-                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
+                "Name": "Confitería La Pasta Frola",
+                "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    -34.603866,
+                    -58.386075
+                ]
             },
             {
-                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
-                "Name": "Hecho Con Carino",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
+                "Name": "La Paz",
+                "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 3.7,
+                "Location": [
+                    -34.604067,
+                    -58.389264
+                ]
             },
             {
-                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
-                "Name": "Cafecito Pura Vida",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
+                "Name": "La Continental",
+                "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    -34.596548,
+                    -58.385791
+                ]
             },
             {
-                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
-                "Name": "DRNK coffee + tea",
-                "Address": ", , , ",
-                "Price": 0
+                "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
+                "Name": "Las Meninas",
+                "Address": "Libertad 849, C1012AAQ CABA, Argentina",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    -34.598734,
+                    -58.383965
+                ]
             },
             {
-                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
-                "Name": "MILK+T",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
+                "Name": "Bonafide",
+                "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.8,
+                "Location": [
+                    -34.604768,
+                    -58.37597
+                ]
             },
             {
-                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
-                "Name": "Orochon Ramen",
-                "Address": ", , , ",
-                "Price": 10
+                "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
+                "Name": "Ligier Vinotecas",
+                "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    -34.606259,
+                    -58.375063
+                ]
             },
             {
-                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
-                "Name": "Spitz - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
+                "Name": "El Gato Negro",
+                "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    -34.604138,
+                    -58.390321
+                ]
             },
             {
-                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
-                "Name": "Perch",
-                "Address": ", , , ",
-                "Price": 50
+                "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
+                "Name": "Via Arriba B\u0026B",
+                "Address": "C1012 Buenos Aires, Argentina",
+                "Price": 30,
+                "Rating": 4.7,
+                "Location": [
+                    -34.608544,
+                    -58.383857
+                ]
             },
             {
-                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
-                "Name": "Izakaya \u0026 Bar Fu-ga",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
+                "Name": "El Palacio de la Papa Frita",
+                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.6023,
+                    -58.37718
+                ]
             },
             {
-                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
-                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
+                "Name": "Piazzolla Tango",
+                "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    -34.606058,
+                    -58.37499
+                ]
             },
             {
-                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
-                "Name": "Far Bar",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
+                "Name": "Café Bar El Teatro",
+                "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    -34.599013,
+                    -58.384392
+                ]
             },
             {
-                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
-                "Name": "Manna Korean BBQ",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
+                "Name": "Café Finanzas",
+                "Address": "Lavalle 502, C1047AAL CABA, Argentina",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    -34.602135,
+                    -58.373936
+                ]
             },
             {
-                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
-                "Name": "Nick \u0026 Stef's Steakhouse",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
-                "Name": "Las Galas",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
-                "Name": "The Redwood Bar \u0026 Grill",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
-                "Name": "Cafe Demitasse",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
-                "Name": "Cafe Dulce",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
-                "Name": "Trimana Restaurant",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
-                "Name": "Cafe Take 5",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
-                "Name": "Spring For Coffee",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
-                "Name": "Starbucks",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
-                "Name": "Hecho Con Carino",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
-                "Name": "Cafecito Pura Vida",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
-                "Name": "DRNK coffee + tea",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJOelxDEjGwoAR_zOSRB1RD2w",
-                "Name": "MILK+T",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
-                "Name": "Orochon Ramen",
-                "Address": ", , , ",
-                "Price": 10
-            },
-            {
-                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
-                "Name": "Spitz - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
-                "Name": "Perch",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
-                "Name": "Izakaya \u0026 Bar Fu-ga",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
-                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
-                "Name": "Far Bar",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
-                "Name": "Manna Korean BBQ",
-                "Address": ", , , ",
-                "Price": 30
-            },
-            {
-                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
-                "Name": "Nick \u0026 Stef's Steakhouse",
-                "Address": ", , , ",
-                "Price": 50
-            },
-            {
-                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
-                "Name": "Las Galas",
-                "Address": ", , , ",
-                "Price": 0
-            },
-            {
-                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
-                "Name": "The Redwood Bar \u0026 Grill",
-                "Address": ", , , ",
-                "Price": 30
+                "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
+                "Name": "Granix Restaurant",
+                "Address": "Florida 165, C1005AAC CABA, Argentina",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    -34.606066,
+                    -58.375014
+                ]
             }
         ],
         "Slot": {
