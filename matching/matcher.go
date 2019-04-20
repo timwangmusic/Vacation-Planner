@@ -28,6 +28,7 @@ type TimeMatchingRequest struct {
 type Place struct{
 	PlaceId 	string	`json:id`
 	Name    	string	`json:name`
+	CatTag		POI.PlaceCategory  `json:category`
 	Address 	string	`json:address`
 	Price   	float64 `json:price`
 	Rating  	float32 `json:rating`
@@ -75,7 +76,7 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 		}
 		cluster := matcher.CateringMgr.TimeClusters.Clusters[clusterKey]
 		for _, place := range cluster.Places{
-			((*clusterMap)[clusterKey]).Places = append(((*clusterMap)[clusterKey]).Places, matcher.createPlace(place))
+			((*clusterMap)[clusterKey]).Places = append(((*clusterMap)[clusterKey]).Places, matcher.createPlace(place, placeCat))
 		}
 	}
 
@@ -106,7 +107,7 @@ func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.P
 	return
 }
 
-func (matcher *TimeMatcher) createPlace(place POI.Place) Place{
+func (matcher *TimeMatcher) createPlace(place POI.Place, catTag POI.PlaceCategory) Place {
 	Place_ := Place{}
 	Place_.PlaceId = place.GetID()
 	Place_.Address = place.GetFormattedAddress()
@@ -114,5 +115,6 @@ func (matcher *TimeMatcher) createPlace(place POI.Place) Place{
 	Place_.Price = checkPrice(place.GetPriceLevel())
 	Place_.Rating = place.GetRating()
 	Place_.Location = place.GetLocation()
+	Place_.CatTag = catTag
 	return Place_
 }

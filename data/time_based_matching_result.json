@@ -4,6 +4,7 @@
             {
                 "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
                 "Name": "Café Tortoni",
+                "CatTag": "eatery",
                 "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.5,
@@ -15,6 +16,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -26,6 +28,7 @@
             {
                 "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
                 "Name": "Places Coffee \u0026 Bar",
+                "CatTag": "eatery",
                 "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.2,
@@ -37,6 +40,7 @@
             {
                 "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
                 "Name": "Il Gatto - Obelisco",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -48,6 +52,7 @@
             {
                 "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
                 "Name": "Songs Rehearsal rooms",
+                "CatTag": "eatery",
                 "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -59,6 +64,7 @@
             {
                 "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
+                "CatTag": "eatery",
                 "Address": "Reconquista 383, C1042AAC CABA, Argentina",
                 "Price": 50,
                 "Rating": 4.1,
@@ -70,6 +76,7 @@
             {
                 "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
                 "Name": "The Cavern Buenos Aires",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -81,6 +88,7 @@
             {
                 "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
+                "CatTag": "eatery",
                 "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
                 "Price": 50,
                 "Rating": 4.2,
@@ -92,6 +100,7 @@
             {
                 "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
                 "Name": "Café Martínez",
+                "CatTag": "eatery",
                 "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -103,6 +112,7 @@
             {
                 "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
                 "Name": "La Continental",
+                "CatTag": "eatery",
                 "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -114,9 +124,10 @@
             {
                 "PlaceId": "ChIJA4T3U83KvJURLuLowgonQRk",
                 "Name": "Alimentari",
+                "CatTag": "eatery",
                 "Address": "Sarmiento 372, C1041AAH CABA, Argentina",
                 "Price": 30,
-                "Rating": 4.1,
+                "Rating": 4,
                 "Location": [
                     -34.604344,
                     -58.371941
@@ -125,6 +136,7 @@
             {
                 "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
                 "Name": "Confitería La Pasta Frola",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.5,
@@ -136,6 +148,7 @@
             {
                 "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
                 "Name": "La Paz",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.7,
@@ -147,6 +160,7 @@
             {
                 "PlaceId": "ChIJQc4WrNPKvJURgYeA_FNuPWE",
                 "Name": "London City",
+                "CatTag": "eatery",
                 "Address": "Av. de Mayo 591, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -158,6 +172,7 @@
             {
                 "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
                 "Name": "La Continental",
+                "CatTag": "eatery",
                 "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -169,8 +184,9 @@
             {
                 "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
                 "Name": "Las Meninas",
+                "CatTag": "eatery",
                 "Address": "Libertad 849, C1012AAQ CABA, Argentina",
-                "Price": 0,
+                "Price": 30,
                 "Rating": 4.1,
                 "Location": [
                     -34.598734,
@@ -180,6 +196,7 @@
             {
                 "PlaceId": "ChIJRctmp7_KvJUR9qGTOTGg9A4",
                 "Name": "Alimentari, Suc. Diagonal Norte",
+                "CatTag": "eatery",
                 "Address": "Av. Pres. Roque Sáenz Peña 892, C1035AAQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 3.9,
@@ -191,6 +208,7 @@
             {
                 "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
                 "Name": "Bonafide",
+                "CatTag": "eatery",
                 "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -202,9 +220,10 @@
             {
                 "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
                 "Name": "Ligier Vinotecas",
+                "CatTag": "eatery",
                 "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
                 "Price": 0,
-                "Rating": 3.1,
+                "Rating": 3.3,
                 "Location": [
                     -34.606259,
                     -58.375063
@@ -213,6 +232,7 @@
             {
                 "PlaceId": "ChIJKcGGWsHKvJUR-S4NlZQ4dW8",
                 "Name": "El Palacio de la Papa Frita",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1612, C1042AAP CABA, Argentina",
                 "Price": 0,
                 "Rating": 3.7,
@@ -224,6 +244,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -235,6 +256,7 @@
             {
                 "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
                 "Name": "Via Arriba B\u0026B",
+                "CatTag": "eatery",
                 "Address": "C1012 Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 4.7,
@@ -246,6 +268,7 @@
             {
                 "PlaceId": "ChIJgV6J_MPKvJURejifigVjdQo",
                 "Name": "Pippo Paraná",
+                "CatTag": "eatery",
                 "Address": "Paraná 356, C1017 CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -257,7 +280,8 @@
             {
                 "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
                 "Name": "El Palacio de la Papa Frita",
-                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "CatTag": "eatery",
+                "Address": "Lavalle 735, C1047 AAO, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
                 "Location": [
@@ -268,6 +292,7 @@
             {
                 "PlaceId": "ChIJL25pscXKvJURZ3947sk9Lvs",
                 "Name": "Club del Progreso Restaurante",
+                "CatTag": "eatery",
                 "Address": "Sarmiento 1334, C1001 CABA, Argentina",
                 "Price": 50,
                 "Rating": 3.9,
@@ -279,6 +304,7 @@
             {
                 "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
                 "Name": "Piazzolla Tango",
+                "CatTag": "eatery",
                 "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
                 "Price": 0,
                 "Rating": 4.6,
@@ -290,6 +316,7 @@
             {
                 "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
                 "Name": "Café Bar El Teatro",
+                "CatTag": "eatery",
                 "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -301,6 +328,7 @@
             {
                 "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
                 "Name": "Café Finanzas",
+                "CatTag": "eatery",
                 "Address": "Lavalle 502, C1047AAL CABA, Argentina",
                 "Price": 0,
                 "Rating": 5,
@@ -312,6 +340,7 @@
             {
                 "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
                 "Name": "Granix Restaurant",
+                "CatTag": "eatery",
                 "Address": "Florida 165, C1005AAC CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -323,6 +352,7 @@
             {
                 "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
                 "Name": "Café Tortoni",
+                "CatTag": "visit",
                 "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.5,
@@ -334,6 +364,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -345,6 +376,7 @@
             {
                 "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
                 "Name": "Places Coffee \u0026 Bar",
+                "CatTag": "visit",
                 "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.2,
@@ -356,6 +388,7 @@
             {
                 "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
                 "Name": "Il Gatto - Obelisco",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -367,6 +400,7 @@
             {
                 "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
                 "Name": "Songs Rehearsal rooms",
+                "CatTag": "visit",
                 "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -378,6 +412,7 @@
             {
                 "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
+                "CatTag": "visit",
                 "Address": "Reconquista 383, C1042AAC CABA, Argentina",
                 "Price": 50,
                 "Rating": 4.1,
@@ -389,6 +424,7 @@
             {
                 "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
                 "Name": "The Cavern Buenos Aires",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -400,6 +436,7 @@
             {
                 "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
+                "CatTag": "visit",
                 "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
                 "Price": 50,
                 "Rating": 4.2,
@@ -411,6 +448,7 @@
             {
                 "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
                 "Name": "Café Martínez",
+                "CatTag": "visit",
                 "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -422,6 +460,7 @@
             {
                 "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
                 "Name": "La Continental",
+                "CatTag": "visit",
                 "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -433,9 +472,10 @@
             {
                 "PlaceId": "ChIJA4T3U83KvJURLuLowgonQRk",
                 "Name": "Alimentari",
+                "CatTag": "visit",
                 "Address": "Sarmiento 372, C1041AAH CABA, Argentina",
                 "Price": 30,
-                "Rating": 4.1,
+                "Rating": 4,
                 "Location": [
                     -34.604344,
                     -58.371941
@@ -444,6 +484,7 @@
             {
                 "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
                 "Name": "Confitería La Pasta Frola",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.5,
@@ -455,6 +496,7 @@
             {
                 "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
                 "Name": "La Paz",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.7,
@@ -466,6 +508,7 @@
             {
                 "PlaceId": "ChIJQc4WrNPKvJURgYeA_FNuPWE",
                 "Name": "London City",
+                "CatTag": "visit",
                 "Address": "Av. de Mayo 591, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -477,6 +520,7 @@
             {
                 "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
                 "Name": "La Continental",
+                "CatTag": "visit",
                 "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -488,8 +532,9 @@
             {
                 "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
                 "Name": "Las Meninas",
+                "CatTag": "visit",
                 "Address": "Libertad 849, C1012AAQ CABA, Argentina",
-                "Price": 0,
+                "Price": 30,
                 "Rating": 4.1,
                 "Location": [
                     -34.598734,
@@ -499,6 +544,7 @@
             {
                 "PlaceId": "ChIJRctmp7_KvJUR9qGTOTGg9A4",
                 "Name": "Alimentari, Suc. Diagonal Norte",
+                "CatTag": "visit",
                 "Address": "Av. Pres. Roque Sáenz Peña 892, C1035AAQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 3.9,
@@ -510,6 +556,7 @@
             {
                 "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
                 "Name": "Bonafide",
+                "CatTag": "visit",
                 "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -521,9 +568,10 @@
             {
                 "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
                 "Name": "Ligier Vinotecas",
+                "CatTag": "visit",
                 "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
                 "Price": 0,
-                "Rating": 3.1,
+                "Rating": 3.3,
                 "Location": [
                     -34.606259,
                     -58.375063
@@ -532,6 +580,7 @@
             {
                 "PlaceId": "ChIJKcGGWsHKvJUR-S4NlZQ4dW8",
                 "Name": "El Palacio de la Papa Frita",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1612, C1042AAP CABA, Argentina",
                 "Price": 0,
                 "Rating": 3.7,
@@ -543,6 +592,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -554,6 +604,7 @@
             {
                 "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
                 "Name": "Via Arriba B\u0026B",
+                "CatTag": "visit",
                 "Address": "C1012 Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 4.7,
@@ -565,6 +616,7 @@
             {
                 "PlaceId": "ChIJgV6J_MPKvJURejifigVjdQo",
                 "Name": "Pippo Paraná",
+                "CatTag": "visit",
                 "Address": "Paraná 356, C1017 CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -576,7 +628,8 @@
             {
                 "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
                 "Name": "El Palacio de la Papa Frita",
-                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "CatTag": "visit",
+                "Address": "Lavalle 735, C1047 AAO, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
                 "Location": [
@@ -587,6 +640,7 @@
             {
                 "PlaceId": "ChIJL25pscXKvJURZ3947sk9Lvs",
                 "Name": "Club del Progreso Restaurante",
+                "CatTag": "visit",
                 "Address": "Sarmiento 1334, C1001 CABA, Argentina",
                 "Price": 50,
                 "Rating": 3.9,
@@ -598,6 +652,7 @@
             {
                 "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
                 "Name": "Piazzolla Tango",
+                "CatTag": "visit",
                 "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
                 "Price": 0,
                 "Rating": 4.6,
@@ -609,6 +664,7 @@
             {
                 "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
                 "Name": "Café Bar El Teatro",
+                "CatTag": "visit",
                 "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -620,6 +676,7 @@
             {
                 "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
                 "Name": "Café Finanzas",
+                "CatTag": "visit",
                 "Address": "Lavalle 502, C1047AAL CABA, Argentina",
                 "Price": 0,
                 "Rating": 5,
@@ -631,6 +688,7 @@
             {
                 "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
                 "Name": "Granix Restaurant",
+                "CatTag": "visit",
                 "Address": "Florida 165, C1005AAC CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -652,6 +710,7 @@
             {
                 "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
                 "Name": "Café Tortoni",
+                "CatTag": "eatery",
                 "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.5,
@@ -663,6 +722,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -674,6 +734,7 @@
             {
                 "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
                 "Name": "Places Coffee \u0026 Bar",
+                "CatTag": "eatery",
                 "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.2,
@@ -685,6 +746,7 @@
             {
                 "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
                 "Name": "Il Gatto - Obelisco",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -696,6 +758,7 @@
             {
                 "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
                 "Name": "Songs Rehearsal rooms",
+                "CatTag": "eatery",
                 "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -707,6 +770,7 @@
             {
                 "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
+                "CatTag": "eatery",
                 "Address": "Reconquista 383, C1042AAC CABA, Argentina",
                 "Price": 50,
                 "Rating": 4.1,
@@ -718,6 +782,7 @@
             {
                 "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
                 "Name": "The Cavern Buenos Aires",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -729,6 +794,7 @@
             {
                 "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
+                "CatTag": "eatery",
                 "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
                 "Price": 50,
                 "Rating": 4.2,
@@ -740,6 +806,7 @@
             {
                 "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
                 "Name": "Café Martínez",
+                "CatTag": "eatery",
                 "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -751,6 +818,7 @@
             {
                 "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
                 "Name": "La Continental",
+                "CatTag": "eatery",
                 "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -762,9 +830,10 @@
             {
                 "PlaceId": "ChIJA4T3U83KvJURLuLowgonQRk",
                 "Name": "Alimentari",
+                "CatTag": "eatery",
                 "Address": "Sarmiento 372, C1041AAH CABA, Argentina",
                 "Price": 30,
-                "Rating": 4.1,
+                "Rating": 4,
                 "Location": [
                     -34.604344,
                     -58.371941
@@ -773,6 +842,7 @@
             {
                 "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
                 "Name": "Confitería La Pasta Frola",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.5,
@@ -784,6 +854,7 @@
             {
                 "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
                 "Name": "La Paz",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.7,
@@ -795,6 +866,7 @@
             {
                 "PlaceId": "ChIJQc4WrNPKvJURgYeA_FNuPWE",
                 "Name": "London City",
+                "CatTag": "eatery",
                 "Address": "Av. de Mayo 591, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -806,6 +878,7 @@
             {
                 "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
                 "Name": "La Continental",
+                "CatTag": "eatery",
                 "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -817,8 +890,9 @@
             {
                 "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
                 "Name": "Las Meninas",
+                "CatTag": "eatery",
                 "Address": "Libertad 849, C1012AAQ CABA, Argentina",
-                "Price": 0,
+                "Price": 30,
                 "Rating": 4.1,
                 "Location": [
                     -34.598734,
@@ -828,6 +902,7 @@
             {
                 "PlaceId": "ChIJRctmp7_KvJUR9qGTOTGg9A4",
                 "Name": "Alimentari, Suc. Diagonal Norte",
+                "CatTag": "eatery",
                 "Address": "Av. Pres. Roque Sáenz Peña 892, C1035AAQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 3.9,
@@ -839,6 +914,7 @@
             {
                 "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
                 "Name": "Bonafide",
+                "CatTag": "eatery",
                 "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -850,9 +926,10 @@
             {
                 "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
                 "Name": "Ligier Vinotecas",
+                "CatTag": "eatery",
                 "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
                 "Price": 0,
-                "Rating": 3.1,
+                "Rating": 3.3,
                 "Location": [
                     -34.606259,
                     -58.375063
@@ -861,6 +938,7 @@
             {
                 "PlaceId": "ChIJKcGGWsHKvJUR-S4NlZQ4dW8",
                 "Name": "El Palacio de la Papa Frita",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1612, C1042AAP CABA, Argentina",
                 "Price": 0,
                 "Rating": 3.7,
@@ -872,6 +950,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -883,6 +962,7 @@
             {
                 "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
                 "Name": "Via Arriba B\u0026B",
+                "CatTag": "eatery",
                 "Address": "C1012 Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 4.7,
@@ -894,6 +974,7 @@
             {
                 "PlaceId": "ChIJgV6J_MPKvJURejifigVjdQo",
                 "Name": "Pippo Paraná",
+                "CatTag": "eatery",
                 "Address": "Paraná 356, C1017 CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -905,7 +986,8 @@
             {
                 "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
                 "Name": "El Palacio de la Papa Frita",
-                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "CatTag": "eatery",
+                "Address": "Lavalle 735, C1047 AAO, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
                 "Location": [
@@ -916,6 +998,7 @@
             {
                 "PlaceId": "ChIJL25pscXKvJURZ3947sk9Lvs",
                 "Name": "Club del Progreso Restaurante",
+                "CatTag": "eatery",
                 "Address": "Sarmiento 1334, C1001 CABA, Argentina",
                 "Price": 50,
                 "Rating": 3.9,
@@ -927,6 +1010,7 @@
             {
                 "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
                 "Name": "Piazzolla Tango",
+                "CatTag": "eatery",
                 "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
                 "Price": 0,
                 "Rating": 4.6,
@@ -938,6 +1022,7 @@
             {
                 "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
                 "Name": "Café Bar El Teatro",
+                "CatTag": "eatery",
                 "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -949,6 +1034,7 @@
             {
                 "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
                 "Name": "Café Finanzas",
+                "CatTag": "eatery",
                 "Address": "Lavalle 502, C1047AAL CABA, Argentina",
                 "Price": 0,
                 "Rating": 5,
@@ -960,6 +1046,7 @@
             {
                 "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
                 "Name": "Granix Restaurant",
+                "CatTag": "eatery",
                 "Address": "Florida 165, C1005AAC CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -971,6 +1058,7 @@
             {
                 "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
                 "Name": "Café Tortoni",
+                "CatTag": "visit",
                 "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.5,
@@ -982,6 +1070,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -993,6 +1082,7 @@
             {
                 "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
                 "Name": "Places Coffee \u0026 Bar",
+                "CatTag": "visit",
                 "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.2,
@@ -1004,6 +1094,7 @@
             {
                 "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
                 "Name": "Il Gatto - Obelisco",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -1015,6 +1106,7 @@
             {
                 "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
                 "Name": "Songs Rehearsal rooms",
+                "CatTag": "visit",
                 "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -1026,6 +1118,7 @@
             {
                 "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
+                "CatTag": "visit",
                 "Address": "Reconquista 383, C1042AAC CABA, Argentina",
                 "Price": 50,
                 "Rating": 4.1,
@@ -1037,6 +1130,7 @@
             {
                 "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
                 "Name": "The Cavern Buenos Aires",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1048,6 +1142,7 @@
             {
                 "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
+                "CatTag": "visit",
                 "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
                 "Price": 50,
                 "Rating": 4.2,
@@ -1059,6 +1154,7 @@
             {
                 "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
                 "Name": "Café Martínez",
+                "CatTag": "visit",
                 "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1070,6 +1166,7 @@
             {
                 "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
                 "Name": "La Continental",
+                "CatTag": "visit",
                 "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1081,9 +1178,10 @@
             {
                 "PlaceId": "ChIJA4T3U83KvJURLuLowgonQRk",
                 "Name": "Alimentari",
+                "CatTag": "visit",
                 "Address": "Sarmiento 372, C1041AAH CABA, Argentina",
                 "Price": 30,
-                "Rating": 4.1,
+                "Rating": 4,
                 "Location": [
                     -34.604344,
                     -58.371941
@@ -1092,6 +1190,7 @@
             {
                 "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
                 "Name": "Confitería La Pasta Frola",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.5,
@@ -1103,6 +1202,7 @@
             {
                 "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
                 "Name": "La Paz",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.7,
@@ -1114,6 +1214,7 @@
             {
                 "PlaceId": "ChIJQc4WrNPKvJURgYeA_FNuPWE",
                 "Name": "London City",
+                "CatTag": "visit",
                 "Address": "Av. de Mayo 591, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -1125,6 +1226,7 @@
             {
                 "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
                 "Name": "La Continental",
+                "CatTag": "visit",
                 "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1136,8 +1238,9 @@
             {
                 "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
                 "Name": "Las Meninas",
+                "CatTag": "visit",
                 "Address": "Libertad 849, C1012AAQ CABA, Argentina",
-                "Price": 0,
+                "Price": 30,
                 "Rating": 4.1,
                 "Location": [
                     -34.598734,
@@ -1147,6 +1250,7 @@
             {
                 "PlaceId": "ChIJRctmp7_KvJUR9qGTOTGg9A4",
                 "Name": "Alimentari, Suc. Diagonal Norte",
+                "CatTag": "visit",
                 "Address": "Av. Pres. Roque Sáenz Peña 892, C1035AAQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 3.9,
@@ -1158,6 +1262,7 @@
             {
                 "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
                 "Name": "Bonafide",
+                "CatTag": "visit",
                 "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -1169,9 +1274,10 @@
             {
                 "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
                 "Name": "Ligier Vinotecas",
+                "CatTag": "visit",
                 "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
                 "Price": 0,
-                "Rating": 3.1,
+                "Rating": 3.3,
                 "Location": [
                     -34.606259,
                     -58.375063
@@ -1180,6 +1286,7 @@
             {
                 "PlaceId": "ChIJKcGGWsHKvJUR-S4NlZQ4dW8",
                 "Name": "El Palacio de la Papa Frita",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1612, C1042AAP CABA, Argentina",
                 "Price": 0,
                 "Rating": 3.7,
@@ -1191,6 +1298,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -1202,6 +1310,7 @@
             {
                 "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
                 "Name": "Via Arriba B\u0026B",
+                "CatTag": "visit",
                 "Address": "C1012 Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 4.7,
@@ -1213,6 +1322,7 @@
             {
                 "PlaceId": "ChIJgV6J_MPKvJURejifigVjdQo",
                 "Name": "Pippo Paraná",
+                "CatTag": "visit",
                 "Address": "Paraná 356, C1017 CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -1224,7 +1334,8 @@
             {
                 "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
                 "Name": "El Palacio de la Papa Frita",
-                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "CatTag": "visit",
+                "Address": "Lavalle 735, C1047 AAO, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
                 "Location": [
@@ -1235,6 +1346,7 @@
             {
                 "PlaceId": "ChIJL25pscXKvJURZ3947sk9Lvs",
                 "Name": "Club del Progreso Restaurante",
+                "CatTag": "visit",
                 "Address": "Sarmiento 1334, C1001 CABA, Argentina",
                 "Price": 50,
                 "Rating": 3.9,
@@ -1246,6 +1358,7 @@
             {
                 "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
                 "Name": "Piazzolla Tango",
+                "CatTag": "visit",
                 "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
                 "Price": 0,
                 "Rating": 4.6,
@@ -1257,6 +1370,7 @@
             {
                 "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
                 "Name": "Café Bar El Teatro",
+                "CatTag": "visit",
                 "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -1268,6 +1382,7 @@
             {
                 "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
                 "Name": "Café Finanzas",
+                "CatTag": "visit",
                 "Address": "Lavalle 502, C1047AAL CABA, Argentina",
                 "Price": 0,
                 "Rating": 5,
@@ -1279,6 +1394,7 @@
             {
                 "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
                 "Name": "Granix Restaurant",
+                "CatTag": "visit",
                 "Address": "Florida 165, C1005AAC CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -1300,6 +1416,7 @@
             {
                 "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
                 "Name": "Café Tortoni",
+                "CatTag": "eatery",
                 "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.5,
@@ -1311,6 +1428,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -1322,6 +1440,7 @@
             {
                 "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
                 "Name": "Places Coffee \u0026 Bar",
+                "CatTag": "eatery",
                 "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.2,
@@ -1333,6 +1452,7 @@
             {
                 "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
                 "Name": "Il Gatto - Obelisco",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -1344,6 +1464,7 @@
             {
                 "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
                 "Name": "Songs Rehearsal rooms",
+                "CatTag": "eatery",
                 "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -1355,6 +1476,7 @@
             {
                 "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
+                "CatTag": "eatery",
                 "Address": "Reconquista 383, C1042AAC CABA, Argentina",
                 "Price": 50,
                 "Rating": 4.1,
@@ -1366,6 +1488,7 @@
             {
                 "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
                 "Name": "The Cavern Buenos Aires",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1377,6 +1500,7 @@
             {
                 "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
+                "CatTag": "eatery",
                 "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
                 "Price": 50,
                 "Rating": 4.2,
@@ -1388,6 +1512,7 @@
             {
                 "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
                 "Name": "Café Martínez",
+                "CatTag": "eatery",
                 "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1399,6 +1524,7 @@
             {
                 "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
                 "Name": "La Continental",
+                "CatTag": "eatery",
                 "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1410,6 +1536,7 @@
             {
                 "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
                 "Name": "Confitería La Pasta Frola",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.5,
@@ -1421,6 +1548,7 @@
             {
                 "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
                 "Name": "La Paz",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.7,
@@ -1432,6 +1560,7 @@
             {
                 "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
                 "Name": "La Continental",
+                "CatTag": "eatery",
                 "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1443,8 +1572,9 @@
             {
                 "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
                 "Name": "Las Meninas",
+                "CatTag": "eatery",
                 "Address": "Libertad 849, C1012AAQ CABA, Argentina",
-                "Price": 0,
+                "Price": 30,
                 "Rating": 4.1,
                 "Location": [
                     -34.598734,
@@ -1454,6 +1584,7 @@
             {
                 "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
                 "Name": "Bonafide",
+                "CatTag": "eatery",
                 "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -1465,9 +1596,10 @@
             {
                 "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
                 "Name": "Ligier Vinotecas",
+                "CatTag": "eatery",
                 "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
                 "Price": 0,
-                "Rating": 3.1,
+                "Rating": 3.3,
                 "Location": [
                     -34.606259,
                     -58.375063
@@ -1476,6 +1608,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "eatery",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -1487,6 +1620,7 @@
             {
                 "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
                 "Name": "Via Arriba B\u0026B",
+                "CatTag": "eatery",
                 "Address": "C1012 Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 4.7,
@@ -1498,7 +1632,8 @@
             {
                 "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
                 "Name": "El Palacio de la Papa Frita",
-                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "CatTag": "eatery",
+                "Address": "Lavalle 735, C1047 AAO, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
                 "Location": [
@@ -1509,6 +1644,7 @@
             {
                 "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
                 "Name": "Piazzolla Tango",
+                "CatTag": "eatery",
                 "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
                 "Price": 0,
                 "Rating": 4.6,
@@ -1520,6 +1656,7 @@
             {
                 "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
                 "Name": "Café Bar El Teatro",
+                "CatTag": "eatery",
                 "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -1531,6 +1668,7 @@
             {
                 "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
                 "Name": "Café Finanzas",
+                "CatTag": "eatery",
                 "Address": "Lavalle 502, C1047AAL CABA, Argentina",
                 "Price": 0,
                 "Rating": 5,
@@ -1542,6 +1680,7 @@
             {
                 "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
                 "Name": "Granix Restaurant",
+                "CatTag": "eatery",
                 "Address": "Florida 165, C1005AAC CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -1553,6 +1692,7 @@
             {
                 "PlaceId": "ChIJ01wendHKvJURLcQXvCCCC1I",
                 "Name": "Café Tortoni",
+                "CatTag": "visit",
                 "Address": "Av. de Mayo 825, C1084 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.5,
@@ -1564,6 +1704,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -1575,6 +1716,7 @@
             {
                 "PlaceId": "ChIJL1kCEcnKvJURH3C2ycz46N8",
                 "Name": "Places Coffee \u0026 Bar",
+                "CatTag": "visit",
                 "Address": "Viamonte 879, C1053ABQ CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.2,
@@ -1586,6 +1728,7 @@
             {
                 "PlaceId": "ChIJfx_NF8_KvJURUv9dyztZs8Y",
                 "Name": "Il Gatto - Obelisco",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 959, C1043AAJ CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -1597,6 +1740,7 @@
             {
                 "PlaceId": "ChIJ2yf0INXKvJURlHAVW61UYj8",
                 "Name": "Songs Rehearsal rooms",
+                "CatTag": "visit",
                 "Address": "Av. Rivadavia 1180, C1033AAO CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
@@ -1608,6 +1752,7 @@
             {
                 "PlaceId": "ChIJPdJGpzM1o5URt-7v9TaEsgc",
                 "Name": "Starbucks",
+                "CatTag": "visit",
                 "Address": "Reconquista 383, C1042AAC CABA, Argentina",
                 "Price": 50,
                 "Rating": 4.1,
@@ -1619,6 +1764,7 @@
             {
                 "PlaceId": "ChIJxzf8Z8HKvJUR3214r69mNtE",
                 "Name": "The Cavern Buenos Aires",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1660, C1042AAP CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1630,6 +1776,7 @@
             {
                 "PlaceId": "ChIJrXe1xtrKvJURGckIQgNs9HQ",
                 "Name": "Starbucks",
+                "CatTag": "visit",
                 "Address": "Av. de Mayo 1300, C1085 ABP, Buenos Aires, Argentina",
                 "Price": 50,
                 "Rating": 4.2,
@@ -1641,6 +1788,7 @@
             {
                 "PlaceId": "ChIJqbLKZrjKvJUREL2Gpr3uXYk",
                 "Name": "Café Martínez",
+                "CatTag": "visit",
                 "Address": "Talcahuano 948, C1013AAS CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1652,6 +1800,7 @@
             {
                 "PlaceId": "ChIJmwPSJ9vKvJUR63XaymmyVJU",
                 "Name": "La Continental",
+                "CatTag": "visit",
                 "Address": "C1085ABD, Av. de Mayo 1389, C1085ABD CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1663,6 +1812,7 @@
             {
                 "PlaceId": "ChIJhXwTK8TKvJURQjt7cVVJsU8",
                 "Name": "Confitería La Pasta Frola",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1365, C1043ABA CABA, Argentina",
                 "Price": 0,
                 "Rating": 4.5,
@@ -1674,6 +1824,7 @@
             {
                 "PlaceId": "ChIJDaEKUcHKvJURCgG8Sv3o0Fw",
                 "Name": "La Paz",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1593, C1042 AAB, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.7,
@@ -1685,6 +1836,7 @@
             {
                 "PlaceId": "ChIJd5iUVrjKvJURQ-LQefsxWEk",
                 "Name": "La Continental",
+                "CatTag": "visit",
                 "Address": "AAV, Talcahuano 1034, C1013 CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.1,
@@ -1696,8 +1848,9 @@
             {
                 "PlaceId": "ChIJWVSm8cfKvJURtt8_2LlvgBQ",
                 "Name": "Las Meninas",
+                "CatTag": "visit",
                 "Address": "Libertad 849, C1012AAQ CABA, Argentina",
-                "Price": 0,
+                "Price": 30,
                 "Rating": 4.1,
                 "Location": [
                     -34.598734,
@@ -1707,6 +1860,7 @@
             {
                 "PlaceId": "ChIJCTg2lc3KvJURzy4R3LHa_04",
                 "Name": "Bonafide",
+                "CatTag": "visit",
                 "Address": "Sarmiento 654, C1041AAN CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.8,
@@ -1718,9 +1872,10 @@
             {
                 "PlaceId": "ChIJ24knZdLKvJUR5LCj6QlOizU",
                 "Name": "Ligier Vinotecas",
+                "CatTag": "visit",
                 "Address": "Florida 165 1005, C1005AAC CABA, Argentina",
                 "Price": 0,
-                "Rating": 3.1,
+                "Rating": 3.3,
                 "Location": [
                     -34.606259,
                     -58.375063
@@ -1729,6 +1884,7 @@
             {
                 "PlaceId": "ChIJgYFjaMHKvJUROxkj_ifahb8",
                 "Name": "El Gato Negro",
+                "CatTag": "visit",
                 "Address": "Av. Corrientes 1669, C1042AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 4.4,
@@ -1740,6 +1896,7 @@
             {
                 "PlaceId": "ChIJT3cjsNrKvJURWJLolFytfYg",
                 "Name": "Via Arriba B\u0026B",
+                "CatTag": "visit",
                 "Address": "C1012 Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 4.7,
@@ -1751,7 +1908,8 @@
             {
                 "PlaceId": "ChIJRSIPH8zKvJURmBLe47AqTKo",
                 "Name": "El Palacio de la Papa Frita",
-                "Address": "Lavalle 735, C1047AAO CABA, Argentina",
+                "CatTag": "visit",
+                "Address": "Lavalle 735, C1047 AAO, Buenos Aires, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
                 "Location": [
@@ -1762,6 +1920,7 @@
             {
                 "PlaceId": "ChIJu4ubkdLKvJUReCD5EvsEjMU",
                 "Name": "Piazzolla Tango",
+                "CatTag": "visit",
                 "Address": "Florida 165 Galería Güemes, C1005 AAC, Buenos Aires, Argentina",
                 "Price": 0,
                 "Rating": 4.6,
@@ -1773,6 +1932,7 @@
             {
                 "PlaceId": "ChIJJeiR7MfKvJURVM24nRHYFH0",
                 "Name": "Café Bar El Teatro",
+                "CatTag": "visit",
                 "Address": "Av. Córdoba 1225, C1055AAC CABA, Argentina",
                 "Price": 30,
                 "Rating": 3.9,
@@ -1784,6 +1944,7 @@
             {
                 "PlaceId": "ChIJ35GY-szKvJURUb88AoDOSJs",
                 "Name": "Café Finanzas",
+                "CatTag": "visit",
                 "Address": "Lavalle 502, C1047AAL CABA, Argentina",
                 "Price": 0,
                 "Rating": 5,
@@ -1795,6 +1956,7 @@
             {
                 "PlaceId": "ChIJYZfYetLKvJURn03O4nEvkJw",
                 "Name": "Granix Restaurant",
+                "CatTag": "visit",
                 "Address": "Florida 165, C1005AAC CABA, Argentina",
                 "Price": 0,
                 "Rating": 4,
