@@ -74,7 +74,7 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 		if _, exist := (*clusterMap)[clusterKey]; !exist{
 			(*clusterMap)[clusterKey] = &PlaceCluster{Places: make([]Place, 0), Slot: TimeSlot{timeInterval}}
 		}
-		cluster := matcher.CateringMgr.TimeClusters.Clusters[clusterKey]
+		cluster := mgr.TimeClusters.Clusters[clusterKey]
 		for _, place := range cluster.Places{
 			((*clusterMap)[clusterKey]).Places = append(((*clusterMap)[clusterKey]).Places, matcher.createPlace(place, placeCat))
 		}

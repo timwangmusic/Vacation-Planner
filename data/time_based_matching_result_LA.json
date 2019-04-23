@@ -1,0 +1,2744 @@
+[
+    {
+        "Places": [
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "138 S Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    34.048026,
+                    -118.239122
+                ]
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
+                "Name": "Cafe Nine",
+                "CatTag": "eatery",
+                "Address": "453 S Spring St # 900, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.9,
+                "Location": [
+                    34.047679,
+                    -118.249693
+                ]
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "217 N Hill St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    34.056139,
+                    -118.246997
+                ]
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "CatTag": "eatery",
+                "Address": "135 San Pedro St, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.5,
+                "Location": [
+                    34.049744,
+                    -118.241695
+                ]
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "CatTag": "eatery",
+                "Address": "134 Japanese Village Plaza Mall, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.5,
+                "Location": [
+                    34.048848,
+                    -118.240454
+                ]
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "800 N Alameda St S2, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4,
+                "Location": [
+                    34.056241,
+                    -118.23651
+                ]
+            },
+            {
+                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
+                "Name": "Homeboy Diner",
+                "CatTag": "eatery",
+                "Address": "200 N Spring St, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.5,
+                "Location": [
+                    34.053713,
+                    -118.242814
+                ]
+            },
+            {
+                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
+                "Name": "Cherry Pick Cafe",
+                "CatTag": "eatery",
+                "Address": "208 S Hill St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    34.052757,
+                    -118.247864
+                ]
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "CatTag": "eatery",
+                "Address": "633 W 5th St, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.050896,
+                    -118.254229
+                ]
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "CatTag": "eatery",
+                "Address": "328 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.049673,
+                    -118.240237
+                ]
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "555 West 5th Street CC56, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.2,
+                "Location": [
+                    34.050112,
+                    -118.253269
+                ]
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "120 S Los Angeles St #110, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.2,
+                "Location": [
+                    34.050984,
+                    -118.242338
+                ]
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "CatTag": "eatery",
+                "Address": "548 S Spring St #106, Los Angeles, CA 90013, USA",
+                "Price": 10,
+                "Rating": 4.4,
+                "Location": [
+                    34.046122,
+                    -118.25061
+                ]
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "333 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    34.053615,
+                    -118.253272
+                ]
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "CatTag": "eatery",
+                "Address": "7 Olvera St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.05765,
+                    -118.237869
+                ]
+            },
+            {
+                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
+                "Name": "Normandie Bakery Cafe \u0026 Catering",
+                "CatTag": "eatery",
+                "Address": "254 S Hope St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    34.053793,
+                    -118.251954
+                ]
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "CatTag": "eatery",
+                "Address": "306 W 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.052557,
+                    -118.247173
+                ]
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "CatTag": "eatery",
+                "Address": "201 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    34.05447,
+                    -118.240883
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_TPBu0nGwoARX6EM9LGAkfE",
+                "Name": "GiorgiPorgi",
+                "CatTag": "eatery",
+                "Address": "137 E 3rd St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.048826,
+                    -118.244875
+                ]
+            },
+            {
+                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
+                "Name": "Bäco Mercat",
+                "CatTag": "eatery",
+                "Address": "408 S Main St, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.0478,
+                    -118.247293
+                ]
+            },
+            {
+                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
+                "Name": "Mendocino Farms",
+                "CatTag": "eatery",
+                "Address": "One California Plaza, 300 S Grand Ave, Los Angeles, CA 90071, USA",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    34.05268,
+                    -118.25075
+                ]
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "CatTag": "eatery",
+                "Address": "123 Astronaut Ellison S Onizuka St #303, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.3,
+                "Location": [
+                    34.049894,
+                    -118.242313
+                ]
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "CatTag": "eatery",
+                "Address": "371 E 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.048246,
+                    -118.239817
+                ]
+            },
+            {
+                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
+                "Name": "Kendall's Brasserie",
+                "CatTag": "eatery",
+                "Address": "135 N Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 50,
+                "Rating": 4.3,
+                "Location": [
+                    34.056468,
+                    -118.248469
+                ]
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "CatTag": "eatery",
+                "Address": "111 San Pedro St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.050084,
+                    -118.241348
+                ]
+            },
+            {
+                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
+                "Name": "Daikokuya",
+                "CatTag": "eatery",
+                "Address": "327 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.049993,
+                    -118.240107
+                ]
+            },
+            {
+                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
+                "Name": "Bar Amá",
+                "CatTag": "eatery",
+                "Address": "118 W 4th St, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    34.048415,
+                    -118.247928
+                ]
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "CatTag": "eatery",
+                "Address": "132 S Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.6,
+                "Location": [
+                    34.048276,
+                    -118.239036
+                ]
+            },
+            {
+                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
+                "Name": "Far Bar",
+                "CatTag": "eatery",
+                "Address": "347 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.3,
+                "Location": [
+                    34.049749,
+                    -118.239459
+                ]
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "CatTag": "eatery",
+                "Address": "333 Alameda St #305, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    34.045331,
+                    -118.238258
+                ]
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "CatTag": "eatery",
+                "Address": "330 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 50,
+                "Rating": 4.4,
+                "Location": [
+                    34.052711,
+                    -118.252815
+                ]
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "CatTag": "eatery",
+                "Address": "103 Japanese Village Plaza Mall, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3.8,
+                "Location": [
+                    34.049305,
+                    -118.23978
+                ]
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "CatTag": "eatery",
+                "Address": "316 W 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.3,
+                "Location": [
+                    34.052744,
+                    -118.247409
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_STuCE7GwoAR3vCqfD2J9es",
+                "Name": "Grand Park",
+                "CatTag": "visit",
+                "Address": "200 N Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.055484,
+                    -118.245549
+                ]
+            },
+            {
+                "PlaceId": "ChIJJ0pgmUzGwoARrlTXznrzjUQ",
+                "Name": "Angel's Knoll",
+                "CatTag": "visit",
+                "Address": "356 S Olive St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    34.051044,
+                    -118.250538
+                ]
+            },
+            {
+                "PlaceId": "ChIJMdMuBkXGwoARDm_195lMnkM",
+                "Name": "Los Angeles Plaza Park",
+                "CatTag": "visit",
+                "Address": "125 Paseo De La Plaza, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.056558,
+                    -118.23877
+                ]
+            },
+            {
+                "PlaceId": "ChIJL45JRErGwoARsOKsBXK4ADU",
+                "Name": "Spring Street Park",
+                "CatTag": "visit",
+                "Address": "428 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.8,
+                "Location": [
+                    34.047971,
+                    -118.248584
+                ]
+            },
+            {
+                "PlaceId": "ChIJ97iLXEnGwoARjlCU-nNwduU",
+                "Name": "Spring Street Community Garden",
+                "CatTag": "visit",
+                "Address": "220 S Spring St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.7,
+                "Location": [
+                    34.050817,
+                    -118.246259
+                ]
+            },
+            {
+                "PlaceId": "ChIJs0e-ukXGwoARQuEM0STE9q0",
+                "Name": "Father Serra Park",
+                "CatTag": "visit",
+                "Address": "540 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3.5,
+                "Location": [
+                    34.055988,
+                    -118.238065
+                ]
+            },
+            {
+                "PlaceId": "ChIJcWx0d03GwoARAnWv9qN13ds",
+                "Name": "Blue Ribbon Garden",
+                "CatTag": "visit",
+                "Address": "Walt Disney Concert Hall, 111 S Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.055638,
+                    -118.250214
+                ]
+            },
+            {
+                "PlaceId": "ChIJw_p-3LLHwoARlSKm5-xKvOs",
+                "Name": "Bank of America Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.053094,
+                    -118.253772
+                ]
+            },
+            {
+                "PlaceId": "ChIJaR6E1kjGwoAR3CeGHpSRXJg",
+                "Name": "Pershing Square",
+                "CatTag": "visit",
+                "Address": "532 S Olive St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    34.048569,
+                    -118.252892
+                ]
+            },
+            {
+                "PlaceId": "ChIJmQn9XrPHwoARtA_ISR01few",
+                "Name": "John Fante Square",
+                "CatTag": "visit",
+                "Address": "\u0026, S Grand Ave \u0026 W 5th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.050197,
+                    -118.253907
+                ]
+            },
+            {
+                "PlaceId": "ChIJaR6E1kjGwoAR2IVp9o8tQ6g",
+                "Name": "HlGHRlDGE PARK",
+                "CatTag": "visit",
+                "Address": "198-100 S Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJq7J65kvHwoAR0UkpkHby8oo",
+                "Name": "Парк Холлидейл риджинал",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJ47YJ1EjGwoARhecN22-ISqY",
+                "Name": "Circle Park",
+                "CatTag": "visit",
+                "Address": "100 W 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.4,
+                "Location": [
+                    34.05282,
+                    -118.243582
+                ]
+            },
+            {
+                "PlaceId": "ChIJR3cdOknGwoARc3f0ebU_Zyk",
+                "Name": "LAPD Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    34.051565,
+                    -118.244984
+                ]
+            },
+            {
+                "PlaceId": "ChIJL70M9kjGwoARped_In4CvOM",
+                "Name": "Kyoto Garden",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.7,
+                "Location": [
+                    34.050308,
+                    -118.24282
+                ]
+            },
+            {
+                "PlaceId": "ChIJc_xTWU_GwoARkdonzURemvk",
+                "Name": "Fletcher Bowron Square",
+                "CatTag": "visit",
+                "Address": "N Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.054113,
+                    -118.241308
+                ]
+            },
+            {
+                "PlaceId": "ChIJZ27zTk7GwoARbrNEsOsWvGg",
+                "Name": "Treasury Tax Collector 9th Floor",
+                "CatTag": "visit",
+                "Address": "Los Angeles County Hall of Records, 320 W Temple St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.055797,
+                    -118.244356
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_Q-odkbGwoARRq7fYEXVii4",
+                "Name": "Roybal Federal Building Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.053429,
+                    -118.239137
+                ]
+            },
+            {
+                "PlaceId": "ChIJTWKgnN7HwoAR_nlysKY5v1c",
+                "Name": "Adventure City",
+                "CatTag": "visit",
+                "Address": "106 W 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoAR57Az-9ItWFU",
+                "Name": "Spring Arts Tower",
+                "CatTag": "visit",
+                "Address": "453 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    34.047679,
+                    -118.249693
+                ]
+            },
+            {
+                "PlaceId": "ChIJi3EIGkjGwoARL9JTWbXiMa4",
+                "Name": "George J Doizaki Gallery",
+                "CatTag": "visit",
+                "Address": "244 San Pedro St # 505, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.04778,
+                    -118.241805
+                ]
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARWxgZTln30Cw",
+                "Name": "The HG Studios",
+                "CatTag": "visit",
+                "Address": "453 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.047763,
+                    -118.249515
+                ]
+            },
+            {
+                "PlaceId": "ChIJgUQMIcvHwoAR8s2zfvJv0_A",
+                "Name": "ECF Downtown Art Center",
+                "CatTag": "visit",
+                "Address": "431 S Broadway, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.7,
+                "Location": [
+                    34.048951,
+                    -118.250428
+                ]
+            },
+            {
+                "PlaceId": "ChIJOewKNkrGwoARTsiD0VDxXJo",
+                "Name": "The Continental Gallery",
+                "CatTag": "visit",
+                "Address": "408 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.048627,
+                    -118.248341
+                ]
+            },
+            {
+                "PlaceId": "ChIJvc7CvszHwoARDUjUAQqOddk",
+                "Name": "Think Tank Gallery",
+                "CatTag": "visit",
+                "Address": "516 E 4th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.044407,
+                    -118.241218
+                ]
+            },
+            {
+                "PlaceId": "ChIJv7Qa0EvGwoARpFMiFEOli1g",
+                "Name": "Clark's Gallery",
+                "CatTag": "visit",
+                "Address": "257 S Spring St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.050775,
+                    -118.247226
+                ]
+            },
+            {
+                "PlaceId": "ChIJAQAAMDXGwoARudNec0Vw9Lg",
+                "Name": "Gallery Mujo",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90014, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.04882,
+                    -118.244873
+                ]
+            },
+            {
+                "PlaceId": "ChIJBSXTbzu_woARXik569iwi0o",
+                "Name": "Tinta Rebelde Tattoo",
+                "CatTag": "visit",
+                "Address": "133 E 3rd St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.048905,
+                    -118.244982
+                ]
+            },
+            {
+                "PlaceId": "ChIJwy_eyUnGwoARlIffo_Sg6fo",
+                "Name": "Little Tokyo Art Complex",
+                "CatTag": "visit",
+                "Address": "262 S Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.048558,
+                    -118.24435
+                ]
+            },
+            {
+                "PlaceId": "ChIJ0UhxNkrGwoARBk06x2p_xlI",
+                "Name": "Robert Reynolds Art Studio",
+                "CatTag": "visit",
+                "Address": "408 S Spring St #100, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.048611,
+                    -118.248357
+                ]
+            },
+            {
+                "PlaceId": "ChIJRUirT0rGwoARBp335HjhwFE",
+                "Name": "Dove Biscuit Studio",
+                "CatTag": "visit",
+                "Address": "435 S Spring St M4, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.048193,
+                    -118.249236
+                ]
+            },
+            {
+                "PlaceId": "ChIJScIhbkrGwoARPvCVwpQ16PQ",
+                "Name": "El Nopal Press Fine Art Publ",
+                "CatTag": "visit",
+                "Address": "109 W 5th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.047049,
+                    -118.248763
+                ]
+            },
+            {
+                "PlaceId": "ChIJmS1FBUvGwoARdmlqVQCGsAs",
+                "Name": "DAC Gallery",
+                "CatTag": "visit",
+                "Address": "431 S Broadway, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.048814,
+                    -118.25025
+                ]
+            },
+            {
+                "PlaceId": "ChIJi3EIGkjGwoARL9JTWbXiMa4",
+                "Name": "George J Doizaki Gallery",
+                "CatTag": "visit",
+                "Address": "244 San Pedro St # 505, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.04778,
+                    -118.241805
+                ]
+            },
+            {
+                "PlaceId": "ChIJ-1Vb4UTGwoARANaWGbqWTUA",
+                "Name": "Avila Adobe",
+                "CatTag": "visit",
+                "Address": "10 Olvera St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    34.057251,
+                    -118.237977
+                ]
+            },
+            {
+                "PlaceId": "ChIJNyYB20zGwoARP2aad76Dj8s",
+                "Name": "Wells Fargo Museum",
+                "CatTag": "visit",
+                "Address": "333 S Grand Ave, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    34.052846,
+                    -118.251916
+                ]
+            },
+            {
+                "PlaceId": "ChIJPzcNDzjGwoARcmz0XPECjHg",
+                "Name": "Brunswig Square",
+                "CatTag": "visit",
+                "Address": "360 E 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.047891,
+                    -118.240142
+                ]
+            },
+            {
+                "PlaceId": "ChIJY5ZK_UzGwoARMPtCpae6vAI",
+                "Name": "The Museum of Contemporary Art",
+                "CatTag": "visit",
+                "Address": "250 S Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.4,
+                "Location": [
+                    34.05335,
+                    -118.250722
+                ]
+            },
+            {
+                "PlaceId": "ChIJfbYXz7LHwoARzo_xXVlj1yk",
+                "Name": "Bank of America Heritage Center",
+                "CatTag": "visit",
+                "Address": "333 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 2.8,
+                "Location": [
+                    34.053627,
+                    -118.253266
+                ]
+            },
+            {
+                "PlaceId": "ChIJjcqwAZnHwoARDBrktyqCBgo",
+                "Name": "Museum Seni Modern",
+                "CatTag": "visit",
+                "Address": "198-100 S Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJ6TJe4EXGwoAReujtsCuYfJo",
+                "Name": "移民局",
+                "CatTag": "visit",
+                "Address": "300 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.053746,
+                    -118.2396
+                ]
+            },
+            {
+                "PlaceId": "ChIJ36mc6UfGwoARVS7DSbWqJ68",
+                "Name": "ミヤコホテル横",
+                "CatTag": "visit",
+                "Address": "350 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.049534,
+                    -118.239918
+                ]
+            },
+            {
+                "PlaceId": "ChIJSW6w4TfGwoARZluKgMJ3hXc",
+                "Name": "Enrtrance to Loading Zone of Aratani Theater",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.047711,
+                    -118.242204
+                ]
+            },
+            {
+                "PlaceId": "ChIJq6ralkfGwoARWbVvABTAGeo",
+                "Name": "National Center for the Preservation of Democracy",
+                "CatTag": "visit",
+                "Address": "100-198 N Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.049467,
+                    -118.2385
+                ]
+            },
+            {
+                "PlaceId": "ChIJm-DWFLXHwoARym5qEHCrWOM",
+                "Name": "AUDREY HEPBURN - 愛心 奧黛麗赫本塗鴉",
+                "CatTag": "visit",
+                "Address": "114-198 Winston St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.046724,
+                    -118.24721
+                ]
+            }
+        ],
+        "Slot": {
+            "Slot": {
+                "Start": 8,
+                "End": 12
+            }
+        }
+    },
+    {
+        "Places": [
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "138 S Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    34.048026,
+                    -118.239122
+                ]
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARJH6YNh0AT5k",
+                "Name": "Cafe Nine",
+                "CatTag": "eatery",
+                "Address": "453 S Spring St # 900, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.9,
+                "Location": [
+                    34.047679,
+                    -118.249693
+                ]
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "217 N Hill St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    34.056139,
+                    -118.246997
+                ]
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "CatTag": "eatery",
+                "Address": "135 San Pedro St, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.5,
+                "Location": [
+                    34.049744,
+                    -118.241695
+                ]
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "CatTag": "eatery",
+                "Address": "134 Japanese Village Plaza Mall, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.5,
+                "Location": [
+                    34.048848,
+                    -118.240454
+                ]
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "800 N Alameda St S2, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4,
+                "Location": [
+                    34.056241,
+                    -118.23651
+                ]
+            },
+            {
+                "PlaceId": "ChIJjzUBO0_GwoARAVTFv3a1L50",
+                "Name": "Homeboy Diner",
+                "CatTag": "eatery",
+                "Address": "200 N Spring St, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.5,
+                "Location": [
+                    34.053713,
+                    -118.242814
+                ]
+            },
+            {
+                "PlaceId": "ChIJF9KvF0zGwoARIxgTtkhd_1k",
+                "Name": "Cherry Pick Cafe",
+                "CatTag": "eatery",
+                "Address": "208 S Hill St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    34.052757,
+                    -118.247864
+                ]
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "CatTag": "eatery",
+                "Address": "633 W 5th St, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.050896,
+                    -118.254229
+                ]
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "CatTag": "eatery",
+                "Address": "328 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.049673,
+                    -118.240237
+                ]
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "555 West 5th Street CC56, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.2,
+                "Location": [
+                    34.050112,
+                    -118.253269
+                ]
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "120 S Los Angeles St #110, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.2,
+                "Location": [
+                    34.050984,
+                    -118.242338
+                ]
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "CatTag": "eatery",
+                "Address": "548 S Spring St #106, Los Angeles, CA 90013, USA",
+                "Price": 10,
+                "Rating": 4.4,
+                "Location": [
+                    34.046122,
+                    -118.25061
+                ]
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "333 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    34.053615,
+                    -118.253272
+                ]
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "CatTag": "eatery",
+                "Address": "7 Olvera St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.05765,
+                    -118.237869
+                ]
+            },
+            {
+                "PlaceId": "ChIJ6yZvME3GwoARI1EavgVsulw",
+                "Name": "Normandie Bakery Cafe \u0026 Catering",
+                "CatTag": "eatery",
+                "Address": "254 S Hope St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    34.053793,
+                    -118.251954
+                ]
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "CatTag": "eatery",
+                "Address": "306 W 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.052557,
+                    -118.247173
+                ]
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "CatTag": "eatery",
+                "Address": "201 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    34.05447,
+                    -118.240883
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_TPBu0nGwoARX6EM9LGAkfE",
+                "Name": "GiorgiPorgi",
+                "CatTag": "eatery",
+                "Address": "137 E 3rd St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.048826,
+                    -118.244875
+                ]
+            },
+            {
+                "PlaceId": "ChIJs7ogGErGwoARmn4fNJG84mA",
+                "Name": "Bäco Mercat",
+                "CatTag": "eatery",
+                "Address": "408 S Main St, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.0478,
+                    -118.247293
+                ]
+            },
+            {
+                "PlaceId": "ChIJ2eB550zGwoAR4mOy-KJIj84",
+                "Name": "Mendocino Farms",
+                "CatTag": "eatery",
+                "Address": "One California Plaza, 300 S Grand Ave, Los Angeles, CA 90071, USA",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    34.05268,
+                    -118.25075
+                ]
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "CatTag": "eatery",
+                "Address": "123 Astronaut Ellison S Onizuka St #303, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.3,
+                "Location": [
+                    34.049894,
+                    -118.242313
+                ]
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "CatTag": "eatery",
+                "Address": "371 E 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.048246,
+                    -118.239817
+                ]
+            },
+            {
+                "PlaceId": "ChIJ50a0I1LGwoARU23W00tLgj0",
+                "Name": "Kendall's Brasserie",
+                "CatTag": "eatery",
+                "Address": "135 N Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 50,
+                "Rating": 4.3,
+                "Location": [
+                    34.056468,
+                    -118.248469
+                ]
+            },
+            {
+                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
+                "Name": "Perch",
+                "CatTag": "eatery",
+                "Address": "448 S Hill St, Los Angeles, CA 90013, USA",
+                "Price": 50,
+                "Rating": 4.5,
+                "Location": [
+                    34.049002,
+                    -118.251408
+                ]
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "CatTag": "eatery",
+                "Address": "111 San Pedro St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.050084,
+                    -118.241348
+                ]
+            },
+            {
+                "PlaceId": "ChIJZ_1uw0fGwoARfKCD7TFSP8U",
+                "Name": "Daikokuya",
+                "CatTag": "eatery",
+                "Address": "327 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.049993,
+                    -118.240107
+                ]
+            },
+            {
+                "PlaceId": "ChIJPfW-MErGwoARpWWpGbfDuPo",
+                "Name": "Bar Amá",
+                "CatTag": "eatery",
+                "Address": "118 W 4th St, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    34.048415,
+                    -118.247928
+                ]
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "CatTag": "eatery",
+                "Address": "132 S Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.6,
+                "Location": [
+                    34.048276,
+                    -118.239036
+                ]
+            },
+            {
+                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
+                "Name": "Far Bar",
+                "CatTag": "eatery",
+                "Address": "347 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.3,
+                "Location": [
+                    34.049749,
+                    -118.239459
+                ]
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "CatTag": "eatery",
+                "Address": "333 Alameda St #305, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    34.045331,
+                    -118.238258
+                ]
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "CatTag": "eatery",
+                "Address": "330 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 50,
+                "Rating": 4.4,
+                "Location": [
+                    34.052711,
+                    -118.252815
+                ]
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "CatTag": "eatery",
+                "Address": "103 Japanese Village Plaza Mall, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3.8,
+                "Location": [
+                    34.049305,
+                    -118.23978
+                ]
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "CatTag": "eatery",
+                "Address": "316 W 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.3,
+                "Location": [
+                    34.052744,
+                    -118.247409
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_STuCE7GwoAR3vCqfD2J9es",
+                "Name": "Grand Park",
+                "CatTag": "visit",
+                "Address": "200 N Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.055484,
+                    -118.245549
+                ]
+            },
+            {
+                "PlaceId": "ChIJJ0pgmUzGwoARrlTXznrzjUQ",
+                "Name": "Angel's Knoll",
+                "CatTag": "visit",
+                "Address": "356 S Olive St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    34.051044,
+                    -118.250538
+                ]
+            },
+            {
+                "PlaceId": "ChIJMdMuBkXGwoARDm_195lMnkM",
+                "Name": "Los Angeles Plaza Park",
+                "CatTag": "visit",
+                "Address": "125 Paseo De La Plaza, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.056558,
+                    -118.23877
+                ]
+            },
+            {
+                "PlaceId": "ChIJL45JRErGwoARsOKsBXK4ADU",
+                "Name": "Spring Street Park",
+                "CatTag": "visit",
+                "Address": "428 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.8,
+                "Location": [
+                    34.047971,
+                    -118.248584
+                ]
+            },
+            {
+                "PlaceId": "ChIJ97iLXEnGwoARjlCU-nNwduU",
+                "Name": "Spring Street Community Garden",
+                "CatTag": "visit",
+                "Address": "220 S Spring St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.7,
+                "Location": [
+                    34.050817,
+                    -118.246259
+                ]
+            },
+            {
+                "PlaceId": "ChIJs0e-ukXGwoARQuEM0STE9q0",
+                "Name": "Father Serra Park",
+                "CatTag": "visit",
+                "Address": "540 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3.5,
+                "Location": [
+                    34.055988,
+                    -118.238065
+                ]
+            },
+            {
+                "PlaceId": "ChIJcWx0d03GwoARAnWv9qN13ds",
+                "Name": "Blue Ribbon Garden",
+                "CatTag": "visit",
+                "Address": "Walt Disney Concert Hall, 111 S Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.055638,
+                    -118.250214
+                ]
+            },
+            {
+                "PlaceId": "ChIJw_p-3LLHwoARlSKm5-xKvOs",
+                "Name": "Bank of America Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.053094,
+                    -118.253772
+                ]
+            },
+            {
+                "PlaceId": "ChIJaR6E1kjGwoAR3CeGHpSRXJg",
+                "Name": "Pershing Square",
+                "CatTag": "visit",
+                "Address": "532 S Olive St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    34.048569,
+                    -118.252892
+                ]
+            },
+            {
+                "PlaceId": "ChIJmQn9XrPHwoARtA_ISR01few",
+                "Name": "John Fante Square",
+                "CatTag": "visit",
+                "Address": "\u0026, S Grand Ave \u0026 W 5th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.050197,
+                    -118.253907
+                ]
+            },
+            {
+                "PlaceId": "ChIJaR6E1kjGwoAR2IVp9o8tQ6g",
+                "Name": "HlGHRlDGE PARK",
+                "CatTag": "visit",
+                "Address": "198-100 S Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJq7J65kvHwoAR0UkpkHby8oo",
+                "Name": "Парк Холлидейл риджинал",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJ47YJ1EjGwoARhecN22-ISqY",
+                "Name": "Circle Park",
+                "CatTag": "visit",
+                "Address": "100 W 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.4,
+                "Location": [
+                    34.05282,
+                    -118.243582
+                ]
+            },
+            {
+                "PlaceId": "ChIJR3cdOknGwoARc3f0ebU_Zyk",
+                "Name": "LAPD Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    34.051565,
+                    -118.244984
+                ]
+            },
+            {
+                "PlaceId": "ChIJL70M9kjGwoARped_In4CvOM",
+                "Name": "Kyoto Garden",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.7,
+                "Location": [
+                    34.050308,
+                    -118.24282
+                ]
+            },
+            {
+                "PlaceId": "ChIJc_xTWU_GwoARkdonzURemvk",
+                "Name": "Fletcher Bowron Square",
+                "CatTag": "visit",
+                "Address": "N Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.054113,
+                    -118.241308
+                ]
+            },
+            {
+                "PlaceId": "ChIJZ27zTk7GwoARbrNEsOsWvGg",
+                "Name": "Treasury Tax Collector 9th Floor",
+                "CatTag": "visit",
+                "Address": "Los Angeles County Hall of Records, 320 W Temple St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.055797,
+                    -118.244356
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_Q-odkbGwoARRq7fYEXVii4",
+                "Name": "Roybal Federal Building Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.053429,
+                    -118.239137
+                ]
+            },
+            {
+                "PlaceId": "ChIJTWKgnN7HwoAR_nlysKY5v1c",
+                "Name": "Adventure City",
+                "CatTag": "visit",
+                "Address": "106 W 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoAR57Az-9ItWFU",
+                "Name": "Spring Arts Tower",
+                "CatTag": "visit",
+                "Address": "453 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    34.047679,
+                    -118.249693
+                ]
+            },
+            {
+                "PlaceId": "ChIJi3EIGkjGwoARL9JTWbXiMa4",
+                "Name": "George J Doizaki Gallery",
+                "CatTag": "visit",
+                "Address": "244 San Pedro St # 505, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.04778,
+                    -118.241805
+                ]
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARWxgZTln30Cw",
+                "Name": "The HG Studios",
+                "CatTag": "visit",
+                "Address": "453 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.047763,
+                    -118.249515
+                ]
+            },
+            {
+                "PlaceId": "ChIJgUQMIcvHwoAR8s2zfvJv0_A",
+                "Name": "ECF Downtown Art Center",
+                "CatTag": "visit",
+                "Address": "431 S Broadway, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.7,
+                "Location": [
+                    34.048951,
+                    -118.250428
+                ]
+            },
+            {
+                "PlaceId": "ChIJOewKNkrGwoARTsiD0VDxXJo",
+                "Name": "The Continental Gallery",
+                "CatTag": "visit",
+                "Address": "408 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.048627,
+                    -118.248341
+                ]
+            },
+            {
+                "PlaceId": "ChIJvc7CvszHwoARDUjUAQqOddk",
+                "Name": "Think Tank Gallery",
+                "CatTag": "visit",
+                "Address": "516 E 4th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.044407,
+                    -118.241218
+                ]
+            },
+            {
+                "PlaceId": "ChIJv7Qa0EvGwoARpFMiFEOli1g",
+                "Name": "Clark's Gallery",
+                "CatTag": "visit",
+                "Address": "257 S Spring St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.050775,
+                    -118.247226
+                ]
+            },
+            {
+                "PlaceId": "ChIJAQAAMDXGwoARudNec0Vw9Lg",
+                "Name": "Gallery Mujo",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90014, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.04882,
+                    -118.244873
+                ]
+            },
+            {
+                "PlaceId": "ChIJBSXTbzu_woARXik569iwi0o",
+                "Name": "Tinta Rebelde Tattoo",
+                "CatTag": "visit",
+                "Address": "133 E 3rd St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.048905,
+                    -118.244982
+                ]
+            },
+            {
+                "PlaceId": "ChIJwy_eyUnGwoARlIffo_Sg6fo",
+                "Name": "Little Tokyo Art Complex",
+                "CatTag": "visit",
+                "Address": "262 S Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.048558,
+                    -118.24435
+                ]
+            },
+            {
+                "PlaceId": "ChIJ0UhxNkrGwoARBk06x2p_xlI",
+                "Name": "Robert Reynolds Art Studio",
+                "CatTag": "visit",
+                "Address": "408 S Spring St #100, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.048611,
+                    -118.248357
+                ]
+            },
+            {
+                "PlaceId": "ChIJRUirT0rGwoARBp335HjhwFE",
+                "Name": "Dove Biscuit Studio",
+                "CatTag": "visit",
+                "Address": "435 S Spring St M4, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.048193,
+                    -118.249236
+                ]
+            },
+            {
+                "PlaceId": "ChIJScIhbkrGwoARPvCVwpQ16PQ",
+                "Name": "El Nopal Press Fine Art Publ",
+                "CatTag": "visit",
+                "Address": "109 W 5th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.047049,
+                    -118.248763
+                ]
+            },
+            {
+                "PlaceId": "ChIJmS1FBUvGwoARdmlqVQCGsAs",
+                "Name": "DAC Gallery",
+                "CatTag": "visit",
+                "Address": "431 S Broadway, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.048814,
+                    -118.25025
+                ]
+            },
+            {
+                "PlaceId": "ChIJi3EIGkjGwoARL9JTWbXiMa4",
+                "Name": "George J Doizaki Gallery",
+                "CatTag": "visit",
+                "Address": "244 San Pedro St # 505, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.04778,
+                    -118.241805
+                ]
+            },
+            {
+                "PlaceId": "ChIJ-1Vb4UTGwoARANaWGbqWTUA",
+                "Name": "Avila Adobe",
+                "CatTag": "visit",
+                "Address": "10 Olvera St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    34.057251,
+                    -118.237977
+                ]
+            },
+            {
+                "PlaceId": "ChIJNyYB20zGwoARP2aad76Dj8s",
+                "Name": "Wells Fargo Museum",
+                "CatTag": "visit",
+                "Address": "333 S Grand Ave, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    34.052846,
+                    -118.251916
+                ]
+            },
+            {
+                "PlaceId": "ChIJPzcNDzjGwoARcmz0XPECjHg",
+                "Name": "Brunswig Square",
+                "CatTag": "visit",
+                "Address": "360 E 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.047891,
+                    -118.240142
+                ]
+            },
+            {
+                "PlaceId": "ChIJY5ZK_UzGwoARMPtCpae6vAI",
+                "Name": "The Museum of Contemporary Art",
+                "CatTag": "visit",
+                "Address": "250 S Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.4,
+                "Location": [
+                    34.05335,
+                    -118.250722
+                ]
+            },
+            {
+                "PlaceId": "ChIJfbYXz7LHwoARzo_xXVlj1yk",
+                "Name": "Bank of America Heritage Center",
+                "CatTag": "visit",
+                "Address": "333 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 2.8,
+                "Location": [
+                    34.053627,
+                    -118.253266
+                ]
+            },
+            {
+                "PlaceId": "ChIJjcqwAZnHwoARDBrktyqCBgo",
+                "Name": "Museum Seni Modern",
+                "CatTag": "visit",
+                "Address": "198-100 S Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJ6TJe4EXGwoAReujtsCuYfJo",
+                "Name": "移民局",
+                "CatTag": "visit",
+                "Address": "300 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.053746,
+                    -118.2396
+                ]
+            },
+            {
+                "PlaceId": "ChIJ36mc6UfGwoARVS7DSbWqJ68",
+                "Name": "ミヤコホテル横",
+                "CatTag": "visit",
+                "Address": "350 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.049534,
+                    -118.239918
+                ]
+            },
+            {
+                "PlaceId": "ChIJSW6w4TfGwoARZluKgMJ3hXc",
+                "Name": "Enrtrance to Loading Zone of Aratani Theater",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.047711,
+                    -118.242204
+                ]
+            },
+            {
+                "PlaceId": "ChIJq6ralkfGwoARWbVvABTAGeo",
+                "Name": "National Center for the Preservation of Democracy",
+                "CatTag": "visit",
+                "Address": "100-198 N Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.049467,
+                    -118.2385
+                ]
+            },
+            {
+                "PlaceId": "ChIJm-DWFLXHwoARym5qEHCrWOM",
+                "Name": "AUDREY HEPBURN - 愛心 奧黛麗赫本塗鴉",
+                "CatTag": "visit",
+                "Address": "114-198 Winston St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.046724,
+                    -118.24721
+                ]
+            }
+        ],
+        "Slot": {
+            "Slot": {
+                "Start": 12,
+                "End": 17
+            }
+        }
+    },
+    {
+        "Places": [
+            {
+                "PlaceId": "ChIJO17ZcTjGwoAR7pmbILYIQ9k",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "138 S Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    34.048026,
+                    -118.239122
+                ]
+            },
+            {
+                "PlaceId": "ChIJtfPgaU7GwoARUmiRGH5BVCA",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "217 N Hill St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 3.9,
+                "Location": [
+                    34.056139,
+                    -118.246997
+                ]
+            },
+            {
+                "PlaceId": "ChIJbQ_g1UfGwoARF3OwkT3P-zg",
+                "Name": "Cafe Demitasse",
+                "CatTag": "eatery",
+                "Address": "135 San Pedro St, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.5,
+                "Location": [
+                    34.049744,
+                    -118.241695
+                ]
+            },
+            {
+                "PlaceId": "ChIJCfsD7kfGwoARTf0tjYY4J74",
+                "Name": "Cafe Dulce",
+                "CatTag": "eatery",
+                "Address": "134 Japanese Village Plaza Mall, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.5,
+                "Location": [
+                    34.048848,
+                    -118.240454
+                ]
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoARhHgph9dnBPA",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "800 N Alameda St S2, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4,
+                "Location": [
+                    34.056241,
+                    -118.23651
+                ]
+            },
+            {
+                "PlaceId": "ChIJJ808FbPHwoARFvpnP2jEdJE",
+                "Name": "Trimana Restaurant",
+                "CatTag": "eatery",
+                "Address": "633 W 5th St, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.050896,
+                    -118.254229
+                ]
+            },
+            {
+                "PlaceId": "ChIJN4KVwkfGwoAR7VShLVCK-8Y",
+                "Name": "Cafe Take 5",
+                "CatTag": "eatery",
+                "Address": "328 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.049673,
+                    -118.240237
+                ]
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARUMgAV2OU4u8",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "555 West 5th Street CC56, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.2,
+                "Location": [
+                    34.050112,
+                    -118.253269
+                ]
+            },
+            {
+                "PlaceId": "ChIJpVL-jEjGwoAR0LXJwHwTrTs",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "120 S Los Angeles St #110, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.2,
+                "Location": [
+                    34.050984,
+                    -118.242338
+                ]
+            },
+            {
+                "PlaceId": "ChIJ93TfmkrGwoARCUyankqzP-s",
+                "Name": "Spring For Coffee",
+                "CatTag": "eatery",
+                "Address": "548 S Spring St #106, Los Angeles, CA 90013, USA",
+                "Price": 10,
+                "Rating": 4.4,
+                "Location": [
+                    34.046122,
+                    -118.25061
+                ]
+            },
+            {
+                "PlaceId": "ChIJPwlCz0zGwoARLLf-Rl3ySU8",
+                "Name": "Starbucks",
+                "CatTag": "eatery",
+                "Address": "333 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 30,
+                "Rating": 4.4,
+                "Location": [
+                    34.053615,
+                    -118.253272
+                ]
+            },
+            {
+                "PlaceId": "ChIJx_IK4UTGwoARzJZ9Mbx-vp4",
+                "Name": "Hecho Con Carino",
+                "CatTag": "eatery",
+                "Address": "7 Olvera St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.05765,
+                    -118.237869
+                ]
+            },
+            {
+                "PlaceId": "ChIJp7t3HEzGwoAR328RsGZTOtw",
+                "Name": "Cafecito Pura Vida",
+                "CatTag": "eatery",
+                "Address": "306 W 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.052557,
+                    -118.247173
+                ]
+            },
+            {
+                "PlaceId": "ChIJp4MYsUjGwoAR2DciGYPjfrY",
+                "Name": "DRNK coffee + tea",
+                "CatTag": "eatery",
+                "Address": "201 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    34.05447,
+                    -118.240883
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_TPBu0nGwoARX6EM9LGAkfE",
+                "Name": "GiorgiPorgi",
+                "CatTag": "eatery",
+                "Address": "137 E 3rd St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.048826,
+                    -118.244875
+                ]
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARVuiQZ0TtLS0",
+                "Name": "Orochon Ramen",
+                "CatTag": "eatery",
+                "Address": "123 Astronaut Ellison S Onizuka St #303, Los Angeles, CA 90012, USA",
+                "Price": 10,
+                "Rating": 4.3,
+                "Location": [
+                    34.049894,
+                    -118.242313
+                ]
+            },
+            {
+                "PlaceId": "ChIJtRpiCTjGwoAR_-NpLZuQpiM",
+                "Name": "Spitz - Little Tokyo",
+                "CatTag": "eatery",
+                "Address": "371 E 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.048246,
+                    -118.239817
+                ]
+            },
+            {
+                "PlaceId": "ChIJqbKnF0vGwoARREUrVhYGqTU",
+                "Name": "Perch",
+                "CatTag": "eatery",
+                "Address": "448 S Hill St, Los Angeles, CA 90013, USA",
+                "Price": 50,
+                "Rating": 4.5,
+                "Location": [
+                    34.049002,
+                    -118.251408
+                ]
+            },
+            {
+                "PlaceId": "ChIJU5InekjGwoAR6PcC32xhOdk",
+                "Name": "Izakaya \u0026 Bar Fu-ga",
+                "CatTag": "eatery",
+                "Address": "111 San Pedro St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.5,
+                "Location": [
+                    34.050084,
+                    -118.241348
+                ]
+            },
+            {
+                "PlaceId": "ChIJQx1McTjGwoARsBTeB62C1uQ",
+                "Name": "Shin-Sen-Gumi Hakata Ramen - Little Tokyo",
+                "CatTag": "eatery",
+                "Address": "132 S Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.6,
+                "Location": [
+                    34.048276,
+                    -118.239036
+                ]
+            },
+            {
+                "PlaceId": "ChIJe3sg60fGwoARrYfEF5S00FI",
+                "Name": "Far Bar",
+                "CatTag": "eatery",
+                "Address": "347 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.3,
+                "Location": [
+                    34.049749,
+                    -118.239459
+                ]
+            },
+            {
+                "PlaceId": "ChIJyy_0pjnGwoARLeLkpRPb5x0",
+                "Name": "Manna Korean BBQ",
+                "CatTag": "eatery",
+                "Address": "333 Alameda St #305, Los Angeles, CA 90013, USA",
+                "Price": 30,
+                "Rating": 4.1,
+                "Location": [
+                    34.045331,
+                    -118.238258
+                ]
+            },
+            {
+                "PlaceId": "ChIJtchJ1bLHwoARk4rP0JOCJLE",
+                "Name": "Nick \u0026 Stef's Steakhouse",
+                "CatTag": "eatery",
+                "Address": "330 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 50,
+                "Rating": 4.4,
+                "Location": [
+                    34.052711,
+                    -118.252815
+                ]
+            },
+            {
+                "PlaceId": "ChIJbwC37EfGwoARDBM2QlVU3a4",
+                "Name": "Las Galas",
+                "CatTag": "eatery",
+                "Address": "103 Japanese Village Plaza Mall, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3.8,
+                "Location": [
+                    34.049305,
+                    -118.23978
+                ]
+            },
+            {
+                "PlaceId": "ChIJQSwgGUzGwoARhEKotmw64n8",
+                "Name": "The Redwood Bar \u0026 Grill",
+                "CatTag": "eatery",
+                "Address": "316 W 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.3,
+                "Location": [
+                    34.052744,
+                    -118.247409
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_STuCE7GwoAR3vCqfD2J9es",
+                "Name": "Grand Park",
+                "CatTag": "visit",
+                "Address": "200 N Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.055484,
+                    -118.245549
+                ]
+            },
+            {
+                "PlaceId": "ChIJJ0pgmUzGwoARrlTXznrzjUQ",
+                "Name": "Angel's Knoll",
+                "CatTag": "visit",
+                "Address": "356 S Olive St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.1,
+                "Location": [
+                    34.051044,
+                    -118.250538
+                ]
+            },
+            {
+                "PlaceId": "ChIJMdMuBkXGwoARDm_195lMnkM",
+                "Name": "Los Angeles Plaza Park",
+                "CatTag": "visit",
+                "Address": "125 Paseo De La Plaza, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.056558,
+                    -118.23877
+                ]
+            },
+            {
+                "PlaceId": "ChIJL45JRErGwoARsOKsBXK4ADU",
+                "Name": "Spring Street Park",
+                "CatTag": "visit",
+                "Address": "428 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.8,
+                "Location": [
+                    34.047971,
+                    -118.248584
+                ]
+            },
+            {
+                "PlaceId": "ChIJ97iLXEnGwoARjlCU-nNwduU",
+                "Name": "Spring Street Community Garden",
+                "CatTag": "visit",
+                "Address": "220 S Spring St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.7,
+                "Location": [
+                    34.050817,
+                    -118.246259
+                ]
+            },
+            {
+                "PlaceId": "ChIJs0e-ukXGwoARQuEM0STE9q0",
+                "Name": "Father Serra Park",
+                "CatTag": "visit",
+                "Address": "540 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3.5,
+                "Location": [
+                    34.055988,
+                    -118.238065
+                ]
+            },
+            {
+                "PlaceId": "ChIJcWx0d03GwoARAnWv9qN13ds",
+                "Name": "Blue Ribbon Garden",
+                "CatTag": "visit",
+                "Address": "Walt Disney Concert Hall, 111 S Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.055638,
+                    -118.250214
+                ]
+            },
+            {
+                "PlaceId": "ChIJw_p-3LLHwoARlSKm5-xKvOs",
+                "Name": "Bank of America Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.053094,
+                    -118.253772
+                ]
+            },
+            {
+                "PlaceId": "ChIJaR6E1kjGwoAR3CeGHpSRXJg",
+                "Name": "Pershing Square",
+                "CatTag": "visit",
+                "Address": "532 S Olive St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.1,
+                "Location": [
+                    34.048569,
+                    -118.252892
+                ]
+            },
+            {
+                "PlaceId": "ChIJmQn9XrPHwoARtA_ISR01few",
+                "Name": "John Fante Square",
+                "CatTag": "visit",
+                "Address": "\u0026, S Grand Ave \u0026 W 5th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.050197,
+                    -118.253907
+                ]
+            },
+            {
+                "PlaceId": "ChIJaR6E1kjGwoAR2IVp9o8tQ6g",
+                "Name": "HlGHRlDGE PARK",
+                "CatTag": "visit",
+                "Address": "198-100 S Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJq7J65kvHwoAR0UkpkHby8oo",
+                "Name": "Парк Холлидейл риджинал",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJ47YJ1EjGwoARhecN22-ISqY",
+                "Name": "Circle Park",
+                "CatTag": "visit",
+                "Address": "100 W 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.4,
+                "Location": [
+                    34.05282,
+                    -118.243582
+                ]
+            },
+            {
+                "PlaceId": "ChIJR3cdOknGwoARc3f0ebU_Zyk",
+                "Name": "LAPD Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4,
+                "Location": [
+                    34.051565,
+                    -118.244984
+                ]
+            },
+            {
+                "PlaceId": "ChIJL70M9kjGwoARped_In4CvOM",
+                "Name": "Kyoto Garden",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.7,
+                "Location": [
+                    34.050308,
+                    -118.24282
+                ]
+            },
+            {
+                "PlaceId": "ChIJc_xTWU_GwoARkdonzURemvk",
+                "Name": "Fletcher Bowron Square",
+                "CatTag": "visit",
+                "Address": "N Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.054113,
+                    -118.241308
+                ]
+            },
+            {
+                "PlaceId": "ChIJZ27zTk7GwoARbrNEsOsWvGg",
+                "Name": "Treasury Tax Collector 9th Floor",
+                "CatTag": "visit",
+                "Address": "Los Angeles County Hall of Records, 320 W Temple St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.055797,
+                    -118.244356
+                ]
+            },
+            {
+                "PlaceId": "ChIJ_Q-odkbGwoARRq7fYEXVii4",
+                "Name": "Roybal Federal Building Park",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.053429,
+                    -118.239137
+                ]
+            },
+            {
+                "PlaceId": "ChIJTWKgnN7HwoAR_nlysKY5v1c",
+                "Name": "Adventure City",
+                "CatTag": "visit",
+                "Address": "106 W 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJZZ-jjkjGwoARwrvv3CZzVD4",
+                "Name": "bluewhale",
+                "CatTag": "visit",
+                "Address": "123 Astronaut Ellison S Onizuka St #301, Los Angeles, CA 90012, USA",
+                "Price": 30,
+                "Rating": 4.6,
+                "Location": [
+                    34.049872,
+                    -118.24212
+                ]
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoAR57Az-9ItWFU",
+                "Name": "Spring Arts Tower",
+                "CatTag": "visit",
+                "Address": "453 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.6,
+                "Location": [
+                    34.047679,
+                    -118.249693
+                ]
+            },
+            {
+                "PlaceId": "ChIJi3EIGkjGwoARL9JTWbXiMa4",
+                "Name": "George J Doizaki Gallery",
+                "CatTag": "visit",
+                "Address": "244 San Pedro St # 505, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.04778,
+                    -118.241805
+                ]
+            },
+            {
+                "PlaceId": "ChIJVc5lWUrGwoARWxgZTln30Cw",
+                "Name": "The HG Studios",
+                "CatTag": "visit",
+                "Address": "453 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.047763,
+                    -118.249515
+                ]
+            },
+            {
+                "PlaceId": "ChIJgUQMIcvHwoAR8s2zfvJv0_A",
+                "Name": "ECF Downtown Art Center",
+                "CatTag": "visit",
+                "Address": "431 S Broadway, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 3.7,
+                "Location": [
+                    34.048951,
+                    -118.250428
+                ]
+            },
+            {
+                "PlaceId": "ChIJOewKNkrGwoARTsiD0VDxXJo",
+                "Name": "The Continental Gallery",
+                "CatTag": "visit",
+                "Address": "408 S Spring St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.048627,
+                    -118.248341
+                ]
+            },
+            {
+                "PlaceId": "ChIJvc7CvszHwoARDUjUAQqOddk",
+                "Name": "Think Tank Gallery",
+                "CatTag": "visit",
+                "Address": "516 E 4th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.044407,
+                    -118.241218
+                ]
+            },
+            {
+                "PlaceId": "ChIJv7Qa0EvGwoARpFMiFEOli1g",
+                "Name": "Clark's Gallery",
+                "CatTag": "visit",
+                "Address": "257 S Spring St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.050775,
+                    -118.247226
+                ]
+            },
+            {
+                "PlaceId": "ChIJAQAAMDXGwoARudNec0Vw9Lg",
+                "Name": "Gallery Mujo",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90014, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.04882,
+                    -118.244873
+                ]
+            },
+            {
+                "PlaceId": "ChIJBSXTbzu_woARXik569iwi0o",
+                "Name": "Tinta Rebelde Tattoo",
+                "CatTag": "visit",
+                "Address": "133 E 3rd St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.048905,
+                    -118.244982
+                ]
+            },
+            {
+                "PlaceId": "ChIJwy_eyUnGwoARlIffo_Sg6fo",
+                "Name": "Little Tokyo Art Complex",
+                "CatTag": "visit",
+                "Address": "262 S Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.3,
+                "Location": [
+                    34.048558,
+                    -118.24435
+                ]
+            },
+            {
+                "PlaceId": "ChIJ0UhxNkrGwoARBk06x2p_xlI",
+                "Name": "Robert Reynolds Art Studio",
+                "CatTag": "visit",
+                "Address": "408 S Spring St #100, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.048611,
+                    -118.248357
+                ]
+            },
+            {
+                "PlaceId": "ChIJRUirT0rGwoARBp335HjhwFE",
+                "Name": "Dove Biscuit Studio",
+                "CatTag": "visit",
+                "Address": "435 S Spring St M4, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.048193,
+                    -118.249236
+                ]
+            },
+            {
+                "PlaceId": "ChIJScIhbkrGwoARPvCVwpQ16PQ",
+                "Name": "El Nopal Press Fine Art Publ",
+                "CatTag": "visit",
+                "Address": "109 W 5th St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 5,
+                "Location": [
+                    34.047049,
+                    -118.248763
+                ]
+            },
+            {
+                "PlaceId": "ChIJi3EIGkjGwoARL9JTWbXiMa4",
+                "Name": "George J Doizaki Gallery",
+                "CatTag": "visit",
+                "Address": "244 San Pedro St # 505, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 3,
+                "Location": [
+                    34.04778,
+                    -118.241805
+                ]
+            },
+            {
+                "PlaceId": "ChIJNyYB20zGwoARP2aad76Dj8s",
+                "Name": "Wells Fargo Museum",
+                "CatTag": "visit",
+                "Address": "333 S Grand Ave, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 4.2,
+                "Location": [
+                    34.052846,
+                    -118.251916
+                ]
+            },
+            {
+                "PlaceId": "ChIJPzcNDzjGwoARcmz0XPECjHg",
+                "Name": "Brunswig Square",
+                "CatTag": "visit",
+                "Address": "360 E 2nd St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.5,
+                "Location": [
+                    34.047891,
+                    -118.240142
+                ]
+            },
+            {
+                "PlaceId": "ChIJY5ZK_UzGwoARMPtCpae6vAI",
+                "Name": "The Museum of Contemporary Art",
+                "CatTag": "visit",
+                "Address": "250 S Grand Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.4,
+                "Location": [
+                    34.05335,
+                    -118.250722
+                ]
+            },
+            {
+                "PlaceId": "ChIJfbYXz7LHwoARzo_xXVlj1yk",
+                "Name": "Bank of America Heritage Center",
+                "CatTag": "visit",
+                "Address": "333 S Hope St, Los Angeles, CA 90071, USA",
+                "Price": 0,
+                "Rating": 2.8,
+                "Location": [
+                    34.053627,
+                    -118.253266
+                ]
+            },
+            {
+                "PlaceId": "ChIJjcqwAZnHwoARDBrktyqCBgo",
+                "Name": "Museum Seni Modern",
+                "CatTag": "visit",
+                "Address": "198-100 S Main St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.052234,
+                    -118.243685
+                ]
+            },
+            {
+                "PlaceId": "ChIJ6TJe4EXGwoAReujtsCuYfJo",
+                "Name": "移民局",
+                "CatTag": "visit",
+                "Address": "300 N Los Angeles St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.053746,
+                    -118.2396
+                ]
+            },
+            {
+                "PlaceId": "ChIJ36mc6UfGwoARVS7DSbWqJ68",
+                "Name": "ミヤコホテル横",
+                "CatTag": "visit",
+                "Address": "350 E 1st St, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.049534,
+                    -118.239918
+                ]
+            },
+            {
+                "PlaceId": "ChIJSW6w4TfGwoARZluKgMJ3hXc",
+                "Name": "Enrtrance to Loading Zone of Aratani Theater",
+                "CatTag": "visit",
+                "Address": "Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.047711,
+                    -118.242204
+                ]
+            },
+            {
+                "PlaceId": "ChIJq6ralkfGwoARWbVvABTAGeo",
+                "Name": "National Center for the Preservation of Democracy",
+                "CatTag": "visit",
+                "Address": "100-198 N Central Ave, Los Angeles, CA 90012, USA",
+                "Price": 0,
+                "Rating": 4.8,
+                "Location": [
+                    34.049467,
+                    -118.2385
+                ]
+            },
+            {
+                "PlaceId": "ChIJm-DWFLXHwoARym5qEHCrWOM",
+                "Name": "AUDREY HEPBURN - 愛心 奧黛麗赫本塗鴉",
+                "CatTag": "visit",
+                "Address": "114-198 Winston St, Los Angeles, CA 90013, USA",
+                "Price": 0,
+                "Rating": 0,
+                "Location": [
+                    34.046724,
+                    -118.24721
+                ]
+            }
+        ],
+        "Slot": {
+            "Slot": {
+                "Start": 17,
+                "End": 22
+            }
+        }
+    }
+]
