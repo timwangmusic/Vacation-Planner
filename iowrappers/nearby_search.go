@@ -25,7 +25,7 @@ const(
 )
 
 const(
-	GOOGLE_NEARBY_SEARCH_DELAY = time.Duration(2 * time.Second)
+	GOOGLE_NEARBY_SEARCH_DELAY = time.Duration(time.Second)
 )
 
 var detailedSearchFields = flag.String("fields", "name,opening_hours,formatted_address,adr_address", "a list of comma-separated fields")
@@ -63,7 +63,7 @@ func GoogleNearbySearchSDK(c MapsClient, location string, placeType string, radi
 }
 
 func (c *MapsClient) NearbySearch(request *PlaceSearchRequest)(places []POI.Place){
-	var maxReqTimes uint = 5
+	var maxReqTimes uint = 1
 	return c.ExtensiveNearbySearch(maxReqTimes, request)
 }
 
@@ -97,18 +97,18 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			searchResp := GoogleNearbySearchSDK(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
 			for k, res := range searchResp.Results{
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil{
-					detailedSearchRes, _ := c.PlaceDetailedSearch(res.PlaceID)
-					searchResp.Results[k].OpeningHours = detailedSearchRes.OpeningHours
-					searchResp.Results[k].FormattedAddress = detailedSearchRes.FormattedAddress
-					microAddrMap[searchResp.Results[k].ID] = detailedSearchRes.AdrAddress	// assume ID is always available
+					go c.DetailedSearchWrapper(res.PlaceID, &searchResp, &microAddrMap, k)
 				}
 			}
+			<-time.After(500*time.Millisecond)
 			places = append(places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap)...)
 			totalResult += uint(len(searchResp.Results))
+			fmt.Println(totalResult)
+			break
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
 		}
 		reqTimes++
-		time.Sleep(GOOGLE_NEARBY_SEARCH_DELAY)	// sleep to make sure new next page token comes to effect
+		//time.Sleep(GOOGLE_NEARBY_SEARCH_DELAY)	// sleep to make sure new next page token comes to effect
 	}
 
 	searchDuration := time.Since(searchStartTime)
@@ -122,6 +122,16 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 	}).Info("Logging nearby search")
 
 	return
+}
+
+func (c *MapsClient) DetailedSearchWrapper(placeId string, res *maps.PlacesSearchResponse, microAddrMap *map[string]string, k int){
+	searchRes, err := c.PlaceDetailedSearch(placeId)
+	if err != nil{
+		log.Error(err)
+	}
+	res.Results[k].OpeningHours = searchRes.OpeningHours
+	res.Results[k].FormattedAddress = searchRes.FormattedAddress
+	(*microAddrMap)[res.Results[k].ID] = searchRes.AdrAddress
 }
 
 func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResult, error){
