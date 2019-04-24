@@ -63,7 +63,7 @@ func GoogleNearbySearchSDK(c MapsClient, location string, placeType string, radi
 }
 
 func (c *MapsClient) NearbySearch(request *PlaceSearchRequest)(places []POI.Place){
-	var maxReqTimes uint = 1
+	var maxReqTimes uint = 5
 	return c.ExtensiveNearbySearch(maxReqTimes, request)
 }
 
@@ -88,7 +88,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 
 	searchStartTime := time.Now()
 
-	for totalResult <= request.MaxNumResults && reqTimes < maxRequestTimes{
+	for totalResult < request.MaxNumResults{
 		for _, placeType := range placeTypes{
 			if reqTimes > 0 && nextPageTokenMap[placeType] == ""{	// no more result for this location type
 				continue
@@ -103,19 +103,20 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			<-time.After(500*time.Millisecond)
 			places = append(places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap)...)
 			totalResult += uint(len(searchResp.Results))
-			fmt.Println(totalResult)
-			break
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
 		}
 		reqTimes++
-		//time.Sleep(GOOGLE_NEARBY_SEARCH_DELAY)	// sleep to make sure new next page token comes to effect
+		if reqTimes == maxRequestTimes{
+			break
+		}
+		time.Sleep(GOOGLE_NEARBY_SEARCH_DELAY)	// sleep to make sure new next page token comes to effect
 	}
 
 	searchDuration := time.Since(searchStartTime)
 
 	// logging
 	c.logger.WithFields(log.Fields{
-		"center location (lat/lng)": request.Location,
+		"center location (lat,lng)": request.Location,
 		"place category": request.PlaceCat,
 		"total results": totalResult,
 		"Maps API call time": searchDuration,
