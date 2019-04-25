@@ -2,6 +2,7 @@ package solution
 
 import (
 	"Vacation-planner/matching"
+	"Vacation-planner/planner"
 	"fmt"
 	"strings"
 	"time"
@@ -30,11 +31,7 @@ type TripEvent struct{
 * implemented to iterate candidate solutions over the places
 * according to valid tags
  */
-type MDtagIter struct {
-	tag string
-	status []int
-	size []int
-}
+
 
 type SlotSolution struct{
 	slotag string
@@ -46,58 +43,7 @@ type SlotSoluCandidate struct{
 	Score float64
 	IsSet bool
 }
-func (this *MDtagIter) Init(tag string, sizeE int, sizeV int) bool {
-	if tag == "" {
-	return false
-	}
-	this.tag = tag
-	this.status = make([]int, len(tag))
-	this.size = make([]int, len(tag))
-	for pos, char := range tag {
-		this.status[pos] = 0
-		if char =='E' || char == 'e' {
-		this.size[pos] =  sizeE
-		} else if char =='V' || char == 'v'{
-			this.size[pos] = sizeV
-		}
-		if this.size[pos] == 0 {
-		return false
-		}
-	}
-	return true
-}
-func (iterator *MDtagIter) HasNext() bool {
-	for i, _ := range iterator.tag {
-		if iterator.status[i] < iterator.size[i] - 1 {
-			return true
-		}
-	}
-	return false
-}
 
-func (this *MDtagIter) Next() bool{
-	l := len(this.tag)
-	return this.plusone(l-1)
-}
-func (this *MDtagIter) plusone(l int) bool {
-	if l < 0 {
-		//log fault
-		return false
-	}
-	if this.status[l] + 1 == this.size[l] {
-		this.status[l] = 0
-		return this.plusone(l-1)
-	} else {
-		this.status[l] += 1
-		return true
-	}
-}
-
-func (this *MDtagIter) Reset()  {
-	for i := range this.tag {
-	this.status[i] = 0
-	}
-}
 
 func (this *SlotSolution) SetTag(tag string) {
 	this.slotag = tag
@@ -157,10 +103,10 @@ func (this *SlotSolution) IsTagValid( slotCandidate SlotSoluCandidate) bool {
 	}
 	return true
 }
-func (this *SlotSolution) CreateCandidate( iter MDtagIter, ecluster matching.PlaceCluster, vcluster matching.PlaceCluster) SlotSoluCandidate {
+func (this *SlotSolution) CreateCandidate( iter planner.MDtagIter, ecluster []matching.Place, vcluster []matching.Place) SlotSoluCandidate {
 	res := SlotSoluCandidate{}
 	res.IsSet = false
-	if len(iter.status) != len(this.slotag) {
+	if len(iter.Status) != len(this.slotag) {
 		//incorrect return
 		// return res
 		}
@@ -168,23 +114,23 @@ func (this *SlotSolution) CreateCandidate( iter MDtagIter, ecluster matching.Pla
 	record := make(map[string]bool)
 	//check form
 	//ASSUME E&V POIs have different placeID
-	places := make([]matching.Place, len(iter.status))
-	for i, num := range iter.status {
+	places := make([]matching.Place, len(iter.Status))
+	for i, num := range iter.Status {
 		if this.slotag[i] == 'E' || this.slotag[i] == 'e' {
-			_, ok := record[ecluster.Places[num].PlaceId]
+			_, ok := record[ecluster[num].PlaceId]
 			if ok == true {
 				return res
 			} else {
-				record[ecluster.Places[num].PlaceId] = true
-				places[i] = ecluster.Places[num]
+				record[ecluster[num].PlaceId] = true
+				places[i] = ecluster[num]
 			}
 		} else if this.slotag[i] == 'V' || this.slotag[i] == 'v' {
-			_, ok := record[vcluster.Places[num].PlaceId]
+			_, ok := record[vcluster[num].PlaceId]
 			if ok == true {
 				return res
 			} else {
-				record[vcluster.Places[num].PlaceId] = true
-				places[i] = vcluster.Places[num]
+				record[vcluster[num].PlaceId] = true
+				places[i] = vcluster[num]
 			}
 		} else {
 			return res
@@ -194,7 +140,7 @@ func (this *SlotSolution) CreateCandidate( iter MDtagIter, ecluster matching.Pla
 	//res.Score = getScore(res.Candidate)
 	res.Score = matching.Score(places)
 	res.IsSet = true
-	fmt.Println(iter.status)
+	fmt.Println(iter.Status)
 	fmt.Println(res.Score)
 	return res
 }
