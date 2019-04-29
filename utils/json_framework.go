@@ -3,9 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"src/github.com/sirupsen/logrus"
 )
 
 /*
@@ -16,7 +16,7 @@ Objects.
 
 func ReadFromFile(fname string, ptr interface{}) error{
 	if fname == "" {
-		/*TODO: Need directory management fucntions*/
+		/*TODO: Need directory management functions*/
 		fname = "create_visit_location_test_001.json"
 	}
 	jsonFile, err := os.Open(fname)
