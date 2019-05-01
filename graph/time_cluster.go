@@ -11,6 +11,10 @@ import (
 	"Vacation-planner/iowrappers"
 )
 
+type ClusterManager interface{
+	PlaceSearch(string, uint, string) // location, search radius and search type
+}
+
 // TimeCluster consists of a set of Places and a time interval
 type TimeCluster struct {
 	Places       []POI.Place
@@ -34,7 +38,7 @@ func (cls *TimeClusters) Size() int{
 }
 
 //TimeClustersManager
-//To use a TimeClustersManager, fetch Places data using GetPlaces and then time clustering with TimeClustering method.
+//To use a TimeClustersManager, fetch Places data using PlaceSearch and then time clustering with Clustering method.
 type TimeClustersManager struct{
 	Client        *iowrappers.MapsClient
 	TimeClusters  *TimeClusters
@@ -60,7 +64,7 @@ func (placeManager *TimeClustersManager) Init(client *iowrappers.MapsClient, pla
 }
 
 // call Google API to obtain nearby Places and extract location data
-func (placeManager *TimeClustersManager) GetPlaces(location string, searchRadius uint, searchType string){
+func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint, searchType string){
 	request := iowrappers.PlaceSearchRequest{
 		Location: location,
 		PlaceCat: placeManager.PlaceCat,
@@ -76,7 +80,7 @@ func (placeManager *TimeClustersManager) GetPlaces(location string, searchRadius
 }
 
 // assign Places to time Clusters using their time interval info
-func (placeManager *TimeClustersManager) TimeClustering(day POI.Weekday) {
+func (placeManager *TimeClustersManager) Clustering(day POI.Weekday) {
 	for _, place := range placeManager.places{
 		placeManager.assign(&place, day)
 	}

@@ -23,7 +23,7 @@ func TestFindClusterCenter (t *testing.T){
 
 	placeClusters := graph.PlaceClusters{}
 	mgr.PlaceClusters = &placeClusters
-	mgr.PlaceClusters.Clusters = make([]graph.Cluster, 3)
+	mgr.PlaceClusters.Clusters = make([]graph.BasicCluster, 3)
 
 	centers := mgr.FindClusterCenter(&geolocations, &clusterResult, &clusterSizes)
 	fmt.Println(centers)
