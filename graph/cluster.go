@@ -7,17 +7,17 @@ import (
 	"github.com/mpraski/clusters"
 )
 
-type Cluster struct{
+type BasicCluster struct{
 	Places []POI.Place
 }
 
-// Size of Cluster returns number of Places in a cluster
-func (cluster *Cluster) Size() int{
+// Size of BasicCluster returns number of Places in a cluster
+func (cluster *BasicCluster) Size() int{
 	return len(cluster.Places)
 }
 
 type PlaceClusters struct{
-	Clusters []Cluster
+	Clusters []BasicCluster
 }
 
 // Size of PlaceClusters returns number of Clusters in a zone
@@ -30,11 +30,20 @@ type ClustersManager struct{
 	PlaceClusters *PlaceClusters
 	places        []POI.Place
 	PlaceCat      POI.PlaceCategory
-	ClusterCenters *[][]float64
+	ClusterCenters *[][]float64		// TODO: cluster centers should be within cluster as an attribute
+}
+
+func (placeManager *ClustersManager) Init(mapsClient *iowrappers.MapsClient, placeCat POI.PlaceCategory, numClusters uint){
+	placeManager.Client = mapsClient
+	placeManager.PlaceClusters = &PlaceClusters{}
+	placeManager.PlaceClusters.Clusters = make([]BasicCluster, numClusters)
+	placeManager.PlaceCat = placeCat
+	clusterCenters := make([][]float64, numClusters)
+	placeManager.ClusterCenters = &clusterCenters
 }
 
 // call Google API to obtain nearby Places and extract location data
-func (placeManager *ClustersManager) GetGeoLocationData(location string, searchRadius uint, searchType string) [][]float64 {
+func (placeManager *ClustersManager) PlaceSearch(location string, searchRadius uint, searchType string) [][]float64 {
 	request := iowrappers.PlaceSearchRequest{
 		Location: location,
 		PlaceCat: placeManager.PlaceCat,
@@ -66,10 +75,6 @@ func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, nu
 	// training
 	err = hardCluster.Learn(*geoLocationData)
 	utils.CheckErr(err)
-
-	placeClusters := PlaceClusters{}
-	placeManager.PlaceClusters = &placeClusters
-	placeManager.PlaceClusters.Clusters = make([]Cluster, numClusters)
 
 	// save membership info
 	for locationIdx, clusterIdx := range hardCluster.Guesses(){

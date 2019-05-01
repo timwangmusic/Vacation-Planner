@@ -101,8 +101,8 @@ func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.P
 
 	// this is how to use TimeClustersManager
 	mgr.Init(mapsClient, placeCat, intervals, req.Weekday)
-	mgr.GetPlaces(req.Location, req.Radius, "")
-	mgr.TimeClustering(req.Weekday)
+	mgr.PlaceSearch(req.Location, req.Radius, "")
+	mgr.Clustering(req.Weekday)
 
 	return
 }
