@@ -1,9 +1,13 @@
 /*
-	Minimum priority queue with Key as non-negative integer and value as Vertex.
+	Minimum priority queue with non-negative integer as Key and graph.Vertex as Value.
 	Interfaces:
 		Insert(Vertex) void
 
 		ExtractTop() Vertex
+
+		Size() int
+
+		GetRoot() Vertex
 */
 
 package graph
@@ -17,7 +21,6 @@ type PriorityQueue interface {
 	GetRoot() Vertex
 }
 
-
 // MinPriorityQueue defines struct for min-priorityQueue
 type MinPriorityQueue struct {
 	Nodes []Vertex
@@ -25,6 +28,9 @@ type MinPriorityQueue struct {
 }
 
 func (h* MinPriorityQueue) GetRoot() Vertex{
+	if h.size == 0{
+		return Vertex{}
+	}
 	return h.Nodes[0]
 }
 
@@ -60,13 +66,23 @@ func (h *MinPriorityQueue) ExtractTop() string {
 	return res
 }
 
-func (h *MinPriorityQueue) findChildrenIndex(idx int) int {
+func (h *MinPriorityQueue) findIndexLargestChild(idx int) int {
 	leftIdx := idx*2 + 1
 	rightIdx := idx*2 + 2
-	if leftIdx < h.size && h.Nodes[leftIdx].Key < h.Nodes[idx].Key {
-		return leftIdx
+	if leftIdx >= h.size || h.Nodes[leftIdx].Key > h.Nodes[idx].Key {
+		leftIdx = -1
 	}
-	if rightIdx < h.size && h.Nodes[rightIdx].Key < h.Nodes[idx].Key {
+	if rightIdx >= h.size || h.Nodes[rightIdx].Key > h.Nodes[idx].Key {
+		rightIdx = -1
+	}
+	if leftIdx >= 0 && rightIdx >= 0{
+		if h.Nodes[leftIdx].Key < h.Nodes[rightIdx].Key{
+			return leftIdx
+		}
+		return rightIdx
+	} else if leftIdx >= 0{
+		return leftIdx
+	} else if rightIdx >= 0{
 		return rightIdx
 	}
 	return -1
@@ -74,7 +90,7 @@ func (h *MinPriorityQueue) findChildrenIndex(idx int) int {
 
 // percolate down performs heapify operation recursively for each sub-tree
 func (h *MinPriorityQueue) percolateDown(idx int) {
-	childIdx := h.findChildrenIndex(idx)
+	childIdx := h.findIndexLargestChild(idx)
 	if childIdx == -1 {
 		// leaf Node or no need to swap
 		return
@@ -104,7 +120,7 @@ func findParent(idx int) int {
 	if idx == 0 {
 		return -1
 	}
-	return idx / 2
+	return (idx - 1) / 2
 }
 
 // swap Nodes at index x and y

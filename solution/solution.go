@@ -39,7 +39,7 @@ func FindBestCandidates(candidates []SolutionCandidate)[]SolutionCandidate{
 	// use limited-size minimum priority queue
 	priorityQueue := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0)}
 	for _, vertex := range vertexes{
-		if priorityQueue.Size() == CANDIDATE_QUEUE_LENGTH{
+		if priorityQueue.Size() == CANDIDATE_QUEUE_DISPLAY{
 			top := priorityQueue.GetRoot()
 			if vertex.Key > top.Key{
 				priorityQueue.ExtractTop()
