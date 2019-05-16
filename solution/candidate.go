@@ -3,7 +3,6 @@ package solution
 import (
 	"Vacation-planner/matching"
 	"Vacation-planner/planner"
-	"fmt"
 	"strings"
 	"time"
 )
@@ -78,7 +77,7 @@ func (this *SlotSolution) IsSlotagValid() bool {
 /*
 * This function matches the slot tag and those of its solutions
 */
-func (this *SlotSolution) IsTagValid( slotCandidate SlotSolutionCandidate) bool {
+func (this *SlotSolution) IsCandidateTagValid( slotCandidate SlotSolutionCandidate) bool {
 	if len(this.slotag) == 0 || len(this.Solution) == 0 {
 		return false
 	}
@@ -141,36 +140,7 @@ func (this *SlotSolution) CreateCandidate( iter planner.MDtagIter, cplaces plann
 	//res.Score = getScore(res.Candidate)
 	res.Score = matching.Score(places)
 	res.IsSet = true
-	fmt.Println(iter.Status)
-	fmt.Println(res.Score)
+	//fmt.Println(iter.Status)
+	//fmt.Println(res.Score)
 	return res
-}
-
-func (this *SlotSolution) EnqueueCandidate(candidate SlotSolutionCandidate) bool {
-	updated := false
-	pivot := len(this.Solution)-1
-	if len(this.Solution) < CANDIDATE_QUEUE_LENGTH {
-		this.Solution = append(this.Solution, candidate)
-		updated = true
-	} else {
-		if this.Solution[pivot].Score < candidate.Score {
-			this.Solution[pivot] = candidate
-			updated = true
-		}
-	}
-	if updated == false {
-		return false
-	} else {
-		for pivot >= 1 {
-			if this.Solution[pivot].Score < this.Solution[pivot -1].Score {
-				return true
-			} else {
-				tempcand := this.Solution[pivot]
-				this.Solution[pivot] = this.Solution[pivot -1]
-				this.Solution[pivot -1] = tempcand
-				pivot--
-			}
-		}
-	return true
-	}
 }
