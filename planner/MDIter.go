@@ -6,7 +6,9 @@ type MDtagIter struct {
 	Size   []int
 }
 
-func (this *MDtagIter) Init(tag string, sizeE int, sizeV int) bool {
+func (this *MDtagIter) Init(tag string, cplaces CategorizedPlaces) bool {
+	sizeE := len(cplaces.EateryPlaces)
+	sizeV := len(cplaces.VisitPlaces)
 	if tag == "" {
 		return false
 	}

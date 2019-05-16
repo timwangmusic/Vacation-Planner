@@ -15,9 +15,7 @@ const(
 )
 const EATARY_LIMIT_PER_SLOT = 1
 const VISIT_LIMIT_PER_SLOT = 3
-const CANDIDATE_QUEUE_LENGTH = 20
-const CANDIDATE_QUEUE_DISPLAY = 5
-type TripEvent struct{
+type TripEvents struct{
 	tag uint8
 	starttime time.Time
 	endtime time.Time
@@ -35,10 +33,10 @@ type TripEvent struct{
 
 type SlotSolution struct{
 	slotag string
-	Solution []SlotSoluCandidate
+	Solution []SlotSolutionCandidate
 }
-type SlotSoluCandidate struct{
-	Candidate []TripEvent
+type SlotSolutionCandidate struct{
+	Candidate []TripEvents
 	EndPlaceDefault matching.Place
 	Score float64
 	IsSet bool
@@ -75,12 +73,12 @@ func (this *SlotSolution) IsSlotagValid() bool {
 			}
 		}
 		return true
-		}
 	}
+}
 /*
 * This function matches the slot tag and those of its solutions
 */
-func (this *SlotSolution) IsTagValid( slotCandidate SlotSoluCandidate) bool {
+func (this *SlotSolution) IsTagValid( slotCandidate SlotSolutionCandidate) bool {
 	if len(this.slotag) == 0 || len(this.Solution) == 0 {
 		return false
 	}
@@ -103,17 +101,20 @@ func (this *SlotSolution) IsTagValid( slotCandidate SlotSoluCandidate) bool {
 	}
 	return true
 }
-func (this *SlotSolution) CreateCandidate( iter planner.MDtagIter, ecluster []matching.Place, vcluster []matching.Place) SlotSoluCandidate {
-	res := SlotSoluCandidate{}
+func (this *SlotSolution) CreateCandidate( iter planner.MDtagIter, cplaces planner.CategorizedPlaces) SlotSolutionCandidate {
+	res := SlotSolutionCandidate{}
 	res.IsSet = false
 	if len(iter.Status) != len(this.slotag) {
 		//incorrect return
 		// return res
-		}
+		return res
+	}
 	//create a hashtable and iterate through place clusters
 	record := make(map[string]bool)
 	//check form
 	//ASSUME E&V POIs have different placeID
+	ecluster := cplaces.EateryPlaces
+	vcluster := cplaces.VisitPlaces
 	places := make([]matching.Place, len(iter.Status))
 	for i, num := range iter.Status {
 		if this.slotag[i] == 'E' || this.slotag[i] == 'e' {
@@ -145,7 +146,7 @@ func (this *SlotSolution) CreateCandidate( iter planner.MDtagIter, ecluster []ma
 	return res
 }
 
-func (this *SlotSolution) EnqueueCandidate(candidate SlotSoluCandidate) bool {
+func (this *SlotSolution) EnqueueCandidate(candidate SlotSolutionCandidate) bool {
 	updated := false
 	pivot := len(this.Solution)-1
 	if len(this.Solution) < CANDIDATE_QUEUE_LENGTH {
