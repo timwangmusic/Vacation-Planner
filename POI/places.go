@@ -18,15 +18,20 @@ const(
 )
 
 type Place struct {
-	ID               string     `bson:"placeId"`
-	Name             string     `bson:"name"`
-	LocationType     string     `bson:"location_type"`
-	Address          Address    `bson:"address"`
-	FormattedAddress string     `bson:"formatted_address"`
-	Geolocation      [2]float64 `bson:"geolocation"` // geolocation coordinates
-	PriceLevel       int		`bson:"price_level"`
-	Rating           float32	`bson:"rating"`
-	Hours            [7]string  `bson:"hours"`
+	ID               string    `bson:"placeId"`
+	Name             string    `bson:"name"`
+	LocationType     string    `bson:"location_type"`
+	Address          Address   `bson:"address"`
+	FormattedAddress string    `bson:"formatted_address"`
+	Location         Location  `bson:"location"`
+	PriceLevel       int       `bson:"price_level"`
+	Rating           float32   `bson:"rating"`
+	Hours            [7]string `bson:"hours"`
+}
+
+type Location struct {
+	Type string	`json:"type"`
+	Coordinates [2]float64 `json:"coordinates"`
 }
 
 type Address struct{
@@ -69,7 +74,7 @@ func (v *Place) GetFormattedAddress() string{
 }
 
 func (v *Place) GetLocation() [2]float64{
-	return v.Geolocation
+	return v.Location.Coordinates
 }
 
 func (v *Place) GetPriceLevel() int{
@@ -152,7 +157,7 @@ func (v *Place) SetAddress(addr string){
 }
 
 func (v *Place) SetLocation(location [2]float64){
-	v.Geolocation = location
+	v.Location.Coordinates = location
 }
 
 func (v *Place) SetPriceLevel(priceRange int){
