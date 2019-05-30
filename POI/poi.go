@@ -10,9 +10,9 @@ package POI
 type PlaceCategory string
 
 const (
-	PlaceCategoryVisit = PlaceCategory("visit")
-	PlaceCategoryStay = PlaceCategory("stay")
-	PlaceCategoryEatery = PlaceCategory("eatery")
+	PlaceCategoryVisit = PlaceCategory("Visit")
+	PlaceCategoryStay = PlaceCategory("Stay")
+	PlaceCategoryEatery = PlaceCategory("Eatery")
 )
 
 type POI interface {
