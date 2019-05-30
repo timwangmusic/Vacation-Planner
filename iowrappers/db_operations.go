@@ -61,7 +61,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) ([]POI.Place, e
 	}
 	collHandler := dbHandler.handlers[collName]
 	radius := req.Radius
-	coordinates := strings.Split(req.Location, "_")
+	coordinates := strings.Split(req.Location, ",")
 	lat, _ := strconv.ParseFloat(coordinates[0], 64)
 	lng, _ := strconv.ParseFloat(coordinates[1], 64)
 	return collHandler.Search(radius, []float64{lat, lng}), nil
