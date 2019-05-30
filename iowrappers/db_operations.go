@@ -67,6 +67,16 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) ([]POI.Place, e
 	return collHandler.Search(radius, []float64{lat, lng}), nil
 }
 
+func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCategory) error{
+	collName := string(placeCat)
+	if _, exist := dbHandler.handlers[collName]; !exist{
+		return fmt.Errorf("Collection %s does not exist", collName)
+	}
+	collHandler := dbHandler.handlers[collName]
+	collHandler.InsertPlace(place)
+	return nil
+}
+
 func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, collectionName string) {
 	collHandler.session = dbHandler.Session
 	collHandler.dbName = databaseName
@@ -78,7 +88,13 @@ func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection){
 	return
 }
 
+func (collHandler *CollHandler) InsertPlace(place POI.Place){
+	err := collHandler.GetCollection().Insert(place)
+	utils.CheckErr(err)
+}
+
 // MongoDB geo-spatial search
+// Need to create 2d sphere index before use, e.g. db.Eatery.createIndex({ location: "2dsphere" })
 func (collHandler *CollHandler) Search(radius uint, coordinates []float64) (places []POI.Place) {
 	lat := coordinates[0]
 	lng := coordinates[1]
