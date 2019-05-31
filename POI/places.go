@@ -158,6 +158,7 @@ func (v *Place) SetAddress(addr string){
 
 func (v *Place) SetLocation(location [2]float64){
 	v.Location.Coordinates = location
+	v.Location.Type = "Point"
 }
 
 func (v *Place) SetPriceLevel(priceRange int){
