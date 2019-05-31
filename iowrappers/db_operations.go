@@ -47,9 +47,11 @@ func (dbHandler *DbHandler) CreateSession(uri string) {
 }
 
 func (dbHandler *DbHandler) SetCollHandler(collectionName string){
-	collHandler := &CollHandler{}
-	dbHandler.handlers[collectionName] = collHandler
-	collHandler.Init(dbHandler, dbHandler.dbName, collectionName)
+	if _, exist := dbHandler.handlers[collectionName]; !exist{
+		collHandler := &CollHandler{}
+		dbHandler.handlers[collectionName] = collHandler
+		collHandler.Init(dbHandler, dbHandler.dbName, collectionName)
+	}
 }
 
 // This design make sure that explicit call to SetCollHandler have to be made for new collection creation.
