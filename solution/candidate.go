@@ -7,55 +7,56 @@ import (
 	"time"
 )
 
-const(
-	EVENT_EATERY = iota + 10// avoid default 0s
+const (
+	EVENT_EATERY = iota + 10 // avoid default 0s
 	EVENT_VISIT
 	EVENT_TRAVEL
 )
 const EATARY_LIMIT_PER_SLOT = 1
 const VISIT_LIMIT_PER_SLOT = 3
-type TripEvents struct{
-	tag uint8
-	starttime time.Time
-	endtime time.Time
+
+type TripEvents struct {
+	tag        uint8
+	starttime  time.Time
+	endtime    time.Time
 	startplace matching.Place
-	endplace matching.Place
-//For T events, start place and end place are different
-//For E events, start place and end place are same
+	endplace   matching.Place
+	//For T events, start place and end place are different
+	//For E events, start place and end place are same
 }
+
 /*
 * Multi-Dimentional Tag iterator
 * implemented to iterate candidate solutions over the places
 * according to valid tags
  */
 
-
-type SlotSolution struct{
-	slotag string
+type SlotSolution struct {
+	slotag   string
 	Solution []SlotSolutionCandidate
 }
-type SlotSolutionCandidate struct{
-	Candidate []TripEvents
+type SlotSolutionCandidate struct {
+	Candidate       []TripEvents
 	EndPlaceDefault matching.Place
-	Score float64
-	IsSet bool
+	Score           float64
+	IsSet           bool
 }
-
 
 func (this *SlotSolution) SetTag(tag string) {
 	this.slotag = tag
 }
+
 /*
 *This function checks if the slots in the solution fits the
 *solution requirement
-*/
+ */
 func (this *SlotSolution) IsSlotagValid() bool {
 	if this.slotag == "" {
 		return false
 	} else {
 		var eatcount uint8 = 0
 		var vstcount uint8 = 0
-		for _, c := range(this.slotag){
+		for _, c := range this.slotag {
 			if c == 'e' || c == 'E' {
 				eatcount++
 			} else if c == 'v' || c == 'V' {
@@ -74,10 +75,11 @@ func (this *SlotSolution) IsSlotagValid() bool {
 		return true
 	}
 }
+
 /*
 * This function matches the slot tag and those of its solutions
-*/
-func (this *SlotSolution) IsCandidateTagValid( slotCandidate SlotSolutionCandidate) bool {
+ */
+func (this *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolutionCandidate) bool {
 	if len(this.slotag) == 0 || len(this.Solution) == 0 {
 		return false
 	}
@@ -86,11 +88,11 @@ func (this *SlotSolution) IsCandidateTagValid( slotCandidate SlotSolutionCandida
 	for _, cand := range slotCandidate.Candidate {
 		if cand.tag == EVENT_EATERY {
 			solutag += "E"
-			count ++
-			} else if cand.tag == EVENT_VISIT {
-				solutag += "V"
-				count ++
-				}
+			count++
+		} else if cand.tag == EVENT_VISIT {
+			solutag += "V"
+			count++
+		}
 	}
 	if count != len(this.slotag) {
 		return false
@@ -100,7 +102,7 @@ func (this *SlotSolution) IsCandidateTagValid( slotCandidate SlotSolutionCandida
 	}
 	return true
 }
-func (this *SlotSolution) CreateCandidate( iter planner.MDtagIter, cplaces planner.CategorizedPlaces) SlotSolutionCandidate {
+func (this *SlotSolution) CreateCandidate(iter planner.MDtagIter, cplaces planner.CategorizedPlaces) SlotSolutionCandidate {
 	res := SlotSolutionCandidate{}
 	res.IsSet = false
 	if len(iter.Status) != len(this.slotag) {

@@ -26,10 +26,10 @@ type SolutionCandidate struct {
 }
 
 // Find top solution candidates
-func FindBestCandidates(candidates []SolutionCandidate)[]SolutionCandidate{
-	m := make(map[string]SolutionCandidate)	// map for result extraction
+func FindBestCandidates(candidates []SolutionCandidate) []SolutionCandidate {
+	m := make(map[string]SolutionCandidate) // map for result extraction
 	vertexes := make([]graph.Vertex, len(candidates))
-	for idx, candidate := range candidates{
+	for idx, candidate := range candidates {
 		candidateKey := strconv.FormatInt(int64(idx), 10)
 		vertex := graph.Vertex{Name: candidateKey, Key: candidate.Score}
 		vertexes[idx] = vertex
@@ -38,12 +38,12 @@ func FindBestCandidates(candidates []SolutionCandidate)[]SolutionCandidate{
 
 	// use limited-size minimum priority queue
 	priorityQueue := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0)}
-	for _, vertex := range vertexes{
-		if priorityQueue.Size() == CANDIDATE_QUEUE_DISPLAY{
+	for _, vertex := range vertexes {
+		if priorityQueue.Size() == CANDIDATE_QUEUE_DISPLAY {
 			top := priorityQueue.GetRoot()
-			if vertex.Key > top.Key{
+			if vertex.Key > top.Key {
 				priorityQueue.ExtractTop()
-			} else{
+			} else {
 				continue
 			}
 		}
@@ -51,13 +51,13 @@ func FindBestCandidates(candidates []SolutionCandidate)[]SolutionCandidate{
 	}
 
 	// remove extra vertexes from priority queue
-	for priorityQueue.Size() > CANDIDATE_QUEUE_DISPLAY{
+	for priorityQueue.Size() > CANDIDATE_QUEUE_DISPLAY {
 		priorityQueue.ExtractTop()
 	}
 
 	res := make([]SolutionCandidate, 0)
 
-	for priorityQueue.Size() > 0{
+	for priorityQueue.Size() > 0 {
 		res = append(res, m[priorityQueue.ExtractTop()])
 	}
 
