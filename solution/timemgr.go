@@ -51,3 +51,4 @@ func GetTravelTimeByDistance(cclusters CategorizedPlaces, mdti MDtagIter) ([]flo
 	}
 	return travelTime, sumTime
 }
+

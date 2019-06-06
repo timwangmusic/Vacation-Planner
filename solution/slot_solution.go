@@ -21,13 +21,13 @@ type TripEvent struct {
 	endPlace   matching.Place
 }
 
+
 type SolutionCandidate struct {
 	Candidate       []TripEvent
 	EndPlaceDefault matching.Place
 	Score           float64
 	IsSet           bool
 }
-
 // Find top solution candidates
 
 func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandidate {
