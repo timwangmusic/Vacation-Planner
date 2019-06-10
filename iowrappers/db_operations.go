@@ -83,6 +83,7 @@ func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, 
 	collHandler.session = dbHandler.Session
 	collHandler.dbName = databaseName
 	collHandler.collName = collectionName
+	// TODO: Ensure placeId index at initialization
 }
 
 func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection){
