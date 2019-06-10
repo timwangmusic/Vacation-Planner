@@ -3,3 +3,7 @@
 .vscode
 .idea
 *.csv
+/main
+Gopkg.lock
+Gopkg.toml
+vendor

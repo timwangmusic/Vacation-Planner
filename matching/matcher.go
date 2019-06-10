@@ -41,10 +41,10 @@ type PlaceCluster struct{
 }
 
 // Matching takes requests from planner and a valid client, returns place clusters with time slot
-func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest, mapsClient *iowrappers.MapsClient) (PlaceClusters []PlaceCluster){
+func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest, poisearcher *iowrappers.PoiSearcher) (PlaceClusters []PlaceCluster){
 	// place search and time clustering
-	matcher.placeSearch(req, POI.PlaceCategoryEatery, mapsClient)	// search catering
-	matcher.placeSearch(req, POI.PlaceCategoryVisit, mapsClient)	// search visit locations
+	matcher.placeSearch(req, POI.PlaceCategoryEatery, poisearcher) // search catering
+	matcher.placeSearch(req, POI.PlaceCategoryVisit, poisearcher)  // search visit locations
 
 	clusterMap := make(map[string]*PlaceCluster)
 
@@ -82,7 +82,7 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 
 }
 
-func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory, mapsClient *iowrappers.MapsClient) (Places []Place){
+func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory, poisearcher *iowrappers.PoiSearcher) (Places []Place) {
 	var mgr *graph.TimeClustersManager
 
 	switch placeCat{
@@ -100,7 +100,7 @@ func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.P
 	}
 
 	// this is how to use TimeClustersManager
-	mgr.Init(mapsClient, placeCat, intervals, req.Weekday)
+	mgr.Init(poisearcher, placeCat, intervals, req.Weekday)
 	mgr.PlaceSearch(req.Location, req.Radius, "")
 	mgr.Clustering(req.Weekday)
 

@@ -40,7 +40,7 @@ func (cls *TimeClusters) Size() int{
 //TimeClustersManager
 //To use a TimeClustersManager, fetch Places data using PlaceSearch and then time clustering with Clustering method.
 type TimeClustersManager struct{
-	Client        *iowrappers.MapsClient
+	poiSearcher	  *iowrappers.PoiSearcher
 	TimeClusters  *TimeClusters
 	places        []POI.Place
 	PlaceCat      POI.PlaceCategory
@@ -48,9 +48,9 @@ type TimeClustersManager struct{
 }
 
 // TimeClusterManager initialization
-func (placeManager *TimeClustersManager) Init(client *iowrappers.MapsClient, placeCat POI.PlaceCategory,
-	timeIntervals []POI.TimeInterval, day POI.Weekday){
-	placeManager.Client = client
+func (placeManager *TimeClustersManager) Init(poiSearcher *iowrappers.PoiSearcher, placeCat POI.PlaceCategory,
+	timeIntervals []POI.TimeInterval, day POI.Weekday) {
+	placeManager.poiSearcher = poiSearcher
 	placeManager.PlaceCat = placeCat
 	placeManager.Weekday = day
 	placeManager.TimeClusters = &TimeClusters{Clusters: make(map[string]*TimeCluster, 0)}
@@ -76,7 +76,7 @@ func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadi
 	} else{
 		request.MaxNumResults = 100
 	}
-	placeManager.places = placeManager.Client.NearbySearch(&request)
+	placeManager.places = placeManager.poiSearcher.NearbySearch(&request)
 }
 
 // assign Places to time Clusters using their time interval info
