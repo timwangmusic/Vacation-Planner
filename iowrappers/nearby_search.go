@@ -97,7 +97,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			searchResp := GoogleNearbySearchSDK(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
 			for k, res := range searchResp.Results{
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil{
-					go c.DetailedSearchWrapper(res.PlaceID, &searchResp, &microAddrMap, k)
+					go c.DetailedSearchWrapper(res.PlaceID, &searchResp, microAddrMap, k)
 				}
 			}
 			<-time.After(500*time.Millisecond)
@@ -125,14 +125,14 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 	return
 }
 
-func (c *MapsClient) DetailedSearchWrapper(placeId string, res *maps.PlacesSearchResponse, microAddrMap *map[string]string, k int){
+func (c *MapsClient) DetailedSearchWrapper(placeId string, res *maps.PlacesSearchResponse, microAddrMap map[string]string, k int){
 	searchRes, err := c.PlaceDetailedSearch(placeId)
 	if err != nil{
 		log.Error(err)
 	}
 	res.Results[k].OpeningHours = searchRes.OpeningHours
 	res.Results[k].FormattedAddress = searchRes.FormattedAddress
-	(*microAddrMap)[res.Results[k].ID] = searchRes.AdrAddress
+	microAddrMap[res.Results[k].ID] = searchRes.AdrAddress
 }
 
 func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResult, error){
