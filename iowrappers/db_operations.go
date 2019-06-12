@@ -20,17 +20,17 @@ type CollectionHandler interface {
 
 // handles operations at database level
 // DbHandler.handlers manages collection handlers
-type DbHandler struct{
-	dbName string
-	Session *mgo.Session
+type DbHandler struct {
+	dbName   string
+	Session  *mgo.Session
 	handlers map[string]*CollHandler
 }
 
 // handles operations at collection level
 // each collection handler is associated with a collection in a database at Init
-type CollHandler struct{
-	session *mgo.Session
-	dbName string
+type CollHandler struct {
+	session  *mgo.Session
+	dbName   string
 	collName string
 }
 
@@ -46,8 +46,8 @@ func (dbHandler *DbHandler) CreateSession(uri string) {
 	dbHandler.Session = session
 }
 
-func (dbHandler *DbHandler) SetCollHandler(collectionName string){
-	if _, exist := dbHandler.handlers[collectionName]; !exist{
+func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
+	if _, exist := dbHandler.handlers[collectionName]; !exist {
 		collHandler := &CollHandler{}
 		dbHandler.handlers[collectionName] = collHandler
 		collHandler.Init(dbHandler, dbHandler.dbName, collectionName)
@@ -58,7 +58,7 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string){
 // Prevent accidentally creating collections in PlaceSearch method
 func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) ([]POI.Place, error) {
 	collName := string(req.PlaceCat)
-	if _, exist := dbHandler.handlers[collName]; !exist{
+	if _, exist := dbHandler.handlers[collName]; !exist {
 		return nil, fmt.Errorf("Collection %s does not exist", collName)
 	}
 	collHandler := dbHandler.handlers[collName]
@@ -69,9 +69,9 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) ([]POI.Place, e
 	return collHandler.Search(radius, []float64{lat, lng}), nil
 }
 
-func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCategory) error{
+func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCategory) error {
 	collName := string(placeCat)
-	if _, exist := dbHandler.handlers[collName]; !exist{
+	if _, exist := dbHandler.handlers[collName]; !exist {
 		return fmt.Errorf("Collection %s does not exist", collName)
 	}
 	collHandler := dbHandler.handlers[collName]
@@ -86,12 +86,12 @@ func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, 
 	// TODO: Ensure placeId index at initialization
 }
 
-func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection){
+func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
 	coll = collHandler.session.DB(collHandler.dbName).C(collHandler.collName)
 	return
 }
 
-func (collHandler *CollHandler) InsertPlace(place POI.Place){
+func (collHandler *CollHandler) InsertPlace(place POI.Place) {
 	err := collHandler.GetCollection().Insert(place)
 	utils.CheckErr(err)
 }
