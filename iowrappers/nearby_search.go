@@ -85,6 +85,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 	var totalResult uint= 0	// number of results so far, keep this number low
 
 	microAddrMap := make(map[string]string)	// map place ID to its micro-address
+	placeMap := make(map[string]bool)	// remove duplication for place with same ID
 
 	searchStartTime := time.Now()
 
@@ -101,7 +102,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 				}
 			}
 			<-time.After(500*time.Millisecond)
-			places = append(places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap)...)
+			places = append(places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap)...)
 			totalResult += uint(len(searchResp.Results))
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
 		}
@@ -169,8 +170,14 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 	return resp, nil
 }
 
-func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType LocationType, microAddrMap map[string]string) (places []POI.Place) {
+func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType LocationType, microAddrMap map[string]string, placeMap map[string]bool) (places []POI.Place) {
 	for _, res := range resp.Results{
+		id := res.PlaceID
+		if seen, _ := placeMap[id]; seen {
+			continue
+		} else {
+			placeMap[id] = true
+		}
 		name := res.Name
 		lat := fmt.Sprintf("%f", res.Geometry.Location.Lat)
 		lng := fmt.Sprintf("%f", res.Geometry.Location.Lng)
@@ -179,7 +186,6 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType Loca
 		if microAddrMap != nil {
 			addr = microAddrMap[res.ID]
 		}
-		id := res.PlaceID
 		priceLevel := res.PriceLevel
 		h := &POI.OpeningHours{}
 		if res.OpeningHours != nil && res.OpeningHours.WeekdayText != nil && len(res.OpeningHours.WeekdayText) > 0{
