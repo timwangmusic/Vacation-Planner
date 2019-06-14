@@ -6,6 +6,7 @@ import (
 	"Vacation-planner/matching"
 	"Vacation-planner/utils"
 	log "github.com/sirupsen/logrus"
+	"src/github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
@@ -70,9 +71,9 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 /*
  *	filename: the input json file
  *	tag: defines the travel patterns in a slot
- *	staytime: the estimated stay time at each POI
+ *	staytime: the estimated state time at each POI
  */
-func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, slotIndex int) SlotSolution {
+func HandleRequestFromFile(filename string, tag string, staytime []int, slotIndex int) SlotSolution{
 	var pclusters []matching.PlaceCluster
 	var sCandidate []SlotSolutionCandidate
 
@@ -93,8 +94,8 @@ func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, s
 	}
 	slotSolution1 := SlotSolution{}
 	slotSolution1.SetTag(tag)
-	if !slotSolution1.IsSlotagValid() {
-		log.Fatal("tag format not supported")
+	if  !slotSolution1.IsSlotagValid(){
+		logrus.Fatal("tag format not supported")
 		return SlotSolution{}
 	}
 	mdti := MDtagIter{}
