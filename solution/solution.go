@@ -6,6 +6,7 @@ import (
 	"Vacation-planner/planner"
 	"Vacation-planner/utils"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"strconv"
 	"time"
@@ -67,29 +68,34 @@ func FindBestCandidates(candidates []SlotSolutionCandidate)[]SlotSolutionCandida
 
 	return res
 }
+/*
+ *	filename: the input json file
+ *	tag: defines the travel patterns in a slot
+ *	staytime: the estimated state time at each POI
+ */
 func HandleRequestFromFile(filename string, tag string, staytime []int) SlotSolution{
 	var pclusters []matching.PlaceCluster
 	var sCandidate []SlotSolutionCandidate
 
 	err := utils.ReadFromFile(filename, &pclusters)
 	if err != nil {
-		log.Fatal("position cluster file reading error")
+		logrus.Fatal("position cluster file reading error")
 		return SlotSolution{}
 	}
 	if len(staytime) != len(tag) {
-		log.Fatal("Stay time does not match tag")
+		logrus.Fatal("Stay time does not match tag")
 		return SlotSolution{}
 	}
 	cclusters := planner.Categorize(&pclusters[0])
 	minutelimit := GetSlotLengthinMin(&pclusters[0])
 	if minutelimit == 0 {
-		log.Fatal("Slot time setting invalid")
+		logrus.Fatal("Slot time setting invalid")
 		return SlotSolution{}
 	}
-	solution1 := SlotSolution{}
-	solution1.SetTag(tag)
-	if  !solution1.IsSlotagValid(){
-		log.Fatal("tag format not supported")
+	slotSolution1 := SlotSolution{}
+	slotSolution1.SetTag(tag)
+	if  !slotSolution1.IsSlotagValid(){
+		logrus.Fatal("tag format not supported")
 		return SlotSolution{}
 	}
 	mdti := planner.MDtagIter{}
@@ -98,11 +104,11 @@ func HandleRequestFromFile(filename string, tag string, staytime []int) SlotSolu
 	for mdti.HasNext() {
 		//iterate through combinations of places according to the tag.
 		//fmt.Printf("len=%d cap=%d %v\n", len(mdti.status), cap(mdti.status), mdti.status)
-		tempCandidate := solution1.CreateCandidate(mdti, cclusters)
+		tempCandidate := slotSolution1.CreateCandidate(mdti, cclusters)
 		if tempCandidate.IsSet {
 			//check time, generate events
-			traveltime, sumtime := GetTravelTimeByDistance(cclusters,mdti)
-			fmt.Printf("len=%d cap=%d %v\n", len(traveltime), cap(traveltime), traveltime)
+			_, sumtime := GetTravelTimeByDistance(cclusters,mdti)
+			//fmt.Printf("len=%d cap=%d %v\n", len(traveltime), cap(traveltime), traveltime)
 			if sumtime <= float64(minutelimit) {
 				sCandidate = append(sCandidate, tempCandidate)
 			}
@@ -110,6 +116,6 @@ func HandleRequestFromFile(filename string, tag string, staytime []int) SlotSolu
 		//save to priority queue
 		mdti.Next()
 	}
-	solution1.Solution = FindBestCandidates(sCandidate)
-	return solution1
+	slotSolution1.Solution = FindBestCandidates(sCandidate)
+	return slotSolution1
 }
