@@ -5,9 +5,7 @@ import (
 	"Vacation-planner/matching"
 	"Vacation-planner/planner"
 	"Vacation-planner/utils"
-	"fmt"
 	"github.com/sirupsen/logrus"
-	"log"
 	"strconv"
 	"time"
 )
@@ -23,17 +21,17 @@ type TripEvent struct {
 	endPlace   matching.Place
 }
 
-
 type SolutionCandidate struct {
 	Candidate       []TripEvent
 	EndPlaceDefault matching.Place
 	Score           float64
 	IsSet           bool
 }
+
 // Find top solution candidates
 
-func FindBestCandidates(candidates []SlotSolutionCandidate)[]SlotSolutionCandidate{
-	m := make(map[string]SlotSolutionCandidate)	// map for result extraction
+func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandidate {
+	m := make(map[string]SlotSolutionCandidate) // map for result extraction
 	vertexes := make([]graph.Vertex, len(candidates))
 	for idx, candidate := range candidates {
 		candidateKey := strconv.FormatInt(int64(idx), 10)
@@ -43,8 +41,8 @@ func FindBestCandidates(candidates []SlotSolutionCandidate)[]SlotSolutionCandida
 	}
 	// use limited-size minimum priority queue
 	priorityQueue := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0)}
-	for _, vertex := range vertexes{
-		if priorityQueue.Size() == CANDIDATE_QUEUE_LENGTH{
+	for _, vertex := range vertexes {
+		if priorityQueue.Size() == CANDIDATE_QUEUE_LENGTH {
 			top := priorityQueue.GetRoot()
 			if vertex.Key > top.Key {
 				priorityQueue.ExtractTop()
@@ -68,12 +66,13 @@ func FindBestCandidates(candidates []SlotSolutionCandidate)[]SlotSolutionCandida
 
 	return res
 }
+
 /*
  *	filename: the input json file
  *	tag: defines the travel patterns in a slot
- *	staytime: the estimated state time at each POI
+ *	staytime: the estimated stay time at each POI
  */
-func HandleRequestFromFile(filename string, tag string, staytime []int) SlotSolution{
+func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, slotIndex int) SlotSolution {
 	var pclusters []matching.PlaceCluster
 	var sCandidate []SlotSolutionCandidate
 
@@ -86,15 +85,15 @@ func HandleRequestFromFile(filename string, tag string, staytime []int) SlotSolu
 		logrus.Fatal("Stay time does not match tag")
 		return SlotSolution{}
 	}
-	cclusters := planner.Categorize(&pclusters[0])
-	minutelimit := GetSlotLengthinMin(&pclusters[0])
+	cclusters := planner.Categorize(&pclusters[slotIndex])
+	minutelimit := GetSlotLengthinMin(&pclusters[slotIndex])
 	if minutelimit == 0 {
 		logrus.Fatal("Slot time setting invalid")
 		return SlotSolution{}
 	}
 	slotSolution1 := SlotSolution{}
 	slotSolution1.SetTag(tag)
-	if  !slotSolution1.IsSlotagValid(){
+	if !slotSolution1.IsSlotagValid() {
 		logrus.Fatal("tag format not supported")
 		return SlotSolution{}
 	}
@@ -107,7 +106,7 @@ func HandleRequestFromFile(filename string, tag string, staytime []int) SlotSolu
 		tempCandidate := slotSolution1.CreateCandidate(mdti, cclusters)
 		if tempCandidate.IsSet {
 			//check time, generate events
-			_, sumtime := GetTravelTimeByDistance(cclusters,mdti)
+			_, sumtime := GetTravelTimeByDistance(cclusters, mdti)
 			//fmt.Printf("len=%d cap=%d %v\n", len(traveltime), cap(traveltime), traveltime)
 			if sumtime <= float64(minutelimit) {
 				sCandidate = append(sCandidate, tempCandidate)
