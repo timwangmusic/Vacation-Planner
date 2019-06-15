@@ -22,13 +22,13 @@ type TripEvent struct {
 	endPlace   matching.Place
 }
 
-
 type SolutionCandidate struct {
 	Candidate       []TripEvent
 	EndPlaceDefault matching.Place
 	Score           float64
 	IsSet           bool
 }
+
 // Find top solution candidates
 
 func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandidate {
@@ -71,9 +71,9 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 /*
  *	filename: the input json file
  *	tag: defines the travel patterns in a slot
- *	staytime: the estimated state time at each POI
+ *	staytime: the estimated stay time at each POI
  */
-func HandleRequestFromFile(filename string, tag string, staytime []int, slotIndex int) SlotSolution{
+func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, slotIndex int) SlotSolution {
 	var pclusters []matching.PlaceCluster
 	var sCandidate []SlotSolutionCandidate
 
@@ -94,7 +94,7 @@ func HandleRequestFromFile(filename string, tag string, staytime []int, slotInde
 	}
 	slotSolution1 := SlotSolution{}
 	slotSolution1.SetTag(tag)
-	if  !slotSolution1.IsSlotagValid(){
+	if !slotSolution1.IsSlotagValid() {
 		logrus.Fatal("tag format not supported")
 		return SlotSolution{}
 	}
