@@ -94,14 +94,26 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			if reqTimes > 0 && nextPageTokenMap[placeType] == "" { // no more result for this location type
 				continue
 			}
+			detailSearchResCh := make(chan PlaceDetailSearchRes)
 			nextPageToken := nextPageTokenMap[placeType]
 			searchResp := GoogleNearbySearchSDK(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			detailSearchCount := 0	// this achieves a similar effect of closing the channel
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
-					go c.DetailedSearchWrapper(res.PlaceID, &searchResp, microAddrMap, k)
+					detailSearchCount++
+					go c.DetailedSearchWrapper(res.PlaceID, detailSearchResCh, k)
 				}
 			}
-			<-time.After(500 * time.Millisecond)
+			// receive place detail search results from channel
+			for detailSearchCount > 0 {
+				detailSearchCount--
+				placeDetails := <-detailSearchResCh
+				respIdx := placeDetails.RespIdx
+				searchResp.Results[respIdx].OpeningHours = placeDetails.Res.OpeningHours
+				searchResp.Results[respIdx].FormattedAddress = placeDetails.Res.FormattedAddress
+				microAddrMap[searchResp.Results[respIdx].PlaceID] = placeDetails.Res.AdrAddress
+			}
+			//<-time.After(500 * time.Millisecond)
 			places = append(places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap)...)
 			totalResult += uint(len(searchResp.Results))
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
@@ -126,14 +138,19 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 	return
 }
 
-func (c *MapsClient) DetailedSearchWrapper(placeId string, res *maps.PlacesSearchResponse, microAddrMap map[string]string, k int) {
+type PlaceDetailSearchRes struct {
+	Res     *maps.PlaceDetailsResult
+	RespIdx int
+}
+
+func (c *MapsClient) DetailedSearchWrapper(placeId string, detailSearchResCh chan PlaceDetailSearchRes, k int) {
 	searchRes, err := c.PlaceDetailedSearch(placeId)
 	if err != nil {
 		log.Error(err)
+		return
 	}
-	res.Results[k].OpeningHours = searchRes.OpeningHours
-	res.Results[k].FormattedAddress = searchRes.FormattedAddress
-	microAddrMap[res.Results[k].ID] = searchRes.AdrAddress
+	result := PlaceDetailSearchRes{&searchRes, k}
+	detailSearchResCh <- result
 }
 
 func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResult, error) {
