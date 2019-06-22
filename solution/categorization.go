@@ -1,4 +1,4 @@
-package planner
+package solution
 
 import "Vacation-planner/matching"
 

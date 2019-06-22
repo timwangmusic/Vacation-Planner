@@ -1,4 +1,4 @@
-package planner
+package solution
 
 type MDtagIter struct {
 	Tag    string

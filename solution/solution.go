@@ -3,7 +3,6 @@ package solution
 import (
 	"Vacation-planner/graph"
 	"Vacation-planner/matching"
-	"Vacation-planner/planner"
 	"Vacation-planner/utils"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -85,7 +84,7 @@ func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, s
 		logrus.Fatal("Stay time does not match tag")
 		return SlotSolution{}
 	}
-	cclusters := planner.Categorize(&pclusters[slotIndex])
+	cclusters := Categorize(&pclusters[slotIndex])
 	minutelimit := GetSlotLengthinMin(&pclusters[slotIndex])
 	if minutelimit == 0 {
 		logrus.Fatal("Slot time setting invalid")
@@ -97,7 +96,7 @@ func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, s
 		logrus.Fatal("tag format not supported")
 		return SlotSolution{}
 	}
-	mdti := planner.MDtagIter{}
+	mdti := MDtagIter{}
 	mdti.Init(tag, cclusters)
 
 	for mdti.HasNext() {
