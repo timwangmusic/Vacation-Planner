@@ -6,9 +6,11 @@ import (
 	"Vacation-planner/POI"
 	"Vacation-planner/graph"
 	"Vacation-planner/iowrappers"
+	"log"
 )
 
 type TimeMatcher struct{
+	PoiSearcher *iowrappers.PoiSearcher
 	CateringMgr *graph.TimeClustersManager
 	TouringMgr 	*graph.TimeClustersManager
 }
@@ -40,11 +42,20 @@ type PlaceCluster struct{
 	Slot TimeSlot	`json:time slot`
 }
 
+func (matcher *TimeMatcher) Init (poiSearcher *iowrappers.PoiSearcher) {
+	if poiSearcher == nil {
+		log.Fatal("PoiSearcher does not exist")
+	}
+	matcher.PoiSearcher = poiSearcher
+	matcher.CateringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryEatery}
+	matcher.TouringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
+}
+
 // Matching takes requests from planner and a valid client, returns place clusters with time slot
-func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest, poisearcher *iowrappers.PoiSearcher) (PlaceClusters []PlaceCluster){
+func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (PlaceClusters []PlaceCluster) {
 	// place search and time clustering
-	matcher.placeSearch(req, POI.PlaceCategoryEatery, poisearcher) // search catering
-	matcher.placeSearch(req, POI.PlaceCategoryVisit, poisearcher)  // search visit locations
+	matcher.placeSearch(req, POI.PlaceCategoryEatery, matcher.PoiSearcher) // search catering
+	matcher.placeSearch(req, POI.PlaceCategoryVisit, matcher.PoiSearcher)  // search visit locations
 
 	clusterMap := make(map[string]*PlaceCluster)
 
