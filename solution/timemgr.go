@@ -2,7 +2,6 @@ package solution
 
 import (
 	"Vacation-planner/matching"
-	"Vacation-planner/planner"
 	"Vacation-planner/utils"
 )
 
@@ -19,7 +18,7 @@ func GetSlotLengthinMin(pcluster *matching.PlaceCluster) int {
 	}
 }
 
-func GetTravelTimeByDistance(cclusters planner.CategorizedPlaces, mdti planner.MDtagIter) ([]float64, float64) {
+func GetTravelTimeByDistance(cclusters CategorizedPlaces, mdti MDtagIter) ([]float64, float64) {
 	var travelTime = make([]float64, len(mdti.Tag), len(mdti.Tag))
 	var sumTime float64 = 0
 	var startplace matching.Place

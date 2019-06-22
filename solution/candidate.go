@@ -2,7 +2,6 @@ package solution
 
 import (
 	"Vacation-planner/matching"
-	"Vacation-planner/planner"
 	"strings"
 	"time"
 )
@@ -102,7 +101,7 @@ func (this *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolutionCandidat
 	}
 	return true
 }
-func (this *SlotSolution) CreateCandidate(iter planner.MDtagIter, cplaces planner.CategorizedPlaces) SlotSolutionCandidate {
+func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPlaces) SlotSolutionCandidate {
 	res := SlotSolutionCandidate{}
 	res.IsSet = false
 	if len(iter.Status) != len(this.slotag) {
