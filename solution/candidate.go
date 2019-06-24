@@ -35,6 +35,7 @@ type SlotSolution struct {
 	Solution []SlotSolutionCandidate
 }
 type SlotSolutionCandidate struct {
+	PlaceIDS        []string
 	Candidate       []TripEvents
 	EndPlaceDefault matching.Place
 	Score           float64
@@ -124,6 +125,7 @@ func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPla
 			} else {
 				record[ecluster[num].PlaceId] = true
 				places[i] = ecluster[num]
+				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
 			}
 		} else if this.slotag[i] == 'V' || this.slotag[i] == 'v' {
 			_, ok := record[vcluster[num].PlaceId]
@@ -132,6 +134,7 @@ func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPla
 			} else {
 				record[vcluster[num].PlaceId] = true
 				places[i] = vcluster[num]
+				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
 			}
 		} else {
 			return res
