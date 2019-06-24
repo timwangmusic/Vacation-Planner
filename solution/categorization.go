@@ -14,9 +14,9 @@ func Categorize(cluster *matching.PlaceCluster) CategorizedPlaces {
 	}
 
 	for _, place := range cluster.Places {
-		if place.CatTag == "visit" {
+		if place.CatTag == "Visit" {
 			res.VisitPlaces = append(res.VisitPlaces, place)
-		} else if place.CatTag == "eatery" {
+		} else if place.CatTag == "Eatery" {
 			res.EateryPlaces = append(res.EateryPlaces, place)
 		}
 	}
