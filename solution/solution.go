@@ -106,9 +106,10 @@ func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, s
 		tempCandidate := slotSolution1.CreateCandidate(mdti, cclusters)
 		if tempCandidate.IsSet {
 			//check time, generate events
-			_, sumtime := GetTravelTimeByDistance(cclusters, mdti)
+			traveltime, sumtime := GetTravelTimeByDistance(cclusters, mdti)
 			//fmt.Printf("len=%d cap=%d %v\n", len(traveltime), cap(traveltime), traveltime)
 			if sumtime <= float64(minutelimit) {
+				tempCandidate.Candidate = GenerateTripEvents(tag, staytime, traveltime, &mdti, cclusters)
 				sCandidate = append(sCandidate, tempCandidate)
 			}
 		}
@@ -117,4 +118,50 @@ func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, s
 	}
 	slotSolution1.Solution = FindBestCandidates(sCandidate)
 	return slotSolution1
+}
+func GenerateTripEvents(tag string, staytime []int, traveltime []float64, mdti *planner.MDtagIter, cclusters planner.CategorizedPlaces) (result []TripEvents) {
+	errorResult := make([]TripEvents, 0)
+	var tempTime time.Time
+	var startTime = time.Date(1988, 4, 1, 8, 0, 0, 0, time.UTC)
+	for i:=0; i< len(tag); i++{
+		//add EV event
+		var tempTripEvent TripEvents
+		var tempTripEvent2 TripEvents
+		if tag[i]=='E' || tag[i]=='e' {
+			tempTripEvent.startplace = cclusters.EateryPlaces[mdti.Status[i]]
+		} else if tag[i]=='V' || tag[i]=='v' {
+			tempTripEvent.startplace = cclusters.VisitPlaces[mdti.Status[i]]
+		} else {
+			return errorResult
+		}
+		if i ==0 {
+			tempTripEvent.starttime = startTime
+		} else {
+			tempTripEvent.starttime = tempTime
+		}
+
+		tempTripEvent.endtime = startTime.Add(time.Duration(staytime[i])*time.Minute)
+		tempTime = tempTripEvent.endtime
+
+		tempTripEvent2.starttime = tempTime
+		tempTripEvent2.startplace = tempTripEvent.startplace
+		if i != len(tag)-1 {
+			//add travel event to next in slot POI
+			tempTripEvent2.endtime = tempTripEvent2.starttime.Add(time.Duration(traveltime[i])* time.Minute)
+			tempTime = tempTripEvent2.endtime
+			if tag[i+1]=='E' || tag[i+1]=='e' {
+				tempTripEvent.endplace = cclusters.EateryPlaces[mdti.Status[i+1]]
+			} else if tag[i+1]=='V' || tag[i+1]=='v' {
+				tempTripEvent2.endplace = cclusters.VisitPlaces[mdti.Status[i+1]]
+			} else {
+				return errorResult
+			}
+			result = append(result, tempTripEvent)
+			result = append(result, tempTripEvent2)
+		} else {
+			//add travel event to last
+			result = append(result, tempTripEvent)
+		}
+	}
+	return
 }
