@@ -18,7 +18,9 @@ func GetSlotLengthinMin(pcluster *matching.PlaceCluster) int {
 	}
 }
 
-func GetTravelTimeByDistance(cclusters CategorizedPlaces, mdti MDtagIter) ([]float64, float64) {
+
+
+func GetTravelTimeByDistance(cclusters CategorizedPlaces, mdti MDtagIter, EndPlace matching.Place) ([]float64, float64) {
 	var travelTime = make([]float64, len(mdti.Tag), len(mdti.Tag))
 	var sumTime float64 = 0
 	var startplace matching.Place
@@ -37,8 +39,11 @@ func GetTravelTimeByDistance(cclusters CategorizedPlaces, mdti MDtagIter) ([]flo
 				endplace = cclusters.VisitPlaces[mdti.Status[i+1]]
 			}
 		} else {
-			endplace = matching.Place{}
-			invalid = true
+			endplace = EndPlace
+			if endplace == (matching.Place{}) {
+				invalid = true
+			}
+
 			//TODO: Put default endplace from slot here.
 		}
 		if invalid {

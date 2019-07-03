@@ -73,7 +73,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
  *	tag: defines the travel patterns in a slot
  *	staytime: the estimated stay time at each POI
  */
-func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, slotIndex int) SlotSolution {
+func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, slotIndex int, endplace matching.Place) SlotSolution {
 	var pclusters []matching.PlaceCluster
 	var sCandidate []SlotSolutionCandidate
 
@@ -107,7 +107,7 @@ func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, s
 		tempCandidate := slotSolution1.CreateCandidate(mdti, cclusters)
 		if tempCandidate.IsSet {
 			//check time, generate events
-			_, sumtime := GetTravelTimeByDistance(cclusters, mdti)
+			_, sumtime := GetTravelTimeByDistance(cclusters, mdti, endplace)
 			//fmt.Printf("len=%d cap=%d %v\n", len(traveltime), cap(traveltime), traveltime)
 			if sumtime <= float64(minutelimit) {
 				sCandidate = append(sCandidate, tempCandidate)
@@ -119,11 +119,17 @@ func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, s
 	slotSolution1.Solution = FindBestCandidates(sCandidate)
 	return slotSolution1
 }
+func ParseStayTime(stayTimes []matching.TimeSlot) (res []int)  {
+	for _, timeslot := range(stayTimes) {
+		res = append(res, int(60 * (timeslot.Slot.End - timeslot.Slot.Start)))
+	}
+	return
+}
 
 // Generate slot solution candidates
 // Parameter list matches slot request
 func GenerateSlotSolution (timeMatcher *matching.TimeMatcher, location string, EVtag string,
-	stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) (slotSolution SlotSolution) {
+	stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday, endplace matching.Place) (slotSolution SlotSolution) {
 	if len(stayTimes) != len(EVtag) {
 		log.Fatal("User designated stay time does not match tag.")
 		return
@@ -172,9 +178,11 @@ func GenerateSlotSolution (timeMatcher *matching.TimeMatcher, location string, E
 		curCandidate := slotSolution.CreateCandidate(mdIter, categorizedPlaces)
 
 		if curCandidate.IsSet {
-			_, travelTimeInMin := GetTravelTimeByDistance(categorizedPlaces, mdIter)
+			travelTimes, travelTimeInMin := GetTravelTimeByDistance(categorizedPlaces, mdIter, endplace)
 			if travelTimeInMin <= float64(minuteLimit) {
 				//FIXME: ADD TRIP EVENT GENERATION FUNCTION CALL
+				stayTimesMin := ParseStayTime(stayTimes)
+				curCandidate.Candidate = GenerateTripEvents(EVtag, stayTimesMin, travelTimes, &mdIter, categorizedPlaces, endplace)
 				slotCandidates = append(slotCandidates, curCandidate)
 			}
 		}
@@ -182,6 +190,55 @@ func GenerateSlotSolution (timeMatcher *matching.TimeMatcher, location string, E
 	}
 	bestCandidates := FindBestCandidates(slotCandidates)
 	slotSolution.Solution = append(slotSolution.Solution, bestCandidates...)
+	return
+}
+func GenerateTripEvents(tag string, staytime []int, traveltime []float64, mdti *MDtagIter, cclusters CategorizedPlaces, defaultEndPlace matching.Place) (result []TripEvents) {
+	errorResult := make([]TripEvents, 0)
+	var tempTime time.Time
+	var startTime = time.Date(1988, 4, 1, 8, 0, 0, 0, time.UTC)
+	for i:=0; i< len(tag); i++{
+		//add EV event
+		var tempTripEvent TripEvents
+		var tempTripEvent2 TripEvents
+		if tag[i]=='E' || tag[i]=='e' {
+			tempTripEvent.startplace = cclusters.EateryPlaces[mdti.Status[i]]
+		} else if tag[i]=='V' || tag[i]=='v' {
+			tempTripEvent.startplace = cclusters.VisitPlaces[mdti.Status[i]]
+		} else {
+			return errorResult
+		}
+		if i ==0 {
+			tempTripEvent.starttime = startTime
+		} else {
+			tempTripEvent.starttime = tempTime
+		}
 
+		tempTripEvent.endtime = startTime.Add(time.Duration(staytime[i])*time.Minute)
+		tempTime = tempTripEvent.endtime
+
+		tempTripEvent2.starttime = tempTime
+		tempTripEvent2.startplace = tempTripEvent.startplace
+		if i != len(tag)-1 {
+			//add travel event to next in slot POI
+			tempTripEvent2.endtime = tempTripEvent2.starttime.Add(time.Duration(traveltime[i])* time.Minute)
+			tempTime = tempTripEvent2.endtime
+			if tag[i+1]=='E' || tag[i+1]=='e' {
+				tempTripEvent.endplace = cclusters.EateryPlaces[mdti.Status[i+1]]
+			} else if tag[i+1]=='V' || tag[i+1]=='v' {
+				tempTripEvent2.endplace = cclusters.VisitPlaces[mdti.Status[i+1]]
+			} else {
+				return errorResult
+			}
+			result = append(result, tempTripEvent)
+			result = append(result, tempTripEvent2)
+		} else {
+			//add travel event to last
+			result = append(result, tempTripEvent)
+			if defaultEndPlace != (matching.Place{}) {
+				tempTripEvent2.endplace = defaultEndPlace
+				result = append(result, tempTripEvent)
+			}
+		}
+	}
 	return
 }
