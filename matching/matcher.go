@@ -9,6 +9,10 @@ import (
 	"log"
 )
 
+type Matcher interface {
+	Matching(req *TimeMatchingRequest) (clusters []PlaceCluster)
+}
+
 type TimeMatcher struct{
 	PoiSearcher *iowrappers.PoiSearcher
 	CateringMgr *graph.TimeClustersManager
