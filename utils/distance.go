@@ -1,6 +1,10 @@
 package utils
 
-import "math"
+import (
+	"math"
+	"strconv"
+	"strings"
+)
 
 func HaversineDist(x []float64, y []float64) float64 {
 	var xlat, xlng, ylat, ylng = x[0], x[1], y[0], y[1]// latitudes and longtitudes in radius
@@ -20,4 +24,19 @@ func HaversineDist(x []float64, y []float64) float64 {
 
 func hav(theta float64) float64 {
 	return (1 - math.Cos(theta)) / 2
+}
+
+// locations are in the format of "lat,lng"
+func ParseLocation(location string) []float64 {
+	latlng := strings.Split(location, ",")
+
+	res := make([]float64, 2)
+
+	lat, _ := strconv.ParseFloat(latlng[0], 64)
+	lng, _ := strconv.ParseFloat(latlng[1], 64)
+
+	res[0] = lat
+	res[1] = lng
+
+	return res
 }
