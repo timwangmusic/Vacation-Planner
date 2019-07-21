@@ -6,11 +6,14 @@ import (
 	"Vacation-planner/iowrappers"
 	"Vacation-planner/matching"
 	"Vacation-planner/utils"
+	"errors"
 	"strconv"
 )
 
 const (
-	NUM_SOLUTIONS = 5
+	NUM_SOLUTIONS               = 5
+	TRAVEL_SPEED                = 50 // km/h
+	TIME_LIMIT_BETWEEN_CLUSTERS = 60 // minutes
 )
 
 // Solvers are used by planners to solve the planning problem
@@ -27,7 +30,11 @@ func (solver *Solver) Init(apiKey string, dbName string, dbUrl string) {
 	solver.matcher.Init(poiSearcher)
 }
 
-func (solver *Solver) Solve(req *PlanningRequest) (resp PlanningResponse) {
+func (solver *Solver) Solve(req *PlanningRequest) (resp PlanningResponse, err error) {
+	if !travelTimeValidation(req) {
+		err = errors.New("Travel time limit exceeded for current selection")
+		return
+	}
 	// each row contains candidates in one slot
 	candidates := make([][]SlotSolutionCandidate, len(req.SlotRequests))
 	for idx := range req.SlotRequests {
@@ -44,18 +51,43 @@ func (solver *Solver) Solve(req *PlanningRequest) (resp PlanningResponse) {
 		}
 	}
 
-	multiSlotSolution := gen_multi_slot_solution_candidates(&candidates)
+	multiSlotSolution := genMultiSlotSolutionCandidates(&candidates)
+	// TODO: ADD TRAVEL TIME FOR EACH MULTI-SLOT SOLUTION
 	resp.Solution = multiSlotSolution
 	return
 }
 
-func gen_multi_slot_solution_candidates(candidates *[][]SlotSolutionCandidate) []MultiSlotSolution {
+// return false if travel time between clusters exceed limit
+// use upper-bound of the sum of radius plus distance between cluster centers
+func travelTimeValidation(req *PlanningRequest) bool {
+	numTimeSlots := len(req.SlotRequests)
+
+	for i := 0; i < numTimeSlots-1; i++ {
+		prevRequest := req.SlotRequests[i]
+		nextRequest := req.SlotRequests[i+1]
+		if travelTime(prevRequest.Location, nextRequest.Location, req.SearchRadius, req.SearchRadius) > TIME_LIMIT_BETWEEN_CLUSTERS {
+			return false
+		}
+	}
+	return true
+}
+
+func travelTime(from_loc string, to_loc string, from_loc_radius uint, to_loc_radius uint) uint {
+	latlng1 := utils.ParseLocation(from_loc)
+	latlng2 := utils.ParseLocation(to_loc)
+
+	distance := utils.HaversineDist(latlng1, latlng2) + float64(from_loc_radius+to_loc_radius)
+
+	return uint(distance / (TRAVEL_SPEED * 16.67)) // 16.67 is the ratio of m/minute and km/hour
+}
+
+func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []MultiSlotSolution {
 	res := make([]MultiSlotSolution, 0)
 	slotSolutionResults := make([][]SlotSolutionCandidate, 0)
 	path := make([]SlotSolutionCandidate, 0)
 	dfs(candidates, 0, &path, &slotSolutionResults)
 
-	// slot solution results are in the shape of number of multi-slot results by number of slots
+	// after dfs, slot solution results are in the shape of number of multi-slot results by number of slots
 	// i.e. each row is ready to fill one multi slot solution
 	for _, result := range slotSolutionResults {
 		multiSlotSolutionScore := totalScore(&result)
@@ -66,11 +98,28 @@ func gen_multi_slot_solution_candidates(candidates *[][]SlotSolutionCandidate) [
 		}
 		res = append(res, multiSlotSolution)
 	}
-	return FindBestSolutions(res)
+	bestSolutions := FindBestSolutions(res)
+	for solutionIdx := range bestSolutions {
+		calTravelTime(&bestSolutions[solutionIdx])
+	}
+	return bestSolutions
 }
 
-func dfs(candidates *[][]SlotSolutionCandidate, depth int, path *[]SlotSolutionCandidate,
-	results *[][]SlotSolutionCandidate) {
+func calTravelTime (solution *MultiSlotSolution) {
+	numTimeSlots := len(solution.SlotSolutions)
+
+	for slotIdx := 0; slotIdx < numTimeSlots - 1; slotIdx++ {
+		startPlace := solution.SlotSolutions[slotIdx].PlaceLocations[len(solution.SlotSolutions[slotIdx].PlaceLocations)-1]
+		endPlace := solution.SlotSolutions[slotIdx].PlaceLocations[0]
+		startLatlng, endLatlng := make([]float64,2), make([]float64,2)
+		startLatlng[0], startLatlng[1] = startPlace[0], startPlace[1]
+		endLatlng[0], endLatlng[1] = endPlace[0], endPlace[1]
+		distance := utils.HaversineDist(startLatlng, endLatlng)
+		solution.TravelTimes = append(solution.TravelTimes, uint(distance / (TRAVEL_SPEED * 16.67)))
+	}
+}
+
+func dfs(candidates *[][]SlotSolutionCandidate, depth int, path *[]SlotSolutionCandidate, results *[][]SlotSolutionCandidate) {
 	if depth == len(*candidates) {
 		tmp := make([]SlotSolutionCandidate, depth)
 		copy(tmp, *path)
@@ -95,6 +144,7 @@ func totalScore(candidates *[]SlotSolutionCandidate) float64 {
 
 type MultiSlotSolution struct {
 	SlotSolutions []SlotSolutionCandidate
+	TravelTimes   []uint
 	TotalTime     uint
 	Score         float64
 }
