@@ -142,13 +142,13 @@ func dfs(candidates *[][]SlotSolutionCandidate, depth int, path *[]SlotSolutionC
 
 func removePlaceIds(placesMap map[string]bool, slotSolutionCandidate *SlotSolutionCandidate) {
 	for _, placeId := range slotSolutionCandidate.PlaceIDS {
-		delete(placesMap, placeId)
+		placesMap[placeId] = false
 	}
 }
 
 func checkDuplication(placesMap map[string]bool, slotSolutionCandidate *SlotSolutionCandidate) bool {
 	for _, placeId := range slotSolutionCandidate.PlaceIDS {
-		if _, exist := placesMap[placeId]; exist {
+		if placesMap[placeId] {
 			return false
 		}
 	}
