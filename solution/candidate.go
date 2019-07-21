@@ -37,7 +37,7 @@ type SlotSolution struct {
 type SlotSolutionCandidate struct {
 	PlaceNames      []string
 	PlaceIDS        []string
-	PlaceLocations	[][2]float64
+	PlaceLocations  [][2]float64
 	Candidate       []TripEvents
 	EndPlaceDefault matching.Place
 	Score           float64
