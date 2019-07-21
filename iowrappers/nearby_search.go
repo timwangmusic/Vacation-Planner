@@ -97,7 +97,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			detailSearchResCh := make(chan PlaceDetailSearchRes)
 			nextPageToken := nextPageTokenMap[placeType]
 			searchResp := GoogleNearbySearchSDK(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
-			detailSearchCount := 0	// this achieves a similar effect of closing the channel
+			detailSearchCount := 0 // this achieves a similar effect of closing the channel
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
 					detailSearchCount++
