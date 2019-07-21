@@ -106,7 +106,8 @@ func (collHandler *CollHandler) Search(radius uint, coordinates []float64) (plac
 			"$nearSphere": bson.M{
 				"$geometry": bson.M{
 					"type":        "Point",
-					"coordinates": [2]float64{lat, lng},
+					// per MongoDB geoJSON requirements, specify the longitude first and then latitude
+					"coordinates": [2]float64{lng, lat},
 				},
 				"$maxDistance": radius,
 			},

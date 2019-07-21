@@ -7,8 +7,8 @@ import (
 
 type Weekday uint8
 
-const(
-	DATE_MONDAY Weekday= iota
+const (
+	DATE_MONDAY Weekday = iota
 	DATE_TUESDAY
 	DATE_WEDNESDAY
 	DATE_THURSAY
@@ -30,25 +30,25 @@ type Place struct {
 }
 
 type Location struct {
-	Type string	`json:"type"`
+	Type        string     `json:"type"`
 	Coordinates [2]float64 `json:"coordinates"`
 }
 
-type Address struct{
-	PObox			string
-	ExtendedAddr	string
-	StreetAddr      string
-	Locality        string
-	Region 			string
-	PostalCode      string
-	Country			string
+type Address struct {
+	PObox        string
+	ExtendedAddr string
+	StreetAddr   string
+	Locality     string
+	Region       string
+	PostalCode   string
+	Country      string
 }
 
-func (v *Place) GetName() string{
+func (v *Place) GetName() string {
 	return v.Name
 }
 
-func (v *Place) GetType() string{
+func (v *Place) GetType() string {
 	return v.LocationType
 }
 
@@ -69,38 +69,39 @@ func (v *Place) GetAddress() Address {
 	return v.Address
 }
 
-func (v *Place) GetFormattedAddress() string{
+func (v *Place) GetFormattedAddress() string {
 	return v.FormattedAddress
 }
 
-func (v *Place) GetLocation() [2]float64{
+func (v *Place) GetLocation() [2]float64 {
 	return v.Location.Coordinates
 }
 
-func (v *Place) GetPriceLevel() int{
+func (v *Place) GetPriceLevel() int {
 	return v.PriceLevel
 }
 
-func (v *Place) GetRating() float32{
+func (v *Place) GetRating() float32 {
 	return v.Rating
 }
 
 // Set name if POI name changed
-func (v *Place) SetName(name string){
+func (v *Place) SetName(name string) {
 	v.Name = name
 }
 
 // Set human-readable Address of this place
-func (v *Place) SetFormattedAddress(formattedAddress string){
+func (v *Place) SetFormattedAddress(formattedAddress string) {
 	v.FormattedAddress = formattedAddress
 }
 
 // Set type if POI type changed
-func (v *Place) SetType(t string){
+func (v *Place) SetType(t string) {
 	v.LocationType = t
 }
+
 // Set time if POI opening hour changed for some day in a week
-func (v *Place) SetHour(day Weekday, hour string){
+func (v *Place) SetHour(day Weekday, hour string) {
 	switch day {
 	case DATE_SUNDAY:
 		v.Hours[day] = hour
@@ -121,23 +122,23 @@ func (v *Place) SetHour(day Weekday, hour string){
 	}
 }
 
-func (v *Place) SetID(id string){
+func (v *Place) SetID(id string) {
 	v.ID = id
 }
 
-func (v *Place) SetAddress(addr string){
-	if addr == ""{
+func (v *Place) SetAddress(addr string) {
+	if addr == "" {
 		return
 	}
 	p := regexp.MustCompile(`<.*?>.*?<`)
 	pVal := regexp.MustCompile(`>.*<`)
 	pFieldName := regexp.MustCompile(`".*"`)
 	fields := p.FindAllString(addr, -1)
-	for _, field := range fields{
+	for _, field := range fields {
 		fieldName := pFieldName.FindString(field)
 		value := pVal.FindString(field)
-		val := value[1:len(value)-1]
-		switch fieldName{
+		val := value[1 : len(value)-1]
+		switch fieldName {
 		case `"post-office-box"`:
 			v.Address.PObox = val
 		case `"extended-address"`:
@@ -156,15 +157,15 @@ func (v *Place) SetAddress(addr string){
 	}
 }
 
-func (v *Place) SetLocation(location [2]float64){
+func (v *Place) SetLocation(location [2]float64) {
 	v.Location.Coordinates = location
 	v.Location.Type = "Point"
 }
 
-func (v *Place) SetPriceLevel(priceRange int){
+func (v *Place) SetPriceLevel(priceRange int) {
 	v.PriceLevel = priceRange
 }
 
-func (v *Place) SetRating(rating float32){
+func (v *Place) SetRating(rating float32) {
 	v.Rating = rating
 }
