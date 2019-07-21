@@ -85,7 +85,8 @@ func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []Mul
 	res := make([]MultiSlotSolution, 0)
 	slotSolutionResults := make([][]SlotSolutionCandidate, 0)
 	path := make([]SlotSolutionCandidate, 0)
-	dfs(candidates, 0, &path, &slotSolutionResults)
+	placeMap := make(map[string]bool)
+	dfs(candidates, 0, &path, &slotSolutionResults, placeMap)
 
 	// after dfs, slot solution results are in the shape of number of multi-slot results by number of slots
 	// i.e. each row is ready to fill one multi slot solution
@@ -105,21 +106,22 @@ func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []Mul
 	return bestSolutions
 }
 
-func calTravelTime (solution *MultiSlotSolution) {
+func calTravelTime(solution *MultiSlotSolution) {
 	numTimeSlots := len(solution.SlotSolutions)
 
-	for slotIdx := 0; slotIdx < numTimeSlots - 1; slotIdx++ {
+	for slotIdx := 0; slotIdx < numTimeSlots-1; slotIdx++ {
 		startPlace := solution.SlotSolutions[slotIdx].PlaceLocations[len(solution.SlotSolutions[slotIdx].PlaceLocations)-1]
 		endPlace := solution.SlotSolutions[slotIdx].PlaceLocations[0]
-		startLatlng, endLatlng := make([]float64,2), make([]float64,2)
+		startLatlng, endLatlng := make([]float64, 2), make([]float64, 2)
 		startLatlng[0], startLatlng[1] = startPlace[0], startPlace[1]
 		endLatlng[0], endLatlng[1] = endPlace[0], endPlace[1]
 		distance := utils.HaversineDist(startLatlng, endLatlng)
-		solution.TravelTimes = append(solution.TravelTimes, uint(distance / (TRAVEL_SPEED * 16.67)))
+		solution.TravelTimes = append(solution.TravelTimes, uint(distance/(TRAVEL_SPEED*16.67)))
 	}
 }
 
-func dfs(candidates *[][]SlotSolutionCandidate, depth int, path *[]SlotSolutionCandidate, results *[][]SlotSolutionCandidate) {
+func dfs(candidates *[][]SlotSolutionCandidate, depth int, path *[]SlotSolutionCandidate,
+	results *[][]SlotSolutionCandidate, placeMap map[string]bool) {
 	if depth == len(*candidates) {
 		tmp := make([]SlotSolutionCandidate, depth)
 		copy(tmp, *path)
@@ -128,10 +130,34 @@ func dfs(candidates *[][]SlotSolutionCandidate, depth int, path *[]SlotSolutionC
 	}
 	candidates_ := *candidates
 	for idx := 0; idx < len(candidates_[depth]); idx++ {
+		if !checkDuplication(placeMap, &candidates_[depth][idx]) {
+			continue
+		}
 		*path = append((*path), candidates_[depth][idx])
-		dfs(candidates, depth+1, path, results)
+		dfs(candidates, depth+1, path, results, placeMap)
 		*path = (*path)[:len(*path)-1]
+		removePlaceIds(placeMap, &candidates_[depth][idx])
 	}
+}
+
+func removePlaceIds(placesMap map[string]bool, slotSolutionCandidate *SlotSolutionCandidate) {
+	for _, placeId := range slotSolutionCandidate.PlaceIDS {
+		delete(placesMap, placeId)
+	}
+}
+
+func checkDuplication(placesMap map[string]bool, slotSolutionCandidate *SlotSolutionCandidate) bool {
+	for _, placeId := range slotSolutionCandidate.PlaceIDS {
+		if _, exist := placesMap[placeId]; exist {
+			return false
+		}
+	}
+
+	for _, placeId := range slotSolutionCandidate.PlaceIDS {
+		placesMap[placeId] = true
+	}
+
+	return true
 }
 
 func totalScore(candidates *[]SlotSolutionCandidate) float64 {
