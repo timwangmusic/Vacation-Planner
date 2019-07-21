@@ -35,6 +35,7 @@ type SlotSolution struct {
 	Solution []SlotSolutionCandidate
 }
 type SlotSolutionCandidate struct {
+	PlaceNames      []string
 	PlaceIDS        []string
 	Candidate       []TripEvents
 	EndPlaceDefault matching.Place
@@ -102,12 +103,12 @@ func (this *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolutionCandidat
 	}
 	return true
 }
+
 func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPlaces) SlotSolutionCandidate {
 	res := SlotSolutionCandidate{}
 	res.IsSet = false
 	if len(iter.Status) != len(this.slotag) {
 		//incorrect return
-		// return res
 		return res
 	}
 	//create a hashtable and iterate through place clusters
@@ -126,6 +127,7 @@ func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPla
 				record[ecluster[num].PlaceId] = true
 				places[i] = ecluster[num]
 				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
+				res.PlaceNames = append(res.PlaceNames, places[i].Name)
 			}
 		} else if this.slotag[i] == 'V' || this.slotag[i] == 'v' {
 			_, ok := record[vcluster[num].PlaceId]
@@ -135,16 +137,13 @@ func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPla
 				record[vcluster[num].PlaceId] = true
 				places[i] = vcluster[num]
 				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
+				res.PlaceNames = append(res.PlaceNames, places[i].Name)
 			}
 		} else {
 			return res
 		}
 	}
-	//get and set score
-	//res.Score = getScore(res.Candidate)
 	res.Score = matching.Score(places)
 	res.IsSet = true
-	//fmt.Println(iter.Status)
-	//fmt.Println(res.Score)
 	return res
 }

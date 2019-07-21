@@ -121,7 +121,7 @@ func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, s
 
 // Generate slot solution candidates
 // Parameter list matches slot request
-func GenerateSlotSolution (timeMatcher *matching.TimeMatcher, location string, EVtag string,
+func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, EVtag string,
 	stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) (slotSolution SlotSolution) {
 	if len(stayTimes) != len(EVtag) {
 		log.Fatal("User designated stay time does not match tag.")
@@ -140,7 +140,7 @@ func GenerateSlotSolution (timeMatcher *matching.TimeMatcher, location string, E
 	req := matching.TimeMatchingRequest{}
 
 	req.Location = location
-	if radius <= 0{
+	if radius <= 0 {
 		radius = 2000
 	}
 	req.Radius = radius
@@ -148,7 +148,7 @@ func GenerateSlotSolution (timeMatcher *matching.TimeMatcher, location string, E
 	query_time_slot := matching.TimeSlot{
 		POI.TimeInterval{
 			stayTimes[0].Slot.Start,
-			 stayTimes[len(stayTimes)-1].Slot.End,
+			stayTimes[len(stayTimes)-1].Slot.End,
 		},
 	}
 	// only one big time slot
