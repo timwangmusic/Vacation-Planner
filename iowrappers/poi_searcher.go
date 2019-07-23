@@ -6,10 +6,6 @@ import (
 	"log"
 )
 
-const (
-	MAX_NUM_PLACES_DIFF = 10
-)
-
 type PlaceSearcher interface {
 	NearbySearch(request *PlaceSearchRequest) []POI.Place
 }
@@ -35,7 +31,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	dbHandler.SetCollHandler(string(request.PlaceCat))
 	storedPlaces, err := dbHandler.PlaceSearch(request)
 	utils.CheckErr(err)
-	if len(storedPlaces) < int(request.MaxNumResults)-MAX_NUM_PLACES_DIFF {
+	if uint(len(storedPlaces)) < request.MinNumResults {
 		places = append(places, poiSearcher.mapsClient.NearbySearch(request)...)
 		for _, place := range places {
 			utils.CheckErr(dbHandler.InsertPlace(place, request.PlaceCat))

@@ -76,8 +76,9 @@ func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadi
 	request := iowrappers.PlaceSearchRequest{
 		Location: location,
 		PlaceCat: placeManager.PlaceCat,
-		Radius:   searchRadius,
-		RankBy:   "prominence",
+		Radius: searchRadius,
+		RankBy: "prominence",
+		MinNumResults: 20,
 	}
 	if searchType == "" {
 		request.MaxNumResults = 20
