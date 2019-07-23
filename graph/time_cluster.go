@@ -70,6 +70,7 @@ func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadi
 		PlaceCat: placeManager.PlaceCat,
 		Radius: searchRadius,
 		RankBy: "prominence",
+		MinNumResults: 20,
 	}
 	if searchType == ""{
 		request.MaxNumResults = 20

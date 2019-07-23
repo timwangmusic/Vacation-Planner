@@ -40,8 +40,10 @@ type PlaceSearchRequest struct {
 	Radius uint
 	// rank by
 	RankBy string
-	// number of results
+	// maximum number of results
 	MaxNumResults uint
+	// minimum number of results
+	MinNumResults uint
 }
 
 func GoogleNearbySearchSDK(c MapsClient, location string, placeType string, radius uint,
