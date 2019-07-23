@@ -30,7 +30,7 @@ func (solver *Solver) Init(apiKey string, dbName string, dbUrl string) {
 	solver.matcher.Init(poiSearcher)
 }
 
-func (solver *Solver) Solve(req *PlanningRequest) (resp PlanningResponse, err error) {
+func (solver *Solver) Solve(req PlanningRequest) (resp PlanningResponse, err error) {
 	if !travelTimeValidation(req) {
 		err = errors.New("Travel time limit exceeded for current selection")
 		return
@@ -59,7 +59,7 @@ func (solver *Solver) Solve(req *PlanningRequest) (resp PlanningResponse, err er
 
 // return false if travel time between clusters exceed limit
 // use upper-bound of the sum of radius plus distance between cluster centers
-func travelTimeValidation(req *PlanningRequest) bool {
+func travelTimeValidation(req PlanningRequest) bool {
 	numTimeSlots := len(req.SlotRequests)
 
 	for i := 0; i < numTimeSlots-1; i++ {
@@ -91,7 +91,7 @@ func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []Mul
 	// after dfs, slot solution results are in the shape of number of multi-slot results by number of slots
 	// i.e. each row is ready to fill one multi slot solution
 	for _, result := range slotSolutionResults {
-		multiSlotSolutionScore := totalScore(&result)
+		multiSlotSolutionScore := totalScore(result)
 		// TODO: ADD TOTAL TIME CALCULATION USING UPPER-BOUND METHOD
 		multiSlotSolution := MultiSlotSolution{
 			Score:         multiSlotSolutionScore,
@@ -101,12 +101,12 @@ func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []Mul
 	}
 	bestSolutions := FindBestSolutions(res)
 	for solutionIdx := range bestSolutions {
-		calTravelTime(&bestSolutions[solutionIdx])
+		calTravelTime(bestSolutions[solutionIdx])
 	}
 	return bestSolutions
 }
 
-func calTravelTime(solution *MultiSlotSolution) {
+func calTravelTime(solution MultiSlotSolution) {
 	numTimeSlots := len(solution.SlotSolutions)
 
 	for slotIdx := 0; slotIdx < numTimeSlots-1; slotIdx++ {
@@ -160,9 +160,9 @@ func checkDuplication(placesMap map[string]bool, slotSolutionCandidate *SlotSolu
 	return true
 }
 
-func totalScore(candidates *[]SlotSolutionCandidate) float64 {
+func totalScore(candidates []SlotSolutionCandidate) float64 {
 	score := 0.0
-	for _, candidate := range *candidates {
+	for _, candidate := range candidates {
 		score += candidate.Score
 	}
 	return score
