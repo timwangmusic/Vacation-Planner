@@ -82,13 +82,6 @@ func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, 
 	collHandler.session = dbHandler.Session
 	collHandler.dbName = databaseName
 	collHandler.collName = collectionName
-	// Ensure placeId index at collection handler initialization
-	placeIdIdx := mgo.Index{
-		Key: []string{"placeId"},
-		Unique: true,
-		DropDups: true,
-	}
-	utils.CheckErr(collHandler.GetCollection().EnsureIndex(placeIdIdx))
 }
 
 func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
