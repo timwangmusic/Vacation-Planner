@@ -75,15 +75,20 @@ func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCateg
 		return fmt.Errorf("Collection %s does not exist", collName)
 	}
 	collHandler := dbHandler.handlers[collName]
-	collHandler.InsertPlace(place)
-	return nil
+	return collHandler.InsertPlace(place)
 }
 
 func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, collectionName string) {
 	collHandler.session = dbHandler.Session
 	collHandler.dbName = databaseName
 	collHandler.collName = collectionName
-	// TODO: Ensure placeId index at initialization
+	// Ensure placeId index at collection handler initialization
+	placeIdIdx := mgo.Index{
+		Key: []string{"placeId"},
+		Unique: true,
+		DropDups: true,
+	}
+	utils.CheckErr(collHandler.GetCollection().EnsureIndex(placeIdIdx))
 }
 
 func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
@@ -91,9 +96,9 @@ func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
 	return
 }
 
-func (collHandler *CollHandler) InsertPlace(place POI.Place) {
+func (collHandler *CollHandler) InsertPlace(place POI.Place) error {
 	err := collHandler.GetCollection().Insert(place)
-	utils.CheckErr(err)
+	return err
 }
 
 // MongoDB geo-spatial search
