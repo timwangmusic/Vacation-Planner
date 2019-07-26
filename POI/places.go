@@ -18,7 +18,7 @@ const (
 )
 
 type Place struct {
-	ID               string    `bson:"placeId"`
+	ID               string    `bson:"_id"`
 	Name             string    `bson:"name"`
 	LocationType     string    `bson:"location_type"`
 	Address          Address   `bson:"address"`
