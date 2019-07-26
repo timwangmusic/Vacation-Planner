@@ -52,7 +52,7 @@ func (solver *Solver) Solve(req PlanningRequest) (resp PlanningResponse, err err
 	}
 
 	multiSlotSolution := genMultiSlotSolutionCandidates(&candidates)
-	// TODO: ADD TRAVEL TIME FOR EACH MULTI-SLOT SOLUTION
+
 	resp.Solution = multiSlotSolution
 	return
 }
@@ -92,7 +92,7 @@ func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []Mul
 	// i.e. each row is ready to fill one multi slot solution
 	for _, result := range slotSolutionResults {
 		multiSlotSolutionScore := totalScore(result)
-		// TODO: ADD TOTAL TIME CALCULATION USING UPPER-BOUND METHOD
+
 		multiSlotSolution := MultiSlotSolution{
 			Score:         multiSlotSolutionScore,
 			SlotSolutions: result,
@@ -101,22 +101,27 @@ func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []Mul
 	}
 	bestSolutions := FindBestSolutions(res)
 	for solutionIdx := range bestSolutions {
-		calTravelTime(bestSolutions[solutionIdx])
+		calTravelTime(&bestSolutions[solutionIdx])
 	}
 	return bestSolutions
 }
 
-func calTravelTime(solution MultiSlotSolution) {
+func calTravelTime(solution *MultiSlotSolution) {
 	numTimeSlots := len(solution.SlotSolutions)
 
 	for slotIdx := 0; slotIdx < numTimeSlots-1; slotIdx++ {
 		startPlace := solution.SlotSolutions[slotIdx].PlaceLocations[len(solution.SlotSolutions[slotIdx].PlaceLocations)-1]
 		endPlace := solution.SlotSolutions[slotIdx].PlaceLocations[0]
+
 		startLatlng, endLatlng := make([]float64, 2), make([]float64, 2)
 		startLatlng[0], startLatlng[1] = startPlace[0], startPlace[1]
 		endLatlng[0], endLatlng[1] = endPlace[0], endPlace[1]
+
 		distance := utils.HaversineDist(startLatlng, endLatlng)
-		solution.TravelTimes = append(solution.TravelTimes, uint(distance/(TRAVEL_SPEED*16.67)))
+		intervalTime := uint(distance / (TRAVEL_SPEED * 16.67))
+
+		solution.TravelTimes = append(solution.TravelTimes, intervalTime)
+		solution.TotalTime += intervalTime
 	}
 }
 
