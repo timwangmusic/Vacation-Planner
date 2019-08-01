@@ -71,8 +71,8 @@ func (placeManager *TimeClustersManager) Init(poiSearcher *iowrappers.PoiSearche
 	}
 }
 
-// call Google API to obtain nearby Places and extract location data
-func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint, searchType string) {
+// searchType is a selector for MinNumResults in PlaceSearchRequest
+func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint, searchType string){
 	request := iowrappers.PlaceSearchRequest{
 		Location: location,
 		PlaceCat: placeManager.PlaceCat,
@@ -80,11 +80,12 @@ func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadi
 		RankBy: "prominence",
 		MinNumResults: 20,
 	}
-	if searchType == "" {
-		request.MaxNumResults = 20
-	} else {
-		request.MaxNumResults = 100
+	if searchType == ""{
+		request.MinNumResults = 20
+	} else{
+		request.MinNumResults = 30
 	}
+	request.MaxNumResults = 2 * request.MinNumResults
 	placeManager.places = placeManager.poiSearcher.NearbySearch(&request)
 }
 

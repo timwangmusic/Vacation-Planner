@@ -40,9 +40,9 @@ type PlaceSearchRequest struct {
 	Radius uint
 	// rank by
 	RankBy string
-	// maximum number of results
+	// maximum number of results, set this upper limit for reducing upper-layer computational load and limiting external API call
 	MaxNumResults uint
-	// minimum number of results
+	// minimum number of results, set this lower limit for reducing risk of zero result in upper-layer computations
 	MinNumResults uint
 }
 
@@ -91,7 +91,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 
 	searchStartTime := time.Now()
 
-	for totalResult < request.MaxNumResults {
+	for totalResult < request.MinNumResults {
 		for _, placeType := range placeTypes {
 			if reqTimes > 0 && nextPageTokenMap[placeType] == "" { // no more result for this location type
 				continue

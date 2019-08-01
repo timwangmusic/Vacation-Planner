@@ -32,17 +32,21 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	storedPlaces, err := dbHandler.PlaceSearch(request)
 	utils.CheckErr(err)
 	if uint(len(storedPlaces)) < request.MinNumResults {
-		places = append(places, poiSearcher.mapsClient.NearbySearch(request)...)
+		places = append(places, poiSearcher.mapsClient.NearbySearch(request)[:request.MaxNumResults]...)
 		for _, place := range places {
 			utils.CheckErr(dbHandler.InsertPlace(place, request.PlaceCat))
 		}
 	} else {
-		places = append(places, storedPlaces...)
+		places = append(places, storedPlaces[:request.MaxNumResults]...)
+	}
+	if uint(len(places)) < request.MinNumResults {
+		log.Printf("Number of POI results found is %d, less than requested %d",
+			len(places), request.MinNumResults)
 	}
 	if len(places) == 0 {
 		log.Printf("No qualified POI result found in the given location %s, radius %d, place type: %s",
 			request.Location, request.Radius, request.PlaceCat)
-		log.Printf("maps client may be invalid")
+		log.Printf("location may be invalid")
 	}
 	return
 }
