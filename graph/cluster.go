@@ -51,9 +51,9 @@ func (placeManager *ClustersManager) PlaceSearch(location string, searchRadius u
 		RankBy: "prominence",
 	}
 	if searchType == ""{
-		request.MaxNumResults = 20
+		request.MinNumResults = 20
 	} else{
-		request.MaxNumResults = 100
+		request.MinNumResults = 100
 	}
 	placeManager.places = placeManager.Client.NearbySearch(&request)
 
