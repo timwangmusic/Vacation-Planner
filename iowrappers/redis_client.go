@@ -12,14 +12,13 @@ import (
 
 type RedisClient struct {
 	client redis.Client
-
 }
 
 func (redisClient *RedisClient) Init(addr string, password string, databaseIdx int) {
 	redisClient.client = *redis.NewClient(&redis.Options{
-		Addr: addr,
+		Addr:     addr,
 		Password: password,
-		DB: databaseIdx,
+		DB:       databaseIdx,
 	})
 }
 
@@ -34,15 +33,17 @@ func (redisClient *RedisClient) setPlace(place POI.Place) {
 // Store places obtained from database in Redis
 // 1) Store place ID to the sorted set for the location
 // 2) Store place details in hash
-func (redisClient *RedisClient) StorePlacesForLocation(location string, places []POI.Place) {
+func (redisClient *RedisClient) StorePlacesForLocation(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
 	client := redisClient.client
 	latLng := strings.Split(location, ",")
 	lat, _ := strconv.ParseFloat(latLng[0], 64)
 	lng, _ := strconv.ParseFloat(latLng[1], 64)
 
+	sortedSetKey := strings.Join([]string{location, string(placeCategory)}, "_")
+
 	for _, place := range places {
 		dist := utils.HaversineDist([]float64{lng, lat}, place.Location.Coordinates[:])
-		client.ZAdd(location, redis.Z{dist, place.ID})
+		client.ZAdd(sortedSetKey, redis.Z{dist, place.ID})
 		redisClient.setPlace(place)
 	}
 }
@@ -56,11 +57,15 @@ func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place) {
 }
 
 func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) []POI.Place {
-	placeIds, _ := redisClient.client.ZRangeWithScores(request.Location, 0, int64(request.Radius)).Result()
+	sortedSetKey := strings.Join([]string{request.Location, string(request.PlaceCat)}, "_")
+	placeIds, _ := redisClient.client.ZRangeByScore(sortedSetKey, redis.ZRangeBy{
+		Min:    "0",
+		Max:    string(request.Radius),
+	}).Result()
 	res := make([]POI.Place, len(placeIds))
 
 	for idx, placeId := range placeIds {
-		res[idx] = redisClient.getPlace(fmt.Sprintf("%v", placeId.Member))
+		res[idx] = redisClient.getPlace(fmt.Sprintf("%v", placeId))
 	}
 	return res
 }
