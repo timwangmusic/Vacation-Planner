@@ -21,12 +21,12 @@ type Solver struct {
 	matcher *matching.TimeMatcher
 }
 
-func (solver *Solver) Init(apiKey string, dbName string, dbUrl string) {
+func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redis_addr string, redis_psw string, redis_idx int) {
 	solver.matcher = &matching.TimeMatcher{}
 	poiSearcher := &iowrappers.PoiSearcher{}
 	mapsClient := &iowrappers.MapsClient{}
 	utils.CheckErr(mapsClient.Create(apiKey))
-	poiSearcher.Init(mapsClient, dbName, dbUrl)
+	poiSearcher.Init(mapsClient, dbName, dbUrl, redis_addr, redis_psw, redis_idx)
 	solver.matcher.Init(poiSearcher)
 }
 
