@@ -58,10 +58,12 @@ func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place) {
 
 func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) []POI.Place {
 	sortedSetKey := strings.Join([]string{request.Location, string(request.PlaceCat)}, "_")
+
 	placeIds, _ := redisClient.client.ZRangeByScore(sortedSetKey, redis.ZRangeBy{
 		Min:    "0",
 		Max:    string(request.Radius),
 	}).Result()
+
 	res := make([]POI.Place, len(placeIds))
 
 	for idx, placeId := range placeIds {
