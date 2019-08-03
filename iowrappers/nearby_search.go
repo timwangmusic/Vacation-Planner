@@ -76,7 +76,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 		request.RankBy = "prominence" // default rankBy value
 	}
 
-	placeTypes := getTypes(request.PlaceCat) // get place types in a category
+	placeTypes := getPlaceTypes(request.PlaceCat) // get place types in a category
 
 	nextPageTokenMap := make(map[LocationType]string) // map for place type to search token
 	for _, placeType := range placeTypes {
@@ -217,7 +217,7 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType Loca
 }
 
 // Given a location type returns a set of types defined in google maps API
-func getTypes(placeCat POI.PlaceCategory) (placeTypes []LocationType) {
+func getPlaceTypes(placeCat POI.PlaceCategory) (placeTypes []LocationType) {
 	switch placeCat {
 	case POI.PlaceCategoryVisit:
 		placeTypes = append(placeTypes,
@@ -225,6 +225,18 @@ func getTypes(placeCat POI.PlaceCategory) (placeTypes []LocationType) {
 	case POI.PlaceCategoryEatery:
 		placeTypes = append(placeTypes,
 			[]LocationType{LocationTypeCafe, LocationTypeRestaurant}...)
+	}
+	return
+}
+
+func getPlaceCategory(placeType LocationType) (placeCategory POI.PlaceCategory) {
+	switch placeType {
+	case LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum:
+		placeCategory = POI.PlaceCategoryVisit
+	case LocationTypeCafe, LocationTypeRestaurant:
+		placeCategory = POI.PlaceCategoryEatery
+	default:
+		placeCategory = POI.PlaceCategoryEatery
 	}
 	return
 }
