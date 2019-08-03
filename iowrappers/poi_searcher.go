@@ -3,6 +3,7 @@ package iowrappers
 import (
 	"Vacation-planner/POI"
 	"Vacation-planner/utils"
+	"fmt"
 	"log"
 )
 
@@ -36,7 +37,9 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	dbHandler := poiSearcher.dbHandler
 	dbHandler.SetCollHandler(string(request.PlaceCat))
 
-	cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
+	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
+	cachedPlaces := poiSearcher.redisClient.RetrieveFromCache(request)
+	fmt.Println("number of results from redis", len(cachedPlaces))
 	if uint(len(cachedPlaces)) >= request.MinNumResults {
 		log.Printf("Place Type: %s, Using Redis to fulfill request! \n", request.PlaceCat)
 		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
@@ -75,7 +78,8 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 //update Redis when hitting cache miss
 func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
-	poiSearcher.redisClient.StorePlacesForLocation(location, places, placeCategory)
+	//poiSearcher.redisClient.StorePlacesForLocation(location, places, placeCategory)
+	poiSearcher.redisClient.CachePlacesOnCategory(places)
 	log.Printf("Redis update complete")
 }
 
