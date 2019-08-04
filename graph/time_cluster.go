@@ -11,7 +11,7 @@ import (
 	"Vacation-planner/iowrappers"
 )
 
-type ClusterManager interface{
+type ClusterManager interface {
 	PlaceSearch(string, uint, string) // location, search radius and search type
 }
 
@@ -21,30 +21,38 @@ type TimeCluster struct {
 	TimeInterval POI.TimeInterval
 }
 
+// an interface for handling interval-like data structure
+type TimeIntervals interface {
+	NumIntervals() int                         // get number of time intervals
+	GetAllIntervals() *[]POI.TimeInterval      // get all time intervals as a list of Start and End time
+	GetInterval(int) (error, POI.TimeInterval) // get an interval by specifying its index
+	InsertTimeInterval(POI.TimeInterval)       // add an interval
+}
+
 // returns number of Places in a time cluster
-func (cls *TimeCluster) Size() int{
+func (cls *TimeCluster) Size() int {
 	return len(cls.Places)
 }
 
 // TimeClusters consists of multiple TimeCluster
 type TimeClusters struct {
-	Clusters      map[string]*TimeCluster     // maps interval to time cluster
-	TimeIntervals POI.GoogleMapsTimeIntervals // all time intervals
+	Clusters      map[string]*TimeCluster // maps interval to time cluster
+	TimeIntervals TimeIntervals           // all time intervals
 }
 
 // returns number of time intervals in a time-based cluster
-func (cls *TimeClusters) Size() int{
+func (cls *TimeClusters) Size() int {
 	return len(cls.Clusters)
 }
 
 //TimeClustersManager
 //To use a TimeClustersManager, fetch Places data using PlaceSearch and then time clustering with Clustering method.
-type TimeClustersManager struct{
-	poiSearcher	  *iowrappers.PoiSearcher
-	TimeClusters  *TimeClusters
-	places        []POI.Place
-	PlaceCat      POI.PlaceCategory
-	Weekday		  POI.Weekday
+type TimeClustersManager struct {
+	poiSearcher  *iowrappers.PoiSearcher
+	TimeClusters *TimeClusters
+	places       []POI.Place
+	PlaceCat     POI.PlaceCategory
+	Weekday      POI.Weekday
 }
 
 // TimeClusterManager initialization
@@ -54,8 +62,8 @@ func (placeManager *TimeClustersManager) Init(poiSearcher *iowrappers.PoiSearche
 	placeManager.PlaceCat = placeCat
 	placeManager.Weekday = day
 	placeManager.TimeClusters = &TimeClusters{Clusters: make(map[string]*TimeCluster, 0)}
-	placeManager.TimeClusters.TimeIntervals = POI.GoogleMapsTimeIntervals{}
-	for _, interval := range timeIntervals{
+	placeManager.TimeClusters.TimeIntervals = &POI.GoogleMapsTimeIntervals{}
+	for _, interval := range timeIntervals {
 		clusterKey := interval.Serialize()
 		placeManager.TimeClusters.TimeIntervals.InsertTimeInterval(interval)
 		placeManager.TimeClusters.Clusters[clusterKey] = &TimeCluster{TimeInterval: interval}
@@ -64,16 +72,16 @@ func (placeManager *TimeClustersManager) Init(poiSearcher *iowrappers.PoiSearche
 }
 
 // call Google API to obtain nearby Places and extract location data
-func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint, searchType string){
+func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint, searchType string) {
 	request := iowrappers.PlaceSearchRequest{
 		Location: location,
 		PlaceCat: placeManager.PlaceCat,
-		Radius: searchRadius,
-		RankBy: "prominence",
+		Radius:   searchRadius,
+		RankBy:   "prominence",
 	}
-	if searchType == ""{
+	if searchType == "" {
 		request.MaxNumResults = 20
-	} else{
+	} else {
 		request.MaxNumResults = 100
 	}
 	placeManager.places = placeManager.poiSearcher.NearbySearch(&request)
@@ -81,19 +89,19 @@ func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadi
 
 // assign Places to time Clusters using their time interval info
 func (placeManager *TimeClustersManager) Clustering(day POI.Weekday) {
-	for _, place := range placeManager.places{
+	for _, place := range placeManager.places {
 		placeManager.assign(&place, day)
 	}
 }
 
 func (placeManager *TimeClustersManager) assign(place *POI.Place, day POI.Weekday) {
-	openingHour := place.GetHour(day)		// get opening hour for a weekday
+	openingHour := place.GetHour(day) // get opening hour for a weekday
 	openingInterval, err := POI.ParseTimeInterval(openingHour)
-	if err != nil{
+	if err != nil {
 		return
 	}
-	for _, interval := range *placeManager.TimeClusters.TimeIntervals.GetAllIntervals(){
-		if openingInterval.Intersect(&interval){
+	for _, interval := range *placeManager.TimeClusters.TimeIntervals.GetAllIntervals() {
+		if openingInterval.Intersect(&interval) {
 			clusterKey := interval.Serialize()
 			clusterPlaces := &placeManager.TimeClusters.Clusters[clusterKey].Places
 			*clusterPlaces = append(*clusterPlaces, *place)

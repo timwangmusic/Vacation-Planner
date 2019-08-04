@@ -21,18 +21,10 @@ func (interval *TimeInterval) Serialize() string {
 
 // returns true if two time intervals intersect
 func (interval *TimeInterval) Intersect(newInterval *TimeInterval) bool {
-	if interval.End < newInterval.Start || interval.Start > newInterval.End {
+	if interval.End <= newInterval.Start || interval.Start >= newInterval.End {
 		return false
 	}
 	return true
-}
-
-// an interface for handling interval-like data structure
-type TimeIntervals interface {
-	NumIntervals() int                     // get number of time intervals
-	GetAllIntervals() *[]TimeInterval      // get all time intervals as a list of Start and End time
-	GetInterval(int) (error, TimeInterval) // get an interval by specifying its index
-	InsertTimeInterval(TimeInterval)       // add an interval
 }
 
 // given a open hours data from Google, we only use the Thursday data to fill GoogleMapsTimeIntervals struct
