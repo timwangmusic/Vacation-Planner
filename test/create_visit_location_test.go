@@ -14,7 +14,7 @@ func TestCreatePlace(t *testing.T){
 		t.Errorf("Name setting is not correct. \n Expected: %s, got: %s",
 			name, place.GetName())
 	}
-	if place.GetLocation() != [2]float64{32.715736,-117.161087}{
+	if place.GetLocation() != [2]float64{-117.161087, 32.715736}{
 		t.Errorf("Location setting is not correct.")
 	}
 	if place.GetType() != "stay" {
