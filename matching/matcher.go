@@ -84,7 +84,7 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 		mgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 	}
 
-	for _, timeInterval := range mgr.TimeClusters.TimeIntervals.Intervals{
+	for _, timeInterval := range *mgr.TimeClusters.TimeIntervals.GetAllIntervals(){
 		clusterKey := timeInterval.Serialize()
 		if _, exist := (*clusterMap)[clusterKey]; !exist{
 			(*clusterMap)[clusterKey] = &PlaceCluster{Places: make([]Place, 0), Slot: TimeSlot{timeInterval}}
