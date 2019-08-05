@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"strconv"
-	"strings"
 )
 
 type DatabaseHandler interface {
@@ -15,7 +13,7 @@ type DatabaseHandler interface {
 }
 
 type CollectionHandler interface {
-	Search(radius uint, coordinates []float64) []POI.Place
+	Search(radius uint, latitude float64, longitude float64) []POI.Place
 }
 
 // handles operations at database level
@@ -59,14 +57,14 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) ([]POI.Place, error) {
 	collName := string(req.PlaceCat)
 	if _, exist := dbHandler.handlers[collName]; !exist {
-		return nil, fmt.Errorf("Collection %s does not exist", collName)
+		return make([]POI.Place, 0), fmt.Errorf("Collection %s does not exist", collName)
 	}
 	collHandler := dbHandler.handlers[collName]
 	radius := req.Radius
-	coordinates := strings.Split(req.Location, ",")
-	lat, _ := strconv.ParseFloat(coordinates[0], 64)
-	lng, _ := strconv.ParseFloat(coordinates[1], 64)
-	return collHandler.Search(radius, []float64{lat, lng}), nil
+	lat_lng := utils.ParseLocation(req.Location)
+	lat := lat_lng[0]
+	lng := lat_lng[1]
+	return collHandler.Search(radius, lat, lng), nil
 }
 
 func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCategory) error {
@@ -96,16 +94,14 @@ func (collHandler *CollHandler) InsertPlace(place POI.Place) error {
 
 // MongoDB geo-spatial search
 // Need to create 2d sphere index before use, e.g. db.Eatery.createIndex({ location: "2dsphere" })
-func (collHandler *CollHandler) Search(radius uint, coordinates []float64) (places []POI.Place) {
-	lat := coordinates[0]
-	lng := coordinates[1]
+func (collHandler *CollHandler) Search(radius uint, latitude float64, longitude float64) (places []POI.Place) {
 	query := bson.M{
 		"location": bson.M{
 			"$nearSphere": bson.M{
 				"$geometry": bson.M{
 					"type": "Point",
 					// per MongoDB geoJSON requirements, specify the longitude first and then latitude
-					"coordinates": [2]float64{lng, lat},
+					"coordinates": [2]float64{longitude, latitude},
 				},
 				"$maxDistance": radius,
 			},
