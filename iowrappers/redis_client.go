@@ -81,8 +81,8 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) []POI.
 	sortedSetKey := strings.Join([]string{request.Location, string(request.PlaceCat)}, "_")
 
 	placeIds, _ := redisClient.client.ZRangeByScore(sortedSetKey, redis.ZRangeBy{
-		Min:    "0",
-		Max:    string(request.Radius),
+		Min: "0",
+		Max: string(request.Radius),
 	}).Result()
 
 	res := make([]POI.Place, len(placeIds))
@@ -110,13 +110,13 @@ func (redisClient *RedisClient) RetrieveFromCache(request *PlaceSearchRequest) (
 	cachedPlaces := make([]redis.GeoLocation, 0)
 	searchRadius := request.Radius
 
-	for radiusMultiplier <= MAX_SEARCH_RADIUS_MULTIPLER && uint(numCachedPlaces) < request.MinNumResults{
+	for searchRadius < MAX_SEARCH_RADIUS && uint(numCachedPlaces) < request.MinNumResults {
 		searchRadius = request.Radius * radiusMultiplier
-		fmt.Printf("Now using search of radius %d meters \n", searchRadius)
+		fmt.Printf("Redis now using search of radius %d meters \n", searchRadius)
 		geoQuery := redis.GeoRadiusQuery{
 			Radius: float64(searchRadius),
-			Unit: "m",
-			Sort: "ASC",	// sort ascending
+			Unit:   "m",
+			Sort:   "ASC", // sort ascending
 		}
 		cachedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
 		utils.CheckErr(err)
