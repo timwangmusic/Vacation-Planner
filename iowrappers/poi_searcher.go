@@ -7,6 +7,10 @@ import (
 	"log"
 )
 
+const (
+	MAX_SEARCH_RADIUS_MULTIPLER = 16
+)
+
 type PlaceSearcher interface {
 	NearbySearch(request *PlaceSearchRequest) []POI.Place
 }
