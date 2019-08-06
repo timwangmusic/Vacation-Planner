@@ -3,12 +3,12 @@ package iowrappers
 import (
 	"Vacation-planner/POI"
 	"Vacation-planner/utils"
-	"fmt"
-	"log"
+	"github.com/globalsign/mgo"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
-	MAX_SEARCH_RADIUS_MULTIPLER = 16
+	MAX_SEARCH_RADIUS = 16000 // 10 miles
 )
 
 type PlaceSearcher interface {
@@ -43,7 +43,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
 	cachedPlaces := poiSearcher.redisClient.RetrieveFromCache(request)
-	fmt.Println("number of results from redis", len(cachedPlaces))
+	log.Printf("number of results from redis is %d", len(cachedPlaces))
 	if uint(len(cachedPlaces)) >= request.MinNumResults {
 		log.Printf("Place Type: %s, Using Redis to fulfill request! \n", request.PlaceCat)
 		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
@@ -90,8 +90,13 @@ func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place,
 //TODO: use bulk insert for new places
 //update MongoDB if number of results is not sufficient
 func (poiSearcher *PoiSearcher) UpdateMongo(placeCat POI.PlaceCategory, places []POI.Place) {
+	numNewDocs := 0
 	for _, place := range places {
-		utils.CheckErr(poiSearcher.dbHandler.InsertPlace(place, placeCat))
+		err := poiSearcher.dbHandler.InsertPlace(place, placeCat)
+		if !mgo.IsDup(err) { // if error is not caused by primary key duplication, further check the error
+			utils.CheckErr(err)
+			numNewDocs++
+		}
 	}
-	log.Printf("Inserted %d places into the database", len(places))
+	log.Printf("Inserted %d places into the database", numNewDocs)
 }

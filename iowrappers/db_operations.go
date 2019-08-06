@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	log "github.com/sirupsen/logrus"
 )
 
 type DatabaseHandler interface {
@@ -53,18 +54,36 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 }
 
 // This design make sure that explicit call to SetCollHandler have to be made for new collection creation.
-// Prevent accidentally creating collections in PlaceSearch method
-func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) ([]POI.Place, error) {
+// Prevent accidentally creating collections in PlaceSearch method.
+// Since the nearby search in Redis has considered maximum search radius, in this method we only need to use the updated
+// search radius to search one more time in database.
+func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, err error) {
 	collName := string(req.PlaceCat)
+
 	if _, exist := dbHandler.handlers[collName]; !exist {
-		return make([]POI.Place, 0), fmt.Errorf("Collection %s does not exist", collName)
+		err = fmt.Errorf("Collection %s does not exist", collName)
+		return
 	}
+
 	collHandler := dbHandler.handlers[collName]
-	radius := req.Radius
+
+	totalNumDocs, err := collHandler.GetCollection().Count()
+	utils.CheckErr(err)
+
+	if uint(totalNumDocs) < req.MinNumResults {
+		log.Errorf("The number of documents in database %d is less than the minimum %d requested",
+			totalNumDocs, req.MinNumResults)
+		return
+	}
+
 	lat_lng := utils.ParseLocation(req.Location)
 	lat := lat_lng[0]
 	lng := lat_lng[1]
-	return collHandler.Search(radius, lat, lng), nil
+
+	searchRadius := req.Radius
+	places = collHandler.Search(searchRadius, lat, lng)
+
+	return
 }
 
 func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCategory) error {
