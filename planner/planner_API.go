@@ -111,9 +111,9 @@ func (planner *MyPlanner) HandlingRequests() {
 
 	myRouter.HandleFunc("/", planner.welcome_api)
 
+
 	//myRouter.HandleFunc("/planning/{location}/{radius}", planner.planning_api)
 	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.planning_api)
-
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
