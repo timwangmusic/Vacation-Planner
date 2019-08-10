@@ -242,7 +242,6 @@ func GetStandardRequest() (req PlanningRequest) {
 		EvOption:     "EVV",
 		StayTimes:    stayTimes1,
 	}
-
 	slot21 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 12, End: 13}}
 	slot22 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 13, End: 17}}
 	slot23 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 17, End: 19}}
