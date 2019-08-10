@@ -2,7 +2,6 @@ package planner
 
 import (
 	"Vacation-planner/POI"
-	"Vacation-planner/matching"
 	"Vacation-planner/solution"
 	"Vacation-planner/utils"
 	"encoding/json"
@@ -14,64 +13,45 @@ import (
 )
 
 type Planner interface {
-	Planning(req *solution.PlanningRequest) (resp *solution.PlanningResponse)
+	Planning(req *solution.PlanningRequest) (resp PlanningResponse)
 }
 
 type MyPlanner struct {
 	Solver solution.Solver
 }
 
-func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp *solution.PlanningResponse) {
+type TimeSectionPlaces struct {
+	Places []string `json:"places"`
+	StartTime POI.Hour `json:"start_time"`
+	EndTime	POI.Hour `json:"end_time"`
+}
+
+type PlanningResponse struct {
+	Places []TimeSectionPlaces `json:"time_section_places"`
+}
+
+func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req)
 	utils.CheckErr(err)
-	return &planningResp
+	if len(planningResp.Solution) == 0 {
+		return
+	}
+	topSolution := planningResp.Solution[0]
+	for idx, slotSol := range topSolution.SlotSolutions {
+		timeSectionPlaces := TimeSectionPlaces{
+			Places:    make([]string, 0),
+			StartTime: req.SlotRequests[idx].TimeInterval.Slot.Start,
+			EndTime:   req.SlotRequests[idx].TimeInterval.Slot.End,
+		}
+		timeSectionPlaces.Places = append(timeSectionPlaces.Places, slotSol.PlaceNames...)
+		resp.Places = append(resp.Places, timeSectionPlaces)
+	}
+	return
 }
 
 func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr string) {
 	dbName := "VacationPlanner"
 	planner.Solver.Init(mapsClientApiKey, dbName, dbUrl, redisAddr, "", 0)
-}
-
-// Generate a standard request while we seek a better way to represent complex REST requests
-func GetStandardRequest() (req solution.PlanningRequest) {
-	slot11 := matching.TimeSlot{POI.TimeInterval{8, 9}}
-	slot12 := matching.TimeSlot{POI.TimeInterval{9, 11}}
-	slot13 := matching.TimeSlot{POI.TimeInterval{11, 12}}
-	stayTimes1 := []matching.TimeSlot{slot11, slot12, slot13}
-	timeslot_1 := matching.TimeSlot{POI.TimeInterval{8, 12}}
-	slotReq1 := solution.SlotRequest{
-		Location:     "",
-		TimeInterval: timeslot_1,
-		EvOption:     "EVV",
-		StayTimes:    stayTimes1,
-	}
-
-	slot21 := matching.TimeSlot{POI.TimeInterval{12, 13}}
-	slot22 := matching.TimeSlot{POI.TimeInterval{13, 17}}
-	slot23 := matching.TimeSlot{POI.TimeInterval{17, 19}}
-	stayTimes2 := []matching.TimeSlot{slot21, slot22, slot23}
-	timeslot2 := matching.TimeSlot{POI.TimeInterval{12, 19}}
-	slotReq2 := solution.SlotRequest{
-		Location:     "",
-		TimeInterval: timeslot2,
-		EvOption:     "EVV",
-		StayTimes:    stayTimes2,
-	}
-
-	slot31 := matching.TimeSlot{POI.TimeInterval{19, 21}}
-	slot32 := matching.TimeSlot{POI.TimeInterval{21, 23}}
-	stayTimes3 := []matching.TimeSlot{slot31, slot32}
-	timeslot3 := matching.TimeSlot{POI.TimeInterval{19, 23}}
-	slotReq3 := solution.SlotRequest{
-		Location:     "",
-		TimeInterval: timeslot3,
-		EvOption:     "EV",
-		StayTimes:    stayTimes3,
-	}
-
-	req.SlotRequests = append(req.SlotRequests, []solution.SlotRequest{slotReq1, slotReq2, slotReq3}...)
-	req.Weekday = POI.DATE_FRIDAY
-	return
 }
 
 // API definitions
@@ -80,12 +60,13 @@ func (planner *MyPlanner) welcome_api(w http.ResponseWriter, r *http.Request) {
 	utils.CheckErr(err)
 }
 
+// Return top planning result to user
 func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	location := vars["location"]
 	radius := vars["radius"]
 
-	planningReq := GetStandardRequest()
+	planningReq := solution.GetStandardRequest()
 	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
 	planningReq.SearchRadius = uint(searchRadius_)
 
