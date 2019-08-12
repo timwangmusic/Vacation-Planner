@@ -174,6 +174,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 	startSearchTime := time.Now()
 
 	resp, err := c.client.PlaceDetails(context.Background(), req)
+	utils.CheckErr(err)
 
 	searchDuration := time.Since(startSearchTime)
 

@@ -13,10 +13,10 @@ type Matcher interface {
 	Matching(req *TimeMatchingRequest) (clusters []PlaceCluster)
 }
 
-type TimeMatcher struct{
+type TimeMatcher struct {
 	PoiSearcher *iowrappers.PoiSearcher
 	CateringMgr *graph.TimeClustersManager
-	TouringMgr 	*graph.TimeClustersManager
+	TouringMgr  *graph.TimeClustersManager
 }
 
 type TimeSlot struct {
@@ -31,22 +31,22 @@ type TimeMatchingRequest struct {
 	Weekday   POI.Weekday // Weekday
 }
 
-type Place struct{
-	PlaceId 	string	`json:id`
-	Name    	string	`json:name`
-	CatTag		POI.PlaceCategory  `json:category`
-	Address 	string	`json:address`
-	Price   	float64 `json:price`
-	Rating  	float32 `json:rating`
-	Location    [2]float64 `json:geolocation`
+type Place struct {
+	PlaceId  string            `json:"id"`
+	Name     string            `json:"name"`
+	CatTag   POI.PlaceCategory `json:"category"`
+	Address  string            `json:"address"`
+	Price    float64           `json:"price"`
+	Rating   float32           `json:"rating"`
+	Location [2]float64        `json:"geolocation"`
 }
 
-type PlaceCluster struct{
-	Places []Place	`json:places`
-	Slot TimeSlot	`json:time slot`
+type PlaceCluster struct {
+	Places []Place  `json:"places"`
+	Slot   TimeSlot `json:"time slot"`
 }
 
-func (matcher *TimeMatcher) Init (poiSearcher *iowrappers.PoiSearcher) {
+func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
 	if poiSearcher == nil {
 		log.Fatal("PoiSearcher does not exist")
 	}
@@ -66,16 +66,16 @@ func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (PlaceClusters []
 	matcher.processCluster(POI.PlaceCategoryEatery, &clusterMap)
 	matcher.processCluster(POI.PlaceCategoryVisit, &clusterMap)
 
-	for _, cluster := range clusterMap{
+	for _, cluster := range clusterMap {
 		PlaceClusters = append(PlaceClusters, *cluster)
 	}
 	return
 }
 
-func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMap *(map[string]*PlaceCluster)){
+func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMap *(map[string]*PlaceCluster)) {
 	var mgr *graph.TimeClustersManager
 
-	switch placeCat{
+	switch placeCat {
 	case POI.PlaceCategoryVisit:
 		mgr = matcher.TouringMgr
 	case POI.PlaceCategoryEatery:
@@ -84,13 +84,13 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 		mgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 	}
 
-	for _, timeInterval := range *mgr.TimeClusters.TimeIntervals.GetAllIntervals(){
+	for _, timeInterval := range *mgr.TimeClusters.TimeIntervals.GetAllIntervals() {
 		clusterKey := timeInterval.Serialize()
-		if _, exist := (*clusterMap)[clusterKey]; !exist{
+		if _, exist := (*clusterMap)[clusterKey]; !exist {
 			(*clusterMap)[clusterKey] = &PlaceCluster{Places: make([]Place, 0), Slot: TimeSlot{timeInterval}}
 		}
 		cluster := mgr.TimeClusters.Clusters[clusterKey]
-		for _, place := range cluster.Places{
+		for _, place := range cluster.Places {
 			((*clusterMap)[clusterKey]).Places = append(((*clusterMap)[clusterKey]).Places, matcher.createPlace(place, placeCat))
 		}
 	}
@@ -100,7 +100,7 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory, poisearcher *iowrappers.PoiSearcher) (Places []Place) {
 	var mgr *graph.TimeClustersManager
 
-	switch placeCat{
+	switch placeCat {
 	case POI.PlaceCategoryVisit:
 		mgr = matcher.TouringMgr
 	case POI.PlaceCategoryEatery:
