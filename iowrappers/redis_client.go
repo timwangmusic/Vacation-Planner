@@ -51,7 +51,7 @@ func (redisClient *RedisClient) StorePlacesForLocation(location string, places [
 	}
 }
 
-func (redisClient *RedisClient) CachePlacesOnCategory(places []POI.Place) {
+func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 	for _, place := range places {
 		placeCategory := getPlaceCategory(LocationType(place.LocationType))
 		geolocation := &redis.GeoLocation{
@@ -93,7 +93,7 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) []POI.
 	return res
 }
 
-func (redisClient *RedisClient) RetrieveFromCache(request *PlaceSearchRequest) (places []POI.Place) {
+func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
 	requestCategory := string(request.PlaceCat)
 
 	totalNumCachedResults, err := redisClient.client.ZCount(requestCategory, "-inf", "inf").Result()
@@ -130,4 +130,31 @@ func (redisClient *RedisClient) RetrieveFromCache(request *PlaceSearchRequest) (
 		places[idx] = redisClient.getPlace(placeInfo.Name)
 	}
 	return
+}
+
+func (redisClient *RedisClient) GetGeocode(query GeocodeQuery) (lat float64, lng float64, exist bool) {
+	redis_key := "cities"
+	redis_field := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
+	geocode, err := redisClient.client.HGet(redis_key, redis_field).Result()
+	if err != nil {
+		return
+	}
+	lat_lng := utils.ParseLocation(geocode)
+	lat = lat_lng[0]
+	lng = lat_lng[1]
+	exist = true
+	log.Infof("Get geolocation for location %s, %s from cache success", query.City, query.Country)
+	return
+}
+
+func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64) bool {
+	redis_key := "cities"
+	redis_field := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
+	redis_val := strings.Join([]string{fmt.Sprint(lat), fmt.Sprint(lng)}, ",")
+	res, err := redisClient.client.HSet(redis_key, redis_field, redis_val).Result()
+	utils.CheckErr(err)
+	if res {
+		log.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
+	}
+	return res
 }

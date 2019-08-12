@@ -21,6 +21,11 @@ type PoiSearcher struct {
 	redisClient *RedisClient
 }
 
+type GeocodeQuery struct {
+	City    string
+	Country string
+}
+
 func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, db_url string,
 	redis_addr string, redis_psw string, redis_idx int) {
 	if mapsClient == nil || mapsClient.client == nil {
@@ -36,13 +41,24 @@ func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, db_u
 	poiSearcher.redisClient.Init(redis_addr, redis_psw, redis_idx)
 }
 
+func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng float64) {
+	lat, lng, exist := poiSearcher.redisClient.GetGeocode(query)
+	if !exist {
+		lat, lng = poiSearcher.mapsClient.Geocode(query)
+		poiSearcher.redisClient.SetGeocode(query, lat, lng)
+	}
+	log.Infof("Geolocation (lat,lng) for location %s, %s is %.4f, %.4f",
+		query.City, query.Country, lat, lng)
+	return
+}
+
 // if client API key is invalid but not empty string, nearby search result will be empty
 func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place) {
 	dbHandler := poiSearcher.dbHandler
 	dbHandler.SetCollHandler(string(request.PlaceCat))
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
-	cachedPlaces := poiSearcher.redisClient.RetrieveFromCache(request)
+	cachedPlaces := poiSearcher.redisClient.GetPlaces(request)
 	log.Printf("number of results from redis is %d", len(cachedPlaces))
 	if uint(len(cachedPlaces)) >= request.MinNumResults {
 		log.Printf("Place Type: %s, Using Redis to fulfill request! \n", request.PlaceCat)
@@ -83,7 +99,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 //update Redis when hitting cache miss
 func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
 	//poiSearcher.redisClient.StorePlacesForLocation(location, places, placeCategory)
-	poiSearcher.redisClient.CachePlacesOnCategory(places)
+	poiSearcher.redisClient.SetPlacesOnCategory(places)
 	log.Printf("Redis update complete")
 }
 
