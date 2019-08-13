@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MAX_SEARCH_RADIUS = 16000 // 10 miles
+	MaxSearchRadius = 16000 // 10 miles
 )
 
 type PlaceSearcher interface {
@@ -28,8 +28,8 @@ type GeocodeQuery struct {
 	Country string
 }
 
-func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, db_url string,
-	redis_addr string, redis_psw string, redis_idx int) {
+func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUrl string,
+	redisAddr string, redisPsw string, redisIdx int) {
 	if mapsClient == nil || mapsClient.client == nil {
 		log.Fatal("maps client is nil")
 	}
@@ -37,10 +37,10 @@ func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, db_u
 
 	poiSearcher.dbHandler = &DbHandler{}
 	// delegate error check of db handler to dbHandler.Init
-	poiSearcher.dbHandler.Init(dbName, db_url)
+	poiSearcher.dbHandler.Init(dbName, dbUrl)
 
 	poiSearcher.redisClient = &RedisClient{}
-	poiSearcher.redisClient.Init(redis_addr, redis_psw, redis_idx)
+	poiSearcher.redisClient.Init(redisAddr, redisPsw, redisIdx)
 }
 
 func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng float64) {
@@ -60,10 +60,10 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	dbHandler.SetCollHandler(string(request.PlaceCat))
 
 	location := request.Location
-	city_country := strings.Split(location, ",")
+	cityCountry := strings.Split(location, ",")
 	lat, lng := poiSearcher.Geocode(GeocodeQuery{
-		City: city_country[0],
-		Country: city_country[1],
+		City:    cityCountry[0],
+		Country: cityCountry[1],
 	})
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 

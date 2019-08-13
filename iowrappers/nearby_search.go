@@ -25,7 +25,7 @@ const (
 )
 
 const (
-	GOOGLE_NEARBY_SEARCH_DELAY = time.Duration(time.Second)
+	GoogleNearbySearchDelay = time.Second
 )
 
 var detailedSearchFields = flag.String("fields", "name,opening_hours,formatted_address,adr_address", "a list of comma-separated fields")
@@ -124,7 +124,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 		if reqTimes == maxRequestTimes {
 			break
 		}
-		time.Sleep(GOOGLE_NEARBY_SEARCH_DELAY) // sleep to make sure new next page token comes to effect
+		time.Sleep(GoogleNearbySearchDelay) // sleep to make sure new next page token comes to effect
 	}
 
 	searchDuration := time.Since(searchStartTime)
