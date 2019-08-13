@@ -106,11 +106,15 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 	requestLat, requestLng := lat_lng[0], lat_lng[1]
 
 	radiusMultiplier := uint(1)
-	numCachedPlaces := 0
-	cachedPlaces := make([]redis.GeoLocation, 0)
+	numQualifiedCachedPlaces := 0
+	cachedQualifiedPlaces := make([]redis.GeoLocation, 0)
 	searchRadius := request.Radius
 
-	for searchRadius < MAX_SEARCH_RADIUS && uint(numCachedPlaces) < request.MinNumResults {
+	if searchRadius > MAX_SEARCH_RADIUS {
+		searchRadius = MAX_SEARCH_RADIUS
+	}
+
+	for searchRadius <= MAX_SEARCH_RADIUS && uint(numQualifiedCachedPlaces) < request.MinNumResults {
 		searchRadius = request.Radius * radiusMultiplier
 		fmt.Printf("Redis now using search of radius %d meters \n", searchRadius)
 		geoQuery := redis.GeoRadiusQuery{
@@ -118,15 +122,15 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 			Unit:   "m",
 			Sort:   "ASC", // sort ascending
 		}
-		cachedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
+		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
 		utils.CheckErr(err)
-		numCachedPlaces = len(cachedPlaces)
+		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
 		radiusMultiplier *= 2
 	}
 	request.Radius = searchRadius
 
-	places = make([]POI.Place, len(cachedPlaces))
-	for idx, placeInfo := range cachedPlaces {
+	places = make([]POI.Place, len(cachedQualifiedPlaces))
+	for idx, placeInfo := range cachedQualifiedPlaces {
 		places[idx] = redisClient.getPlace(placeInfo.Name)
 	}
 	return
