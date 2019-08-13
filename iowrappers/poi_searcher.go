@@ -3,8 +3,10 @@ package iowrappers
 import (
 	"Vacation-planner/POI"
 	"Vacation-planner/utils"
+	"fmt"
 	"github.com/globalsign/mgo"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 const (
@@ -56,6 +58,14 @@ func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng fl
 func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place) {
 	dbHandler := poiSearcher.dbHandler
 	dbHandler.SetCollHandler(string(request.PlaceCat))
+
+	location := request.Location
+	city_country := strings.Split(location, ",")
+	lat, lng := poiSearcher.Geocode(GeocodeQuery{
+		City: city_country[0],
+		Country: city_country[1],
+	})
+	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
 	cachedPlaces := poiSearcher.redisClient.GetPlaces(request)
