@@ -187,7 +187,7 @@ type PlanningRequest struct {
 }
 
 type SlotRequest struct {
-	Location     string              // lat,lng
+	Location     string              // city,country
 	TimeInterval matching.TimeSlot   // e.g. "8AM-12PM"
 	EvOption     string              // e.g. "EVV", "VEV"
 	StayTimes    []matching.TimeSlot // e.g. ["8AM-10AM", "10AM-11AM", "11AM-12PM"]

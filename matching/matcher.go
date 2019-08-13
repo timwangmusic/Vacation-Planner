@@ -25,7 +25,7 @@ type TimeSlot struct {
 
 // Request from planner
 type TimeMatchingRequest struct {
-	Location  string      // lat,lng
+	Location  string      // city,country
 	Radius    uint        // search Radius
 	TimeSlots []TimeSlot  // division of day
 	Weekday   POI.Weekday // Weekday
