@@ -63,15 +63,19 @@ func (planner *MyPlanner) welcome_api(w http.ResponseWriter, r *http.Request) {
 // Return top planning result to user
 func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	location := vars["location"]
+	//location := vars["location"]
+	country := vars["country"]
+	city := vars["city"]
 	radius := vars["radius"]
+
+	city_country := city + "," + country
 
 	planningReq := solution.GetStandardRequest()
 	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
 	planningReq.SearchRadius = uint(searchRadius_)
 
 	for slotReqIdx := range planningReq.SlotRequests {
-		planningReq.SlotRequests[slotReqIdx].Location = location // set to the same location from URL
+		planningReq.SlotRequests[slotReqIdx].Location = city_country // set to the same location from URL
 	}
 
 	utils.CheckErr(json.NewEncoder(w).Encode(planner.Planning(&planningReq)))
@@ -82,7 +86,7 @@ func (planner *MyPlanner) HandlingRequests() {
 
 	myRouter.HandleFunc("/", planner.welcome_api)
 
-	myRouter.HandleFunc("/planning/{location}/{radius}", planner.planning_api)
-
+	//myRouter.HandleFunc("/planning/{location}/{radius}", planner.planning_api)
+	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.planning_api)
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }

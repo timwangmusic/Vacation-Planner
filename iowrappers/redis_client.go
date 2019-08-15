@@ -46,12 +46,12 @@ func (redisClient *RedisClient) StorePlacesForLocation(location string, places [
 
 	for _, place := range places {
 		dist := utils.HaversineDist([]float64{lng, lat}, place.Location.Coordinates[:])
-		client.ZAdd(sortedSetKey, redis.Z{dist, place.ID})
+		client.ZAdd(sortedSetKey, redis.Z{Score: dist, Member: place.ID})
 		redisClient.cachePlace(place)
 	}
 }
 
-func (redisClient *RedisClient) CachePlacesOnCategory(places []POI.Place) {
+func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 	for _, place := range places {
 		placeCategory := getPlaceCategory(LocationType(place.LocationType))
 		geolocation := &redis.GeoLocation{
@@ -59,9 +59,9 @@ func (redisClient *RedisClient) CachePlacesOnCategory(places []POI.Place) {
 			Longitude: place.Location.Coordinates[0],
 			Latitude:  place.Location.Coordinates[1],
 		}
-		cmd_val, cmd_err := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
-		utils.CheckErr(cmd_err)
-		if cmd_val == 1 {
+		cmdVal, cmdErr := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
+		utils.CheckErr(cmdErr)
+		if cmdVal == 1 {
 			log.Printf("new place %s cache success", place.Name)
 		}
 		redisClient.cachePlace(place)
@@ -93,7 +93,7 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) []POI.
 	return res
 }
 
-func (redisClient *RedisClient) RetrieveFromCache(request *PlaceSearchRequest) (places []POI.Place) {
+func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
 	requestCategory := string(request.PlaceCat)
 
 	totalNumCachedResults, err := redisClient.client.ZCount(requestCategory, "-inf", "inf").Result()
@@ -102,15 +102,19 @@ func (redisClient *RedisClient) RetrieveFromCache(request *PlaceSearchRequest) (
 		return
 	}
 
-	lat_lng := utils.ParseLocation(request.Location)
-	requestLat, requestLng := lat_lng[0], lat_lng[1]
+	latLng := utils.ParseLocation(request.Location)
+	requestLat, requestLng := latLng[0], latLng[1]
 
 	radiusMultiplier := uint(1)
-	numCachedPlaces := 0
-	cachedPlaces := make([]redis.GeoLocation, 0)
+	numQualifiedCachedPlaces := 0
+	cachedQualifiedPlaces := make([]redis.GeoLocation, 0)
 	searchRadius := request.Radius
 
-	for searchRadius < MAX_SEARCH_RADIUS && uint(numCachedPlaces) < request.MinNumResults {
+	if searchRadius > MaxSearchRadius {
+		searchRadius = MaxSearchRadius
+	}
+
+	for searchRadius <= MaxSearchRadius && uint(numQualifiedCachedPlaces) < request.MinNumResults {
 		searchRadius = request.Radius * radiusMultiplier
 		fmt.Printf("Redis now using search of radius %d meters \n", searchRadius)
 		geoQuery := redis.GeoRadiusQuery{
@@ -118,16 +122,43 @@ func (redisClient *RedisClient) RetrieveFromCache(request *PlaceSearchRequest) (
 			Unit:   "m",
 			Sort:   "ASC", // sort ascending
 		}
-		cachedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
+		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
 		utils.CheckErr(err)
-		numCachedPlaces = len(cachedPlaces)
+		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
 		radiusMultiplier *= 2
 	}
 	request.Radius = searchRadius
 
-	places = make([]POI.Place, len(cachedPlaces))
-	for idx, placeInfo := range cachedPlaces {
+	places = make([]POI.Place, len(cachedQualifiedPlaces))
+	for idx, placeInfo := range cachedQualifiedPlaces {
 		places[idx] = redisClient.getPlace(placeInfo.Name)
 	}
 	return
+}
+
+func (redisClient *RedisClient) GetGeocode(query GeocodeQuery) (lat float64, lng float64, exist bool) {
+	redisKey := "cities"
+	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
+	geocode, err := redisClient.client.HGet(redisKey, redisField).Result()
+	if err != nil {
+		return
+	}
+	latLng := utils.ParseLocation(geocode)
+	lat = latLng[0]
+	lng = latLng[1]
+	exist = true
+	log.Infof("Get geolocation for location %s, %s from cache success", query.City, query.Country)
+	return
+}
+
+func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64) bool {
+	redisKey := "cities"
+	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
+	redisVal := strings.Join([]string{fmt.Sprint(lat), fmt.Sprint(lng)}, ",")
+	res, err := redisClient.client.HSet(redisKey, redisField, redisVal).Result()
+	utils.CheckErr(err)
+	if res {
+		log.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
+	}
+	return res
 }

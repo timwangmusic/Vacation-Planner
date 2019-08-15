@@ -3,12 +3,14 @@ package iowrappers
 import (
 	"Vacation-planner/POI"
 	"Vacation-planner/utils"
+	"fmt"
 	"github.com/globalsign/mgo"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 const (
-	MAX_SEARCH_RADIUS = 16000 // 10 miles
+	MaxSearchRadius = 16000 // 10 miles
 )
 
 type PlaceSearcher interface {
@@ -21,8 +23,13 @@ type PoiSearcher struct {
 	redisClient *RedisClient
 }
 
-func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, db_url string,
-	redis_addr string, redis_psw string, redis_idx int) {
+type GeocodeQuery struct {
+	City    string
+	Country string
+}
+
+func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUrl string,
+	redisAddr string, redisPsw string, redisIdx int) {
 	if mapsClient == nil || mapsClient.client == nil {
 		log.Fatal("maps client is nil")
 	}
@@ -30,10 +37,21 @@ func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, db_u
 
 	poiSearcher.dbHandler = &DbHandler{}
 	// delegate error check of db handler to dbHandler.Init
-	poiSearcher.dbHandler.Init(dbName, db_url)
+	poiSearcher.dbHandler.Init(dbName, dbUrl)
 
 	poiSearcher.redisClient = &RedisClient{}
-	poiSearcher.redisClient.Init(redis_addr, redis_psw, redis_idx)
+	poiSearcher.redisClient.Init(redisAddr, redisPsw, redisIdx)
+}
+
+func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng float64) {
+	lat, lng, exist := poiSearcher.redisClient.GetGeocode(query)
+	if !exist {
+		lat, lng = poiSearcher.mapsClient.Geocode(query)
+		poiSearcher.redisClient.SetGeocode(query, lat, lng)
+	}
+	log.Infof("Geolocation (lat,lng) for location %s, %s is %.4f, %.4f",
+		query.City, query.Country, lat, lng)
+	return
 }
 
 // if client API key is invalid but not empty string, nearby search result will be empty
@@ -41,8 +59,16 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	dbHandler := poiSearcher.dbHandler
 	dbHandler.SetCollHandler(string(request.PlaceCat))
 
+	location := request.Location
+	cityCountry := strings.Split(location, ",")
+	lat, lng := poiSearcher.Geocode(GeocodeQuery{
+		City:    cityCountry[0],
+		Country: cityCountry[1],
+	})
+	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
+
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
-	cachedPlaces := poiSearcher.redisClient.RetrieveFromCache(request)
+	cachedPlaces := poiSearcher.redisClient.GetPlaces(request)
 	log.Printf("number of results from redis is %d", len(cachedPlaces))
 	if uint(len(cachedPlaces)) >= request.MinNumResults {
 		log.Printf("Place Type: %s, Using Redis to fulfill request! \n", request.PlaceCat)
@@ -83,7 +109,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 //update Redis when hitting cache miss
 func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
 	//poiSearcher.redisClient.StorePlacesForLocation(location, places, placeCategory)
-	poiSearcher.redisClient.CachePlacesOnCategory(places)
+	poiSearcher.redisClient.SetPlacesOnCategory(places)
 	log.Printf("Redis update complete")
 }
 

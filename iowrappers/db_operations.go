@@ -61,7 +61,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 	collName := string(req.PlaceCat)
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
-		err = fmt.Errorf("Collection %s does not exist", collName)
+		err = fmt.Errorf("collection %s does not exist", collName)
 		return
 	}
 
@@ -76,9 +76,9 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 		return
 	}
 
-	lat_lng := utils.ParseLocation(req.Location)
-	lat := lat_lng[0]
-	lng := lat_lng[1]
+	latLng := utils.ParseLocation(req.Location)
+	lat := latLng[0]
+	lng := latLng[1]
 
 	searchRadius := req.Radius
 	places = collHandler.Search(searchRadius, lat, lng)
@@ -89,7 +89,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCategory) error {
 	collName := string(placeCat)
 	if _, exist := dbHandler.handlers[collName]; !exist {
-		return fmt.Errorf("Collection %s does not exist", collName)
+		return fmt.Errorf("collection %s does not exist", collName)
 	}
 	collHandler := dbHandler.handlers[collName]
 	return collHandler.InsertPlace(place)
