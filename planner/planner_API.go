@@ -2,6 +2,7 @@ package planner
 
 import (
 	"Vacation-planner/POI"
+	"Vacation-planner/iowrappers"
 	"Vacation-planner/solution"
 	"Vacation-planner/utils"
 	"fmt"
@@ -17,6 +18,8 @@ type Planner interface {
 }
 
 type MyPlanner struct {
+	RedisLogger iowrappers.RedisClient
+	RedisStreamName string
 	Solver solution.Solver
 }
 
@@ -57,9 +60,15 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 	return
 }
 
-func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr string) {
+func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr string, redisStreamName string) {
 	dbName := "VacationPlanner"
 	planner.Solver.Init(mapsClientApiKey, dbName, dbUrl, redisAddr, "", 0)
+
+	planner.RedisLogger.Init(redisAddr, "", 0)
+	planner.RedisStreamName = redisStreamName
+	if redisStreamName == "" {
+		planner.RedisStreamName = "planning_api_usage"
+	}
 }
 
 // API definitions
@@ -75,6 +84,13 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	country := vars["country"]
 	city := vars["city"]
 	radius := vars["radius"]
+
+	// TODO: Validate user inputs
+	// logging planning API usage
+	planner.PlanningEventLogging(PlanningEvent{
+		City:    city,
+		Country: country,
+	})
 
 	city_country := city + "," + country
 
