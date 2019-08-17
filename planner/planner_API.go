@@ -35,12 +35,16 @@ type TimeSectionPlaces struct {
 
 type PlanningResponse struct {
 	Places []TimeSectionPlaces `json:"time_section_places"`
+	Err string `json:"error"`
+	Errcode uint `json:"errorcode"`
 }
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
 	utils.CheckErr(err)
 	if len(planningResp.Solution) == 0 {
+		resp.Err = planningResp.Err.Error()
+		resp.Errcode = planningResp.Errcode
 		return
 	}
 	topSolution := planningResp.Solution[0]

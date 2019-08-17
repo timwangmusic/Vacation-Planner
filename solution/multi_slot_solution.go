@@ -20,6 +20,19 @@ const (
 type Solver struct {
 	matcher *matching.TimeMatcher
 }
+const (
+	SOLVER_NO_ERROR = iota
+	SOLVER_REQ_TIME_INTERVAL_INVALID
+	SOLVER_ERROR_MAX
+)
+
+
+func (solver *Solver) SolverProcessError(errstring string, errorcode uint, resp * PlanningResponse)(err error){
+	err = utils.GenerateErr("Travel time limit exceeded for current selection")
+	resp.Err = err
+	resp.Errcode = errorcode
+	return
+}
 
 func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr string, redisPsw string, redisIdx int) {
 	solver.matcher = &matching.TimeMatcher{}
@@ -194,6 +207,8 @@ type SlotRequest struct {
 
 type PlanningResponse struct {
 	Solution []MultiSlotSolution
+	Err error
+	Errcode uint
 }
 
 // Find top multi-slot solutions
