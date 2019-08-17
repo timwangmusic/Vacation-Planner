@@ -28,12 +28,16 @@ type TimeSectionPlaces struct {
 
 type PlanningResponse struct {
 	Places []TimeSectionPlaces `json:"time_section_places"`
+	Err string `json:"error"`
+	Errcode uint `json:"errorcode"`
 }
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req)
 	utils.CheckErr(err)
 	if len(planningResp.Solution) == 0 {
+		resp.Err = planningResp.Err.Error()
+		resp.Errcode = planningResp.Errcode
 		return
 	}
 	topSolution := planningResp.Solution[0]
@@ -77,8 +81,8 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	for slotReqIdx := range planningReq.SlotRequests {
 		planningReq.SlotRequests[slotReqIdx].Location = city_country // set to the same location from URL
 	}
-
-	utils.CheckErr(json.NewEncoder(w).Encode(planner.Planning(&planningReq)))
+	resp := planner.Planning(&planningReq)
+	utils.CheckErr(json.NewEncoder(w).Encode(resp))
 }
 
 func (planner *MyPlanner) HandlingRequests() {

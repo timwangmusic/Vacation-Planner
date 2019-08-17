@@ -1,9 +1,18 @@
 package utils
 
-import 	log "github.com/sirupsen/logrus"
+import (
+	"errors"
+	log "github.com/sirupsen/logrus"
+	"runtime/debug"
+)
 
 func CheckErr(err error){
 	if err != nil{
-		log.Fatal(err)
+		log.Error(err)
 	}
+}
+func GenerateErr(errstring string) (err error){
+	err = errors.New(errstring)
+	debug.PrintStack()
+	return
 }
