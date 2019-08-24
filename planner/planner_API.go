@@ -4,9 +4,9 @@ import (
 	"Vacation-planner/POI"
 	"Vacation-planner/solution"
 	"Vacation-planner/utils"
-	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -20,10 +20,14 @@ type MyPlanner struct {
 	Solver solution.Solver
 }
 
-type TimeSectionPlaces struct {
-	Places []string `json:"places"`
+type TimeSectionPlace struct {
+	PlaceName string `json:"place_name"`
 	StartTime POI.Hour `json:"start_time"`
 	EndTime	POI.Hour `json:"end_time"`
+}
+
+type TimeSectionPlaces struct {
+	Places []TimeSectionPlace `json:"places"`
 }
 
 type PlanningResponse struct {
@@ -39,11 +43,15 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 	topSolution := planningResp.Solution[0]
 	for idx, slotSol := range topSolution.SlotSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
-			Places:    make([]string, 0),
-			StartTime: req.SlotRequests[idx].TimeInterval.Slot.Start,
-			EndTime:   req.SlotRequests[idx].TimeInterval.Slot.End,
+			Places:    make([]TimeSectionPlace, 0),
 		}
-		timeSectionPlaces.Places = append(timeSectionPlaces.Places, slotSol.PlaceNames...)
+		for pidx, placeName := range slotSol.PlaceNames {
+			timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
+				PlaceName: placeName,
+				StartTime: req.SlotRequests[idx].StayTimes[pidx].Slot.Start,
+				EndTime:   req.SlotRequests[idx].StayTimes[pidx].Slot.End,
+			})
+		}
 		resp.Places = append(resp.Places, timeSectionPlaces)
 	}
 	return
@@ -77,8 +85,9 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	for slotReqIdx := range planningReq.SlotRequests {
 		planningReq.SlotRequests[slotReqIdx].Location = city_country // set to the same location from URL
 	}
-
-	utils.CheckErr(json.NewEncoder(w).Encode(planner.Planning(&planningReq)))
+	tmpl := template.Must(template.ParseFiles("templates/plan_layout.html"))
+	planningResp := planner.Planning(&planningReq)
+	utils.CheckErr(tmpl.Execute(w, planningResp))
 }
 
 func (planner *MyPlanner) HandlingRequests() {
