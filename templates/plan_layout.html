@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vacation Plans</title>
+</head>
+<body>
+<h1>
+    Vacation Plans
+</h1>
+    {{range .Places}}
+        <table>
+            <tr>
+                <th> Start Time (Hour) </th>
+                <th> End Time (Hour) </th>
+                <th> Place Name </th>
+            </tr>
+
+            {{range .Places}}
+                <tr>
+                    <td> {{.StartTime}} </td>
+                    <td> {{.EndTime}} </td>
+                    <td> {{.PlaceName}} </td>
+                </tr>
+            {{end}}
+        </table>
+    {{end}}
+</body>
+</html>
