@@ -1,0 +1,5 @@
+development_config:
+  mongo_url: :27017
+  redis_url: :6379
+  maps_client_api_key: AIzaSyDRkZOKwe521MXspQZnZvR8pwJsh1d5tEY
+  redis_stream_name: planning_api_usage
