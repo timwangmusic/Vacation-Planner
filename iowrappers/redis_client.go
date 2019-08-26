@@ -168,7 +168,7 @@ func (redisClient *RedisClient) StreamsLogging(streamName string, data map[strin
 	xArgs := redis.XAddArgs{Stream: streamName}
 	xArgs.Values = make(map[string]interface{}, 0)
 	for field, value := range data {
-		xArgs.Values[field] = value
+		xArgs.Values[field] = strings.ToLower(value)
 	}
 	streamsId, err := redisClient.client.XAdd(&xArgs).Result()
 	if err != nil {
