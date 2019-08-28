@@ -99,6 +99,12 @@ func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, 
 	collHandler.session = dbHandler.Session
 	collHandler.dbName = databaseName
 	collHandler.collName = collectionName
+	// ensure the 2d-sphere index exist
+	coll := collHandler.GetCollection()
+	index := mgo.Index{
+		Key: []string{"$2dsphere:location"},
+	}
+	utils.CheckErr(coll.EnsureIndex(index))
 }
 
 func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
