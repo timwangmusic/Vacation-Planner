@@ -7,12 +7,12 @@ import (
 )
 
 const (
-	EVENT_EATERY = iota + 10 // avoid default 0s
-	EVENT_VISIT
-	EVENT_TRAVEL
+	EventEatery = iota + 10 // avoid default 0s
+	EventVisit
+	EventTravel
 )
-const EATARY_LIMIT_PER_SLOT = 1
-const VISIT_LIMIT_PER_SLOT = 3
+const EateryLimitPerSlot = 1
+const VisitLimitPerSlot = 3
 
 type TripEvents struct {
 	tag        uint8
@@ -31,7 +31,7 @@ type TripEvents struct {
  */
 
 type SlotSolution struct {
-	slotag   string
+	slotTag  string
 	Solution []SlotSolutionCandidate
 }
 type SlotSolutionCandidate struct {
@@ -44,33 +44,33 @@ type SlotSolutionCandidate struct {
 	IsSet           bool
 }
 
-func (this *SlotSolution) SetTag(tag string) {
-	this.slotag = tag
+func (slotSolution *SlotSolution) SetTag(tag string) {
+	slotSolution.slotTag = tag
 }
 
 /*
 *This function checks if the slots in the solution fits the
 *solution requirement
  */
-func (this *SlotSolution) IsSlotagValid() bool {
-	if this.slotag == "" {
+func (slotSolution *SlotSolution) IsSlotagValid() bool {
+	if slotSolution.slotTag == "" {
 		return false
 	} else {
 		var eatcount uint8 = 0
 		var vstcount uint8 = 0
-		for _, c := range this.slotag {
+		for _, c := range slotSolution.slotTag {
 			if c == 'e' || c == 'E' {
 				eatcount++
 			} else if c == 'v' || c == 'V' {
 				if eatcount == 0 {
-					//visit before eat, no valid at this time
+					//visit before eat, no valid at slotSolution time
 					return false
 				}
 				vstcount++
 			} else {
 				return false
 			}
-			if eatcount > EATARY_LIMIT_PER_SLOT || vstcount > VISIT_LIMIT_PER_SLOT {
+			if eatcount > EateryLimitPerSlot || vstcount > VisitLimitPerSlot {
 				return false
 			}
 		}
@@ -81,34 +81,34 @@ func (this *SlotSolution) IsSlotagValid() bool {
 /*
 * This function matches the slot tag and those of its solutions
  */
-func (this *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolutionCandidate) bool {
-	if len(this.slotag) == 0 || len(this.Solution) == 0 {
+func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolutionCandidate) bool {
+	if len(slotSolution.slotTag) == 0 || len(slotSolution.Solution) == 0 {
 		return false
 	}
 	solutag := ""
 	var count = 0
 	for _, cand := range slotCandidate.Candidate {
-		if cand.tag == EVENT_EATERY {
+		if cand.tag == EventEatery {
 			solutag += "E"
 			count++
-		} else if cand.tag == EVENT_VISIT {
+		} else if cand.tag == EventVisit {
 			solutag += "V"
 			count++
 		}
 	}
-	if count != len(this.slotag) {
+	if count != len(slotSolution.slotTag) {
 		return false
 	}
-	if strings.EqualFold(solutag, this.slotag) {
+	if strings.EqualFold(solutag, slotSolution.slotTag) {
 		return false
 	}
 	return true
 }
 
-func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPlaces) SlotSolutionCandidate {
+func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPlaces) SlotSolutionCandidate {
 	res := SlotSolutionCandidate{}
 	res.IsSet = false
-	if len(iter.Status) != len(this.slotag) {
+	if len(iter.Status) != len(slotSolution.slotTag) {
 		//incorrect return
 		return res
 	}
@@ -120,7 +120,7 @@ func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPla
 	vcluster := cplaces.VisitPlaces
 	places := make([]matching.Place, len(iter.Status))
 	for i, num := range iter.Status {
-		if this.slotag[i] == 'E' || this.slotag[i] == 'e' {
+		if slotSolution.slotTag[i] == 'E' || slotSolution.slotTag[i] == 'e' {
 			_, ok := record[ecluster[num].PlaceId]
 			if ok == true {
 				return res
@@ -131,7 +131,7 @@ func (this *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPla
 				res.PlaceNames = append(res.PlaceNames, places[i].Name)
 				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
 			}
-		} else if this.slotag[i] == 'V' || this.slotag[i] == 'v' {
+		} else if slotSolution.slotTag[i] == 'V' || slotSolution.slotTag[i] == 'v' {
 			_, ok := record[vcluster[num].PlaceId]
 			if ok == true {
 				return res

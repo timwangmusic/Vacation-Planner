@@ -4,14 +4,13 @@ import (
 	"Vacation-planner/POI"
 	"Vacation-planner/graph"
 	"Vacation-planner/matching"
-	"Vacation-planner/utils"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
 
-const CANDIDATE_QUEUE_LENGTH = 20
-const CANDIDATE_QUEUE_DISPLAY = 15
+const CandidateQueueLength = 20
+const CandidateQueueDisplay = 15
 
 type TripEvent struct {
 	tag        uint8
@@ -21,15 +20,7 @@ type TripEvent struct {
 	endPlace   matching.Place
 }
 
-type SolutionCandidate struct {
-	Candidate       []TripEvent
-	EndPlaceDefault matching.Place
-	Score           float64
-	IsSet           bool
-}
-
 // Find top solution candidates
-
 func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandidate {
 	m := make(map[string]SlotSolutionCandidate) // map for result extraction
 	vertexes := make([]graph.Vertex, len(candidates))
@@ -42,7 +33,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 	// use limited-size minimum priority queue
 	priorityQueue := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0)}
 	for _, vertex := range vertexes {
-		if priorityQueue.Size() == CANDIDATE_QUEUE_LENGTH {
+		if priorityQueue.Size() == CandidateQueueLength {
 			top := priorityQueue.GetRoot()
 			if vertex.Key > top.Key {
 				priorityQueue.ExtractTop()
@@ -54,7 +45,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 	}
 
 	// remove extra vertexes from priority queue
-	for priorityQueue.Size() > CANDIDATE_QUEUE_DISPLAY {
+	for priorityQueue.Size() > CandidateQueueDisplay {
 		priorityQueue.ExtractTop()
 	}
 
@@ -65,58 +56,6 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 	}
 
 	return res
-}
-
-/*
- *	filename: the input json file
- *	tag: defines the travel patterns in a slot
- *	staytime: the estimated stay time at each POI
- */
-func GenerateSlotSolutionFromFile(filename string, tag string, staytime []int, slotIndex int) SlotSolution {
-	var pclusters []matching.PlaceCluster
-	var sCandidate []SlotSolutionCandidate
-
-	err := utils.ReadFromFile(filename, &pclusters)
-	if err != nil {
-		log.Fatal("position cluster file reading error")
-		return SlotSolution{}
-	}
-	if len(staytime) != len(tag) {
-		log.Fatal("Stay time does not match tag")
-		return SlotSolution{}
-	}
-	cclusters := Categorize(&pclusters[slotIndex])
-	minutelimit := GetSlotLengthinMin(&pclusters[slotIndex])
-	if minutelimit == 0 {
-		log.Fatal("Slot time setting invalid")
-		return SlotSolution{}
-	}
-	slotSolution1 := SlotSolution{}
-	slotSolution1.SetTag(tag)
-	if !slotSolution1.IsSlotagValid() {
-		log.Fatal("tag format not supported")
-		return SlotSolution{}
-	}
-	mdti := MDtagIter{}
-	mdti.Init(tag, cclusters)
-
-	for mdti.HasNext() {
-		//iterate through combinations of places according to the tag.
-		//fmt.Printf("len=%d cap=%d %v\n", len(mdti.status), cap(mdti.status), mdti.status)
-		tempCandidate := slotSolution1.CreateCandidate(mdti, cclusters)
-		if tempCandidate.IsSet {
-			//check time, generate events
-			_, sumtime := GetTravelTimeByDistance(cclusters, mdti)
-			//fmt.Printf("len=%d cap=%d %v\n", len(traveltime), cap(traveltime), traveltime)
-			if sumtime <= float64(minutelimit) {
-				sCandidate = append(sCandidate, tempCandidate)
-			}
-		}
-		//save to priority queue
-		mdti.Next()
-	}
-	slotSolution1.Solution = FindBestCandidates(sCandidate)
-	return slotSolution1
 }
 
 // Generate slot solution candidates
@@ -145,14 +84,14 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, EV
 	}
 	req.Radius = radius
 
-	query_time_slot := matching.TimeSlot{
-		POI.TimeInterval{
-			stayTimes[0].Slot.Start,
-			stayTimes[len(stayTimes)-1].Slot.End,
+	queryTimeSlot := matching.TimeSlot{
+		Slot: POI.TimeInterval{
+			Start: stayTimes[0].Slot.Start,
+			End:   stayTimes[len(stayTimes)-1].Slot.End,
 		},
 	}
 	// only one big time slot
-	req.TimeSlots = []matching.TimeSlot{query_time_slot}
+	req.TimeSlots = []matching.TimeSlot{queryTimeSlot}
 
 	if weekday < POI.DATE_MONDAY || weekday > POI.DATE_SUNDAY {
 		weekday = POI.DATE_SATURDAY
