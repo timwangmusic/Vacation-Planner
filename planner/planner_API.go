@@ -2,11 +2,12 @@ package planner
 
 import (
 	"Vacation-planner/POI"
+	"Vacation-planner/iowrappers"
 	"Vacation-planner/solution"
 	"Vacation-planner/utils"
-	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -17,13 +18,19 @@ type Planner interface {
 }
 
 type MyPlanner struct {
+	RedisLogger iowrappers.RedisClient
+	RedisStreamName string
 	Solver solution.Solver
 }
 
-type TimeSectionPlaces struct {
-	Places []string `json:"places"`
+type TimeSectionPlace struct {
+	PlaceName string `json:"place_name"`
 	StartTime POI.Hour `json:"start_time"`
 	EndTime	POI.Hour `json:"end_time"`
+}
+
+type TimeSectionPlaces struct {
+	Places []TimeSectionPlace `json:"places"`
 }
 
 type PlanningResponse struct {
@@ -43,19 +50,29 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 	topSolution := planningResp.Solution[0]
 	for idx, slotSol := range topSolution.SlotSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
-			Places:    make([]string, 0),
-			StartTime: req.SlotRequests[idx].TimeInterval.Slot.Start,
-			EndTime:   req.SlotRequests[idx].TimeInterval.Slot.End,
+			Places:    make([]TimeSectionPlace, 0),
 		}
-		timeSectionPlaces.Places = append(timeSectionPlaces.Places, slotSol.PlaceNames...)
+		for pidx, placeName := range slotSol.PlaceNames {
+			timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
+				PlaceName: placeName,
+				StartTime: req.SlotRequests[idx].StayTimes[pidx].Slot.Start,
+				EndTime:   req.SlotRequests[idx].StayTimes[pidx].Slot.End,
+			})
+		}
 		resp.Places = append(resp.Places, timeSectionPlaces)
 	}
 	return
 }
 
-func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr string) {
+func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr string, redisStreamName string) {
 	dbName := "VacationPlanner"
 	planner.Solver.Init(mapsClientApiKey, dbName, dbUrl, redisAddr, "", 0)
+
+	planner.RedisLogger.Init(redisAddr, "", 0)
+	planner.RedisStreamName = redisStreamName
+	if redisStreamName == "" {
+		planner.RedisStreamName = "planning_api_usage"
+	}
 }
 
 // API definitions
@@ -72,6 +89,13 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	city := vars["city"]
 	radius := vars["radius"]
 
+	// TODO: Validate user inputs
+	// logging planning API usage
+	planner.PlanningEventLogging(PlanningEvent{
+		City:    city,
+		Country: country,
+	})
+
 	city_country := city + "," + country
 
 	planningReq := solution.GetStandardRequest()
@@ -81,8 +105,10 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	for slotReqIdx := range planningReq.SlotRequests {
 		planningReq.SlotRequests[slotReqIdx].Location = city_country // set to the same location from URL
 	}
-	resp := planner.Planning(&planningReq)
-	utils.CheckErr(json.NewEncoder(w).Encode(resp))
+	tmpl := template.Must(template.ParseFiles("templates/plan_layout.html"))
+	planningResp := planner.Planning(&planningReq)
+	utils.CheckErr(tmpl.Execute(w, planningResp))
+
 }
 
 func (planner *MyPlanner) HandlingRequests() {

@@ -2,8 +2,7 @@
 .log
 .vscode
 .idea
-*.csv
-/main
+/main/main.go
 Gopkg.lock
 Gopkg.toml
 vendor

@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	NUM_SOLUTIONS               = 5
-	TRAVEL_SPEED                = 50 // km/h
-	TIME_LIMIT_BETWEEN_CLUSTERS = 60 // minutes
+	NumSolutions             = 5
+	TravelSpeed              = 50 // km/h
+	TimeLimitBetweenClusters = 60 // minutes
 )
 
 // Solvers are used by planners to solve the planning problem
@@ -33,12 +33,12 @@ func (solver *Solver) SolverProcessError(errstring string, errorcode uint, resp 
 	return
 }
 
-func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redis_addr string, redis_psw string, redis_idx int) {
+func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr string, redisPsw string, redisIdx int) {
 	solver.matcher = &matching.TimeMatcher{}
 	poiSearcher := &iowrappers.PoiSearcher{}
 	mapsClient := &iowrappers.MapsClient{}
 	utils.CheckErr(mapsClient.Create(apiKey))
-	poiSearcher.Init(mapsClient, dbName, dbUrl, redis_addr, redis_psw, redis_idx)
+	poiSearcher.Init(mapsClient, dbName, dbUrl, redisAddr, redisPsw, redisIdx)
 	solver.matcher.Init(poiSearcher)
 }
 
@@ -77,20 +77,20 @@ func travelTimeValidation(req PlanningRequest) bool {
 	for i := 0; i < numTimeSlots-1; i++ {
 		prevRequest := req.SlotRequests[i]
 		nextRequest := req.SlotRequests[i+1]
-		if travelTime(prevRequest.Location, nextRequest.Location, req.SearchRadius, req.SearchRadius) > TIME_LIMIT_BETWEEN_CLUSTERS {
+		if travelTime(prevRequest.Location, nextRequest.Location, req.SearchRadius, req.SearchRadius) > TimeLimitBetweenClusters {
 			return false
 		}
 	}
 	return true
 }
 
-func travelTime(from_loc string, to_loc string, from_loc_radius uint, to_loc_radius uint) uint {
-	latlng1 := utils.ParseLocation(from_loc)
-	latlng2 := utils.ParseLocation(to_loc)
+func travelTime(fromLoc string, toLoc string, fromLocRadius uint, toLocRadius uint) uint {
+	latLng1 := utils.ParseLocation(fromLoc)
+	latLng2 := utils.ParseLocation(toLoc)
 
-	distance := utils.HaversineDist(latlng1, latlng2) + float64(from_loc_radius+to_loc_radius)
+	distance := utils.HaversineDist(latLng1, latLng2) + float64(fromLocRadius+toLocRadius)
 
-	return uint(distance / (TRAVEL_SPEED * 16.67)) // 16.67 is the ratio of m/minute and km/hour
+	return uint(distance / (TravelSpeed * 16.67)) // 16.67 is the ratio of m/minute and km/hour
 }
 
 func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []MultiSlotSolution {
@@ -125,12 +125,12 @@ func calTravelTime(solution *MultiSlotSolution) {
 		startPlace := solution.SlotSolutions[slotIdx].PlaceLocations[len(solution.SlotSolutions[slotIdx].PlaceLocations)-1]
 		endPlace := solution.SlotSolutions[slotIdx].PlaceLocations[0]
 
-		startLatlng, endLatlng := make([]float64, 2), make([]float64, 2)
-		startLatlng[0], startLatlng[1] = startPlace[0], startPlace[1]
-		endLatlng[0], endLatlng[1] = endPlace[0], endPlace[1]
+		startLatLng, endLatLng := make([]float64, 2), make([]float64, 2)
+		startLatLng[0], startLatLng[1] = startPlace[0], startPlace[1]
+		endLatLng[0], endLatLng[1] = endPlace[0], endPlace[1]
 
-		distance := utils.HaversineDist(startLatlng, endLatlng)
-		intervalTime := uint(distance / (TRAVEL_SPEED * 16.67))
+		distance := utils.HaversineDist(startLatLng, endLatLng)
+		intervalTime := uint(distance / (TravelSpeed * 16.67))
 
 		solution.TravelTimes = append(solution.TravelTimes, intervalTime)
 		solution.TotalTime += intervalTime
@@ -224,7 +224,7 @@ func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
 	// use limited-size minimum priority queue
 	priorityQueue := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0)}
 	for _, vertex := range vertexes {
-		if priorityQueue.Size() == NUM_SOLUTIONS {
+		if priorityQueue.Size() == NumSolutions {
 			top := priorityQueue.GetRoot()
 			if vertex.Key > top.Key {
 				priorityQueue.ExtractTop()
@@ -246,37 +246,37 @@ func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
 
 // Generate a standard request while we seek a better way to represent complex REST requests
 func GetStandardRequest() (req PlanningRequest) {
-	slot11 := matching.TimeSlot{POI.TimeInterval{8, 9}}
-	slot12 := matching.TimeSlot{POI.TimeInterval{9, 11}}
-	slot13 := matching.TimeSlot{POI.TimeInterval{11, 12}}
+	slot11 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 8, End: 9}}
+	slot12 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 9, End: 11}}
+	slot13 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 11, End: 12}}
 	stayTimes1 := []matching.TimeSlot{slot11, slot12, slot13}
-	timeslot_1 := matching.TimeSlot{POI.TimeInterval{8, 12}}
+	timeSlot1 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 8, End: 12}}
 	slotReq1 := SlotRequest{
 		Location:     "",
-		TimeInterval: timeslot_1,
+		TimeInterval: timeSlot1,
 		EvOption:     "EVV",
 		StayTimes:    stayTimes1,
 	}
 
-	slot21 := matching.TimeSlot{POI.TimeInterval{12, 13}}
-	slot22 := matching.TimeSlot{POI.TimeInterval{13, 17}}
-	slot23 := matching.TimeSlot{POI.TimeInterval{17, 19}}
+	slot21 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 12, End: 13}}
+	slot22 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 13, End: 17}}
+	slot23 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 17, End: 19}}
 	stayTimes2 := []matching.TimeSlot{slot21, slot22, slot23}
-	timeslot2 := matching.TimeSlot{POI.TimeInterval{12, 19}}
+	timeSlot2 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 12, End: 19}}
 	slotReq2 := SlotRequest{
 		Location:     "",
-		TimeInterval: timeslot2,
+		TimeInterval: timeSlot2,
 		EvOption:     "EVV",
 		StayTimes:    stayTimes2,
 	}
 
-	slot31 := matching.TimeSlot{POI.TimeInterval{19, 21}}
-	slot32 := matching.TimeSlot{POI.TimeInterval{21, 23}}
+	slot31 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 19, End: 21}}
+	slot32 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 21, End: 23}}
 	stayTimes3 := []matching.TimeSlot{slot31, slot32}
-	timeslot3 := matching.TimeSlot{POI.TimeInterval{19, 23}}
+	timeSlot3 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 19, End: 23}}
 	slotReq3 := SlotRequest{
 		Location:     "",
-		TimeInterval: timeslot3,
+		TimeInterval: timeSlot3,
 		EvOption:     "EV",
 		StayTimes:    stayTimes3,
 	}
