@@ -3,9 +3,11 @@ package solution
 import (
 	"Vacation-planner/POI"
 	"Vacation-planner/graph"
+	"Vacation-planner/iowrappers"
 	"Vacation-planner/matching"
 	log "github.com/sirupsen/logrus"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -60,20 +62,56 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 
 // Generate slot solution candidates
 // Parameter list matches slot request
-func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, EVtag string,
-	stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) (slotSolution SlotSolution) {
-	if len(stayTimes) != len(EVtag) {
+func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot,
+	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient) (slotSolution SlotSolution) {
+	if len(stayTimes) != len(evTag) {
 		log.Fatal("User designated stay time does not match tag.")
 		return
 	}
 
-	slotSolution.SetTag(EVtag)
-	if !slotSolution.IsSlotTagValid() {
-		log.Fatalf("Slot tag %s is invalid.", EVtag)
+	intervals := make([]POI.TimeInterval, len(stayTimes))
+	for idx, stayTime := range stayTimes {
+		intervals[idx] = stayTime.Slot
+	}
+
+	cityCountry := strings.Split(location, ",")
+	evTags := make([]string, len(stayTimes))
+	for idx, c := range evTag {
+		evTags[idx] = string(c)
+	}
+
+	redisReq := iowrappers.SlotSolutionCacheRequest{
+		Country:   cityCountry[1],
+		City:      cityCountry[0],
+		Radius:    uint64(radius),
+		EVTags:    evTags,
+		Intervals: intervals,
+		Weekday:   weekday,
+	}
+
+	slotSolutionCacheResp, err := redisClient.GetSlotSolution(redisReq)
+	if err == nil { // cache hit
+		for _, candidate := range slotSolutionCacheResp.SlotSolutionCandidate {
+			slotSolutionCandidate := SlotSolutionCandidate{
+				PlaceNames:      candidate.PlaceNames,
+				PlaceIDS:        candidate.PlaceIds,
+				PlaceLocations:  candidate.PlaceLocations,
+				EndPlaceDefault: matching.Place{},
+				Score:           candidate.Score,
+				IsSet:           true,
+			}
+			slotSolution.SlotSolutionCandidates = append(slotSolution.SlotSolutionCandidates, slotSolutionCandidate)
+		}
 		return
 	}
 
-	slotSolution.Solution = make([]SlotSolutionCandidate, 0)
+	slotSolution.SetTag(evTag)
+	if !slotSolution.IsSlotTagValid() {
+		log.Fatalf("Slot tag %s is invalid.", evTag)
+		return
+	}
+
+	slotSolution.SlotSolutionCandidates = make([]SlotSolutionCandidate, 0)
 	slotCandidates := make([]SlotSolutionCandidate, 0)
 
 	req := matching.TimeMatchingRequest{}
@@ -104,7 +142,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, EV
 	minuteLimit := GetSlotLengthinMin(&placeClusters[0])
 
 	mdIter := MDtagIter{}
-	mdIter.Init(EVtag, categorizedPlaces)
+	mdIter.Init(evTag, categorizedPlaces)
 
 	for mdIter.HasNext() {
 		curCandidate := slotSolution.CreateCandidate(mdIter, categorizedPlaces)
@@ -119,7 +157,23 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, EV
 		mdIter.Next()
 	}
 	bestCandidates := FindBestCandidates(slotCandidates)
-	slotSolution.Solution = append(slotSolution.Solution, bestCandidates...)
+	slotSolution.SlotSolutionCandidates = append(slotSolution.SlotSolutionCandidates, bestCandidates...)
+
+	// cache slot solution calculation results
+	slotSolutionToCache := iowrappers.SlotSolutionCacheResponse{}
+	slotSolutionToCache.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, len(slotSolution.SlotSolutionCandidates))
+
+	for idx, slotSolutionCandidate := range slotSolution.SlotSolutionCandidates {
+		candidateCache := iowrappers.SlotSolutionCandidateCache{
+			PlaceIds:       slotSolutionCandidate.PlaceIDS,
+			Score:          slotSolutionCandidate.Score,
+			PlaceNames:     slotSolutionCandidate.PlaceNames,
+			PlaceLocations: slotSolutionCandidate.PlaceLocations,
+		}
+		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
+	}
+
+	redisClient.CacheSlotSolution(redisReq, slotSolutionToCache)
 
 	return
 }

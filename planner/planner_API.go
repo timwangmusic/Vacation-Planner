@@ -38,7 +38,7 @@ type PlanningResponse struct {
 }
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
-	planningResp, err := planner.Solver.Solve(*req)
+	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
 	utils.CheckErr(err)
 	if len(planningResp.Solution) == 0 {
 		return
@@ -92,14 +92,14 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 		Country: country,
 	})
 
-	city_country := city + "," + country
+	cityCountry := city + "," + country
 
 	planningReq := solution.GetStandardRequest()
 	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
 	planningReq.SearchRadius = uint(searchRadius_)
 
 	for slotReqIdx := range planningReq.SlotRequests {
-		planningReq.SlotRequests[slotReqIdx].Location = city_country // set to the same location from URL
+		planningReq.SlotRequests[slotReqIdx].Location = cityCountry // set to the same location from URL
 	}
 	tmpl := template.Must(template.ParseFiles("templates/plan_layout.html"))
 	planningResp := planner.Planning(&planningReq)

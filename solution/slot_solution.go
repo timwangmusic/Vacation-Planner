@@ -25,8 +25,8 @@ type TripEvents struct {
 }
 
 type SlotSolution struct {
-	SlotTag  string                  `json:"slot_tag"`
-	Solution []SlotSolutionCandidate `json:"solution"`
+	SlotTag                string                  `json:"slot_tag"`
+	SlotSolutionCandidates []SlotSolutionCandidate `json:"solution"`
 }
 
 type SlotSolutionCandidate struct {
@@ -77,7 +77,7 @@ func (slotSolution *SlotSolution) IsSlotTagValid() bool {
 * This function matches the slot tag and those of its solutions
  */
 func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolutionCandidate) bool {
-	if len(slotSolution.SlotTag) == 0 || len(slotSolution.Solution) == 0 {
+	if len(slotSolution.SlotTag) == 0 || len(slotSolution.SlotSolutionCandidates) == 0 {
 		return false
 	}
 	solutag := ""

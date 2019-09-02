@@ -30,7 +30,7 @@ func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr
 	solver.matcher.Init(poiSearcher)
 }
 
-func (solver *Solver) Solve(req PlanningRequest) (resp PlanningResponse, err error) {
+func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient) (resp PlanningResponse, err error) {
 	if !travelTimeValidation(req) {
 		err = errors.New("travel time limit exceeded for current selection")
 		return
@@ -43,10 +43,9 @@ func (solver *Solver) Solve(req PlanningRequest) (resp PlanningResponse, err err
 
 	for idx, slotRequest := range req.SlotRequests {
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius,
-			req.Weekday)
+		slotSolution := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
-		for _, candidate := range slotSolution.Solution {
+		for _, candidate := range slotSolution.SlotSolutionCandidates {
 			candidates[idx] = append(candidates[idx], candidate)
 		}
 	}
