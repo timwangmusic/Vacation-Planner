@@ -24,28 +24,23 @@ type TripEvents struct {
 	//For E events, start place and end place are same
 }
 
-/*
-* Multi-Dimentional Tag iterator
-* implemented to iterate candidate solutions over the places
-* according to valid tags
- */
-
 type SlotSolution struct {
-	slotTag  string
-	Solution []SlotSolutionCandidate
+	SlotTag  string                  `json:"slot_tag"`
+	Solution []SlotSolutionCandidate `json:"solution"`
 }
+
 type SlotSolutionCandidate struct {
-	PlaceNames      []string
-	PlaceIDS        []string
-	PlaceLocations  [][2]float64
-	Candidate       []TripEvents
-	EndPlaceDefault matching.Place
-	Score           float64
-	IsSet           bool
+	PlaceNames      []string       `json:"place_names"`
+	PlaceIDS        []string       `json:"place_ids"`
+	PlaceLocations  [][2]float64   `json:"place_locations"`
+	Candidate       []TripEvents   `json:"candidate"`
+	EndPlaceDefault matching.Place `json:"end_place_default"`
+	Score           float64        `json:"score"`
+	IsSet           bool           `json:"is_set"`
 }
 
 func (slotSolution *SlotSolution) SetTag(tag string) {
-	slotSolution.slotTag = tag
+	slotSolution.SlotTag = tag
 }
 
 /*
@@ -53,12 +48,12 @@ func (slotSolution *SlotSolution) SetTag(tag string) {
 *solution requirement
  */
 func (slotSolution *SlotSolution) IsSlotagValid() bool {
-	if slotSolution.slotTag == "" {
+	if slotSolution.SlotTag == "" {
 		return false
 	} else {
 		var eatcount uint8 = 0
 		var vstcount uint8 = 0
-		for _, c := range slotSolution.slotTag {
+		for _, c := range slotSolution.SlotTag {
 			if c == 'e' || c == 'E' {
 				eatcount++
 			} else if c == 'v' || c == 'V' {
@@ -82,7 +77,7 @@ func (slotSolution *SlotSolution) IsSlotagValid() bool {
 * This function matches the slot tag and those of its solutions
  */
 func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolutionCandidate) bool {
-	if len(slotSolution.slotTag) == 0 || len(slotSolution.Solution) == 0 {
+	if len(slotSolution.SlotTag) == 0 || len(slotSolution.Solution) == 0 {
 		return false
 	}
 	solutag := ""
@@ -96,10 +91,10 @@ func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolution
 			count++
 		}
 	}
-	if count != len(slotSolution.slotTag) {
+	if count != len(slotSolution.SlotTag) {
 		return false
 	}
-	if strings.EqualFold(solutag, slotSolution.slotTag) {
+	if strings.EqualFold(solutag, slotSolution.SlotTag) {
 		return false
 	}
 	return true
@@ -108,7 +103,7 @@ func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolution
 func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPlaces) SlotSolutionCandidate {
 	res := SlotSolutionCandidate{}
 	res.IsSet = false
-	if len(iter.Status) != len(slotSolution.slotTag) {
+	if len(iter.Status) != len(slotSolution.SlotTag) {
 		//incorrect return
 		return res
 	}
@@ -120,7 +115,7 @@ func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, cplaces Catego
 	vcluster := cplaces.VisitPlaces
 	places := make([]matching.Place, len(iter.Status))
 	for i, num := range iter.Status {
-		if slotSolution.slotTag[i] == 'E' || slotSolution.slotTag[i] == 'e' {
+		if slotSolution.SlotTag[i] == 'E' || slotSolution.SlotTag[i] == 'e' {
 			_, ok := record[ecluster[num].PlaceId]
 			if ok == true {
 				return res
@@ -131,7 +126,7 @@ func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, cplaces Catego
 				res.PlaceNames = append(res.PlaceNames, places[i].Name)
 				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
 			}
-		} else if slotSolution.slotTag[i] == 'V' || slotSolution.slotTag[i] == 'v' {
+		} else if slotSolution.SlotTag[i] == 'V' || slotSolution.SlotTag[i] == 'v' {
 			_, ok := record[vcluster[num].PlaceId]
 			if ok == true {
 				return res
