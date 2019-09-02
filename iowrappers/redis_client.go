@@ -7,6 +7,7 @@ import (
 	"Vacation-planner/POI"
 	"Vacation-planner/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
@@ -175,4 +176,82 @@ func (redisClient *RedisClient) StreamsLogging(streamName string, data map[strin
 		log.Info(err)
 	}
 	return streamsId
+}
+
+type SlotSolutionCandidateCache struct {
+	PlaceIds       []string     `json:"place_ids"`
+	Score          float64      `json:"score"`
+	PlaceNames     []string     `json:"place_names"`
+	PlaceLocations [][2]float64 `json:"place_locations"`
+}
+
+type SlotSolutionCacheResponse struct {
+	SlotSolutionCandidate []SlotSolutionCandidateCache `json:"slot_solution_candidate"`
+}
+
+type SlotSolutionCacheRequest struct {
+	Country   string
+	City      string
+	Radius    uint64
+	EVTags    []string
+	Intervals []POI.TimeInterval
+	Weekday   POI.Weekday
+}
+
+// convert time intervals and an EV tag to an integer
+// each time interval and E/V pair has 23 * 24 * 2 = 1104 possibilities
+// treat each pair as one digit in 1104-ary number and we have maximum 4 digits
+func encodeTimeCatIdx(eVTag []string, intervals []POI.TimeInterval) (res int64, err error) {
+	if len(eVTag) != len(intervals) {
+		err = errors.New("wrong inputs")
+		res = -1
+		return
+	}
+	for idx, tagVal := range eVTag {
+		res *= 1104
+		interval := intervals[idx]
+		if strings.ToLower(tagVal) == "e" {
+			res += int64(interval.Start) * int64(interval.End)
+		} else if strings.ToLower(tagVal) == "v" {
+			res += int64(interval.Start) * int64(interval.End) * 2
+		} else {
+			err = errors.New("wrong input EV tag")
+			res = -1
+			return
+		}
+	}
+	return
+}
+
+func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
+	country, city := req.Country, req.City
+	timeCatIdx, err := encodeTimeCatIdx(req.EVTags, req.Intervals)
+	utils.CheckErr(err)
+
+	radius := strconv.FormatUint(req.Radius, 10)
+	timeCatIdxStr := strconv.FormatInt(timeCatIdx, 10)
+
+	redisFieldKey := strings.Join([]string{country, city, radius, string(req.Weekday), timeCatIdxStr}, ":")
+	return redisFieldKey
+}
+
+// cache iowrapper level version of slot solution
+func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, solution SlotSolutionCacheResponse) {
+	redisFieldKey := genSlotSolutionCacheKey(req)
+	json_, err := json.Marshal(solution)
+	utils.CheckErr(err)
+
+	data := make(map[string]interface{})
+	data[redisFieldKey] = json_
+	redisClient.client.HMSet("slotSolutionCache", data)
+}
+
+func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (solution SlotSolutionCacheResponse, err error) {
+	redisFieldKey := genSlotSolutionCacheKey(req)
+	json_, err := redisClient.client.HGet("slotSolutionCache", redisFieldKey).Result()
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal([]byte(json_), &solution)
+	return
 }
