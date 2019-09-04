@@ -6,13 +6,13 @@ import (
 	"runtime/debug"
 )
 const(
-	LOG_PANIC = iota
-	LOG_FATAL
-	LOG_ERROR
-	LOG_WARNING
-	LOG_INFO
-	LOG_DEBUG
-	LOG_TRACE
+	LogPanic = iota
+	LogFatal
+	LogError
+	LogWarning
+	LogInfo
+	LogDebug
+	LogTrace
 )
 type UtilsError struct{
 	Err error
@@ -25,19 +25,19 @@ func (this UtilsError) Error() (res string){
 func CheckErrImmediate(err error, level uint){
 	if err != nil{
 		switch level {
-		case LOG_PANIC :
+		case LogPanic:
 			log.Panic(err)
-		case LOG_FATAL:
+		case LogFatal:
 			log.Fatal(err)
-		case LOG_ERROR:
+		case LogError:
 			log.Error(err)
-		case LOG_WARNING:
+		case LogWarning:
 			log.Warn(err)
-		case LOG_INFO:
+		case LogInfo:
 			log.Info(err)
-		case LOG_DEBUG:
+		case LogDebug:
 			log.Debug(err)
-		case LOG_TRACE:
+		case LogTrace:
 			log.Trace(err)
 		default:
 			log.Error("No level is provided for this error")
@@ -50,19 +50,19 @@ func CheckErrImmediate(err error, level uint){
 func CheckErr(err UtilsError){
 	if err.Err != nil{
 		switch err.level {
-		case LOG_PANIC :
+		case LogPanic:
 			log.Panic(err.Err)
-		case LOG_FATAL:
+		case LogFatal:
 			log.Fatal(err.Err)
-		case LOG_ERROR:
+		case LogError:
 			log.Error(err.Err)
-		case LOG_WARNING:
+		case LogWarning:
 			log.Warn(err.Err)
-		case LOG_INFO:
+		case LogInfo:
 			log.Info(err.Err)
-		case LOG_DEBUG:
+		case LogDebug:
 			log.Debug(err.Err)
-		case LOG_TRACE:
+		case LogTrace:
 			log.Trace(err.Err)
 		default:
 			log.Error("No level is provided for this error")

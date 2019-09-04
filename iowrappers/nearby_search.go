@@ -50,7 +50,7 @@ func GoogleNearbySearchSDK(c MapsClient, location string, placeType string, radi
 	pageToken string, rankBy string) (resp maps.PlacesSearchResponse) {
 	var err error
 	latlng, err := maps.ParseLatLng(location)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	mapsReq := maps.NearbySearchRequest{
 		Type:      maps.PlaceType(placeType),
@@ -60,7 +60,7 @@ func GoogleNearbySearchSDK(c MapsClient, location string, placeType string, radi
 		RankBy:    maps.RankBy(rankBy),
 	}
 	resp, err = c.client.NearbySearch(context.Background(), &mapsReq)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 	return
 }
 
@@ -167,14 +167,14 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 
 	if *detailedSearchFields != "" {
 		fieldMask, err := parseFields(*detailedSearchFields)
-		utils.CheckErr(err)
+		utils.CheckErrImmediate(err, utils.LogError)
 		req.Fields = fieldMask
 	}
 
 	startSearchTime := time.Now()
 
 	resp, err := c.client.PlaceDetails(context.Background(), req)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	searchDuration := time.Since(startSearchTime)
 
@@ -185,7 +185,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 		"Maps API call time":      searchDuration,
 	}).Info("Logging detailed place search")
 
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	return resp, nil
 }
@@ -247,7 +247,7 @@ func parseFields(fields string) ([]maps.PlaceDetailsFieldMask, error) {
 	var res []maps.PlaceDetailsFieldMask
 	for _, s := range strings.Split(fields, ",") {
 		f, err := maps.ParsePlaceDetailsFieldMask(s)
-		utils.CheckErr(err)
+		utils.CheckErrImmediate(err, utils.LogError)
 		res = append(res, f)
 	}
 	return res, nil

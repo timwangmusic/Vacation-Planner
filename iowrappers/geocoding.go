@@ -17,7 +17,7 @@ func (c MapsClient) Geocode(query GeocodeQuery) (lat float64, lng float64) {
 		}}
 
 	resp, err := c.client.Geocode(context.Background(), req)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	if len(resp) < 1 {
 		log.Fatal(errors.New("Maps geocoding response invalid"))

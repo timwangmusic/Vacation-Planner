@@ -41,7 +41,7 @@ func (dbHandler *DbHandler) Init(DbName string, url string) {
 
 func (dbHandler *DbHandler) CreateSession(uri string) {
 	session, err := mgo.Dial(uri)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 	dbHandler.Session = session
 }
 
@@ -57,7 +57,8 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 // Prevent accidentally creating collections in PlaceSearch method.
 // Since the nearby search in Redis has considered maximum search radius, in this method we only need to use the updated
 // search radius to search one more time in database.
-func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, err error) {
+func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, uerr utils.UtilsError) {
+	var err error
 	collName := string(req.PlaceCat)
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
@@ -68,7 +69,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 	collHandler := dbHandler.handlers[collName]
 
 	totalNumDocs, err := collHandler.GetCollection().Count()
-	utils.CheckErr(err)
+	uerr = utils.GenerateErr(err.Error(), utils.LogError)
 
 	if uint(totalNumDocs) < req.MinNumResults {
 		log.Errorf("The number of documents in database %d is less than the minimum %d requested",
@@ -104,7 +105,7 @@ func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, 
 	index := mgo.Index{
 		Key: []string{"$2dsphere:location"},
 	}
-	utils.CheckErr(coll.EnsureIndex(index))
+	utils.CheckErrImmediate(coll.EnsureIndex(index), utils.LogError)
 }
 
 func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
@@ -133,6 +134,6 @@ func (collHandler *CollHandler) Search(radius uint, latitude float64, longitude 
 		},
 	}
 	coll := collHandler.GetCollection()
-	utils.CheckErr(coll.Find(query).All(&places))
+	utils.CheckErrImmediate(coll.Find(query).All(&places), utils.LogError)
 	return
 }
