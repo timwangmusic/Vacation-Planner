@@ -27,7 +27,7 @@ const (
 
 
 func (solver *Solver) SolverProcessError(errstring string, errorcode uint, resp * PlanningResponse)(err error){
-	err = utils.GenerateErr("Travel time limit exceeded for current selection")
+	err = utils.GenerateErr("Travel time limit exceeded for current selection", utils.LogError)
 	resp.Err = err
 	resp.Errcode = errorcode
 	return

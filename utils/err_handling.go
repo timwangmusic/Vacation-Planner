@@ -42,10 +42,9 @@ func CheckErrImmediate(err error, level uint){
 		default:
 			log.Error("No level is provided for this error")
 		}
-	} else {
-		log.Error("No Error is raised")
+		debug.PrintStack()
 	}
-	debug.PrintStack()
+
 }
 func CheckErr(err UtilsError){
 	if err.Err != nil{
