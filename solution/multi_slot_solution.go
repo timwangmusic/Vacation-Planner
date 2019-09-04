@@ -38,7 +38,7 @@ func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr
 	solver.matcher = &matching.TimeMatcher{}
 	poiSearcher := &iowrappers.PoiSearcher{}
 	mapsClient := &iowrappers.MapsClient{}
-	utils.CheckErr(mapsClient.Create(apiKey))
+	utils.CheckErrImmediate(mapsClient.Create(apiKey), utils.LogFatal)
 	poiSearcher.Init(mapsClient, dbName, dbUrl, redisAddr, redisPsw, redisIdx)
 	solver.matcher.Init(poiSearcher)
 }

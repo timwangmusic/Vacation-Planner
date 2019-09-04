@@ -77,7 +77,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 		return
 	} else {
 		dbStoredPlaces, err := dbHandler.PlaceSearch(request)
-		utils.CheckErr(err)
+		utils.CheckErrImmediate(err, utils.LogError)
 		if uint(len(dbStoredPlaces)) < request.MinNumResults {
 			// Call external API only when both cache and database cannot fulfill request
 			newPlaces := poiSearcher.mapsClient.NearbySearch(request)
@@ -120,7 +120,7 @@ func (poiSearcher *PoiSearcher) UpdateMongo(placeCat POI.PlaceCategory, places [
 	for _, place := range places {
 		err := poiSearcher.dbHandler.InsertPlace(place, placeCat)
 		if !mgo.IsDup(err) { // if error is not caused by primary key duplication, further check the error
-			utils.CheckErr(err)
+			utils.CheckErrImmediate(err, utils.LogError)
 			numNewDocs++
 		}
 	}

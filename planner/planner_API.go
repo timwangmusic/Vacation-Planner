@@ -40,8 +40,8 @@ type PlanningResponse struct {
 }
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
-	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
-	utils.CheckErr(err)
+	planningResp, err := planner.Solver.Solve(*req)
+	utils.CheckErrImmediate(err, utils.LogError)
 	if len(planningResp.Solution) == 0 {
 		resp.Err = planningResp.Err.Error()
 		resp.Errcode = planningResp.Errcode
@@ -78,7 +78,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr 
 // API definitions
 func (planner *MyPlanner) welcome_api(w http.ResponseWriter, r *http.Request) {
 	_, err := fmt.Fprint(w, "Welcome to use the Vacation Planner system!")
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 }
 
 // Return top planning result to user
@@ -107,7 +107,7 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpl := template.Must(template.ParseFiles("templates/plan_layout.html"))
 	planningResp := planner.Planning(&planningReq)
-	utils.CheckErr(tmpl.Execute(w, planningResp))
+	utils.CheckErrImmediate(tmpl.Execute(w, planningResp), utils.LogError)
 }
 
 func (planner *MyPlanner) HandlingRequests() {
