@@ -16,20 +16,21 @@ type Config struct {
 	RedisUrl         string `yaml:"redis_url"`
 	MapsClientApiKey string `yaml:"maps_client_api_key"`
 	RedisStreamName  string `yaml:"redis_stream_name"`
+	ServerPort		 string `yaml:"server_port"`
 }
 
 func RunDevServer() {
 	conf := DevelopmentConfig{}
-	yml_file, err := ioutil.ReadFile("Config/server_config.yml")
+	ymlFile, err := ioutil.ReadFile("Config/server_config.yml")
 	utils.CheckErr(err)
 
-	err = yaml.Unmarshal(yml_file, &conf)
+	err = yaml.Unmarshal(ymlFile, &conf)
 	utils.CheckErr(err)
 
 	myPlanner := planner.MyPlanner{}
 	conf_ := conf.Conf
 	myPlanner.Init(conf_.MapsClientApiKey, conf_.MongoDBUrl, conf_.RedisUrl, conf_.RedisStreamName)
-	myPlanner.HandlingRequests()
+	myPlanner.HandlingRequests(conf_.ServerPort)
 }
 
 func main() {
