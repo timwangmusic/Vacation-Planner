@@ -1,125 +1,149 @@
 package solution
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/graph"
 	"Vacation-planner/matching"
-	log "github.com/sirupsen/logrus"
-	"strconv"
+	"strings"
 	"time"
 )
 
-const CandidateQueueLength = 20
-const CandidateQueueDisplay = 15
+const (
+	EventEatery = iota + 10 // avoid default 0s
+	EventVisit
+	EventTravel
+)
 
-type TripEvent struct {
+const EateryLimitPerSlot = 1
+const VisitLimitPerSlot = 3
+const LimitPerSlot = 4
+
+type TripEvents struct {
 	tag        uint8
-	startTime  time.Time
-	endTime    time.Time
-	startPlace matching.Place
-	endPlace   matching.Place
+	starttime  time.Time
+	endtime    time.Time
+	startplace matching.Place
+	endplace   matching.Place
+	//For T events, start place and end place are different
+	//For E events, start place and end place are same
 }
 
-// Find top solution candidates
-func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandidate {
-	m := make(map[string]SlotSolutionCandidate) // map for result extraction
-	vertexes := make([]graph.Vertex, len(candidates))
-	for idx, candidate := range candidates {
-		candidateKey := strconv.FormatInt(int64(idx), 10)
-		vertex := graph.Vertex{Name: candidateKey, Key: candidate.Score}
-		vertexes[idx] = vertex
-		m[candidateKey] = candidate
-	}
-	// use limited-size minimum priority queue
-	priorityQueue := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0)}
-	for _, vertex := range vertexes {
-		if priorityQueue.Size() == CandidateQueueLength {
-			top := priorityQueue.GetRoot()
-			if vertex.Key > top.Key {
-				priorityQueue.ExtractTop()
+type SlotSolution struct {
+	SlotTag                string                  `json:"slot_tag"`
+	SlotSolutionCandidates []SlotSolutionCandidate `json:"solution"`
+}
+
+type SlotSolutionCandidate struct {
+	PlaceNames      []string       `json:"place_names"`
+	PlaceIDS        []string       `json:"place_ids"`
+	PlaceLocations  [][2]float64   `json:"place_locations"`
+	Candidate       []TripEvents   `json:"candidate"`
+	EndPlaceDefault matching.Place `json:"end_place_default"`
+	Score           float64        `json:"score"`
+	IsSet           bool           `json:"is_set"`
+}
+
+func (slotSolution *SlotSolution) SetTag(tag string) {
+	slotSolution.SlotTag = tag
+}
+
+/*
+*This function checks if the slots in the solution fits the
+*solution requirement
+ */
+func (slotSolution *SlotSolution) IsSlotTagValid() bool {
+	if slotSolution.SlotTag == "" {
+		return false
+	} else {
+		var eatcount uint8 = 0
+		var vstcount uint8 = 0
+		for _, c := range slotSolution.SlotTag {
+			if c == 'e' || c == 'E' {
+				eatcount++
+			} else if c == 'v' || c == 'V' {
+				if eatcount == 0 {
+					//visit before eat, no valid at slotSolution time
+					return false
+				}
+				vstcount++
 			} else {
-				continue
+				return false
+			}
+			if eatcount + vstcount > LimitPerSlot {
+				return false
 			}
 		}
-		priorityQueue.Insert(vertex)
+		return true
 	}
-
-	// remove extra vertexes from priority queue
-	for priorityQueue.Size() > CandidateQueueDisplay {
-		priorityQueue.ExtractTop()
-	}
-
-	res := make([]SlotSolutionCandidate, 0)
-
-	for priorityQueue.Size() > 0 {
-		res = append(res, m[priorityQueue.ExtractTop()])
-	}
-
-	return res
 }
 
-// Generate slot solution candidates
-// Parameter list matches slot request
-func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, EVtag string,
-	stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) (slotSolution SlotSolution) {
-	if len(stayTimes) != len(EVtag) {
-		log.Fatal("User designated stay time does not match tag.")
-		return
+/*
+* This function matches the slot tag and those of its solutions
+ */
+func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolutionCandidate) bool {
+	if len(slotSolution.SlotTag) == 0 || len(slotSolution.SlotSolutionCandidates) == 0 {
+		return false
 	}
-
-	slotSolution.SetTag(EVtag)
-	if !slotSolution.IsSlotagValid() {
-		log.Fatalf("Slot tag %s is invalid.", EVtag)
-		return
-	}
-
-	slotSolution.Solution = make([]SlotSolutionCandidate, 0)
-	slotCandidates := make([]SlotSolutionCandidate, 0)
-
-	req := matching.TimeMatchingRequest{}
-
-	req.Location = location
-	if radius <= 0 {
-		radius = 2000
-	}
-	req.Radius = radius
-
-	queryTimeSlot := matching.TimeSlot{
-		Slot: POI.TimeInterval{
-			Start: stayTimes[0].Slot.Start,
-			End:   stayTimes[len(stayTimes)-1].Slot.End,
-		},
-	}
-	// only one big time slot
-	req.TimeSlots = []matching.TimeSlot{queryTimeSlot}
-
-	if weekday < POI.DATE_MONDAY || weekday > POI.DATE_SUNDAY {
-		weekday = POI.DATE_SATURDAY
-	}
-	req.Weekday = weekday
-
-	placeClusters := timeMatcher.Matching(&req)
-
-	categorizedPlaces := Categorize(&placeClusters[0])
-	minuteLimit := GetSlotLengthinMin(&placeClusters[0])
-
-	mdIter := MDtagIter{}
-	mdIter.Init(EVtag, categorizedPlaces)
-
-	for mdIter.HasNext() {
-		curCandidate := slotSolution.CreateCandidate(mdIter, categorizedPlaces)
-
-		if curCandidate.IsSet {
-			_, travelTimeInMin := GetTravelTimeByDistance(categorizedPlaces, mdIter)
-			if travelTimeInMin <= float64(minuteLimit) {
-				//FIXME: ADD TRIP EVENT GENERATION FUNCTION CALL
-				slotCandidates = append(slotCandidates, curCandidate)
-			}
+	solutag := ""
+	var count = 0
+	for _, cand := range slotCandidate.Candidate {
+		if cand.tag == EventEatery {
+			solutag += "E"
+			count++
+		} else if cand.tag == EventVisit {
+			solutag += "V"
+			count++
 		}
-		mdIter.Next()
 	}
-	bestCandidates := FindBestCandidates(slotCandidates)
-	slotSolution.Solution = append(slotSolution.Solution, bestCandidates...)
+	if count != len(slotSolution.SlotTag) {
+		return false
+	}
+	if strings.EqualFold(solutag, slotSolution.SlotTag) {
+		return false
+	}
+	return true
+}
 
-	return
+func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPlaces) SlotSolutionCandidate {
+	res := SlotSolutionCandidate{}
+	res.IsSet = false
+	if len(iter.Status) != len(slotSolution.SlotTag) {
+		//incorrect return
+		return res
+	}
+	//create a hashtable and iterate through place clusters
+	record := make(map[string]bool)
+	//check form
+	//ASSUME E&V POIs have different placeID
+	ecluster := cplaces.EateryPlaces
+	vcluster := cplaces.VisitPlaces
+	places := make([]matching.Place, len(iter.Status))
+	for i, num := range iter.Status {
+		if slotSolution.SlotTag[i] == 'E' || slotSolution.SlotTag[i] == 'e' {
+			_, ok := record[ecluster[num].PlaceId]
+			if ok == true {
+				return res
+			} else {
+				record[ecluster[num].PlaceId] = true
+				places[i] = ecluster[num]
+				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
+				res.PlaceNames = append(res.PlaceNames, places[i].Name)
+				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
+			}
+		} else if slotSolution.SlotTag[i] == 'V' || slotSolution.SlotTag[i] == 'v' {
+			_, ok := record[vcluster[num].PlaceId]
+			if ok == true {
+				return res
+			} else {
+				record[vcluster[num].PlaceId] = true
+				places[i] = vcluster[num]
+				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
+				res.PlaceNames = append(res.PlaceNames, places[i].Name)
+				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
+			}
+		} else {
+			return res
+		}
+	}
+	res.Score = matching.Score(places)
+	res.IsSet = true
+	return res
 }
