@@ -11,8 +11,10 @@ const (
 	EventVisit
 	EventTravel
 )
+
 const EateryLimitPerSlot = 1
 const VisitLimitPerSlot = 3
+const LimitPerSlot = 4
 
 type TripEvents struct {
 	tag        uint8
@@ -65,7 +67,7 @@ func (slotSolution *SlotSolution) IsSlotTagValid() bool {
 			} else {
 				return false
 			}
-			if eatcount > EateryLimitPerSlot || vstcount > VisitLimitPerSlot {
+			if eatcount + vstcount > LimitPerSlot {
 				return false
 			}
 		}
