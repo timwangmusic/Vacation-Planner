@@ -6,12 +6,18 @@ import (
 	"Vacation-planner/solution"
 	"Vacation-planner/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
+)
+
+const (
+	MaxPlacesPerSlot = 4
+	MaxPlacesPerDay = 12
 )
 
 type Planner interface {
@@ -40,13 +46,13 @@ type PlanningResponse struct {
 }
 
 type PlanningPostRequest struct {
-	Country   string `json:"country"`
-	City      string `json:"city"`
-	Weekday   string `json:"weekday"`
-	StartTime int    `json:"start_time"`
-	EndTime   int    `json:"end_time"`
-	NumVisit  uint   `json:"num_visit"`
-	NumEatery uint   `json:"num_eatery"`
+	Country   string      `json:"country"`
+	City      string      `json:"city"`
+	Weekday   POI.Weekday `json:"weekday"`
+	StartTime POI.Hour    `json:"start_time"`
+	EndTime   POI.Hour    `json:"end_time"`
+	NumVisit  uint        `json:"num_visit"`
+	NumEatery uint        `json:"num_eatery"`
 }
 
 // single-day, single-city planning method
@@ -96,11 +102,52 @@ func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	req := PlanningPostRequest{}
 	utils.CheckErr(json.NewDecoder(r.Body).Decode(&req))
-	//planningReq := processPlanningPostRequest(&req)
-
+	planningReq, err := processPlanningPostRequest(&req)
+	utils.CheckErr(err)
+	planningResp := planner.Planning(&planningReq)
+	utils.CheckErr(planner.ResultHTMLTemplate.Execute(w, planningResp))
 }
 
-func processPlanningPostRequest(req *PlanningPostRequest) (planningRequest solution.PlanningRequest) {
+func processPlanningPostRequest(req *PlanningPostRequest) (planningRequest solution.PlanningRequest, err error) {
+	planningRequest.Weekday = req.Weekday
+	planningRequest.SearchRadius = 10000
+	// basic POST parameter validations
+	if req.StartTime == 0 || req.EndTime == 0 {
+		req.StartTime = 9
+		req.EndTime = 22
+	}
+
+	if req.NumVisit == 0 && req.NumEatery == 0 {
+		req.NumVisit = 4
+		req.NumEatery = 3
+	}
+
+	err = checkPostReqTimePlaceNum(req)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func checkPostReqTimePlaceNum(req *PlanningPostRequest) (err error) {
+	if req.StartTime > 24 || req.EndTime > 24 {
+		err = errors.New("invalid time, valid times are chosen from 1-24")
+		return
+	}
+	if req.StartTime >= req.EndTime {
+		err = errors.New("start time cannot be later than end time")
+		return
+	}
+
+	if req.NumEatery + req.NumVisit > MaxPlacesPerDay {
+		err = fmt.Errorf("total number of places cannot exceed %d", MaxPlacesPerDay)
+		return
+	}
+
+	if req.NumEatery + req.NumVisit > uint(req.EndTime - req.StartTime) {
+		err = errors.New("not enough time for visiting all the places")
+	}
 	return
 }
 
@@ -138,7 +185,9 @@ func (planner *MyPlanner) HandlingRequests(serverPort string) {
 
 	myRouter.HandleFunc("/", planner.welcomeApi)
 
-	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.getPlanningApi)
+	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.getPlanningApi).Methods("GET")
+
+	myRouter.HandleFunc("/planning/v1", planner.postPlanningApi).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(serverPort, myRouter))
 }
