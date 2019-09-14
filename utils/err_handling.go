@@ -5,7 +5,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"runtime/debug"
 )
-const(
+
+const (
 	LogPanic = iota
 	LogFatal
 	LogError
@@ -14,16 +15,18 @@ const(
 	LogDebug
 	LogTrace
 )
-type UtilsError struct{
-	Err error
+
+type UtilsError struct {
+	Err   error
 	level uint
 }
-func (this UtilsError) Error() (res string){
+
+func (this UtilsError) Error() (res string) {
 	res = this.Err.Error()
 	return res
 }
-func CheckErrImmediate(err error, level uint){
-	if err != nil{
+func CheckErrImmediate(err error, level uint) {
+	if err != nil {
 		switch level {
 		case LogPanic:
 			log.Panic(err)
@@ -46,8 +49,8 @@ func CheckErrImmediate(err error, level uint){
 	}
 
 }
-func CheckErr(err UtilsError){
-	if err.Err != nil{
+func CheckErr(err UtilsError) {
+	if err.Err != nil {
 		switch err.level {
 		case LogPanic:
 			log.Panic(err.Err)
@@ -70,7 +73,7 @@ func CheckErr(err UtilsError){
 		log.Error("No Error is raised")
 	}
 }
-func GenerateErr(errstring string, level uint) (err UtilsError){
+func GenerateErr(errstring string, level uint) (err UtilsError) {
 	err = UtilsError{errors.New(errstring), level}
 	debug.PrintStack()
 	return

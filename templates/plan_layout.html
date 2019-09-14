@@ -8,6 +8,10 @@
 <h1>
     Vacation Plans
 </h1>
+{{if .Err}}
+    Error: {{.Err}}<br>
+    Error code: {{.Errcode}}<br>
+{{end}}
     {{range .Places}}
         <table>
             <tr>

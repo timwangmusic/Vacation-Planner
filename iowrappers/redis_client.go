@@ -99,7 +99,7 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 	requestCategory := string(request.PlaceCat)
 
 	totalNumCachedResults, err := redisClient.client.ZCount(requestCategory, "-inf", "inf").Result()
-	utils.CheckErrImmediate(err, utils.LogError)
+	utils.CheckErrImmediate(err, utils.LogInfo)
 	if uint(totalNumCachedResults) < request.MinNumResults {
 		return
 	}

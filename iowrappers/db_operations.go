@@ -105,7 +105,7 @@ func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, 
 	index := mgo.Index{
 		Key: []string{"$2dsphere:location"},
 	}
-	utils.CheckErrImmediate(coll.EnsureIndex(index), utils.LogError)
+	utils.CheckErrImmediate(coll.EnsureIndex(index), utils.LogInfo)
 }
 
 func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {

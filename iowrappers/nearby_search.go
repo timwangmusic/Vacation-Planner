@@ -185,8 +185,6 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 		"Maps API call time":      searchDuration,
 	}).Info("Logging detailed place search")
 
-	utils.CheckErrImmediate(err, utils.LogError)
-
 	return resp, nil
 }
 

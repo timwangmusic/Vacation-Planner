@@ -18,15 +18,15 @@ type Planner interface {
 }
 
 type MyPlanner struct {
-	RedisLogger iowrappers.RedisClient
+	RedisLogger     iowrappers.RedisClient
 	RedisStreamName string
-	Solver solution.Solver
+	Solver          solution.Solver
 }
 
 type TimeSectionPlace struct {
-	PlaceName string `json:"place_name"`
+	PlaceName string   `json:"place_name"`
 	StartTime POI.Hour `json:"start_time"`
-	EndTime	POI.Hour `json:"end_time"`
+	EndTime   POI.Hour `json:"end_time"`
 }
 
 type TimeSectionPlaces struct {
@@ -41,7 +41,13 @@ type PlanningResponse struct {
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req)
-	utils.CheckErrImmediate(err, utils.LogError)
+	if err != nil {
+		utils.CheckErrImmediate(err, utils.LogError)
+		resp.Err = err.Error()
+		resp.Errcode = planningResp.Errcode
+		return
+	}
+
 	if len(planningResp.Solution) == 0 {
 		resp.Err = planningResp.Err.Error()
 		resp.Errcode = planningResp.Errcode
@@ -50,7 +56,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 	topSolution := planningResp.Solution[0]
 	for idx, slotSol := range topSolution.SlotSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
-			Places:    make([]TimeSectionPlace, 0),
+			Places: make([]TimeSectionPlace, 0),
 		}
 		for pidx, placeName := range slotSol.PlaceNames {
 			timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{

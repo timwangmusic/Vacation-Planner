@@ -20,15 +20,16 @@ const (
 type Solver struct {
 	matcher *matching.TimeMatcher
 }
+
+//The constants are used to handle and summarize solver reported error to the front end.
+//TODO: impelment error parsing to front end.
 const (
 	SOLVER_NO_ERROR = iota
 	SOLVER_REQ_TIME_INTERVAL_INVALID
 	SOLVER_ERROR_MAX
 )
 
-
-func (solver *Solver) SolverProcessError(errstring string, errorcode uint, resp * PlanningResponse)(err error){
-	err = utils.GenerateErr("Travel time limit exceeded for current selection", utils.LogError)
+func (solver *Solver) SolverProcessError(err error, errorcode uint, resp *PlanningResponse) {
 	resp.Err = err
 	resp.Errcode = errorcode
 	return
@@ -46,6 +47,7 @@ func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr
 func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient) (resp PlanningResponse, err error) {
 	if !travelTimeValidation(req) {
 		err = errors.New("travel time limit exceeded for current selection")
+		resp.Errcode = SOLVER_REQ_TIME_INTERVAL_INVALID
 		return
 	}
 	// each row contains candidates in one slot
@@ -207,8 +209,8 @@ type SlotRequest struct {
 
 type PlanningResponse struct {
 	Solution []MultiSlotSolution
-	Err error
-	Errcode uint
+	Err      error
+	Errcode  uint
 }
 
 // Find top multi-slot solutions
