@@ -46,11 +46,12 @@ type PlaceSearchRequest struct {
 	MinNumResults uint
 }
 
-func GoogleNearbySearchSDK(c MapsClient, location string, placeType string, radius uint,
+func GoogleNearbySearchWrapper(c MapsClient, location string, placeType string, radius uint,
 	pageToken string, rankBy string) (resp maps.PlacesSearchResponse) {
 	var err error
 	latlng, err := maps.ParseLatLng(location)
 	utils.CheckErrImmediate(err, utils.LogError)
+	// TODO: handle lat/lng parse error
 
 	mapsReq := maps.NearbySearchRequest{
 		Type:      maps.PlaceType(placeType),
@@ -61,6 +62,7 @@ func GoogleNearbySearchSDK(c MapsClient, location string, placeType string, radi
 	}
 	resp, err = c.client.NearbySearch(context.Background(), &mapsReq)
 	utils.CheckErrImmediate(err, utils.LogError)
+	// TODO: handle nearby search error
 	return
 }
 
@@ -98,7 +100,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			}
 			detailSearchResCh := make(chan PlaceDetailSearchRes)
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp := GoogleNearbySearchSDK(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			searchResp := GoogleNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
 			detailSearchCount := 0 // this achieves a similar effect of closing the channel
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {

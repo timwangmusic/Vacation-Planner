@@ -57,7 +57,7 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 // Prevent accidentally creating collections in PlaceSearch method.
 // Since the nearby search in Redis has considered maximum search radius, in this method we only need to use the updated
 // search radius to search one more time in database.
-func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, uerr utils.UtilsError) {
+func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, uerr utils.Error) {
 	var err error
 	collName := string(req.PlaceCat)
 

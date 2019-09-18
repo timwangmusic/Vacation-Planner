@@ -16,15 +16,16 @@ const (
 	LogTrace
 )
 
-type UtilsError struct {
+type Error struct {
 	Err   error
-	level uint
+	Level uint
 }
 
-func (this UtilsError) Error() (res string) {
-	res = this.Err.Error()
+func (error Error) Error() (res string) {
+	res = error.Err.Error()
 	return res
 }
+
 func CheckErrImmediate(err error, level uint) {
 	if err != nil {
 		switch level {
@@ -43,15 +44,16 @@ func CheckErrImmediate(err error, level uint) {
 		case LogTrace:
 			log.Trace(err)
 		default:
-			log.Error("No level is provided for this error")
+			log.Error("No Level is provided for this error")
 		}
 		debug.PrintStack()
 	}
 
 }
-func CheckErr(err UtilsError) {
+
+func CheckErr(err Error) {
 	if err.Err != nil {
-		switch err.level {
+		switch err.Level {
 		case LogPanic:
 			log.Panic(err.Err)
 		case LogFatal:
@@ -67,14 +69,15 @@ func CheckErr(err UtilsError) {
 		case LogTrace:
 			log.Trace(err.Err)
 		default:
-			log.Error("No level is provided for this error")
+			log.Error("No Level is provided for this error")
 		}
 	} else {
 		log.Error("No Error is raised")
 	}
 }
-func GenerateErr(errstring string, level uint) (err UtilsError) {
-	err = UtilsError{errors.New(errstring), level}
+
+func GenerateErr(errString string, level uint) (err Error) {
+	err = Error{errors.New(errString), level}
 	debug.PrintStack()
 	return
 }

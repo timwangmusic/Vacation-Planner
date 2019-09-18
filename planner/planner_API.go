@@ -40,7 +40,7 @@ type PlanningResponse struct {
 }
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
-	planningResp, err := planner.Solver.Solve(*req)
+	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
 	if err != nil {
 		utils.CheckErrImmediate(err, utils.LogError)
 		resp.Err = err.Error()

@@ -78,7 +78,8 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	} else {
 		dbStoredPlaces, err := dbHandler.PlaceSearch(request)
 		utils.CheckErrImmediate(err, utils.LogError)
-		if uint(len(dbStoredPlaces)) < request.MinNumResults {
+		// if PlaceSearch in database has error, use maps client for place search
+		if err.Err != nil || uint(len(dbStoredPlaces)) < request.MinNumResults {
 			// Call external API only when both cache and database cannot fulfill request
 			newPlaces := poiSearcher.mapsClient.NearbySearch(request)
 			maxResultNum := utils.MinInt(len(newPlaces), int(request.MaxNumResults))
