@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	log "github.com/sirupsen/logrus"
 )
 
 type DatabaseHandler interface {
@@ -63,17 +62,23 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
 		err = fmt.Errorf("collection %s does not exist", collName)
+		uerr = utils.GenerateErr(err.Error(), utils.LogError)
 		return
 	}
 
 	collHandler := dbHandler.handlers[collName]
 
 	totalNumDocs, err := collHandler.GetCollection().Count()
-	uerr = utils.GenerateErr(err.Error(), utils.LogError)
+	if err != nil {
+		uerr = utils.GenerateErr(err.Error(), utils.LogError)
+		return
+	}
+
 
 	if uint(totalNumDocs) < req.MinNumResults {
-		log.Errorf("The number of documents in database %d is less than the minimum %d requested",
+		err = fmt.Errorf("The number of documents in database %d is less than the minimum %d requested",
 			totalNumDocs, req.MinNumResults)
+		uerr = utils.GenerateErr(err.Error(), utils.LogError)
 		return
 	}
 

@@ -227,7 +227,7 @@ func encodeTimeCatIdx(eVTag []string, intervals []POI.TimeInterval) (res int64, 
 func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 	country, city := req.Country, req.City
 	timeCatIdx, err := encodeTimeCatIdx(req.EVTags, req.Intervals)
-	utils.CheckErr(utils.Error{Err: err, Level: utils.LogError})
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	radius := strconv.FormatUint(req.Radius, 10)
 	timeCatIdxStr := strconv.FormatInt(timeCatIdx, 10)
@@ -240,7 +240,7 @@ func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, solution SlotSolutionCacheResponse) {
 	redisFieldKey := genSlotSolutionCacheKey(req)
 	json_, err := json.Marshal(solution)
-	utils.CheckErr(utils.Error{Err: err, Level: utils.LogError})
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	data := make(map[string]interface{})
 	data[redisFieldKey] = json_

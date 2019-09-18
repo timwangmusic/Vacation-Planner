@@ -34,9 +34,9 @@ type TimeSectionPlaces struct {
 }
 
 type PlanningResponse struct {
-	Places []TimeSectionPlaces `json:"time_section_places"`
-	Err string `json:"error"`
-	Errcode uint `json:"errorcode"`
+	Places  []TimeSectionPlaces `json:"time_section_places"`
+	Err     string              `json:"error"`
+	Errcode uint                `json:"errorcode"`
 }
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
@@ -120,7 +120,6 @@ func (planner *MyPlanner) HandlingRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
 	myRouter.HandleFunc("/", planner.welcome_api)
-
 
 	//myRouter.HandleFunc("/planning/{location}/{radius}", planner.planning_api)
 	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.planning_api)
