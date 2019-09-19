@@ -71,8 +71,6 @@ func CheckErr(err Error) {
 		default:
 			log.Error("No Level is provided for this error")
 		}
-	} else {
-		log.Error("No Error is raised")
 	}
 }
 

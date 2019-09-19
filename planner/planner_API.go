@@ -5,6 +5,7 @@ import (
 	"Vacation-planner/iowrappers"
 	"Vacation-planner/solution"
 	"Vacation-planner/utils"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"html/template"
@@ -34,9 +35,9 @@ type TimeSectionPlaces struct {
 }
 
 type PlanningResponse struct {
-	Places []TimeSectionPlaces `json:"time_section_places"`
-	Err string `json:"error"`
-	Errcode uint `json:"errorcode"`
+	Places     []TimeSectionPlaces `json:"time_section_places"`
+	Err        string              `json:"error"`
+	StatusCode uint                `json:"status_code"`
 }
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
@@ -44,13 +45,13 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 	if err != nil {
 		utils.CheckErrImmediate(err, utils.LogError)
 		resp.Err = err.Error()
-		resp.Errcode = planningResp.Errcode
+		resp.StatusCode = planningResp.Errcode
 		return
 	}
 
 	if len(planningResp.Solution) == 0 {
-		resp.Err = planningResp.Err.Error()
-		resp.Errcode = planningResp.Errcode
+		resp.Err = errors.New("cannot find a solution").Error()
+		resp.StatusCode = solution.NoValidSolution
 		return
 	}
 	topSolution := planningResp.Solution[0]
@@ -67,6 +68,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		}
 		resp.Places = append(resp.Places, timeSectionPlaces)
 	}
+	resp.StatusCode = solution.ValidSolutionFound
 	return
 }
 
@@ -114,6 +116,8 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("templates/plan_layout.html"))
 	planningResp := planner.Planning(&planningReq)
 	utils.CheckErrImmediate(tmpl.Execute(w, planningResp), utils.LogError)
+	//fmt.Println(planningResp)
+	//tmpl.Execute(w, planningResp)
 }
 
 func (planner *MyPlanner) HandlingRequests() {
