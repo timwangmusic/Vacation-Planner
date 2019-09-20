@@ -57,8 +57,7 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 // Prevent accidentally creating collections in PlaceSearch method.
 // Since the nearby search in Redis has considered maximum search radius, in this method we only need to use the updated
 // search radius to search one more time in database.
-func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, uerr utils.Error) {
-	var err error
+func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, err error) {
 	collName := string(req.PlaceCat)
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
@@ -69,7 +68,6 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 	collHandler := dbHandler.handlers[collName]
 
 	totalNumDocs, err := collHandler.GetCollection().Count()
-	uerr = utils.GenerateErr(err.Error(), utils.LogError)
 
 	if uint(totalNumDocs) < req.MinNumResults {
 		log.Errorf("The number of documents in database %d is less than the minimum %d requested",

@@ -55,7 +55,7 @@ func (placeManager *ClustersManager) PlaceSearch(location string, searchRadius u
 	} else{
 		request.MinNumResults = 100
 	}
-	placeManager.places = placeManager.Client.NearbySearch(&request)
+	placeManager.places, _ = placeManager.Client.NearbySearch(&request)
 
 	locationData := make([][]float64, len(placeManager.places))
 	for idx, place := range placeManager.places{

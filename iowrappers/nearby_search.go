@@ -46,12 +46,13 @@ type PlaceSearchRequest struct {
 	MinNumResults uint
 }
 
-func GoogleNearbySearchWrapper(c MapsClient, location string, placeType string, radius uint,
-	pageToken string, rankBy string) (resp maps.PlacesSearchResponse) {
-	var err error
+func GoogleNearbySearchWrapper(c MapsClient, location string, placeType string, radius uint, pageToken string, rankBy string) (resp maps.PlacesSearchResponse, err error) {
 	latlng, err := maps.ParseLatLng(location)
-	utils.CheckErrImmediate(err, utils.LogError)
-	// TODO: handle lat/lng parse error
+	// since we have Redis and database before calling nearby search,
+	// if location cannot be parsed, then the request cannot be fulfilled.
+	if logErr(err, utils.LogError) {
+		return
+	}
 
 	mapsReq := maps.NearbySearchRequest{
 		Type:      maps.PlaceType(placeType),
@@ -61,19 +62,19 @@ func GoogleNearbySearchWrapper(c MapsClient, location string, placeType string, 
 		RankBy:    maps.RankBy(rankBy),
 	}
 	resp, err = c.client.NearbySearch(context.Background(), &mapsReq)
-	utils.CheckErrImmediate(err, utils.LogError)
-	// TODO: handle nearby search error
+	logErr(err, utils.LogError)
 	return
 }
 
-func (c *MapsClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place) {
+func (c *MapsClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, e error) {
 	var maxReqTimes uint = 5
-	return c.ExtensiveNearbySearch(maxReqTimes, request)
+	places, e = c.ExtensiveNearbySearch(maxReqTimes, request)
+	return
 }
 
 // ExtensiveNearbySearch tries to find a specified number of search results from a place category once for each location type in the category
 // maxRequestTime specifies the number of times to query for each location type having maxRequestTimes provides Google API call protection
-func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place) {
+func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place, err error) {
 	if request.RankBy == "" {
 		request.RankBy = "prominence" // default rankBy value
 	}
@@ -94,13 +95,21 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 	searchStartTime := time.Now()
 
 	for totalResult < request.MinNumResults {
+		// if error, return regardless of number of results obtained
+		if err != nil {
+			return
+		}
 		for _, placeType := range placeTypes {
 			if reqTimes > 0 && nextPageTokenMap[placeType] == "" { // no more result for this location type
 				continue
 			}
 			detailSearchResCh := make(chan PlaceDetailSearchRes)
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp := GoogleNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			searchResp, error_ := GoogleNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			err = error_
+			if err != nil {
+				continue	// search other types of place for another round
+			}
 			detailSearchCount := 0 // this achieves a similar effect of closing the channel
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
@@ -251,4 +260,12 @@ func parseFields(fields string) ([]maps.PlaceDetailsFieldMask, error) {
 		res = append(res, f)
 	}
 	return res, nil
+}
+
+func logErr(err error, logLevel uint) bool {
+	utils.CheckErrImmediate(err, logLevel)
+	if err != nil {
+		return true
+	}
+	return false
 }

@@ -14,7 +14,7 @@ const (
 )
 
 type PlaceSearcher interface {
-	NearbySearch(request *PlaceSearchRequest) []POI.Place
+	NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error)
 }
 
 type PoiSearcher struct {
@@ -55,7 +55,7 @@ func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng fl
 }
 
 // if client API key is invalid but not empty string, nearby search result will be empty
-func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place) {
+func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, e error) {
 	dbHandler := poiSearcher.dbHandler
 	dbHandler.SetCollHandler(string(request.PlaceCat))
 
@@ -77,11 +77,10 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 		return
 	} else {
 		dbStoredPlaces, err := dbHandler.PlaceSearch(request)
-		utils.CheckErrImmediate(err, utils.LogError)
 		// if PlaceSearch in database has error, use maps client for place search
-		if err.Err != nil || uint(len(dbStoredPlaces)) < request.MinNumResults {
+		if logErr(err, utils.LogError) || uint(len(dbStoredPlaces)) < request.MinNumResults {
 			// Call external API only when both cache and database cannot fulfill request
-			newPlaces := poiSearcher.mapsClient.NearbySearch(request)
+			newPlaces, _ := poiSearcher.mapsClient.NearbySearch(request)
 			maxResultNum := utils.MinInt(len(newPlaces), int(request.MaxNumResults))
 			places = append(places, newPlaces[:maxResultNum]...)
 			// update database
