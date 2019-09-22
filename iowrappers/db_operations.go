@@ -62,7 +62,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
 		err = fmt.Errorf("collection %s does not exist", collName)
-		uerr = utils.GenerateErr(err.Error(), utils.LogError)
+		uerr = utils.GenerateErr(err, utils.LogError)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 
 	totalNumDocs, err := collHandler.GetCollection().Count()
 	if err != nil {
-		uerr = utils.GenerateErr(err.Error(), utils.LogError)
+		uerr = utils.GenerateErr(err, utils.LogError)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 	if uint(totalNumDocs) < req.MinNumResults {
 		err = fmt.Errorf("The number of documents in database %d is less than the minimum %d requested",
 			totalNumDocs, req.MinNumResults)
-		uerr = utils.GenerateErr(err.Error(), utils.LogError)
+		uerr = utils.GenerateErr(err, utils.LogError)
 		return
 	}
 

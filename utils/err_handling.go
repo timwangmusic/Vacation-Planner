@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	log "github.com/sirupsen/logrus"
 	"runtime/debug"
 )
@@ -71,13 +70,11 @@ func CheckErr(err Error) {
 		default:
 			log.Error("No Level is provided for this error")
 		}
-	} else {
-		log.Error("No Error is raised")
 	}
 }
 
-func GenerateErr(errString string, level uint) (err Error) {
-	err = Error{errors.New(errString), level}
+func GenerateErr(e error, level uint) (err Error) {
+	err = Error{e, level}
 	debug.PrintStack()
 	return
 }
