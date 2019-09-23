@@ -106,8 +106,8 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			detailSearchResCh := make(chan PlaceDetailSearchRes)
 			nextPageToken := nextPageTokenMap[placeType]
 			searchResp, error_ := GoogleNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
-			err = error_
-			if err != nil {
+			if error_ != nil {
+				err = error_
 				continue	// search other types of place for another round
 			}
 			detailSearchCount := 0 // this achieves a similar effect of closing the channel

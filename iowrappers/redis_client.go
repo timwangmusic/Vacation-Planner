@@ -70,12 +70,13 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 }
 
 // obtain place info from Redis based on placeId
-func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place) {
+func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err error) {
 	res, err := redisClient.client.Get(placeId).Result()
 	utils.CheckErrImmediate(err, utils.LogError)
-	if err == nil {
-		utils.CheckErrImmediate(json.Unmarshal([]byte(res), &place), utils.LogError)
+	if err != nil {
+		return
 	}
+	utils.CheckErrImmediate(json.Unmarshal([]byte(res), &place), utils.LogError)
 	return
 }
 
@@ -90,7 +91,7 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 	res := make([]POI.Place, len(placeIds))
 
 	for idx, placeId := range placeIds {
-		res[idx] = redisClient.getPlace(fmt.Sprintf("%v", placeId))
+		res[idx], _ = redisClient.getPlace(fmt.Sprintf("%v", placeId))
 	}
 	return res, nil
 }
@@ -131,9 +132,12 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 	}
 	request.Radius = searchRadius
 
-	places = make([]POI.Place, len(cachedQualifiedPlaces))
-	for idx, placeInfo := range cachedQualifiedPlaces {
-		places[idx] = redisClient.getPlace(placeInfo.Name)
+	places = make([]POI.Place, 0)
+	for _, placeInfo := range cachedQualifiedPlaces {
+		place, err := redisClient.getPlace(placeInfo.Name)
+		if err == nil {
+			places = append(places, place)
+		}
 	}
 	return
 }

@@ -4,7 +4,6 @@ import (
 	"Vacation-planner/utils"
 	"context"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"googlemaps.github.io/maps"
 )
 
@@ -20,7 +19,8 @@ func (c MapsClient) Geocode(query GeocodeQuery) (lat float64, lng float64) {
 	utils.CheckErrImmediate(err, utils.LogError)
 
 	if len(resp) < 1 {
-		log.Fatal(errors.New("Maps geocoding response invalid"))
+		utils.CheckErrImmediate(errors.New("maps geo-coding response invalid"), utils.LogError)
+		return
 	}
 
 	location := resp[0].Geometry.Location
