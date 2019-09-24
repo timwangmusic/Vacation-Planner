@@ -10,6 +10,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 )
 
@@ -18,15 +19,15 @@ type Planner interface {
 }
 
 type MyPlanner struct {
-	RedisLogger iowrappers.RedisClient
+	RedisLogger     iowrappers.RedisClient
 	RedisStreamName string
-	Solver solution.Solver
+	Solver          solution.Solver
 }
 
 type TimeSectionPlace struct {
-	PlaceName string `json:"place_name"`
+	PlaceName string   `json:"place_name"`
 	StartTime POI.Hour `json:"start_time"`
-	EndTime	POI.Hour `json:"end_time"`
+	EndTime   POI.Hour `json:"end_time"`
 }
 
 type TimeSectionPlaces struct {
@@ -35,6 +36,15 @@ type TimeSectionPlaces struct {
 
 type PlanningResponse struct {
 	Places []TimeSectionPlaces `json:"time_section_places"`
+}
+
+// validate REST API input
+func validateSearchRadius(searchRadius string) bool {
+	searchRadiusPattern := "^[1-9][0-9]{2,5}$"	// limit range to 100 -- 99999
+	if matched, _ := regexp.Match(searchRadiusPattern, []byte(searchRadius)); !matched {
+		return false
+	}
+	return true
 }
 
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
@@ -46,7 +56,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 	topSolution := planningResp.Solution[0]
 	for idx, slotSol := range topSolution.SlotSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
-			Places:    make([]TimeSectionPlace, 0),
+			Places: make([]TimeSectionPlace, 0),
 		}
 		for pidx, placeName := range slotSol.PlaceNames {
 			timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
@@ -80,10 +90,15 @@ func (planner *MyPlanner) welcome_api(w http.ResponseWriter, r *http.Request) {
 // Return top planning result to user
 func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	//location := vars["location"]
 	country := vars["country"]
 	city := vars["city"]
 	radius := vars["radius"]
+
+	if !validateSearchRadius(radius) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("invalid search radius"))
+		return
+	}
 
 	// TODO: Validate user inputs
 	// logging planning API usage
@@ -113,7 +128,6 @@ func (planner *MyPlanner) HandlingRequests() {
 
 	//myRouter.HandleFunc("/planning/{location}/{radius}", planner.planning_api)
 	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.planning_api)
-
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
