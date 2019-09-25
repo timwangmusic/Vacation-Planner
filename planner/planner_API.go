@@ -15,7 +15,7 @@ import (
 )
 
 type Planner interface {
-	Planning(req *solution.PlanningRequest) (resp PlanningResponse)
+	Planning(req *solution.PlanningRequest) (resp PlanningResponse, err error)
 }
 
 type MyPlanner struct {
@@ -47,11 +47,13 @@ func validateSearchRadius(searchRadius string) bool {
 	return true
 }
 
-func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
+func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse, err error) {
 	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
-	utils.CheckErr(err)
-	if len(planningResp.Solution) == 0 {
+	if err != nil {
 		return
+	}
+	if len(planningResp.Solution) == 0 {
+		return	// no error, handle the situation in API
 	}
 	topSolution := planningResp.Solution[0]
 	for idx, slotSol := range topSolution.SlotSolutions {
@@ -100,7 +102,6 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Validate user inputs
 	// logging planning API usage
 	planner.PlanningEventLogging(PlanningEvent{
 		City:    city,
@@ -117,7 +118,19 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 		planningReq.SlotRequests[slotReqIdx].Location = cityCountry // set to the same location from URL
 	}
 	tmpl := template.Must(template.ParseFiles("templates/plan_layout.html"))
-	planningResp := planner.Planning(&planningReq)
+	planningResp, err := planner.Planning(&planningReq)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	if planningResp.Places == nil {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("No valid solution is found"))
+	}
+
 	utils.CheckErr(tmpl.Execute(w, planningResp))
 }
 

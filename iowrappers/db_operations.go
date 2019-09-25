@@ -76,7 +76,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 		return
 	}
 
-	latLng := utils.ParseLocation(req.Location)
+	latLng, _ := utils.ParseLocation(req.Location)
 	lat := latLng[0]
 	lng := latLng[1]
 
