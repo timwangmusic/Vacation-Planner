@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"googlemaps.github.io/maps"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -46,7 +47,7 @@ type PlaceSearchRequest struct {
 	MinNumResults uint
 }
 
-func GoogleNearbySearchSDK(c MapsClient, location string, placeType string, radius uint,
+func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType string, radius uint,
 	pageToken string, rankBy string) (resp maps.PlacesSearchResponse) {
 	var err error
 	latlng, err := maps.ParseLatLng(location)
@@ -96,26 +97,31 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			if reqTimes > 0 && nextPageTokenMap[placeType] == "" { // no more result for this location type
 				continue
 			}
-			detailSearchResCh := make(chan PlaceDetailSearchRes)
+
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp := GoogleNearbySearchSDK(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
-			detailSearchCount := 0 // this achieves a similar effect of closing the channel
+			searchResp := GoogleMapsNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			placeIdMap := make(map[int]string) // maps index in search response to place ID
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
-					detailSearchCount++
-					go c.DetailedSearchWrapper(res.PlaceID, detailSearchResCh, k)
+					placeIdMap[k] = res.PlaceID
 				}
 			}
-			// receive place detail search results from channel
-			for detailSearchCount > 0 {
-				detailSearchCount--
-				placeDetails := <-detailSearchResCh
-				respIdx := placeDetails.RespIdx
-				searchResp.Results[respIdx].OpeningHours = placeDetails.Res.OpeningHours
-				searchResp.Results[respIdx].FormattedAddress = placeDetails.Res.FormattedAddress
-				microAddrMap[searchResp.Results[respIdx].PlaceID] = placeDetails.Res.AdrAddress
+
+			detailSearchResults := make([]PlaceDetailSearchRes, len(placeIdMap))
+			var wg sync.WaitGroup
+			wg.Add(len(placeIdMap))
+			for idx, placeId := range placeIdMap {
+				go c.DetailedSearchWrapper(idx, placeId, &detailSearchResults[idx], &wg)
 			}
-			//<-time.After(500 * time.Millisecond)
+			wg.Wait()
+
+			for _, placeDetails := range detailSearchResults {
+				searchRespIdx := placeDetails.RespIdx
+				searchResp.Results[searchRespIdx].OpeningHours = placeDetails.Res.OpeningHours
+				searchResp.Results[searchRespIdx].FormattedAddress = placeDetails.Res.FormattedAddress
+				microAddrMap[searchResp.Results[searchRespIdx].PlaceID] = placeDetails.Res.AdrAddress
+			}
+
 			places = append(places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap)...)
 			totalResult += uint(len(searchResp.Results))
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
@@ -145,14 +151,15 @@ type PlaceDetailSearchRes struct {
 	RespIdx int
 }
 
-func (c *MapsClient) DetailedSearchWrapper(placeId string, detailSearchResCh chan PlaceDetailSearchRes, k int) {
+func (c *MapsClient) DetailedSearchWrapper(idx int, placeId string, detailSearchRes *PlaceDetailSearchRes, wg *sync.WaitGroup) {
+	defer wg.Done()
 	searchRes, err := c.PlaceDetailedSearch(placeId)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	result := PlaceDetailSearchRes{&searchRes, k}
-	detailSearchResCh <- result
+	*detailSearchRes = PlaceDetailSearchRes{Res: &searchRes, RespIdx: idx}
+	return
 }
 
 func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResult, error) {
