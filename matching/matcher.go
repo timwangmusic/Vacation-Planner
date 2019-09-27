@@ -97,7 +97,7 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 
 }
 
-func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory, poiSearcher *iowrappers.PoiSearcher) (Places []Place) {
+func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory, poiSearcher *iowrappers.PoiSearcher) {
 	var mgr *graph.TimeClustersManager
 
 	switch placeCat {
