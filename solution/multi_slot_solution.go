@@ -8,6 +8,7 @@ import (
 	"Vacation-planner/utils"
 	"errors"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -43,11 +44,32 @@ func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr
 	solver.matcher.Init(poiSearcher)
 }
 
+func (solver *Solver) ValidateLocation(location string) bool {
+	countryCity := strings.Split(location, ",")
+	_, _, err := solver.matcher.PoiSearcher.Geocode(iowrappers.GeocodeQuery{
+		City:    countryCity[0],
+		Country: countryCity[1],
+	})
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient) (resp PlanningResponse, err error) {
 	if !travelTimeValidation(req) {
 		err = errors.New("travel time limit exceeded for current selection")
 		resp.Errcode = SolverReqTimeIntervalInvalid
 		return
+	}
+
+	// validate location with poiSearcher of the time matcher
+	for _, slotRequest := range req.SlotRequests {
+		location := slotRequest.Location
+		if !solver.ValidateLocation(location) {
+			err = errors.New("invalid travel destination")
+			return
+		}
 	}
 	// each row contains candidates in one slot
 	candidates := make([][]SlotSolutionCandidate, len(req.SlotRequests))
@@ -86,8 +108,8 @@ func travelTimeValidation(req PlanningRequest) bool {
 }
 
 func travelTime(fromLoc string, toLoc string, fromLocRadius uint, toLocRadius uint) uint {
-	latLng1 := utils.ParseLocation(fromLoc)
-	latLng2 := utils.ParseLocation(toLoc)
+	latLng1, _ := utils.ParseLocation(fromLoc)
+	latLng2, _ := utils.ParseLocation(toLoc)
 
 	distance := utils.HaversineDist(latLng1, latLng2) + float64(fromLocRadius+toLocRadius)
 

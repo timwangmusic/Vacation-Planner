@@ -105,7 +105,7 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 		return
 	}
 
-	latLng := utils.ParseLocation(request.Location)
+	latLng, _ := utils.ParseLocation(request.Location)
 	requestLat, requestLng := latLng[0], latLng[1]
 
 	radiusMultiplier := uint(1)
@@ -147,9 +147,9 @@ func (redisClient *RedisClient) GetGeocode(query GeocodeQuery) (lat float64, lng
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
 	geocode, err := redisClient.client.HGet(redisKey, redisField).Result()
 	if err != nil {
-		return
+		return // location does not exist
 	}
-	latLng := utils.ParseLocation(geocode)
+	latLng, _ := utils.ParseLocation(geocode)
 	lat = latLng[0]
 	lng = latLng[1]
 	exist = true

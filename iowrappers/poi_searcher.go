@@ -43,10 +43,14 @@ func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUr
 	poiSearcher.redisClient.Init(redisAddr, redisPsw, redisIdx)
 }
 
-func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng float64) {
+// currently geocode is equivalent to mapping city and country to latitude and longitude
+func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng float64, err error) {
 	lat, lng, exist := poiSearcher.redisClient.GetGeocode(query)
 	if !exist {
-		lat, lng = poiSearcher.mapsClient.Geocode(query)
+		lat, lng, err = poiSearcher.mapsClient.Geocode(query)
+		if err != nil {
+			return
+		}
 		poiSearcher.redisClient.SetGeocode(query, lat, lng)
 	}
 	log.Infof("Geolocation (lat,lng) for location %s, %s is %.4f, %.4f",
@@ -61,7 +65,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
-	lat, lng := poiSearcher.Geocode(GeocodeQuery{
+	lat, lng, _ := poiSearcher.Geocode(GeocodeQuery{
 		City:    cityCountry[0],
 		Country: cityCountry[1],
 	})
