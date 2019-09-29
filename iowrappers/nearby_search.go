@@ -107,10 +107,12 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			}
 
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp, err := GoogleMapsNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
-      if err != nil {
-        return 
-      }
+			searchResp, error_ := GoogleMapsNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			if error_ != nil {
+				err = error_
+				continue
+			}
+
 			placeIdMap := make(map[int]string) // maps index in search response to place ID
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
