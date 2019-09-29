@@ -71,7 +71,7 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 	utils.CheckErr(err)
 
 	if uint(totalNumDocs) < req.MinNumResults {
-		log.Errorf("The number of documents in database %d is less than the minimum %d requested",
+		log.Infof("The number of documents in database %d is less than the minimum %d requested",
 			totalNumDocs, req.MinNumResults)
 		return
 	}
