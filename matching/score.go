@@ -7,6 +7,14 @@ import (
 	"math"
 )
 
+const (
+	AvgRating  = 3.0
+	AvgPricing = PRICE_LEVEL_2
+)
+
+
+
+
 type KnapsackNode struct {
 	score float64
 	solution []Place
@@ -87,6 +95,16 @@ func Knapsack(places []Place, staytime []uint8, timeLimit uint8, budget uint) (r
 				}
 			}
 		}
+<<<<<<< HEAD
+=======
+	}
+	return optimalNode.solution
+}
+
+func Score(places []Place) float64 {
+	if len(places) == 0 {
+		return 0.0
+>>>>>>> knapsack for budget probelm
 	}
 	return optimalNode.solution
 }
