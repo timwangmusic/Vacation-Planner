@@ -32,13 +32,14 @@ type TimeMatchingRequest struct {
 }
 
 type Place struct {
-	PlaceId  string            `json:"id"`
-	Name     string            `json:"name"`
-	CatTag   POI.PlaceCategory `json:"category"`
-	Address  string            `json:"address"`
-	Price    float64           `json:"price"`
-	Rating   float32           `json:"rating"`
-	Location [2]float64        `json:"geolocation"`
+	PlaceId   string            `json:"id"`
+	Name      string            `json:"name"`
+	PlaceType POI.LocationType  `json:"place_type"`
+	CatTag    POI.PlaceCategory `json:"category"`
+	Address   string            `json:"address"`
+	Price     float64           `json:"price"`
+	Rating    float32           `json:"rating"`
+	Location  [2]float64        `json:"geolocation"`
 }
 
 type PlaceCluster struct {
@@ -131,5 +132,6 @@ func (matcher *TimeMatcher) createPlace(place POI.Place, catTag POI.PlaceCategor
 	Place_.Rating = place.GetRating()
 	Place_.Location = place.GetLocation()
 	Place_.CatTag = catTag
+	Place_.PlaceType = place.LocationType
 	return Place_
 }
