@@ -9,7 +9,7 @@ type OpeningHours struct {
 	Hours []string
 }
 
-func CreatePlace(name string, location string, addr string, formattedAddr string, locationType string, openingHours *OpeningHours, placeID string, priceLevel int, rating float32) (place Place) {
+func CreatePlace(name string, location string, addr string, formattedAddr string, locationType LocationType, openingHours *OpeningHours, placeID string, priceLevel int, rating float32) (place Place) {
 	place.SetType(locationType)
 	place.SetName(name)
 	place.SetID(placeID)
@@ -27,9 +27,9 @@ func CreatePlace(name string, location string, addr string, formattedAddr string
 	}
 	l := strings.Split(location, ",")
 	lat, lng := l[0], l[1]
-	lat_f, _ := strconv.ParseFloat(lat, 64)
-	lng_f, _ := strconv.ParseFloat(lng, 64)
-	place.SetLocation([2]float64{lng_f, lat_f}) // ensure same lng/lat order as the docs in MongoDB
+	latFloat, _ := strconv.ParseFloat(lat, 64)
+	lngFloat, _ := strconv.ParseFloat(lng, 64)
+	place.SetLocation([2]float64{lngFloat, latFloat}) // ensure same lng/lat order as the docs in MongoDB
 	place.SetAddress(addr)
 	place.SetFormattedAddress(formattedAddr)
 	place.SetPriceLevel(priceLevel)

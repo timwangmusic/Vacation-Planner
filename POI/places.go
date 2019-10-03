@@ -18,15 +18,15 @@ const (
 )
 
 type Place struct {
-	ID               string    `bson:"_id"`
-	Name             string    `bson:"name"`
-	LocationType     string    `bson:"location_type"`
-	Address          Address   `bson:"address"`
-	FormattedAddress string    `bson:"formatted_address"`
-	Location         Location  `bson:"location"`
-	PriceLevel       int       `bson:"price_level"`
-	Rating           float32   `bson:"rating"`
-	Hours            [7]string `bson:"hours"`
+	ID               string       `bson:"_id"`
+	Name             string       `bson:"name"`
+	LocationType     LocationType `bson:"location_type"`
+	Address          Address      `bson:"address"`
+	FormattedAddress string       `bson:"formatted_address"`
+	Location         Location     `bson:"location"`
+	PriceLevel       int          `bson:"price_level"`
+	Rating           float32      `bson:"rating"`
+	Hours            [7]string    `bson:"hours"`
 }
 
 type Location struct {
@@ -48,7 +48,7 @@ func (v *Place) GetName() string {
 	return v.Name
 }
 
-func (v *Place) GetType() string {
+func (v *Place) GetType() LocationType {
 	return v.LocationType
 }
 
@@ -96,7 +96,7 @@ func (v *Place) SetFormattedAddress(formattedAddress string) {
 }
 
 // Set type if POI type changed
-func (v *Place) SetType(t string) {
+func (v *Place) SetType(t LocationType) {
 	v.LocationType = t
 }
 
