@@ -59,6 +59,11 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 // search radius to search one more time in database.
 func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, err error) {
 	collName := string(req.PlaceCat)
+	dbHandler.SetCollHandler(collName)
+	err = EnsureSpatialIndex(dbHandler.handlers[collName].GetCollection())
+	if err != nil {
+		return
+	}
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
 		err = fmt.Errorf("collection %s does not exist", collName)
@@ -95,16 +100,19 @@ func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCateg
 	return collHandler.InsertPlace(place)
 }
 
+// ensure the 2d-sphere index exist
+func EnsureSpatialIndex(coll *mgo.Collection) (err error) {
+	index := mgo.Index{
+		Key: []string{"$2dsphere:location"},
+	}
+	err = coll.EnsureIndex(index)
+	return
+}
+
 func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, collectionName string) {
 	collHandler.session = dbHandler.Session
 	collHandler.dbName = databaseName
 	collHandler.collName = collectionName
-	// ensure the 2d-sphere index exist
-	coll := collHandler.GetCollection()
-	index := mgo.Index{
-		Key: []string{"$2dsphere:location"},
-	}
-	utils.CheckErr(coll.EnsureIndex(index))
 }
 
 func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
