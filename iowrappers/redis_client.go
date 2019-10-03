@@ -54,7 +54,7 @@ func (redisClient *RedisClient) StorePlacesForLocation(location string, places [
 
 func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 	for _, place := range places {
-		placeCategory := getPlaceCategory(LocationType(place.LocationType))
+		placeCategory := POI.GetPlaceCategory(place.LocationType)
 		geolocation := &redis.GeoLocation{
 			Name:      place.ID,
 			Longitude: place.Location.Coordinates[0],

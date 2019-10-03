@@ -14,17 +14,6 @@ import (
 	"time"
 )
 
-type LocationType string
-
-const (
-	LocationTypeCafe          = LocationType("cafe")
-	LocationTypeRestaurant    = LocationType("restaurant")
-	LocationTypeMuseum        = LocationType("museum")
-	LocationTypeGallery       = LocationType("art_gallery")
-	LocationTypeAmusementPark = LocationType("amusement_park")
-	LocationTypePark          = LocationType("park")
-)
-
 const (
 	GoogleNearbySearchDelay = time.Second
 )
@@ -77,9 +66,9 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 		request.RankBy = "prominence" // default rankBy value
 	}
 
-	placeTypes := getPlaceTypes(request.PlaceCat) // get place types in a category
+	placeTypes := POI.GetPlaceTypes(request.PlaceCat) // get place types in a category
 
-	nextPageTokenMap := make(map[LocationType]string) // map for place type to search token
+	nextPageTokenMap := make(map[POI.LocationType]string) // map for place type to search token
 	for _, placeType := range placeTypes {
 		nextPageTokenMap[placeType] = ""
 	}
@@ -197,7 +186,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 	return resp, nil
 }
 
-func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType LocationType, microAddrMap map[string]string, placeMap map[string]bool) (places []POI.Place) {
+func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.LocationType, microAddrMap map[string]string, placeMap map[string]bool) (places []POI.Place) {
 	for _, res := range resp.Results {
 		id := res.PlaceID
 		if seen, _ := placeMap[id]; seen {
@@ -219,32 +208,7 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType Loca
 			h.Hours = append(h.Hours, res.OpeningHours.WeekdayText...)
 		}
 		rating := res.Rating
-		places = append(places, POI.CreatePlace(name, location, addr, res.FormattedAddress, string(locationType), h, id, priceLevel, rating))
-	}
-	return
-}
-
-// Given a location type returns a set of types defined in google maps API
-func getPlaceTypes(placeCat POI.PlaceCategory) (placeTypes []LocationType) {
-	switch placeCat {
-	case POI.PlaceCategoryVisit:
-		placeTypes = append(placeTypes,
-			[]LocationType{LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum}...)
-	case POI.PlaceCategoryEatery:
-		placeTypes = append(placeTypes,
-			[]LocationType{LocationTypeCafe, LocationTypeRestaurant}...)
-	}
-	return
-}
-
-func getPlaceCategory(placeType LocationType) (placeCategory POI.PlaceCategory) {
-	switch placeType {
-	case LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum:
-		placeCategory = POI.PlaceCategoryVisit
-	case LocationTypeCafe, LocationTypeRestaurant:
-		placeCategory = POI.PlaceCategoryEatery
-	default:
-		placeCategory = POI.PlaceCategoryEatery
+		places = append(places, POI.CreatePlace(name, location, addr, res.FormattedAddress, locationType, h, id, priceLevel, rating))
 	}
 	return
 }
