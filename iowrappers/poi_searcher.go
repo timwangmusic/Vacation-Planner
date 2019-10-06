@@ -61,7 +61,6 @@ func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng fl
 // if client API key is invalid but not empty string, nearby search result will be empty
 func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, e error) {
 	dbHandler := poiSearcher.dbHandler
-	dbHandler.SetCollHandler(string(request.PlaceCat))
 
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
