@@ -16,7 +16,7 @@ import (
 )
 
 type Planner interface {
-	Planning(req *solution.PlanningRequest) (resp PlanningResponse, err error)
+	Planning(req *solution.PlanningRequest) (resp PlanningResponse)
 }
 
 type MyPlanner struct {
@@ -43,17 +43,17 @@ type PlanningResponse struct {
 
 // validate REST API input
 func validateSearchRadius(searchRadius string) bool {
-	searchRadiusPattern := "^[1-9][0-9]{2,5}$"	// limit range to 100 -- 99999
+	searchRadiusPattern := "^[1-9][0-9]{2,5}$" // limit range to 100 -- 99999
 	if matched, _ := regexp.Match(searchRadiusPattern, []byte(searchRadius)); !matched {
 		return false
 	}
 	return true
 }
 
-func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse, err error) {
+func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
+	utils.CheckErrImmediate(err, utils.LogError)
 	if err != nil {
-		utils.CheckErrImmediate(err, utils.LogError)
 		resp.Err = err.Error()
 		resp.StatusCode = planningResp.Errcode
 		return
@@ -64,9 +64,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		resp.StatusCode = solution.NoValidSolution
 		return
 	}
-	if len(planningResp.Solution) == 0 {
-		return	// no error, handle the situation in API
-	}
+
 	topSolution := planningResp.Solution[0]
 	for idx, slotSol := range topSolution.SlotSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
@@ -97,13 +95,13 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr 
 }
 
 // API definitions
-func (planner *MyPlanner) welcome_api(w http.ResponseWriter, r *http.Request) {
+func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
 	_, err := fmt.Fprint(w, "Welcome to use the Vacation Planner system!")
 	utils.CheckErrImmediate(err, utils.LogError)
 }
 
 // Return top planning result to user
-func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
+func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	country := vars["country"]
 	city := vars["city"]
@@ -132,18 +130,18 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpl := template.Must(template.ParseFiles("templates/plan_layout.html"))
 
-	planningResp, err := planner.Planning(&planningReq)
+	planningResp := planner.Planning(&planningReq)
 
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(err.Error()))
-    utils.CheckErrImmediate(err, utils.LogError)
+	err := planningResp.Err
+	if err != "" {
+		if planningResp.StatusCode == solution.InvalidRequestLocation {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err))
+		} else if planningResp.StatusCode == solution.NoValidSolution {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte("No valid solution is found"))
+		}
 		return
-	}
-
-	if planningResp.Places == nil {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte("No valid solution is found"))
 	}
 
 	utils.CheckErrImmediate(tmpl.Execute(w, planningResp), utils.LogError)
@@ -152,10 +150,10 @@ func (planner *MyPlanner) planning_api(w http.ResponseWriter, r *http.Request) {
 func (planner *MyPlanner) HandlingRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
-	myRouter.HandleFunc("/", planner.welcome_api)
+	myRouter.HandleFunc("/", planner.welcomeApi)
 
 	//myRouter.HandleFunc("/planning/{location}/{radius}", planner.planning_api)
-	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.planning_api)
+	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.planningApi)
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }

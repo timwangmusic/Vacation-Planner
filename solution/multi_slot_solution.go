@@ -25,15 +25,10 @@ type Solver struct {
 // mapping from status to standard http status codes
 const (
 	ValidSolutionFound           = 200
-	SolverReqTimeIntervalInvalid = 400
+	InvalidSolverReqTimeInterval = 400
+	InvalidRequestLocation       = 400
 	NoValidSolution              = 404
 )
-
-func (solver *Solver) SolverProcessError(err error, errorcode uint, resp *PlanningResponse) {
-	resp.Err = err
-	resp.Errcode = errorcode
-	return
-}
 
 func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr string, redisPsw string, redisIdx int) {
 	solver.matcher = &matching.TimeMatcher{}
@@ -59,7 +54,7 @@ func (solver *Solver) ValidateLocation(location string) bool {
 func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient) (resp PlanningResponse, err error) {
 	if !travelTimeValidation(req) {
 		err = errors.New("travel time limit exceeded for current selection")
-		resp.Errcode = SolverReqTimeIntervalInvalid
+		resp.Errcode = InvalidSolverReqTimeInterval
 		return
 	}
 
@@ -68,6 +63,7 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		location := slotRequest.Location
 		if !solver.ValidateLocation(location) {
 			err = errors.New("invalid travel destination")
+			resp.Errcode = InvalidRequestLocation
 			return
 		}
 	}

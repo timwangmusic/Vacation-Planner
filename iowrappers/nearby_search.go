@@ -39,7 +39,7 @@ type PlaceSearchRequest struct {
 func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType string, radius uint,
 	pageToken string, rankBy string) (resp maps.PlacesSearchResponse, err error) {
 	latlng, err := maps.ParseLatLng(location)
-	// since we have Redis and database before calling nearby search,
+	// since we try to use Redis and database before calling nearby search,
 	// if location cannot be parsed, then the request cannot be fulfilled.
 	if logErr(err, utils.LogError) {
 		return
@@ -194,7 +194,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 		"Maps API call time":      searchDuration,
 	}).Info("Logging detailed place search")
 
-	return resp, nil
+	return resp, err
 }
 
 func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.LocationType, microAddrMap map[string]string, placeMap map[string]bool) (places []POI.Place) {
@@ -229,7 +229,9 @@ func parseFields(fields string) ([]maps.PlaceDetailsFieldMask, error) {
 	var res []maps.PlaceDetailsFieldMask
 	for _, s := range strings.Split(fields, ",") {
 		f, err := maps.ParsePlaceDetailsFieldMask(s)
-		utils.CheckErrImmediate(err, utils.LogError)
+		if logErr(err, utils.LogError) {
+			return res, err
+		}
 		res = append(res, f)
 	}
 	return res, nil

@@ -56,17 +56,17 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 // Prevent accidentally creating collections in PlaceSearch method.
 // Since the nearby search in Redis has considered maximum search radius, in this method we only need to use the updated
 // search radius to search one more time in database.
-func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, uerr utils.Error) {
+func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, uErr utils.Error) {
 	collName := string(req.PlaceCat)
 	dbHandler.SetCollHandler(collName)
-	err = EnsureSpatialIndex(dbHandler.handlers[collName].GetCollection())
+	err := EnsureSpatialIndex(dbHandler.handlers[collName].GetCollection())
 	if err != nil {
 		return
 	}
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
 		err := fmt.Errorf("collection %s does not exist", collName)
-		uerr = utils.GenerateErr(err, utils.LogError)
+		uErr = utils.GenerateErr(err, utils.LogError)
 		return
 	}
 
@@ -74,15 +74,14 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 
 	totalNumDocs, err := collHandler.GetCollection().Count()
 	if err != nil {
-		uerr = utils.GenerateErr(err, utils.LogError)
+		uErr = utils.GenerateErr(err, utils.LogError)
 		return
 	}
 
-
 	if uint(totalNumDocs) < req.MinNumResults {
-		err = fmt.Errorf("The number of documents in database %d is less than the minimum %d requested",
+		err = fmt.Errorf("the number of documents in database %d is less than the minimum %d requested",
 			totalNumDocs, req.MinNumResults)
-		uerr = utils.GenerateErr(err, utils.LogInfo)
+		uErr = utils.GenerateErr(err, utils.LogInfo)
 		return
 	}
 
