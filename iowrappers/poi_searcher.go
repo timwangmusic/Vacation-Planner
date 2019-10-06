@@ -14,7 +14,7 @@ const (
 )
 
 type PlaceSearcher interface {
-	NearbySearch(request *PlaceSearchRequest) []POI.Place
+	NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error)
 }
 
 type PoiSearcher struct {
@@ -59,15 +59,18 @@ func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng fl
 }
 
 // if client API key is invalid but not empty string, nearby search result will be empty
-func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place) {
+func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
 	dbHandler := poiSearcher.dbHandler
 
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
-	lat, lng, _ := poiSearcher.Geocode(GeocodeQuery{
+	lat, lng, err := poiSearcher.Geocode(GeocodeQuery{
 		City:    cityCountry[0],
 		Country: cityCountry[1],
 	})
+	if logErr(err, utils.LogError) {
+		return
+	}
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
@@ -81,9 +84,12 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	} else {
 		dbStoredPlaces, err := dbHandler.PlaceSearch(request)
 		utils.CheckErr(err)
+		// if PlaceSearch in database has error, use maps client for place search
 		if uint(len(dbStoredPlaces)) < request.MinNumResults {
 			// Call external API only when both cache and database cannot fulfill request
-			newPlaces := poiSearcher.mapsClient.NearbySearch(request)
+			newPlaces, err := poiSearcher.mapsClient.NearbySearch(request)
+			logErr(err, utils.LogError)
+
 			maxResultNum := utils.MinInt(len(newPlaces), int(request.MaxNumResults))
 			places = append(places, newPlaces[:maxResultNum]...)
 			// update database
@@ -123,7 +129,7 @@ func (poiSearcher *PoiSearcher) UpdateMongo(placeCat POI.PlaceCategory, places [
 	for _, place := range places {
 		err := poiSearcher.dbHandler.InsertPlace(place, placeCat)
 		if !mgo.IsDup(err) { // if error is not caused by primary key duplication, further check the error
-			utils.CheckErr(err)
+			utils.CheckErrImmediate(err, utils.LogError)
 			numNewDocs++
 		}
 	}

@@ -30,7 +30,7 @@ func (redisClient *RedisClient) Init(addr string, password string, databaseIdx i
 // serialize place using JSON and store in Redis with key as the place ID
 func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	json_, err := json.Marshal(place)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	redisClient.client.Set(place.ID, json_, -1)
 }
@@ -61,7 +61,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 			Latitude:  place.Location.Coordinates[1],
 		}
 		cmdVal, cmdErr := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
-		utils.CheckErr(cmdErr)
+		utils.CheckErrImmediate(cmdErr, utils.LogError)
 		if cmdVal == 1 {
 			log.Printf("new place %s cache success", place.Name)
 		}
@@ -70,15 +70,17 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 }
 
 // obtain place info from Redis based on placeId
-func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place) {
+func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err error) {
 	res, err := redisClient.client.Get(placeId).Result()
-	utils.CheckErr(err)
-
-	utils.CheckErr(json.Unmarshal([]byte(res), &place))
+	utils.CheckErrImmediate(err, utils.LogError)
+	if err != nil {
+		return
+	}
+	utils.CheckErrImmediate(json.Unmarshal([]byte(res), &place), utils.LogError)
 	return
 }
 
-func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) []POI.Place {
+func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error) {
 	sortedSetKey := strings.Join([]string{request.Location, string(request.PlaceCat)}, "_")
 
 	placeIds, _ := redisClient.client.ZRangeByScore(sortedSetKey, redis.ZRangeBy{
@@ -89,16 +91,16 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) []POI.
 	res := make([]POI.Place, len(placeIds))
 
 	for idx, placeId := range placeIds {
-		res[idx] = redisClient.getPlace(fmt.Sprintf("%v", placeId))
+		res[idx], _ = redisClient.getPlace(fmt.Sprintf("%v", placeId))
 	}
-	return res
+	return res, nil
 }
 
 func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
 	requestCategory := string(request.PlaceCat)
 
 	totalNumCachedResults, err := redisClient.client.ZCount(requestCategory, "-inf", "inf").Result()
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogInfo)
 	if uint(totalNumCachedResults) < request.MinNumResults {
 		return
 	}
@@ -124,15 +126,18 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 			Sort:   "ASC", // sort ascending
 		}
 		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
-		utils.CheckErr(err)
+		utils.CheckErrImmediate(err, utils.LogError)
 		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
 		radiusMultiplier *= 2
 	}
 	request.Radius = searchRadius
 
-	places = make([]POI.Place, len(cachedQualifiedPlaces))
-	for idx, placeInfo := range cachedQualifiedPlaces {
-		places[idx] = redisClient.getPlace(placeInfo.Name)
+	places = make([]POI.Place, 0)
+	for _, placeInfo := range cachedQualifiedPlaces {
+		place, err := redisClient.getPlace(placeInfo.Name)
+		if err == nil {
+			places = append(places, place)
+		}
 	}
 	return
 }
@@ -157,7 +162,7 @@ func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng 
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
 	redisVal := strings.Join([]string{fmt.Sprint(lat), fmt.Sprint(lng)}, ",")
 	res, err := redisClient.client.HSet(redisKey, redisField, redisVal).Result()
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 	if res {
 		log.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
 	}
@@ -226,7 +231,7 @@ func encodeTimeCatIdx(eVTag []string, intervals []POI.TimeInterval) (res int64, 
 func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 	country, city := req.Country, req.City
 	timeCatIdx, err := encodeTimeCatIdx(req.EVTags, req.Intervals)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	radius := strconv.FormatUint(req.Radius, 10)
 	timeCatIdxStr := strconv.FormatInt(timeCatIdx, 10)
@@ -239,7 +244,7 @@ func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, solution SlotSolutionCacheResponse) {
 	redisFieldKey := genSlotSolutionCacheKey(req)
 	json_, err := json.Marshal(solution)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	data := make(map[string]interface{})
 	data[redisFieldKey] = json_

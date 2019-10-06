@@ -37,10 +37,13 @@ type PlaceSearchRequest struct {
 }
 
 func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType string, radius uint,
-	pageToken string, rankBy string) (resp maps.PlacesSearchResponse) {
-	var err error
+	pageToken string, rankBy string) (resp maps.PlacesSearchResponse, err error) {
 	latlng, err := maps.ParseLatLng(location)
-	utils.CheckErr(err)
+	// since we try to use Redis and database before calling nearby search,
+	// if location cannot be parsed, then the request cannot be fulfilled.
+	if logErr(err, utils.LogError) {
+		return
+	}
 
 	mapsReq := maps.NearbySearchRequest{
 		Type:      maps.PlaceType(placeType),
@@ -50,18 +53,19 @@ func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType stri
 		RankBy:    maps.RankBy(rankBy),
 	}
 	resp, err = c.client.NearbySearch(context.Background(), &mapsReq)
-	utils.CheckErr(err)
+	logErr(err, utils.LogError)
 	return
 }
 
-func (c *MapsClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place) {
+func (c *MapsClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, e error) {
 	var maxReqTimes uint = 5
-	return c.ExtensiveNearbySearch(maxReqTimes, request)
+	places, e = c.ExtensiveNearbySearch(maxReqTimes, request)
+	return
 }
 
 // ExtensiveNearbySearch tries to find a specified number of search results from a place category once for each location type in the category
 // maxRequestTime specifies the number of times to query for each location type having maxRequestTimes provides Google API call protection
-func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place) {
+func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place, err error) {
 	if request.RankBy == "" {
 		request.RankBy = "prominence" // default rankBy value
 	}
@@ -82,13 +86,22 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 	searchStartTime := time.Now()
 
 	for totalResult < request.MinNumResults {
+		// if error, return regardless of number of results obtained
+		if err != nil {
+			return
+		}
 		for _, placeType := range placeTypes {
 			if reqTimes > 0 && nextPageTokenMap[placeType] == "" { // no more result for this location type
 				continue
 			}
 
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp := GoogleMapsNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			searchResp, error_ := GoogleMapsNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			if error_ != nil {
+				err = error_
+				continue
+			}
+
 			placeIdMap := make(map[int]string) // maps index in search response to place ID
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
@@ -163,14 +176,14 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 
 	if *detailedSearchFields != "" {
 		fieldMask, err := parseFields(*detailedSearchFields)
-		utils.CheckErr(err)
+		utils.CheckErrImmediate(err, utils.LogError)
 		req.Fields = fieldMask
 	}
 
 	startSearchTime := time.Now()
 
 	resp, err := c.client.PlaceDetails(context.Background(), req)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 
 	searchDuration := time.Since(startSearchTime)
 
@@ -181,9 +194,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 		"Maps API call time":      searchDuration,
 	}).Info("Logging detailed place search")
 
-	utils.CheckErr(err)
-
-	return resp, nil
+	return resp, err
 }
 
 func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.LocationType, microAddrMap map[string]string, placeMap map[string]bool) (places []POI.Place) {
@@ -218,8 +229,18 @@ func parseFields(fields string) ([]maps.PlaceDetailsFieldMask, error) {
 	var res []maps.PlaceDetailsFieldMask
 	for _, s := range strings.Split(fields, ",") {
 		f, err := maps.ParsePlaceDetailsFieldMask(s)
-		utils.CheckErr(err)
+		if logErr(err, utils.LogError) {
+			return res, err
+		}
 		res = append(res, f)
 	}
 	return res, nil
+}
+
+func logErr(err error, logLevel uint) bool {
+	utils.CheckErrImmediate(err, logLevel)
+	if err != nil {
+		return true
+	}
+	return false
 }

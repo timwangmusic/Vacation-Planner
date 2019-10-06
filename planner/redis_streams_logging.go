@@ -1,13 +1,13 @@
 package planner
 
 type PlanningEvent struct {
-	City string `json:"city"`
+	City    string `json:"city"`
 	Country string `json:"country"`
 }
 
-func (planner MyPlanner) PlanningEventLogging (event PlanningEvent) {
+func (planner MyPlanner) PlanningEventLogging(event PlanningEvent) {
 	eventData := map[string]string{
-		"city": event.City,
+		"city":    event.City,
 		"country": event.Country,
 	}
 	planner.RedisLogger.StreamsLogging(planner.RedisStreamName, eventData)
