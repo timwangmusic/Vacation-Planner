@@ -125,14 +125,26 @@ func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
 func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	req := PlanningPostRequest{}
-	utils.CheckErr(json.NewDecoder(r.Body).Decode(&req))
-	planningReq, err := processPlanningPostRequest(&req)
+	err := json.NewDecoder(r.Body).Decode(&req)
+	utils.CheckErrImmediate(err, utils.LogError)
 	if err != nil {
-		utils.CheckErr(json.NewEncoder(w).Encode(err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	planningReq, err := processPlanningPostRequest(&req)
+	utils.CheckErrImmediate(err, utils.LogError)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(err.Error())
 		return
 	}
 	planningResp := planner.Planning(&planningReq)
-	utils.CheckErr(planner.ResultHTMLTemplate.Execute(w, planningResp))
+	if planningResp.Err != "" && planningResp.StatusCode == http.StatusNotFound {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("No solution is found"))
+		return
+	}
+	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(w, planningResp), utils.LogError)
 }
 
 func processPlanningPostRequest(req *PlanningPostRequest) (planningRequest solution.PlanningRequest, err error) {
