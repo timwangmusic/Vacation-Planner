@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	log "github.com/sirupsen/logrus"
 )
 
 type DatabaseHandler interface {
@@ -41,7 +40,7 @@ func (dbHandler *DbHandler) Init(DbName string, url string) {
 
 func (dbHandler *DbHandler) CreateSession(uri string) {
 	session, err := mgo.Dial(uri)
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 	dbHandler.Session = session
 }
 
@@ -57,26 +56,36 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 // Prevent accidentally creating collections in PlaceSearch method.
 // Since the nearby search in Redis has considered maximum search radius, in this method we only need to use the updated
 // search radius to search one more time in database.
-func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, err error) {
+func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, uErr utils.Error) {
 	collName := string(req.PlaceCat)
+	dbHandler.SetCollHandler(collName)
+	err := EnsureSpatialIndex(dbHandler.handlers[collName].GetCollection())
+	if err != nil {
+		return
+	}
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
-		err = fmt.Errorf("collection %s does not exist", collName)
+		err := fmt.Errorf("collection %s does not exist", collName)
+		uErr = utils.GenerateErr(err, utils.LogError)
 		return
 	}
 
 	collHandler := dbHandler.handlers[collName]
 
 	totalNumDocs, err := collHandler.GetCollection().Count()
-	utils.CheckErr(err)
-
-	if uint(totalNumDocs) < req.MinNumResults {
-		log.Errorf("The number of documents in database %d is less than the minimum %d requested",
-			totalNumDocs, req.MinNumResults)
+	if err != nil {
+		uErr = utils.GenerateErr(err, utils.LogError)
 		return
 	}
 
-	latLng := utils.ParseLocation(req.Location)
+	if uint(totalNumDocs) < req.MinNumResults {
+		err = fmt.Errorf("the number of documents in database %d is less than the minimum %d requested",
+			totalNumDocs, req.MinNumResults)
+		uErr = utils.GenerateErr(err, utils.LogInfo)
+		return
+	}
+
+	latLng, _ := utils.ParseLocation(req.Location)
 	lat := latLng[0]
 	lng := latLng[1]
 
@@ -95,16 +104,19 @@ func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCateg
 	return collHandler.InsertPlace(place)
 }
 
+// ensure the 2d-sphere index exist
+func EnsureSpatialIndex(coll *mgo.Collection) (err error) {
+	index := mgo.Index{
+		Key: []string{"$2dsphere:location"},
+	}
+	err = coll.EnsureIndex(index)
+	return
+}
+
 func (collHandler *CollHandler) Init(dbHandler *DbHandler, databaseName string, collectionName string) {
 	collHandler.session = dbHandler.Session
 	collHandler.dbName = databaseName
 	collHandler.collName = collectionName
-	// ensure the 2d-sphere index exist
-	coll := collHandler.GetCollection()
-	index := mgo.Index{
-		Key: []string{"$2dsphere:location"},
-	}
-	utils.CheckErr(coll.EnsureIndex(index))
 }
 
 func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
@@ -133,6 +145,6 @@ func (collHandler *CollHandler) Search(radius uint, latitude float64, longitude 
 		},
 	}
 	coll := collHandler.GetCollection()
-	utils.CheckErr(coll.Find(query).All(&places))
+	utils.CheckErrImmediate(coll.Find(query).All(&places), utils.LogError)
 	return
 }

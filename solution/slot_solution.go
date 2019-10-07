@@ -63,7 +63,7 @@ func (slotSolution *SlotSolution) IsSlotTagValid() bool {
 			} else {
 				return false
 			}
-			if eatcount + vstcount > LimitPerSlot {
+			if eatcount+vstcount > LimitPerSlot {
 				return false
 			}
 		}

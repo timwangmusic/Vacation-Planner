@@ -13,6 +13,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -44,7 +45,18 @@ type TimeSectionPlaces struct {
 }
 
 type PlanningResponse struct {
-	Places []TimeSectionPlaces `json:"time_section_places"`
+	Places     []TimeSectionPlaces `json:"time_section_places"`
+	Err        string              `json:"error"`
+	StatusCode uint                `json:"status_code"`
+}
+
+// validate REST API input
+func validateSearchRadius(searchRadius string) bool {
+	searchRadiusPattern := "^[1-9][0-9]{2,5}$" // limit range to 100 -- 99999
+	if matched, _ := regexp.Match(searchRadiusPattern, []byte(searchRadius)); !matched {
+		return false
+	}
+	return true
 }
 
 type PlanningPostRequest struct {
@@ -60,10 +72,19 @@ type PlanningPostRequest struct {
 // single-day, single-city planning method
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
-	utils.CheckErr(err)
-	if len(planningResp.Solution) == 0 {
+	utils.CheckErrImmediate(err, utils.LogError)
+	if err != nil {
+		resp.Err = err.Error()
+		resp.StatusCode = planningResp.Errcode
 		return
 	}
+
+	if len(planningResp.Solution) == 0 {
+		resp.Err = errors.New("cannot find a solution").Error()
+		resp.StatusCode = solution.NoValidSolution
+		return
+	}
+
 	topSolution := planningResp.Solution[0]
 	for idx, slotSol := range topSolution.SlotSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
@@ -78,6 +99,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		}
 		resp.Places = append(resp.Places, timeSectionPlaces)
 	}
+	resp.StatusCode = solution.ValidSolutionFound
 	return
 }
 
@@ -96,7 +118,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr 
 // API definitions
 func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
 	_, err := fmt.Fprint(w, "Welcome to use the Vacation Planner system!")
-	utils.CheckErr(err)
+	utils.CheckErrImmediate(err, utils.LogError)
 }
 
 // HTTP POST API end-point
@@ -264,14 +286,18 @@ func checkPostReqTimePlaceNum(req *PlanningPostRequest) (err error) {
 
 // HTTP GET API end-point
 // Return top planning result to user
-func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request) {
+func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	//location := vars["location"]
 	country := vars["country"]
 	city := vars["city"]
 	radius := vars["radius"]
 
-	// TODO: Validate user inputs
+	if !validateSearchRadius(radius) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("invalid search radius"))
+		return
+	}
+
 	// logging planning API usage
 	planner.PlanningEventLogging(PlanningEvent{
 		City:    city,
@@ -287,8 +313,22 @@ func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request)
 	for slotReqIdx := range planningReq.SlotRequests {
 		planningReq.SlotRequests[slotReqIdx].Location = cityCountry // set to the same location from URL
 	}
+
 	planningResp := planner.Planning(&planningReq)
-	utils.CheckErr(planner.ResultHTMLTemplate.Execute(w, planningResp))
+
+	err := planningResp.Err
+	if err != "" {
+		if planningResp.StatusCode == solution.InvalidRequestLocation {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err))
+		} else if planningResp.StatusCode == solution.NoValidSolution {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte("No valid solution is found"))
+		}
+		return
+	}
+
+	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(w, planningResp), utils.LogError)
 }
 
 func (planner *MyPlanner) HandlingRequests(serverPort string) {
@@ -296,9 +336,9 @@ func (planner *MyPlanner) HandlingRequests(serverPort string) {
 
 	myRouter.HandleFunc("/", planner.welcomeApi)
 
-	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.getPlanningApi).Methods("GET")
-
 	myRouter.HandleFunc("/planning/v1", planner.postPlanningApi).Methods("POST")
+
+	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.planningApi).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(serverPort, myRouter))
 }

@@ -21,11 +21,12 @@ type Config struct {
 
 func RunDevServer() {
 	conf := DevelopmentConfig{}
-	ymlFile, err := ioutil.ReadFile("Config/server_config.yml")
-	utils.CheckErr(err)
-
-	err = yaml.Unmarshal(ymlFile, &conf)
-	utils.CheckErr(err)
+  
+	yml_file, err := ioutil.ReadFile("Config/server_config.yml")
+	utils.CheckErrImmediate(err, utils.LogFatal)
+  
+	err = yaml.Unmarshal(yml_file, &conf)
+	utils.CheckErrImmediate(err, utils.LogFatal)
 
 	myPlanner := planner.MyPlanner{}
 	conf_ := conf.Conf
