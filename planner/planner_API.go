@@ -124,6 +124,7 @@ func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
 // HTTP POST API end-point
 func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
 	req := PlanningPostRequest{}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	utils.CheckErrImmediate(err, utils.LogError)
@@ -131,6 +132,7 @@ func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	planningReq, err := processPlanningPostRequest(&req)
 	utils.CheckErrImmediate(err, utils.LogError)
 	if err != nil {
@@ -138,16 +140,23 @@ func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request
 		_ = json.NewEncoder(w).Encode(err.Error())
 		return
 	}
+
 	planningResp := planner.Planning(&planningReq)
 	if planningResp.Err != "" && planningResp.StatusCode == http.StatusNotFound {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte("No solution is found"))
 		return
 	}
+	// generate valid solution
 	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(w, planningResp), utils.LogError)
 }
 
 func processPlanningPostRequest(req *PlanningPostRequest) (planningRequest solution.PlanningRequest, err error) {
+	if req.Weekday > POI.DATE_SUNDAY || req.Weekday < POI.DATE_MONDAY {
+		err = errors.New("invalid weekday in the request")
+		return
+	}
+
 	planningRequest.Weekday = req.Weekday
 	planningRequest.SearchRadius = 10000
 	// basic POST parameter validations
@@ -183,6 +192,8 @@ func GenSlotRequests(req PlanningPostRequest) []solution.SlotRequest {
 	for idx := range groups {
 		groups[idx] = make([]string, 0)
 	}
+	// construct groups, make sure eatery appear before visit locations
+	// depends on the location type ratio, some groups might only has 1 location
 	if req.NumVisit > req.NumEatery {
 		ratio := int(req.NumVisit / req.NumEatery)
 		for idx := range groups {
@@ -252,9 +263,9 @@ func GenSlotRequests(req PlanningPostRequest) []solution.SlotRequest {
 	curGroupIdx := 1
 	excludedGroupIndexes := make(map[int]bool)
 
+	// combine groups and limit maximum number of groups
 	for numGroups > 3 && curGroupIdx < len(slotRequests) {
 		if len(slotRequests[groupIdx].EvOption)+len(slotRequests[curGroupIdx].EvOption) <= MaxPlacesPerSlot {
-			// combine groups
 			slotRequests[groupIdx].EvOption = slotRequests[groupIdx].EvOption + slotRequests[curGroupIdx].EvOption
 			slotRequests[groupIdx].StayTimes = append(slotRequests[groupIdx].StayTimes, slotRequests[curGroupIdx].StayTimes...)
 			excludedGroupIndexes[curGroupIdx] = true
