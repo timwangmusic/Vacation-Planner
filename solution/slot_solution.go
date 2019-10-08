@@ -59,10 +59,6 @@ func (slotSolution *SlotSolution) IsSlotTagValid() bool {
 			if c == 'e' || c == 'E' {
 				eatcount++
 			} else if c == 'v' || c == 'V' {
-				if eatcount == 0 {
-					//visit before eat, no valid at slotSolution time
-					return false
-				}
 				vstcount++
 			} else {
 				return false

@@ -3,3 +3,4 @@ development_config:
   redis_url: :6379
   maps_client_api_key: XXXXXX
   redis_stream_name: planning_api_usage
+  server_port: :10000

@@ -6,3 +6,4 @@
 Gopkg.lock
 Gopkg.toml
 vendor
+/test/.empty/
