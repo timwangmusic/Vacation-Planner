@@ -45,9 +45,11 @@ func CheckErrImmediate(err error, level uint) {
 		default:
 			log.Error("No Level is provided for this error")
 		}
-		debug.PrintStack()
+		// print debug stack only if error level is higher than some threshold
+		if level < LogWarning {
+			debug.PrintStack()
+		}
 	}
-
 }
 
 func CheckErr(err Error) {
