@@ -72,7 +72,7 @@ type PlanningPostRequest struct {
 // single-day, single-city planning method
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
-	utils.CheckErrImmediate(err, utils.LogError)
+	utils.CheckErrImmediate(err, utils.LogInfo)
 	if err != nil {
 		resp.Err = err.Error()
 		resp.StatusCode = planningResp.Errcode
@@ -127,14 +127,14 @@ func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request
 
 	req := PlanningPostRequest{}
 	err := json.NewDecoder(r.Body).Decode(&req)
-	utils.CheckErrImmediate(err, utils.LogError)
+	utils.CheckErrImmediate(err, utils.LogInfo)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	planningReq, err := processPlanningPostRequest(&req)
-	utils.CheckErrImmediate(err, utils.LogError)
+	utils.CheckErrImmediate(err, utils.LogInfo)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(err.Error())
