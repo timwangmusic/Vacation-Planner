@@ -77,6 +77,8 @@ func CheckErr(err Error) {
 
 func GenerateErr(e error, level uint) (err Error) {
 	err = Error{e, level}
-	debug.PrintStack()
+	if level < LogWarning {
+		debug.PrintStack()
+	}
 	return
 }
