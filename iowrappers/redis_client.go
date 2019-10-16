@@ -13,6 +13,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
+	"time"
+)
+
+const (
+	SlotSolutionExpirationTime = time.Duration(24 * time.Hour)
 )
 
 type RedisClient struct {
@@ -35,6 +40,7 @@ func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	redisClient.client.Set(place.ID, json_, -1)
 }
 
+// currently not used
 // store places obtained from database or external API in Redis
 // places for a location are stored in separate sorted sets based on category
 func (redisClient *RedisClient) StorePlacesForLocation(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
@@ -80,6 +86,7 @@ func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err e
 	return
 }
 
+// currently not used
 func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error) {
 	sortedSetKey := strings.Join([]string{request.Location, string(request.PlaceCat)}, "_")
 
@@ -236,25 +243,28 @@ func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 	radius := strconv.FormatUint(req.Radius, 10)
 	timeCatIdxStr := strconv.FormatInt(timeCatIdx, 10)
 
-	redisFieldKey := strings.Join([]string{country, city, radius, string(req.Weekday), timeCatIdxStr}, ":")
+	redisFieldKey := strings.Join([]string{"slot_solution", country, city, radius, string(req.Weekday), timeCatIdxStr}, ":")
 	return redisFieldKey
 }
 
 // cache iowrapper level version of slot solution
 func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, solution SlotSolutionCacheResponse) {
-	redisFieldKey := genSlotSolutionCacheKey(req)
+	redisKey := genSlotSolutionCacheKey(req)
 	json_, err := json.Marshal(solution)
 	utils.CheckErrImmediate(err, utils.LogError)
 
-	data := make(map[string]interface{})
-	data[redisFieldKey] = json_
-	redisClient.client.HMSet("slotSolutionCache", data)
+	if err != nil {
+		log.Errorf("cache slot solution failure for request with key: %s", redisKey)
+	} else {
+		redisClient.client.Set(redisKey, json_, SlotSolutionExpirationTime)
+	}
 }
 
 func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (solution SlotSolutionCacheResponse, err error) {
-	redisFieldKey := genSlotSolutionCacheKey(req)
-	json_, err := redisClient.client.HGet("slotSolutionCache", redisFieldKey).Result()
+	redisKey := genSlotSolutionCacheKey(req)
+	json_, err := redisClient.client.Get(redisKey).Result()
 	if err != nil {
+		log.Errorf("get slot solution cache failure for request with key: %s", redisKey)
 		return
 	}
 	err = json.Unmarshal([]byte(json_), &solution)
