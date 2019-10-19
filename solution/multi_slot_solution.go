@@ -218,9 +218,9 @@ type PlanningRequest struct {
 }
 
 type SlotRequest struct {
-	Location     string              // city,country
-	EvOption     string              // e.g. "EVV", "VEV"
-	StayTimes    []matching.TimeSlot // e.g. ["8AM-10AM", "10AM-11AM", "11AM-12PM"]
+	Location  string              // city,country
+	EvOption  string              // e.g. "EVV", "VEV"
+	StayTimes []matching.TimeSlot // e.g. ["8AM-10AM", "10AM-11AM", "11AM-12PM"]
 }
 
 type PlanningResponse struct {
@@ -269,26 +269,26 @@ func GetStandardRequest() (req PlanningRequest) {
 	slot13 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 11, End: 12}}
 	stayTimes1 := []matching.TimeSlot{slot11, slot12, slot13}
 	slotReq1 := SlotRequest{
-		Location:     "",
-		EvOption:     "EVV",
-		StayTimes:    stayTimes1,
+		Location:  "",
+		EvOption:  "EVV",
+		StayTimes: stayTimes1,
 	}
 	slot21 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 12, End: 13}}
 	slot22 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 13, End: 17}}
 	slot23 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 17, End: 19}}
 	stayTimes2 := []matching.TimeSlot{slot21, slot22, slot23}
 	slotReq2 := SlotRequest{
-		Location:     "",
-		EvOption:     "EVV",
-		StayTimes:    stayTimes2,
+		Location:  "",
+		EvOption:  "EVV",
+		StayTimes: stayTimes2,
 	}
 	slot31 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 19, End: 21}}
 	slot32 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 21, End: 23}}
 	stayTimes3 := []matching.TimeSlot{slot31, slot32}
 	slotReq3 := SlotRequest{
-		Location:     "",
-		EvOption:     "EV",
-		StayTimes:    stayTimes3,
+		Location:  "",
+		EvOption:  "EV",
+		StayTimes: stayTimes3,
 	}
 
 	req.SlotRequests = append(req.SlotRequests, []SlotRequest{slotReq1, slotReq2, slotReq3}...)

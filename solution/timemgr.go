@@ -7,9 +7,9 @@ import (
 
 const DIS2MIN_TEST = 0.05
 
-func GetSlotLengthinMin(pcluster *matching.PlaceCluster) int {
-	var start = pcluster.Slot.Slot.Start
-	var end = pcluster.Slot.Slot.End
+func GetTimeSlotLengthInMin(placeClusters []matching.PlaceCluster) int {
+	var start = placeClusters[0].Slot.Slot.Start
+	var end = placeClusters[len(placeClusters)-1].Slot.Slot.End
 	var min = int((end - start) * 60)
 	if min <= 0 {
 		return 0

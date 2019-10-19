@@ -131,15 +131,12 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 	// only one big time slot
 	req.TimeSlots = []matching.TimeSlot{queryTimeSlot}
 
-	if weekday < POI.DATE_MONDAY || weekday > POI.DATE_SUNDAY {
-		weekday = POI.DATE_SATURDAY
-	}
 	req.Weekday = weekday
 
 	placeClusters := timeMatcher.Matching(&req)
 
-	categorizedPlaces := Categorize(&placeClusters[0])
-	minuteLimit := GetSlotLengthinMin(&placeClusters[0])
+	categorizedPlaces := Categorize(placeClusters)
+	minuteLimit := GetTimeSlotLengthInMin(placeClusters)
 
 	mdIter := MDtagIter{}
 	mdIter.Init(evTag, categorizedPlaces)

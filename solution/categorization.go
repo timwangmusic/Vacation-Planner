@@ -7,17 +7,19 @@ type CategorizedPlaces struct {
 	VisitPlaces  []matching.Place
 }
 
-func Categorize(cluster *matching.PlaceCluster) CategorizedPlaces {
+func Categorize(clusters []matching.PlaceCluster) CategorizedPlaces {
 	res := CategorizedPlaces{
 		EateryPlaces: make([]matching.Place, 0),
 		VisitPlaces:  make([]matching.Place, 0),
 	}
 
-	for _, place := range cluster.Places {
-		if place.CatTag == "Visit" {
-			res.VisitPlaces = append(res.VisitPlaces, place)
-		} else if place.CatTag == "Eatery" {
-			res.EateryPlaces = append(res.EateryPlaces, place)
+	for _, cluster := range clusters {
+		for _, place := range cluster.Places {
+			if place.CatTag == "Visit" {
+				res.VisitPlaces = append(res.VisitPlaces, place)
+			} else if place.CatTag == "Eatery" {
+				res.EateryPlaces = append(res.EateryPlaces, place)
+			}
 		}
 	}
 
