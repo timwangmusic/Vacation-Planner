@@ -117,7 +117,6 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 //update Redis when hitting cache miss
 func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
-	//poiSearcher.redisClient.StorePlacesForLocation(location, places, placeCategory)
 	poiSearcher.redisClient.SetPlacesOnCategory(places)
 	log.Printf("Redis update complete")
 }
