@@ -165,9 +165,12 @@ func processPlanningPostRequest(req *PlanningPostRequest) (planningRequest solut
 		req.EndTime = 22
 	}
 
-	if req.NumVisit == 0 && req.NumEatery == 0 {
-		req.NumVisit = 4
-		req.NumEatery = 3
+	if req.NumEatery == 0 {
+		req.NumEatery = 1
+	}
+
+	if req.NumVisit == 0 {
+		req.NumVisit = 2
 	}
 
 	err = checkPostReqTimePlaceNum(req)
