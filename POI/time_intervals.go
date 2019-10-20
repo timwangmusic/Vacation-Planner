@@ -27,6 +27,11 @@ func (interval *TimeInterval) Intersect(newInterval *TimeInterval) bool {
 	return true
 }
 
+// returns true if the current interval includes the new interval in the parameter
+func (interval *TimeInterval) Inclusive(newInterval *TimeInterval) bool {
+	return newInterval.Start >= interval.Start && newInterval.End <= interval.End
+}
+
 // given a open hours data from Google, we only use the Thursday data to fill GoogleMapsTimeIntervals struct
 type GoogleMapsTimeIntervals struct {
 	numIntervals int
