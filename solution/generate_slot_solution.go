@@ -122,24 +122,24 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 	}
 	req.Radius = radius
 
-	queryTimeSlot := matching.TimeSlot{
-		Slot: POI.TimeInterval{
-			Start: stayTimes[0].Slot.Start,
-			End:   stayTimes[len(stayTimes)-1].Slot.End,
-		},
-	}
-	// only one big time slot
-	req.TimeSlots = []matching.TimeSlot{queryTimeSlot}
+	req.TimeSlots = stayTimes
 
 	req.Weekday = weekday
 
 	placeClusters := timeMatcher.Matching(&req)
 
-	categorizedPlaces := Categorize(placeClusters)
+	categorizedPlaces := make([]CategorizedPlaces, len(placeClusters))
+
+	for idx, placeCluster := range placeClusters {
+		categorizedPlaces[idx] = Categorize(placeCluster)
+	}
+
 	minuteLimit := GetTimeSlotLengthInMin(placeClusters)
 
 	mdIter := MDtagIter{}
-	mdIter.Init(evTag, categorizedPlaces)
+	if !mdIter.Init(evTag, categorizedPlaces) {
+		log.Println("time slot place category tag iterator init failure")
+	}
 
 	for mdIter.HasNext() {
 		curCandidate := slotSolution.CreateCandidate(mdIter, categorizedPlaces)

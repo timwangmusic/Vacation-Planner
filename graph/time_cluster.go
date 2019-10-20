@@ -103,7 +103,7 @@ func (placeManager *TimeClustersManager) assign(place *POI.Place, day POI.Weekda
 		return
 	}
 	for _, interval := range *placeManager.TimeClusters.TimeIntervals.GetAllIntervals() {
-		if openingInterval.Intersect(&interval) {
+		if openingInterval.Inclusive(&interval) {
 			clusterKey := interval.Serialize()
 			clusterPlaces := &placeManager.TimeClusters.Clusters[clusterKey].Places
 			*clusterPlaces = append(*clusterPlaces, *place)
