@@ -264,34 +264,24 @@ func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
 
 // Generate a standard request while we seek a better way to represent complex REST requests
 func GetStandardRequest() (req PlanningRequest) {
-	slot11 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 8, End: 9}}
-	slot12 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 9, End: 11}}
-	slot13 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 11, End: 12}}
-	stayTimes1 := []matching.TimeSlot{slot11, slot12, slot13}
+	slot12 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 9, End: 10}}
+	slot13 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
+	stayTimes1 := []matching.TimeSlot{slot12, slot13}
 	slotReq1 := SlotRequest{
 		Location:  "",
-		EvOption:  "EVV",
+		EvOption:  "EV",
 		StayTimes: stayTimes1,
 	}
 	slot21 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 12, End: 13}}
 	slot22 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 13, End: 17}}
-	slot23 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 17, End: 19}}
-	stayTimes2 := []matching.TimeSlot{slot21, slot22, slot23}
+	stayTimes2 := []matching.TimeSlot{slot21, slot22}
 	slotReq2 := SlotRequest{
 		Location:  "",
-		EvOption:  "EVV",
+		EvOption:  "EV",
 		StayTimes: stayTimes2,
 	}
-	slot31 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 19, End: 21}}
-	slot32 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 21, End: 23}}
-	stayTimes3 := []matching.TimeSlot{slot31, slot32}
-	slotReq3 := SlotRequest{
-		Location:  "",
-		EvOption:  "EV",
-		StayTimes: stayTimes3,
-	}
 
-	req.SlotRequests = append(req.SlotRequests, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
+	req.SlotRequests = append(req.SlotRequests, []SlotRequest{slotReq1, slotReq2}...)
 	req.Weekday = POI.DATE_FRIDAY
 	return
 }
