@@ -39,17 +39,15 @@ func (h *MinPriorityQueue) Size() int{
 }
 
 // Insert is a method for inserting a Node to priority queue and maintaining priority
+// Node name should not be an empty string
 func (h *MinPriorityQueue) Insert(n Vertex) {
-	if n.Key < 0 {
-		return
-	}
 	h.Nodes = append(h.Nodes, n)
 	h.size++
 	h.percolateUp(h.size - 1)
 }
 
 // ExtractTop is a method for min-priorityQueue to find element with minimum Key
-// Returns node with minimum Key. If queue is empty, returns a fake node with Key = -1
+// Returns node with minimum Key. If queue is empty, returns empty string as fake node name
 func (h *MinPriorityQueue) ExtractTop() string {
 	if h.size == 0 {
 		return ""
