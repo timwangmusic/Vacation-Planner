@@ -59,6 +59,7 @@ func (redisClient *RedisClient) StorePlacesForLocation(location string, places [
 }
 
 func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
+	var geoAddSuccessCount int
 	for _, place := range places {
 		placeCategory := POI.GetPlaceCategory(place.LocationType)
 		geolocation := &redis.GeoLocation{
@@ -68,11 +69,14 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 		}
 		cmdVal, cmdErr := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
-		if cmdVal == 1 {
-			log.Printf("new place %s cache success", place.Name)
+		if cmdVal == 0 {
+			log.Printf("Geo adding place %s to Redis failure", place.Name)
+		} else {
+			geoAddSuccessCount++
+			redisClient.cachePlace(place)
 		}
-		redisClient.cachePlace(place)
 	}
+	log.Infof("%d places geo added to Redis", geoAddSuccessCount)
 }
 
 // obtain place info from Redis based on placeId
