@@ -27,14 +27,14 @@ type MinPriorityQueue struct {
 	size  int
 }
 
-func (h* MinPriorityQueue) GetRoot() Vertex{
-	if h.size == 0{
+func (h *MinPriorityQueue) GetRoot() Vertex {
+	if h.size == 0 {
 		return Vertex{}
 	}
 	return h.Nodes[0]
 }
 
-func (h *MinPriorityQueue) Size() int{
+func (h *MinPriorityQueue) Size() int {
 	return h.size
 }
 
@@ -73,14 +73,14 @@ func (h *MinPriorityQueue) findIndexLargestChild(idx int) int {
 	if rightIdx >= h.size || h.Nodes[rightIdx].Key > h.Nodes[idx].Key {
 		rightIdx = -1
 	}
-	if leftIdx >= 0 && rightIdx >= 0{
-		if h.Nodes[leftIdx].Key < h.Nodes[rightIdx].Key{
+	if leftIdx >= 0 && rightIdx >= 0 {
+		if h.Nodes[leftIdx].Key < h.Nodes[rightIdx].Key {
 			return leftIdx
 		}
 		return rightIdx
-	} else if leftIdx >= 0{
+	} else if leftIdx >= 0 {
 		return leftIdx
-	} else if rightIdx >= 0{
+	} else if rightIdx >= 0 {
 		return rightIdx
 	}
 	return -1
@@ -105,7 +105,7 @@ func (h *MinPriorityQueue) percolateDown(idx int) {
 // percolate up the inserted Node
 func (h *MinPriorityQueue) percolateUp(idx int) {
 	parent := findParent(idx)
-	if parent == -1 {	// root
+	if parent == -1 { // root
 		return
 	}
 	if h.Nodes[parent].Key > h.Nodes[idx].Key {
