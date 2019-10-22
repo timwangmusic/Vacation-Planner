@@ -27,29 +27,27 @@ type MinPriorityQueue struct {
 	size  int
 }
 
-func (h* MinPriorityQueue) GetRoot() Vertex{
-	if h.size == 0{
+func (h *MinPriorityQueue) GetRoot() Vertex {
+	if h.size == 0 {
 		return Vertex{}
 	}
 	return h.Nodes[0]
 }
 
-func (h *MinPriorityQueue) Size() int{
+func (h *MinPriorityQueue) Size() int {
 	return h.size
 }
 
 // Insert is a method for inserting a Node to priority queue and maintaining priority
+// Node name should not be an empty string
 func (h *MinPriorityQueue) Insert(n Vertex) {
-	if n.Key < 0 {
-		return
-	}
 	h.Nodes = append(h.Nodes, n)
 	h.size++
 	h.percolateUp(h.size - 1)
 }
 
 // ExtractTop is a method for min-priorityQueue to find element with minimum Key
-// Returns node with minimum Key. If queue is empty, returns a fake node with Key = -1
+// Returns node with minimum Key. If queue is empty, returns empty string as fake node name
 func (h *MinPriorityQueue) ExtractTop() string {
 	if h.size == 0 {
 		return ""
@@ -75,14 +73,14 @@ func (h *MinPriorityQueue) findIndexLargestChild(idx int) int {
 	if rightIdx >= h.size || h.Nodes[rightIdx].Key > h.Nodes[idx].Key {
 		rightIdx = -1
 	}
-	if leftIdx >= 0 && rightIdx >= 0{
-		if h.Nodes[leftIdx].Key < h.Nodes[rightIdx].Key{
+	if leftIdx >= 0 && rightIdx >= 0 {
+		if h.Nodes[leftIdx].Key < h.Nodes[rightIdx].Key {
 			return leftIdx
 		}
 		return rightIdx
-	} else if leftIdx >= 0{
+	} else if leftIdx >= 0 {
 		return leftIdx
-	} else if rightIdx >= 0{
+	} else if rightIdx >= 0 {
 		return rightIdx
 	}
 	return -1
@@ -107,7 +105,7 @@ func (h *MinPriorityQueue) percolateDown(idx int) {
 // percolate up the inserted Node
 func (h *MinPriorityQueue) percolateUp(idx int) {
 	parent := findParent(idx)
-	if parent == -1 {	// root
+	if parent == -1 { // root
 		return
 	}
 	if h.Nodes[parent].Key > h.Nodes[idx].Key {

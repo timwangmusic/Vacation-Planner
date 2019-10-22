@@ -37,7 +37,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 	for _, vertex := range vertexes {
 		if priorityQueue.Size() == CandidateQueueLength {
 			top := priorityQueue.GetRoot()
-			if vertex.Key > top.Key {
+			if top.Name != "" && vertex.Key > top.Key { // protect against the case of CandidateQueueLength == 0
 				priorityQueue.ExtractTop()
 			} else {
 				continue
