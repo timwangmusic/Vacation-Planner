@@ -70,7 +70,11 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 		cmdVal, cmdErr := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
 		if cmdVal == 0 {
-			log.Printf("Geo adding place %s to Redis failure", place.Name)
+			err := utils.Error{
+				Err:   fmt.Errorf("geo adding place %s to Redis failure", place.Name),
+				Level: utils.LogInfo,
+			}
+			utils.CheckErr(err)
 		} else {
 			geoAddSuccessCount++
 			redisClient.cachePlace(place)

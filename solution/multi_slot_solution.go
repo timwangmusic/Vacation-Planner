@@ -281,7 +281,15 @@ func GetStandardRequest() (req PlanningRequest) {
 		StayTimes: stayTimes2,
 	}
 
-	req.SlotRequests = append(req.SlotRequests, []SlotRequest{slotReq1, slotReq2}...)
+	slot31 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 18, End: 20}}
+	stayTimes3 := []matching.TimeSlot{slot31}
+	slotReq3 := SlotRequest{
+		Location:  "",
+		EvOption:  "E",
+		StayTimes: stayTimes3,
+	}
+
+	req.SlotRequests = append(req.SlotRequests, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
 	req.Weekday = POI.DATE_FRIDAY
 	return
 }
