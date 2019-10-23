@@ -98,39 +98,37 @@ func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolution
 	return true
 }
 
-func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, cplaces CategorizedPlaces) SlotSolutionCandidate {
+func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, categorizedPlaces []CategorizedPlaces) SlotSolutionCandidate {
 	res := SlotSolutionCandidate{}
 	res.IsSet = false
 	if len(iter.Status) != len(slotSolution.SlotTag) {
-		//incorrect return
 		return res
 	}
-	//create a hashtable and iterate through place clusters
+	//create a hashtable for deduplication
 	record := make(map[string]bool)
-	//check form
-	//ASSUME E&V POIs have different placeID
-	ecluster := cplaces.EateryPlaces
-	vcluster := cplaces.VisitPlaces
 	places := make([]matching.Place, len(iter.Status))
-	for i, num := range iter.Status {
+	for i, placeIdx := range iter.Status {
+		placesByCategory := categorizedPlaces[i]
+		visitPlaces := placesByCategory.VisitPlaces
+		eateryPlaces := placesByCategory.EateryPlaces
 		if slotSolution.SlotTag[i] == 'E' || slotSolution.SlotTag[i] == 'e' {
-			_, ok := record[ecluster[num].PlaceId]
+			_, ok := record[eateryPlaces[placeIdx].PlaceId]
 			if ok == true {
 				return res
 			} else {
-				record[ecluster[num].PlaceId] = true
-				places[i] = ecluster[num]
+				record[eateryPlaces[placeIdx].PlaceId] = true
+				places[i] = eateryPlaces[placeIdx]
 				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
 				res.PlaceNames = append(res.PlaceNames, places[i].Name)
 				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
 			}
 		} else if slotSolution.SlotTag[i] == 'V' || slotSolution.SlotTag[i] == 'v' {
-			_, ok := record[vcluster[num].PlaceId]
+			_, ok := record[visitPlaces[placeIdx].PlaceId]
 			if ok == true {
 				return res
 			} else {
-				record[vcluster[num].PlaceId] = true
-				places[i] = vcluster[num]
+				record[visitPlaces[placeIdx].PlaceId] = true
+				places[i] = visitPlaces[placeIdx]
 				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
 				res.PlaceNames = append(res.PlaceNames, places[i].Name)
 				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
