@@ -40,22 +40,24 @@ func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	redisClient.client.Set(place.ID, json_, -1)
 }
 
-// currently not used
+// currently not used, but it is still a primitive implementation that might have faster search time compared
+// with all places stored under one key
 // store places obtained from database or external API in Redis
 // places for a location are stored in separate sorted sets based on category
-func (redisClient *RedisClient) StorePlacesForLocation(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
+func (redisClient *RedisClient) StorePlacesForLocation(geocodeInString string, places []POI.Place) error {
 	client := redisClient.client
-	latLng := strings.Split(location, ",")
-	lat, _ := strconv.ParseFloat(latLng[0], 64)
-	lng, _ := strconv.ParseFloat(latLng[1], 64)
-
-	sortedSetKey := strings.Join([]string{location, string(placeCategory)}, "_")
-
+	latLng, _ := utils.ParseLocation(geocodeInString)
+	lat, lng := latLng[0], latLng[1]
 	for _, place := range places {
+		sortedSetKey := strings.Join([]string{geocodeInString, string(POI.GetPlaceCategory(place.LocationType))}, "_")
 		dist := utils.HaversineDist([]float64{lng, lat}, place.Location.Coordinates[:])
-		client.ZAdd(sortedSetKey, &redis.Z{Score: dist, Member: place.ID})
+		_, err := client.ZAdd(sortedSetKey, &redis.Z{Score: dist, Member: place.ID}).Result()
+		if err != nil {
+			return err
+		}
 		redisClient.cachePlace(place)
 	}
+	return nil
 }
 
 func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
@@ -95,12 +97,23 @@ func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err e
 }
 
 // currently not used
+// use with StorePlacesForLocation method
+// if no geocode in Redis, then we assume no nearby place exists either
 func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error) {
-	sortedSetKey := strings.Join([]string{request.Location, string(request.PlaceCat)}, "_")
+	cityCountry := strings.Split(request.Location, ",")
+	lat, lng, exist := redisClient.GetGeocode(GeocodeQuery{
+		City:    cityCountry[0],
+		Country: cityCountry[1],
+	})
+	if !exist {
+		return nil, errors.New("no nearby place exist for the requested location")
+	}
+	latLng := strings.Join([]string{fmt.Sprintf("%f", lat), fmt.Sprintf("%f", lng)}, ",")
+	sortedSetKey := strings.Join([]string{latLng, string(request.PlaceCat)}, "_")
 
 	placeIds, _ := redisClient.client.ZRangeByScore(sortedSetKey, &redis.ZRangeBy{
 		Min: "0",
-		Max: string(request.Radius),
+		Max: fmt.Sprintf("%d", request.Radius),
 	}).Result()
 
 	res := make([]POI.Place, len(placeIds))
@@ -175,7 +188,7 @@ func (redisClient *RedisClient) GetGeocode(query GeocodeQuery) (lat float64, lng
 func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64) bool {
 	redisKey := "cities"
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
-	redisVal := strings.Join([]string{fmt.Sprint(lat), fmt.Sprint(lng)}, ",")
+	redisVal := strings.Join([]string{fmt.Sprintf("%.6f", lat), fmt.Sprintf("%.6f", lng)}, ",") // 1/9 meter precision
 	res, err := redisClient.client.HSet(redisKey, redisField, redisVal).Result()
 	utils.CheckErrImmediate(err, utils.LogError)
 	if res {
