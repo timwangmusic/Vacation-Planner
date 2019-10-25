@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v7"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -53,7 +53,7 @@ func (redisClient *RedisClient) StorePlacesForLocation(location string, places [
 
 	for _, place := range places {
 		dist := utils.HaversineDist([]float64{lng, lat}, place.Location.Coordinates[:])
-		client.ZAdd(sortedSetKey, redis.Z{Score: dist, Member: place.ID})
+		client.ZAdd(sortedSetKey, &redis.Z{Score: dist, Member: place.ID})
 		redisClient.cachePlace(place)
 	}
 }
@@ -98,7 +98,7 @@ func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err e
 func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error) {
 	sortedSetKey := strings.Join([]string{request.Location, string(request.PlaceCat)}, "_")
 
-	placeIds, _ := redisClient.client.ZRangeByScore(sortedSetKey, redis.ZRangeBy{
+	placeIds, _ := redisClient.client.ZRangeByScore(sortedSetKey, &redis.ZRangeBy{
 		Min: "0",
 		Max: string(request.Radius),
 	}).Result()
@@ -162,13 +162,13 @@ func (redisClient *RedisClient) GetGeocode(query GeocodeQuery) (lat float64, lng
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
 	geocode, err := redisClient.client.HGet(redisKey, redisField).Result()
 	if err != nil {
+		log.Infof("geocode of location %s, %s does not exist in cache", query.City, query.Country)
 		return // location does not exist
 	}
 	latLng, _ := utils.ParseLocation(geocode)
 	lat = latLng[0]
 	lng = latLng[1]
 	exist = true
-	log.Infof("Get geolocation for location %s, %s from cache success", query.City, query.Country)
 	return
 }
 
