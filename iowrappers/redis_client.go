@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	redis "github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v7"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
