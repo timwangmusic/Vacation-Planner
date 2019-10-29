@@ -45,9 +45,10 @@ type TimeSectionPlaces struct {
 }
 
 type PlanningResponse struct {
-	Places     []TimeSectionPlaces `json:"time_section_places"`
-	Err        string              `json:"error"`
-	StatusCode uint                `json:"status_code"`
+	TravelDestination string              `json:"travel_destination"`
+	Places            []TimeSectionPlaces `json:"time_section_places"`
+	Err               string              `json:"error"`
+	StatusCode        uint                `json:"status_code"`
 }
 
 // validate REST API input
@@ -100,6 +101,11 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		resp.Places = append(resp.Places, timeSectionPlaces)
 	}
 	resp.StatusCode = solution.ValidSolutionFound
+	if len(req.SlotRequests) > 0 {
+		resp.TravelDestination = strings.Title(strings.Split(req.SlotRequests[0].Location, ",")[0])
+	} else {
+		resp.TravelDestination = "Dream Vacation Destination"
+	}
 	return
 }
 

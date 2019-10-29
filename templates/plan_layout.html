@@ -3,23 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <title>Vacation Plans</title>
+    <style>
+        h1 {
+            color: darkorange;
+        }
+        body {
+            background-color: azure;
+            font-size: 18px;
+        }
+        table {
+            border-style: solid;
+            border-width: thin;
+        }
+        th {
+            color: dodgerblue;
+        }
+    </style>
 </head>
 <body>
 <h1>
-    Vacation Plans
+    Vacation Plans for {{.TravelDestination}}
 </h1>
 {{if .Err}}
     Error: {{.Err}}<br>
     Error code: {{.StatusCode}}<br>
 {{end}}
+<table>
+    <tr>
+        <th> Start Time (Hour) </th>
+        <th> End Time (Hour) </th>
+        <th> Place Name </th>
+    </tr>
     {{range .Places}}
-        <table>
-            <tr>
-                <th> Start Time (Hour) </th>
-                <th> End Time (Hour) </th>
-                <th> Place Name </th>
-            </tr>
-
             {{range .Places}}
                 <tr>
                     <td> {{.StartTime}} </td>
@@ -27,7 +42,7 @@
                     <td> {{.PlaceName}} </td>
                 </tr>
             {{end}}
-        </table>
     {{end}}
+        </table>
 </body>
 </html>
