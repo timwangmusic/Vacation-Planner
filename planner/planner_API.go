@@ -79,22 +79,22 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		return
 	}
 
-	if len(planningResp.Solution) == 0 {
+	if len(planningResp.Solutions) == 0 {
 		resp.Err = errors.New("cannot find a solution").Error()
 		resp.StatusCode = solution.NoValidSolution
 		return
 	}
 
-	topSolution := planningResp.Solution[0]
+	topSolution := planningResp.Solutions[0]
 	for idx, slotSol := range topSolution.SlotSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
 			Places: make([]TimeSectionPlace, 0),
 		}
-		for pidx, placeName := range slotSol.PlaceNames {
+		for pIdx, placeName := range slotSol.PlaceNames {
 			timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
 				PlaceName: placeName,
-				StartTime: req.SlotRequests[idx].StayTimes[pidx].Slot.Start,
-				EndTime:   req.SlotRequests[idx].StayTimes[pidx].Slot.End,
+				StartTime: req.SlotRequests[idx].StayTimes[pIdx].Slot.Start,
+				EndTime:   req.SlotRequests[idx].StayTimes[pIdx].Slot.End,
 			})
 		}
 		resp.Places = append(resp.Places, timeSectionPlaces)
