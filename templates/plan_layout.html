@@ -12,20 +12,21 @@
     Error: {{.Err}}<br>
     Error code: {{.StatusCode}}<br>
 {{end}}
-    {{range .Places}}
+    {{range $i, $p := .Places}}
         <table>
-            <tr>
-                <th> Start Time (Hour) </th>
-                <th> End Time (Hour) </th>
-                <th> Place Name </th>
-            </tr>
-
-            {{range .Places}}
-                <tr>
-                    <td> {{.StartTime}} </td>
-                    <td> {{.EndTime}} </td>
-                    <td> {{.PlaceName}} </td>
-                </tr>
+        <tr>
+            <th> Start Time (Hour) </th>
+            <th> End Time (Hour) </th>
+            <th> Place Name </th>
+        </tr>
+            {{range $p}}
+                {{range .Places}}
+                    <tr>
+                        <td> {{.StartTime}} </td>
+                        <td> {{.EndTime}} </td>
+                        <td> {{.PlaceName}} </td>
+                    </tr>
+                {{end}}
             {{end}}
         </table>
     {{end}}
