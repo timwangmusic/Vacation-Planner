@@ -82,9 +82,7 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		}
 	}
 
-	multiSlotSolutions := genBestMultiSlotSolutions(&candidates)
-
-	resp.Solutions = multiSlotSolutions
+	resp.Solutions = genBestMultiSlotSolutions(&candidates)
 	return
 }
 

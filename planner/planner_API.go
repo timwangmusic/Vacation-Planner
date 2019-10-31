@@ -80,7 +80,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 	}
 
 	if len(planningResp.Solutions) == 0 {
-		resp.Err = errors.New("cannot find a topSolution").Error()
+		resp.Err = errors.New("cannot find a valid solution").Error()
 		resp.StatusCode = solution.NoValidSolution
 		return
 	}

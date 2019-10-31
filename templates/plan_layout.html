@@ -12,7 +12,9 @@
     Error: {{.Err}}<br>
     Error code: {{.StatusCode}}<br>
 {{end}}
+{{/*    iterate over multi-slot solutions*/}}
     {{range $i, $p := .Places}}
+{{/*        create one table for each multi-slot solution*/}}
         <table>
         <tr>
             <th> Start Time (Hour) </th>

@@ -52,9 +52,9 @@ func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng fl
 			return
 		}
 		poiSearcher.redisClient.SetGeocode(query, lat, lng)
+		log.Infof("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
+			query.City, query.Country, lat, lng)
 	}
-	log.Infof("Geolocation (lat,lng) for location %s, %s is %.4f, %.4f",
-		query.City, query.Country, lat, lng)
 	return
 }
 
