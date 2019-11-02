@@ -27,22 +27,28 @@
 {{if .Err}}
     Error: {{.Err}}<br>
     Error code: {{.StatusCode}}<br>
-{{end}}
-<table>
-    <tr>
-        <th> Start Time (Hour) </th>
-        <th> End Time (Hour) </th>
-        <th> Place Name </th>
-    </tr>
-    {{range .Places}}
-            {{range .Places}}
-                <tr>
-                    <td> {{.StartTime}} </td>
-                    <td> {{.EndTime}} </td>
-                    <td> {{.PlaceName}} </td>
-                </tr>
+{{else}}
+    {{/*    iterate over multi-slot solutions*/}}
+    {{range $i, $p := .Places}}
+        {{/*        create one table for each multi-slot solution*/}}
+        <table>
+            <tr>
+                <th> Start Time (Hour) </th>
+                <th> End Time (Hour) </th>
+                <th> Place Name </th>
+            </tr>
+            {{range $p}}
+                {{range .Places}}
+                    <tr>
+                        <td> {{.StartTime}} </td>
+                        <td> {{.EndTime}} </td>
+                        <td> {{.PlaceName}} </td>
+                    </tr>
+                {{end}}
             {{end}}
-    {{end}}
         </table>
+    {{end}}
+{{end}}
+
 </body>
 </html>

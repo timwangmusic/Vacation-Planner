@@ -82,9 +82,7 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		}
 	}
 
-	multiSlotSolution := genMultiSlotSolutionCandidates(&candidates)
-
-	resp.Solution = multiSlotSolution
+	resp.Solutions = genBestMultiSlotSolutions(&candidates)
 	return
 }
 
@@ -112,7 +110,7 @@ func travelTime(fromLoc string, toLoc string, fromLocRadius uint, toLocRadius ui
 	return uint(distance / (TravelSpeed * 16.67)) // 16.67 is the ratio of m/minute and km/hour
 }
 
-func genMultiSlotSolutionCandidates(candidates *[][]SlotSolutionCandidate) []MultiSlotSolution {
+func genBestMultiSlotSolutions(candidates *[][]SlotSolutionCandidate) []MultiSlotSolution {
 	res := make([]MultiSlotSolution, 0)
 	slotSolutionResults := make([][]SlotSolutionCandidate, 0)
 	path := make([]SlotSolutionCandidate, 0)
@@ -224,9 +222,9 @@ type SlotRequest struct {
 }
 
 type PlanningResponse struct {
-	Solution []MultiSlotSolution
-	Err      error
-	Errcode  uint
+	Solutions []MultiSlotSolution
+	Err       error
+	Errcode   uint
 }
 
 // Find top multi-slot solutions

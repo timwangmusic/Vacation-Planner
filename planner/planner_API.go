@@ -45,10 +45,10 @@ type TimeSectionPlaces struct {
 }
 
 type PlanningResponse struct {
-	TravelDestination string              `json:"travel_destination"`
-	Places            []TimeSectionPlaces `json:"time_section_places"`
-	Err               string              `json:"error"`
-	StatusCode        uint                `json:"status_code"`
+	TravelDestination string                `json:"travel_destination"`
+	Places            [][]TimeSectionPlaces `json:"time_section_places"`
+	Err               string                `json:"error"`
+	StatusCode        uint                  `json:"status_code"`
 }
 
 // validate REST API input
@@ -80,26 +80,30 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		return
 	}
 
-	if len(planningResp.Solution) == 0 {
-		resp.Err = errors.New("cannot find a solution").Error()
+	if len(planningResp.Solutions) == 0 {
+		resp.Err = errors.New("cannot find a valid solution").Error()
 		resp.StatusCode = solution.NoValidSolution
 		return
 	}
 
-	topSolution := planningResp.Solution[0]
-	for idx, slotSol := range topSolution.SlotSolutions {
-		timeSectionPlaces := TimeSectionPlaces{
-			Places: make([]TimeSectionPlace, 0),
+	topSolutions := planningResp.Solutions
+	resp.Places = make([][]TimeSectionPlaces, len(topSolutions))
+	for sIdx, topSolution := range topSolutions {
+		for idx, slotSol := range topSolution.SlotSolutions {
+			timeSectionPlaces := TimeSectionPlaces{
+				Places: make([]TimeSectionPlace, 0),
+			}
+			for pIdx, placeName := range slotSol.PlaceNames {
+				timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
+					PlaceName: placeName,
+					StartTime: req.SlotRequests[idx].StayTimes[pIdx].Slot.Start,
+					EndTime:   req.SlotRequests[idx].StayTimes[pIdx].Slot.End,
+				})
+			}
+			resp.Places[sIdx] = append(resp.Places[sIdx], timeSectionPlaces)
 		}
-		for pidx, placeName := range slotSol.PlaceNames {
-			timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
-				PlaceName: placeName,
-				StartTime: req.SlotRequests[idx].StayTimes[pidx].Slot.Start,
-				EndTime:   req.SlotRequests[idx].StayTimes[pidx].Slot.End,
-			})
-		}
-		resp.Places = append(resp.Places, timeSectionPlaces)
 	}
+
 	resp.StatusCode = solution.ValidSolutionFound
 	if len(req.SlotRequests) > 0 {
 		resp.TravelDestination = strings.Title(strings.Split(req.SlotRequests[0].Location, ",")[0])
