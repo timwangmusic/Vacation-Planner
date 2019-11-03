@@ -102,8 +102,8 @@ func TestGetPlaces(t *testing.T) {
 		t.Error("should return empty slice if total number of cached places in a category is less than requested minimum")
 	}
 
-	// expect to return all qualified places when total number of qualified places within max search radius
-	// is less than requested minimum
+	// expect to return all qualified places when total number of qualified places within max search radius is less than requested minimum
+	// the setup of this test case guarantees that the Peter Luger's Steakhouse is located OUTSIDE the max search radius coverage
 	cachedEateryPlaces = redisClient.GetPlaces(&iowrappers.PlaceSearchRequest{
 		Location:      nycLatLng,
 		PlaceCat:      "Eatery",
