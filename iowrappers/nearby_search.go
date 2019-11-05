@@ -192,7 +192,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 		"place name":              resp.Name,
 		"place formatted address": resp.FormattedAddress,
 		"Maps API call time":      searchDuration,
-	}).Info("Logging detailed place search")
+	}).Debug("Logging detailed place search")
 
 	return resp, err
 }

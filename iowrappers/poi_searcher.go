@@ -52,7 +52,7 @@ func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng fl
 			return
 		}
 		poiSearcher.redisClient.SetGeocode(query, lat, lng)
-		log.Infof("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
+		log.Debugf("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
 			query.City, query.Country, lat, lng)
 	}
 	return
@@ -75,9 +75,9 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
 	cachedPlaces := poiSearcher.redisClient.GetPlaces(request)
-	log.Printf("number of results from redis is %d", len(cachedPlaces))
+	log.Debugf("number of results from redis is %d", len(cachedPlaces))
 	if uint(len(cachedPlaces)) >= request.MinNumResults {
-		log.Printf("Place Type: %s, Using Redis to fulfill request! \n", request.PlaceCat)
+		log.Infof("Using Redis to fulfill request. Place Type: %s \n", request.PlaceCat)
 		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
 		places = append(places, cachedPlaces[:maxResultNum]...)
 		return
@@ -95,7 +95,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 			// update database
 			poiSearcher.UpdateMongo(request.PlaceCat, newPlaces)
 		} else {
-			log.Printf("Place Type: %s, Using MongoDB to fulfill request! \n", request.PlaceCat)
+			log.Infof("Using MongoDB to fulfill request. Place Type: %s \n", request.PlaceCat)
 			maxResultNum := utils.MinInt(len(dbStoredPlaces), int(request.MaxNumResults))
 			places = append(places, dbStoredPlaces[:maxResultNum]...)
 		}
@@ -104,13 +104,13 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	poiSearcher.UpdateRedis(request.Location, places, request.PlaceCat)
 
 	if uint(len(places)) < request.MinNumResults {
-		log.Printf("Number of POI results found is %d, less than requested %d",
+		log.Debugf("Found %d POI results, less than requested number of %d",
 			len(places), request.MinNumResults)
 	}
 	if len(places) == 0 {
-		log.Printf("No qualified POI result found in the given location %s, radius %d, place type: %s",
+		log.Debugf("No qualified POI result found in the given location %s, radius %d, and place type: %s",
 			request.Location, request.Radius, request.PlaceCat)
-		log.Printf("location may be invalid")
+		log.Debugf("location may be invalid")
 	}
 	return
 }
@@ -118,7 +118,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 //update Redis when hitting cache miss
 func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
 	poiSearcher.redisClient.SetPlacesOnCategory(places)
-	log.Printf("Redis update complete")
+	log.Debugf("Redis update complete")
 }
 
 //TODO: use bulk insert for new places

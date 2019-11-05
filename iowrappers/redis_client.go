@@ -124,6 +124,8 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 	return res, nil
 }
 
+// if total number of places in a category for a location is less than minimum, return an empty slice
+// return as many places as possible within the maximum search radius
 func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
 	requestCategory := string(request.PlaceCat)
 
@@ -146,8 +148,7 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 	}
 
 	for searchRadius <= MaxSearchRadius && uint(numQualifiedCachedPlaces) < request.MinNumResults {
-		searchRadius = request.Radius * radiusMultiplier
-		fmt.Printf("Redis now using search of radius %d meters \n", searchRadius)
+		log.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
 		geoQuery := redis.GeoRadiusQuery{
 			Radius: float64(searchRadius),
 			Unit:   "m",
@@ -155,8 +156,10 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 		}
 		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
 		utils.CheckErrImmediate(err, utils.LogError)
+
 		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
 		radiusMultiplier *= 2
+		searchRadius = request.Radius * radiusMultiplier
 	}
 	request.Radius = searchRadius
 
