@@ -44,10 +44,10 @@ func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUr
 }
 
 // currently geocode is equivalent to mapping city and country to latitude and longitude
-func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng float64, err error) {
+func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng float64, err error, destinationCorrected bool) {
 	lat, lng, exist := poiSearcher.redisClient.GetGeocode(query)
 	if !exist {
-		lat, lng, err = poiSearcher.mapsClient.Geocode(query)
+		lat, lng, err, destinationCorrected = poiSearcher.mapsClient.Geocode(&query)
 		if err != nil {
 			return
 		}
@@ -64,13 +64,14 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
-	lat, lng, err := poiSearcher.Geocode(GeocodeQuery{
+	lat, lng, err, _ := poiSearcher.Geocode(GeocodeQuery{
 		City:    cityCountry[0],
 		Country: cityCountry[1],
 	})
 	if logErr(err, utils.LogError) {
 		return
 	}
+	// note that request.Location is overwritten to lat/lng
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)

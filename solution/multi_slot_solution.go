@@ -41,7 +41,7 @@ func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr
 
 func (solver *Solver) ValidateLocation(location string) bool {
 	countryCity := strings.Split(location, ",")
-	_, _, err := solver.matcher.PoiSearcher.Geocode(iowrappers.GeocodeQuery{
+	_, _, err, _ := solver.matcher.PoiSearcher.Geocode(iowrappers.GeocodeQuery{
 		City:    countryCity[0],
 		Country: countryCity[1],
 	})
