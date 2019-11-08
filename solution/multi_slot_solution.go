@@ -82,7 +82,7 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		}
 	}
 
-	resp.Solutions = genBestMultiSlotSolutions(&candidates)
+	resp.Solutions = genBestMultiSlotSolutions(candidates)
 	return
 }
 
@@ -110,12 +110,12 @@ func travelTime(fromLoc string, toLoc string, fromLocRadius uint, toLocRadius ui
 	return uint(distance / (TravelSpeed * 16.67)) // 16.67 is the ratio of m/minute and km/hour
 }
 
-func genBestMultiSlotSolutions(candidates *[][]SlotSolutionCandidate) []MultiSlotSolution {
+func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate) []MultiSlotSolution {
 	res := make([]MultiSlotSolution, 0)
 	slotSolutionResults := make([][]SlotSolutionCandidate, 0)
 	path := make([]SlotSolutionCandidate, 0)
 	placeMap := make(map[string]bool)
-	dfs(candidates, 0, &path, &slotSolutionResults, placeMap)
+	dfs(candidates, 0, path, &slotSolutionResults, placeMap)
 
 	// after dfs, slot solution results are in the shape of number of multi-slot results by number of slots
 	// i.e. each row is ready to fill one multi slot solution
@@ -154,33 +154,34 @@ func calTravelTime(solution *MultiSlotSolution) {
 	}
 }
 
-func dfs(candidates *[][]SlotSolutionCandidate, depth int, path *[]SlotSolutionCandidate,
+func dfs(candidates [][]SlotSolutionCandidate, depth int, path []SlotSolutionCandidate,
 	results *[][]SlotSolutionCandidate, placeMap map[string]bool) {
-	if depth == len(*candidates) {
+	if depth == len(candidates) {
 		tmp := make([]SlotSolutionCandidate, depth)
-		copy(tmp, *path)
+		copy(tmp, path)
 		*results = append(*results, tmp)
 		return
 	}
-	candidates_ := *candidates
-	for idx := 0; idx < len(candidates_[depth]); idx++ {
-		if !checkDuplication(placeMap, &candidates_[depth][idx]) {
+
+	for idx := 0; idx < len(candidates[depth]); idx++ {
+		if !checkDuplication(placeMap, candidates[depth][idx]) {
 			continue
 		}
-		*path = append((*path), candidates_[depth][idx])
+		path = append(path, candidates[depth][idx])
 		dfs(candidates, depth+1, path, results, placeMap)
-		*path = (*path)[:len(*path)-1]
-		removePlaceIds(placeMap, &candidates_[depth][idx])
+		path = path[:len(path)-1]
+		removePlaceIds(placeMap, candidates[depth][idx])
 	}
+	return
 }
 
-func removePlaceIds(placesMap map[string]bool, slotSolutionCandidate *SlotSolutionCandidate) {
+func removePlaceIds(placesMap map[string]bool, slotSolutionCandidate SlotSolutionCandidate) {
 	for _, placeId := range slotSolutionCandidate.PlaceIDS {
 		placesMap[placeId] = false
 	}
 }
 
-func checkDuplication(placesMap map[string]bool, slotSolutionCandidate *SlotSolutionCandidate) bool {
+func checkDuplication(placesMap map[string]bool, slotSolutionCandidate SlotSolutionCandidate) bool {
 	for _, placeId := range slotSolutionCandidate.PlaceIDS {
 		if placesMap[placeId] {
 			return false
