@@ -8,7 +8,7 @@ import (
 )
 
 // Translate city, country to its central location
-func (c MapsClient) Geocode(query *GeocodeQuery) (lat float64, lng float64, err error, destinationCorrected bool) {
+func (c MapsClient) Geocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
 	req := &maps.GeocodingRequest{
 		Components: map[maps.Component]string{
 			maps.ComponentLocality: query.City,
@@ -31,10 +31,8 @@ func (c MapsClient) Geocode(query *GeocodeQuery) (lat float64, lng float64, err 
 	lat = location.Lat
 	lng = location.Lng
 
-	cityName := resp[0].AddressComponents[0].ShortName
-	if cityName != query.City {
-		query.City = cityName
-		destinationCorrected = true
-	}
+	cityName := resp[0].AddressComponents[0].LongName
+	query.City = cityName
+
 	return
 }

@@ -45,13 +45,11 @@ func (solver *Solver) ValidateLocation(slotRequestLocation *string) bool {
 		City:    countryCity[0],
 		Country: countryCity[1],
 	}
-	_, _, err, destinationCorrected := solver.matcher.PoiSearcher.Geocode(&geoQuery)
+	_, _, err := solver.matcher.PoiSearcher.Geocode(&geoQuery)
 	if err != nil {
 		return false
 	}
-	if destinationCorrected {
-		*slotRequestLocation = strings.Join([]string{geoQuery.City, geoQuery.Country}, ",")
-	}
+	*slotRequestLocation = strings.Join([]string{geoQuery.City, geoQuery.Country}, ",")
 	return true
 }
 

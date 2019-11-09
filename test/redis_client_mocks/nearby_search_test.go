@@ -43,10 +43,11 @@ func TestNearbySearch(t *testing.T) {
 		Hours:            [7]string{},
 	}
 
-	redisClient.SetGeocode(iowrappers.GeocodeQuery{
+	geocodeQuery := iowrappers.GeocodeQuery{
 		City:    "New York City",
 		Country: "US",
-	}, 40.712800, -74.006000)
+	}
+	redisClient.SetGeocode(geocodeQuery, 40.712800, -74.006000, geocodeQuery)
 
 	err = redisClient.StorePlacesForLocation("40.712800,-74.006000", places)
 
