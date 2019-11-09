@@ -71,13 +71,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 		}
 		cmdVal, cmdErr := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
-		if cmdVal == 0 {
-			err := utils.Error{
-				Err:   fmt.Errorf("geo adding place %s to Redis failure", place.Name),
-				Level: utils.LogInfo,
-			}
-			utils.CheckErr(err)
-		} else {
+		if cmdVal == 1 {
 			geoAddSuccessCount++
 			redisClient.cachePlace(place)
 		}
@@ -101,7 +95,7 @@ func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err e
 // if no geocode in Redis, then we assume no nearby place exists either
 func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error) {
 	cityCountry := strings.Split(request.Location, ",")
-	lat, lng, exist := redisClient.GetGeocode(GeocodeQuery{
+	lat, lng, exist := redisClient.GetGeocode(&GeocodeQuery{
 		City:    cityCountry[0],
 		Country: cityCountry[1],
 	})
@@ -173,9 +167,45 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 	return
 }
 
-func (redisClient *RedisClient) GetGeocode(query GeocodeQuery) (lat float64, lng float64, exist bool) {
+// cache the mapping from user input location name to geo-coding-corrected location name
+// correct location name is an alias of itself
+func (redisClient *RedisClient) CacheLocationAlias(query GeocodeQuery, correctedQuery GeocodeQuery) (err error) {
+	_, err = redisClient.client.HSet("city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
+	if err != nil {
+		return
+	}
+	_, err = redisClient.client.HSet("country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
+	if err != nil {
+		return
+	}
+	return
+}
+
+// retrieve corrected location name from cache. return empty string if not exist
+// if corrected location name exists, corrects geocode query
+func (redisClient *RedisClient) GetLocationWithAlias(query *GeocodeQuery) string {
+	resCity, err := redisClient.client.HGet("city_names", strings.ToLower(query.City)).Result()
+	if err != nil {
+		return ""
+	}
+
+	resCountry, err := redisClient.client.HGet("country_names", strings.ToLower(query.Country)).Result()
+	if err != nil {
+		return ""
+	}
+
+	query.Country = resCountry
+	query.City = resCity
+	return strings.Join([]string{resCity, resCountry}, "_")
+}
+
+func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, exist bool) {
 	redisKey := "cities"
-	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
+	redisField := redisClient.GetLocationWithAlias(query)
+	if redisField == "" {
+		log.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
+		return
+	}
 	geocode, err := redisClient.client.HGet(redisKey, redisField).Result()
 	if err != nil {
 		log.Infof("geocode of location %s, %s does not exist in cache", query.City, query.Country)
@@ -188,7 +218,7 @@ func (redisClient *RedisClient) GetGeocode(query GeocodeQuery) (lat float64, lng
 	return
 }
 
-func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64) bool {
+func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64, originalQuery GeocodeQuery) {
 	redisKey := "cities"
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
 	redisVal := strings.Join([]string{fmt.Sprintf("%.6f", lat), fmt.Sprintf("%.6f", lng)}, ",") // 1/9 meter precision
@@ -197,7 +227,7 @@ func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng 
 	if res {
 		log.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
 	}
-	return res
+	utils.CheckErrImmediate(redisClient.CacheLocationAlias(originalQuery, query), utils.LogError)
 }
 
 // returns redis streams ID if XADD command execution is successful
@@ -267,7 +297,7 @@ func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 	radius := strconv.FormatUint(req.Radius, 10)
 	timeCatIdxStr := strconv.FormatInt(timeCatIdx, 10)
 
-	redisFieldKey := strings.Join([]string{"slot_solution", country, city, radius, string(req.Weekday), timeCatIdxStr}, ":")
+	redisFieldKey := strings.ToLower(strings.Join([]string{"slot_solution", country, city, radius, string(req.Weekday), timeCatIdxStr}, ":"))
 	return redisFieldKey
 }
 

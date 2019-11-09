@@ -44,14 +44,18 @@ func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUr
 }
 
 // currently geocode is equivalent to mapping city and country to latitude and longitude
-func (poiSearcher *PoiSearcher) Geocode(query GeocodeQuery) (lat float64, lng float64, err error) {
+func (poiSearcher *PoiSearcher) Geocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
+	originalGeocodeQuery := GeocodeQuery{}
+	originalGeocodeQuery.City = query.City
+	originalGeocodeQuery.Country = query.Country
 	lat, lng, exist := poiSearcher.redisClient.GetGeocode(query)
 	if !exist {
 		lat, lng, err = poiSearcher.mapsClient.Geocode(query)
 		if err != nil {
 			return
 		}
-		poiSearcher.redisClient.SetGeocode(query, lat, lng)
+		// either redisClient or mapsClient may have corrected location name in the query
+		poiSearcher.redisClient.SetGeocode(*query, lat, lng, originalGeocodeQuery)
 		log.Debugf("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
 			query.City, query.Country, lat, lng)
 	}
@@ -64,13 +68,14 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
-	lat, lng, err := poiSearcher.Geocode(GeocodeQuery{
+	lat, lng, err := poiSearcher.Geocode(&GeocodeQuery{
 		City:    cityCountry[0],
 		Country: cityCountry[1],
 	})
 	if logErr(err, utils.LogError) {
 		return
 	}
+	// note that request.Location is overwritten to lat/lng
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)

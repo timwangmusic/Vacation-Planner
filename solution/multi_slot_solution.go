@@ -39,15 +39,17 @@ func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisAddr
 	solver.matcher.Init(poiSearcher)
 }
 
-func (solver *Solver) ValidateLocation(location string) bool {
-	countryCity := strings.Split(location, ",")
-	_, _, err := solver.matcher.PoiSearcher.Geocode(iowrappers.GeocodeQuery{
+func (solver *Solver) ValidateLocation(slotRequestLocation *string) bool {
+	countryCity := strings.Split(*slotRequestLocation, ",")
+	geoQuery := iowrappers.GeocodeQuery{
 		City:    countryCity[0],
 		Country: countryCity[1],
-	})
+	}
+	_, _, err := solver.matcher.PoiSearcher.Geocode(&geoQuery)
 	if err != nil {
 		return false
 	}
+	*slotRequestLocation = strings.Join([]string{geoQuery.City, geoQuery.Country}, ",")
 	return true
 }
 
@@ -59,9 +61,8 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 	}
 
 	// validate location with poiSearcher of the time matcher
-	for _, slotRequest := range req.SlotRequests {
-		location := slotRequest.Location
-		if !solver.ValidateLocation(location) {
+	for idx := range req.SlotRequests {
+		if !solver.ValidateLocation(&req.SlotRequests[idx].Location) {
 			err = errors.New("invalid travel destination")
 			resp.Errcode = InvalidRequestLocation
 			return
