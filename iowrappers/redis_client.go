@@ -71,13 +71,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 		}
 		cmdVal, cmdErr := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
-		if cmdVal == 0 {
-			err := utils.Error{
-				Err:   fmt.Errorf("geo adding place %s to Redis failure", place.Name),
-				Level: utils.LogInfo,
-			}
-			utils.CheckErr(err)
-		} else {
+		if cmdVal == 1 {
 			geoAddSuccessCount++
 			redisClient.cachePlace(place)
 		}
@@ -223,7 +217,7 @@ func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, ln
 	return
 }
 
-func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64, originalQuery GeocodeQuery) bool {
+func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64, originalQuery GeocodeQuery) {
 	redisKey := "cities"
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
 	redisVal := strings.Join([]string{fmt.Sprintf("%.6f", lat), fmt.Sprintf("%.6f", lng)}, ",") // 1/9 meter precision
@@ -232,10 +226,7 @@ func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng 
 	if res {
 		log.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
 	}
-	if redisClient.CacheLocationAlias(originalQuery, query) != nil {
-		return false
-	}
-	return res
+	utils.CheckErrImmediate(redisClient.CacheLocationAlias(originalQuery, query), utils.LogError)
 }
 
 // returns redis streams ID if XADD command execution is successful

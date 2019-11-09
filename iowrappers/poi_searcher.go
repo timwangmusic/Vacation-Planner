@@ -54,6 +54,7 @@ func (poiSearcher *PoiSearcher) Geocode(query *GeocodeQuery) (lat float64, lng f
 		if err != nil {
 			return
 		}
+		// either redisClient or mapsClient may have corrected location name in the query
 		poiSearcher.redisClient.SetGeocode(*query, lat, lng, originalGeocodeQuery)
 		log.Debugf("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
 			query.City, query.Country, lat, lng)
