@@ -182,7 +182,8 @@ func (redisClient *RedisClient) CacheLocationAlias(query GeocodeQuery, corrected
 }
 
 // retrieve corrected location name from cache. return empty string if not exist
-func (redisClient *RedisClient) GetLocationAlias(query *GeocodeQuery) string {
+// if corrected location name exists, corrects geocode query
+func (redisClient *RedisClient) GetLocationWithAlias(query *GeocodeQuery) string {
 	resCity, err := redisClient.client.HGet("city_names", strings.ToLower(query.City)).Result()
 	if err != nil {
 		return ""
@@ -200,9 +201,9 @@ func (redisClient *RedisClient) GetLocationAlias(query *GeocodeQuery) string {
 
 func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, exist bool) {
 	redisKey := "cities"
-	redisField := redisClient.GetLocationAlias(query)
+	redisField := redisClient.GetLocationWithAlias(query)
 	if redisField == "" {
-		log.Infof("alias of location %s, %s does not exist in cache", query.City, query.Country)
+		log.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
 		return
 	}
 	geocode, err := redisClient.client.HGet(redisKey, redisField).Result()
