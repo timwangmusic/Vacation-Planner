@@ -267,7 +267,7 @@ func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 	radius := strconv.FormatUint(req.Radius, 10)
 	timeCatIdxStr := strconv.FormatInt(timeCatIdx, 10)
 
-	redisFieldKey := strings.Join([]string{"slot_solution", country, city, radius, string(req.Weekday), timeCatIdxStr}, ":")
+	redisFieldKey := strings.ToLower(strings.Join([]string{"slot_solution", country, city, radius, string(req.Weekday), timeCatIdxStr}, ":"))
 	return redisFieldKey
 }
 
