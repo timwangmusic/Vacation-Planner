@@ -1,6 +1,7 @@
 package solution
 
 import (
+	"container/heap"
 	"errors"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -236,23 +237,24 @@ func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
 		m[candidateKey] = candidate
 	}
 	// use limited-size minimum priority queue
-	priorityQueue := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0)}
+	priorityQueue := &graph.MinPriorityQueueVertex{}
 	for _, vertex := range vertexes {
-		if priorityQueue.Size() == NumSolutions {
-			top := priorityQueue.GetRoot()
+		if priorityQueue.Len() == NumSolutions {
+			top := (*priorityQueue)[0]
 			if vertex.Key > top.Key {
-				priorityQueue.ExtractTop()
+				heap.Pop(priorityQueue)
 			} else {
 				continue
 			}
 		}
-		priorityQueue.Insert(vertex)
+		heap.Push(priorityQueue, vertex)
 	}
 
 	res := make([]MultiSlotSolution, 0)
 
-	for priorityQueue.Size() > 0 {
-		res = append(res, m[priorityQueue.ExtractTop()])
+	for priorityQueue.Len() > 0 {
+		top := heap.Pop(priorityQueue).(graph.Vertex)
+		res = append(res, m[top.Name])
 	}
 
 	return res
