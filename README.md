@@ -11,18 +11,34 @@ The service then suggest several travel plans for the user.
 * The initial version only plans for one-day trip, and when selecting places it only considers POI information without personal dining preferences, etc.
 
 ## REST API
-* ```Planning(req *solution.PlanningRequest) (resp PlanningResponse)``` The Planning REST API takes in user request with destination and time info and response with suggested trip details.
+* The Planning REST API takes in user request with destination and time info and response with suggested trip details.
 
+    `url: http://hostname/planning/country/city/search_radius`
+
+
+## Installation (Mac)
+* git clone the repository
+* update Homebrew `brew update`
+* Install MongoDB using Homebrew with `brew install mongodb`. The database data by default locates in `/data/db`.
+You need to give permission to write the directory using `sudo chown -R id -un /data/db` and enter your password.
+* Install Redis using Homebrew with `brew install redis`
+
+## Run REST server
+* Obtain Google Maps API key and modify `maps_client_api_key` field in `server_config.yml`.
+* Start (in background) Redis service with `brew services start redis`
+* Start (in background) MongoDB service with `mongod --fork --syslog`
+* Execute `go run main/run_server.go` to start the REST server.
 
 ## Future Releases
 * Multi-city, multi-day vacation planning
 * Personalization
 
+
 ## Third-party Libraries and External Services
 * Logging: Logrus
 * Redis Client: go-redis/redis
 * MongoDB Client: globalsign/mgo
-* Google Maps Places API to find detailed POI info 
+* Google Maps Geocoding/Places API
 
 
 ## Programming Languages
