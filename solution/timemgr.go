@@ -1,8 +1,8 @@
 package solution
 
 import (
-	"Vacation-planner/matching"
-	"Vacation-planner/utils"
+	"github.com/weihesdlegend/Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
 const Dis2minTest = 0.05

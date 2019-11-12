@@ -1,9 +1,9 @@
 package test
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/matching"
-	"Vacation-planner/planner"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/planner"
 	"testing"
 )
 

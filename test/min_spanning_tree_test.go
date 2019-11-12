@@ -1,21 +1,21 @@
 package test
 
 import (
-	"Vacation-planner/graph"
+	"github.com/weihesdlegend/Vacation-planner/graph"
 	"testing"
 )
 
 // Set a root vertex and start constructing the min spanning tree.
 // Verify that the parent of each vertex is correct and the traversal string is correct
-func TestMinSpanningTree(t *testing.T){
-	nyc := graph.Vertex{Location:graph.Point{Lat:40.712776, Lng:-74.005974}, Name: "New York"}
+func TestMinSpanningTree(t *testing.T) {
+	nyc := graph.Vertex{Location: graph.Point{Lat: 40.712776, Lng: -74.005974}, Name: "New York"}
 	la := graph.Vertex{Location: graph.Point{Lat: 34.052235, Lng: -118.243683}, Name: "Los Angeles"}
 	lv := graph.Vertex{Location: graph.Point{Lat: 36.169941, Lng: -115.139832}, Name: "Las Vegas"}
-	pitt := graph.Vertex{Location: graph.Point{Lat:40.440624, Lng: -79.995888}, Name: "Pittsburgh"}
-	boston := graph.Vertex{Location: graph.Point{Lat:42.360081, Lng:-71.058884}, Name: "Boston"}
-	met := graph.Vertex{Location:graph.Point{Lat: 40.779079, Lng: -73.962578}, Name: "The Met"}
-	sd := graph.Vertex{Location:graph.Point{Lat: 32.715736, Lng: -117.161087}, Name: "San Diego"}
-	sf :=graph.Vertex{Location:graph.Point{Lat: 37.773972, Lng: -122.431297}, Name: "San Francisco"}
+	pitt := graph.Vertex{Location: graph.Point{Lat: 40.440624, Lng: -79.995888}, Name: "Pittsburgh"}
+	boston := graph.Vertex{Location: graph.Point{Lat: 42.360081, Lng: -71.058884}, Name: "Boston"}
+	met := graph.Vertex{Location: graph.Point{Lat: 40.779079, Lng: -73.962578}, Name: "The Met"}
+	sd := graph.Vertex{Location: graph.Point{Lat: 32.715736, Lng: -117.161087}, Name: "San Diego"}
+	sf := graph.Vertex{Location: graph.Point{Lat: 37.773972, Lng: -122.431297}, Name: "San Francisco"}
 
 	// pass by pointer
 	cities := []*graph.Vertex{&nyc, &la, &lv, &pitt, &sf, &boston, &met, &sd}
@@ -27,19 +27,19 @@ func TestMinSpanningTree(t *testing.T){
 	res := mst.Construct(cities)
 
 	expected := map[string]string{
-		nyc.Name: "",
-		la.Name: lv.Name,
-		lv.Name: pitt.Name,
-		pitt.Name: nyc.Name,
+		nyc.Name:    "",
+		la.Name:     lv.Name,
+		lv.Name:     pitt.Name,
+		pitt.Name:   nyc.Name,
 		boston.Name: met.Name,
-		sd.Name: la.Name,
-		sf.Name: la.Name,
-		met.Name: nyc.Name,
+		sd.Name:     la.Name,
+		sf.Name:     la.Name,
+		met.Name:    nyc.Name,
 	}
 
 	// Verify construction
-	for name, city := range res{
-		if city.Parent != expected[name]{
+	for name, city := range res {
+		if city.Parent != expected[name] {
 			t.Errorf("Parent city is not set correctly. Expected: %s, got: %s", expected[name], city.Parent)
 		}
 	}

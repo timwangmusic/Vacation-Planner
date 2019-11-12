@@ -61,7 +61,7 @@ func findChildren(m map[string]*Vertex) map[string]*treeNode {
 			res[name] = &treeNode{name: name, Children: make([]string, 0)}
 		}
 		parent := node.Parent
-		if parent == ""{
+		if parent == "" {
 			continue
 		}
 		_, exist = res[parent]
@@ -92,7 +92,7 @@ func (tree *MinSpanningTree) Construct(nodes []*Vertex) map[string]*Vertex {
 		node.Key = math.Inf(1) // positive infinity
 	}
 
-	tree.Root.Key = 0.0		// set distance of root as zero
+	tree.Root.Key = 0.0 // set distance of root as zero
 	queue.Insert(*tree.Root)
 
 	for len(addedNodes) < N {

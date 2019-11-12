@@ -1,11 +1,11 @@
 package solution
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/graph"
-	"Vacation-planner/iowrappers"
-	"Vacation-planner/matching"
 	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/graph"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"github.com/weihesdlegend/Vacation-planner/matching"
 	"strconv"
 	"strings"
 	"time"

@@ -1,8 +1,8 @@
 package redis_client_mocks
 
 import (
-	"Vacation-planner/iowrappers"
 	"github.com/alicebob/miniredis/v2"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"strings"
 	"testing"
 )

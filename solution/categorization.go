@@ -1,6 +1,6 @@
 package solution
 
-import "Vacation-planner/matching"
+import "github.com/weihesdlegend/Vacation-planner/matching"
 
 type CategorizedPlaces struct {
 	EateryPlaces []matching.Place

@@ -7,8 +7,8 @@
 package graph
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/iowrappers"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
 
 type ClusterManager interface {
@@ -72,17 +72,17 @@ func (placeManager *TimeClustersManager) Init(poiSearcher *iowrappers.PoiSearche
 }
 
 // searchType is a selector for MinNumResults in PlaceSearchRequest
-func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint, searchType string){
+func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint, searchType string) {
 	request := iowrappers.PlaceSearchRequest{
-		Location: location,
-		PlaceCat: placeManager.PlaceCat,
-		Radius: searchRadius,
-		RankBy: "prominence",
+		Location:      location,
+		PlaceCat:      placeManager.PlaceCat,
+		Radius:        searchRadius,
+		RankBy:        "prominence",
 		MinNumResults: 20,
 	}
-	if searchType == ""{
+	if searchType == "" {
 		request.MinNumResults = 20
-	} else{
+	} else {
 		request.MinNumResults = 30
 	}
 	request.MaxNumResults = 2 * request.MinNumResults

@@ -1,21 +1,23 @@
 package graph
 
-const(
-	PRIORITY_TIME=iota
+const (
+	PRIORITY_TIME = iota
 	PRIORITY_BUDGET
 )
-type SimpleWeight struct{
+
+type SimpleWeight struct {
 	w uint32
 }
-func (this *SimpleWeight) SetWeight(weight uint32){
+
+func (this *SimpleWeight) SetWeight(weight uint32) {
 	this.w = weight
 }
-func (this *SimpleWeight) GetWeight(weight uint32) uint32{
+func (this *SimpleWeight) GetWeight(weight uint32) uint32 {
 	return this.w
 }
 
 func (l SimpleWeight) Compare(r SimpleWeight) bool {
-	if l.w <= r.w{
+	if l.w <= r.w {
 		return true
 	} else {
 		return false
@@ -24,16 +26,18 @@ func (l SimpleWeight) Compare(r SimpleWeight) bool {
 
 type SimpleBaseWeight struct {
 	timeInMin uint32
-	budget	float64
-	cmpflag	uint8
+	budget    float64
+	cmpflag   uint8
 }
-func (this *SimpleBaseWeight) SetWeight(timeInMin uint32, budget float64){
+
+func (this *SimpleBaseWeight) SetWeight(timeInMin uint32, budget float64) {
 	this.timeInMin = timeInMin
-	this.budget = budget}
+	this.budget = budget
+}
 func (this *SimpleBaseWeight) GetWeight() (uint32, float64) {
 	return this.timeInMin, this.budget
 }
-func (this *SimpleBaseWeight) SetCmpFlag( flag uint8) bool {
+func (this *SimpleBaseWeight) SetCmpFlag(flag uint8) bool {
 	switch flag {
 	case PRIORITY_BUDGET:
 		this.cmpflag = flag
@@ -53,24 +57,23 @@ func (this *SimpleBaseWeight) GetCmpFlag() uint8 {
 FIXME: The priority of configuration is based only on the cmpflag
 of the object calling the compare function. This configuration must
 be used with care.
- */
+*/
 
-
-func (v SimpleBaseWeight) Setcmpflag(cmpflag uint8){
+func (v SimpleBaseWeight) Setcmpflag(cmpflag uint8) {
 	/*
-	Need to perform validity check of input values
-	will change function signiture to bool after then
-	 */
+		Need to perform validity check of input values
+		will change function signiture to bool after then
+	*/
 	v.cmpflag = cmpflag
 }
-func (v SimpleBaseWeight) Getcmpflag() uint8{
+func (v SimpleBaseWeight) Getcmpflag() uint8 {
 	return v.cmpflag
 }
 
-func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool{
+func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool {
 	switch l.cmpflag {
-	case PRIORITY_TIME :
-		if(l.timeInMin <=r.timeInMin){
+	case PRIORITY_TIME:
+		if l.timeInMin <= r.timeInMin {
 
 			return true
 		} else {
@@ -84,8 +87,8 @@ func (l SimpleBaseWeight) Compare(r SimpleBaseWeight) bool{
 		}
 	default:
 		/*
-		Default behavior favor money
-		 */
+			Default behavior favor money
+		*/
 		if l.budget <= r.budget {
 			return true
 		} else {

@@ -1,4 +1,4 @@
-module Vacation-planner
+module github.com/weihesdlegend/Vacation-planner
 
 go 1.12
 

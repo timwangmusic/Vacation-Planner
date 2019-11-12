@@ -1,8 +1,8 @@
 package POI
 
 import (
-	"Vacation-planner/utils"
 	"errors"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"regexp"
 	"strconv"
 	"strings"

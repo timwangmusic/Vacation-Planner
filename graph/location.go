@@ -1,23 +1,23 @@
 package graph
 
 import (
-	"Vacation-planner/utils"
 	"fmt"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"strconv"
 )
 
 // GetLocationsFromCsv...
 // Current format specifies that each line contain 3 fields: location name, latitude, longitude
-func GetLocationsFromCsv(filename string) map[string]Point{
+func GetLocationsFromCsv(filename string) map[string]Point {
 	locations := make(map[string]Point, 0)
 	locationsData := utils.ReadCsv(filename)
-	for _, location := range locationsData{
+	for _, location := range locationsData {
 		name := location[0]
 		lat, _ := strconv.ParseFloat(location[1], 64)
 		lng, _ := strconv.ParseFloat(location[2], 64)
 		_, exist := locations[name]
-		if !exist{	// dedupe
-			locations[name] = Point{Lat:lat, Lng:lng}
+		if !exist { // dedupe
+			locations[name] = Point{Lat: lat, Lng: lng}
 		}
 	}
 	return locations

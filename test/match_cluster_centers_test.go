@@ -1,11 +1,11 @@
 package test
 
 import (
-	"Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/matching"
 	"testing"
 )
 
-func TestMatchClusterCenters (t *testing.T){
+func TestMatchClusterCenters(t *testing.T) {
 	eateryCenters := [][]float64{
 		{37.773972, -122.431297},
 		{32.715736, -117.161087},
@@ -21,8 +21,8 @@ func TestMatchClusterCenters (t *testing.T){
 
 	expected := [][]int{{0, 1}, {1, 0}, {2, 2}}
 
-	for k, pair := range clusterPairs{
-		if pair.EateryIdx != expected[k][0] || pair.VisitIdx != expected[k][1]{
+	for k, pair := range clusterPairs {
+		if pair.EateryIdx != expected[k][0] || pair.VisitIdx != expected[k][1] {
 			t.Errorf("Incorrect cluster matching result. Expected %T, got %T", expected[k], pair)
 		}
 	}

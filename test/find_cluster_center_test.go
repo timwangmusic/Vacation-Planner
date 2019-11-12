@@ -1,12 +1,12 @@
 package test
 
 import (
-	"Vacation-planner/graph"
 	"fmt"
+	"github.com/weihesdlegend/Vacation-planner/graph"
 	"testing"
 )
 
-func TestFindClusterCenter (t *testing.T){
+func TestFindClusterCenter(t *testing.T) {
 	geolocations := [][]float64{
 		{40.440624, -79.995888},
 		{37.773972, -122.431297},
