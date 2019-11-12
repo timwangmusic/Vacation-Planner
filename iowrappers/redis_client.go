@@ -4,13 +4,13 @@ package iowrappers
 // serving the caching needs of the Vacation Planner
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v7"
 	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"strconv"
 	"strings"
 	"time"

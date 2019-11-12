@@ -1,13 +1,13 @@
 package iowrappers
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/utils"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"googlemaps.github.io/maps"
 	"strings"
 	"sync"

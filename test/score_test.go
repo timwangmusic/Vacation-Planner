@@ -1,7 +1,7 @@
 package test
 
 import (
-	"Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/matching"
 	"math"
 	"testing"
 )
@@ -27,7 +27,7 @@ func TestScoreFunction(t *testing.T) {
 	// test multiple places with same location (NYC)
 	places := []matching.Place{place1, place2}
 	score = matching.Score(places)
-	expected = (matching.AvgRating / matching.AvgPricing + 0.1) / 2 / math.Max(matching.AvgRating / matching.AvgPricing, 0.1)
+	expected = (matching.AvgRating/matching.AvgPricing + 0.1) / 2 / math.Max(matching.AvgRating/matching.AvgPricing, 0.1)
 	if score != expected {
 		t.Errorf("Expected score %f, got %f", expected, score)
 	}

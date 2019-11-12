@@ -1,7 +1,7 @@
 package solution
 
 import (
-	"Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/matching"
 	"strings"
 	"time"
 )

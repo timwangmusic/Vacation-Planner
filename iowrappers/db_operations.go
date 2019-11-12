@@ -1,11 +1,11 @@
 package iowrappers
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/utils"
 	"fmt"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
 type DatabaseHandler interface {

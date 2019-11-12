@@ -3,9 +3,9 @@
 package matching
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/graph"
-	"Vacation-planner/iowrappers"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/graph"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"log"
 )
 

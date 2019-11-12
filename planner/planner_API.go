@@ -1,15 +1,15 @@
 package planner
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/iowrappers"
-	"Vacation-planner/matching"
-	"Vacation-planner/solution"
-	"Vacation-planner/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"github.com/weihesdlegend/Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/solution"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"html/template"
 	"log"
 	"net/http"

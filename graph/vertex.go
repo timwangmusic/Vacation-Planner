@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"Vacation-planner/utils"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
 // Vertex defines a struct type for basic vertexes

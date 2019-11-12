@@ -1,11 +1,11 @@
 package iowrappers
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/utils"
 	"fmt"
 	"github.com/globalsign/mgo"
 	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"strings"
 )
 

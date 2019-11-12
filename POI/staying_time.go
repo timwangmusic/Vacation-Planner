@@ -13,12 +13,12 @@ const (
 
 func GetStayingTimeForLocationType(locationType LocationType) StayingTime {
 	var stayingTimeMap = map[LocationType]StayingTime{
-		LocationTypeCafe: StayingTimeLocationTypeCafe,
-		LocationTypeRestaurant: StayingTimeLocationTypeRestaurant,
-		LocationTypeMuseum: StayingTimeLocationTypeMuseum,
-		LocationTypeGallery: StayingTimeLocationTypeGallery,
+		LocationTypeCafe:          StayingTimeLocationTypeCafe,
+		LocationTypeRestaurant:    StayingTimeLocationTypeRestaurant,
+		LocationTypeMuseum:        StayingTimeLocationTypeMuseum,
+		LocationTypeGallery:       StayingTimeLocationTypeGallery,
 		LocationTypeAmusementPark: StayingTimeLocationTypeAmusementPark,
-		LocationTypePark: StayingTimeLocationTypePark,
+		LocationTypePark:          StayingTimeLocationTypePark,
 	}
 
 	return stayingTimeMap[locationType]

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Vacation-planner/planner"
-	"Vacation-planner/utils"
+	"github.com/weihesdlegend/Vacation-planner/planner"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
@@ -22,10 +22,10 @@ type Config struct {
 func RunDevServer() {
 	conf := DevelopmentConfig{}
   
-	yml_file, err := ioutil.ReadFile("Config/server_config.yml")
+	ymlFile, err := ioutil.ReadFile("Config/server_config.yml")
 	utils.CheckErrImmediate(err, utils.LogFatal)
   
-	err = yaml.Unmarshal(yml_file, &conf)
+	err = yaml.Unmarshal(ymlFile, &conf)
 	utils.CheckErrImmediate(err, utils.LogFatal)
 
 	myPlanner := planner.MyPlanner{}
