@@ -26,7 +26,7 @@ You need to give permission to write the directory using `sudo chown -R id -un /
 * Install Redis using Homebrew with `brew install redis`
 
 ## Run REST server
-* Obtain Google Maps API key and modify `maps_client_api_key` field in `server_config.yml`.
+* Obtain Google Maps API key and set the `MAPS_CLIENT_API_KEY` environment variable.
 * Start (in background) Redis service with `brew services start redis`
 * Start (in background) MongoDB service with `mongod --fork --syslog`
 * Execute `go run main/run_server.go` to start the REST server.
