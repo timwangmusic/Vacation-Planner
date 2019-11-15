@@ -170,11 +170,11 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 // cache the mapping from user input location name to geo-coding-corrected location name
 // correct location name is an alias of itself
 func (redisClient *RedisClient) CacheLocationAlias(query GeocodeQuery, correctedQuery GeocodeQuery) (err error) {
-	_, err = redisClient.client.HSet("city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
+	_, err = redisClient.client.HSet("location_name_alias_mapping:city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
 	if err != nil {
 		return
 	}
-	_, err = redisClient.client.HSet("country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
+	_, err = redisClient.client.HSet("location_name_alias_mapping:country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
 	if err != nil {
 		return
 	}
@@ -184,12 +184,12 @@ func (redisClient *RedisClient) CacheLocationAlias(query GeocodeQuery, corrected
 // retrieve corrected location name from cache. return empty string if not exist
 // if corrected location name exists, corrects geocode query
 func (redisClient *RedisClient) GetLocationWithAlias(query *GeocodeQuery) string {
-	resCity, err := redisClient.client.HGet("city_names", strings.ToLower(query.City)).Result()
+	resCity, err := redisClient.client.HGet("location_name_alias_mapping:city_names", strings.ToLower(query.City)).Result()
 	if err != nil {
 		return ""
 	}
 
-	resCountry, err := redisClient.client.HGet("country_names", strings.ToLower(query.Country)).Result()
+	resCountry, err := redisClient.client.HGet("location_name_alias_mapping:country_names", strings.ToLower(query.Country)).Result()
 	if err != nil {
 		return ""
 	}
@@ -200,7 +200,7 @@ func (redisClient *RedisClient) GetLocationWithAlias(query *GeocodeQuery) string
 }
 
 func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, exist bool) {
-	redisKey := "cities"
+	redisKey := "geocode:cities"
 	redisField := redisClient.GetLocationWithAlias(query)
 	if redisField == "" {
 		log.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
@@ -219,7 +219,7 @@ func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, ln
 }
 
 func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64, originalQuery GeocodeQuery) {
-	redisKey := "cities"
+	redisKey := "geocode:cities"
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
 	redisVal := strings.Join([]string{fmt.Sprintf("%.6f", lat), fmt.Sprintf("%.6f", lng)}, ",") // 1/9 meter precision
 	res, err := redisClient.client.HSet(redisKey, redisField, redisVal).Result()

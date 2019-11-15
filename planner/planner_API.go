@@ -120,7 +120,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr 
 	planner.RedisLogger.Init(redisAddr, "", 0)
 	planner.RedisStreamName = redisStreamName
 	if redisStreamName == "" {
-		planner.RedisStreamName = "planning_api_usage"
+		planner.RedisStreamName = "stream:planning_api_usage"
 	}
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
 }
