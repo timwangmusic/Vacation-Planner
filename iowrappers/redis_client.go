@@ -32,12 +32,12 @@ func (redisClient *RedisClient) Init(addr string, password string, databaseIdx i
 	})
 }
 
-// serialize place using JSON and store in Redis with key as the place ID
+// serialize place using JSON and store in Redis with key place_details:place_ID:placeID
 func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	json_, err := json.Marshal(place)
 	utils.CheckErrImmediate(err, utils.LogError)
 
-	redisClient.client.Set(place.ID, json_, -1)
+	redisClient.client.Set("place_details:place_ID:" + place.ID, json_, -1)
 }
 
 // currently not used, but it is still a primitive implementation that might have faster search time compared
@@ -79,9 +79,9 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 	log.Infof("%d places geo added to Redis", geoAddSuccessCount)
 }
 
-// obtain place info from Redis based on placeId
+// obtain place info from Redis based with key place_details:place_ID:placeID
 func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err error) {
-	res, err := redisClient.client.Get(placeId).Result()
+	res, err := redisClient.client.Get("place_details:place_ID:" + placeId).Result()
 	utils.CheckErrImmediate(err, utils.LogError)
 	if err != nil {
 		return
@@ -113,7 +113,7 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 	res := make([]POI.Place, len(placeIds))
 
 	for idx, placeId := range placeIds {
-		res[idx], _ = redisClient.getPlace(fmt.Sprintf("%v", placeId))
+		res[idx], _ = redisClient.getPlace(placeId)
 	}
 	return res, nil
 }

@@ -61,8 +61,8 @@ func TestGetPlaces(t *testing.T) {
 
 	// if place are not cached, it is possibly because of GeoAdd failure
 	for _, place := range places {
-		if !mockServer.Exists(place.ID) {
-			t.Errorf("place %s does not exist in Redis", place.ID)
+		if !mockServer.Exists("place_details:place_ID:" + place.ID) {
+			t.Errorf("place with ID %s does not exist in Redis", place.ID)
 		}
 	}
 
