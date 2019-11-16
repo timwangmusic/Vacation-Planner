@@ -1,5 +1,5 @@
 development_config:
   mongo_url: :27017
   redis_url: :6379
-  redis_stream_name: planning_api_usage
+  redis_stream_name: stream:planning_api_usage
   server_port: :10000

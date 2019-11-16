@@ -32,12 +32,12 @@ func (redisClient *RedisClient) Init(addr string, password string, databaseIdx i
 	})
 }
 
-// serialize place using JSON and store in Redis with key as the place ID
+// serialize place using JSON and store in Redis with key place_details:place_ID:placeID
 func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	json_, err := json.Marshal(place)
 	utils.CheckErrImmediate(err, utils.LogError)
 
-	redisClient.client.Set(place.ID, json_, -1)
+	redisClient.client.Set("place_details:place_ID:" + place.ID, json_, -1)
 }
 
 // currently not used, but it is still a primitive implementation that might have faster search time compared
@@ -69,7 +69,8 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 			Longitude: place.Location.Coordinates[0],
 			Latitude:  place.Location.Coordinates[1],
 		}
-		cmdVal, cmdErr := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
+		redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
+		cmdVal, cmdErr := redisClient.client.GeoAdd(redisKey, geolocation).Result()
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
 		if cmdVal == 1 {
 			geoAddSuccessCount++
@@ -79,9 +80,9 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 	log.Infof("%d places geo added to Redis", geoAddSuccessCount)
 }
 
-// obtain place info from Redis based on placeId
+// obtain place info from Redis based with key place_details:place_ID:placeID
 func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err error) {
-	res, err := redisClient.client.Get(placeId).Result()
+	res, err := redisClient.client.Get("place_details:place_ID:" + placeId).Result()
 	utils.CheckErrImmediate(err, utils.LogError)
 	if err != nil {
 		return
@@ -113,7 +114,7 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 	res := make([]POI.Place, len(placeIds))
 
 	for idx, placeId := range placeIds {
-		res[idx], _ = redisClient.getPlace(fmt.Sprintf("%v", placeId))
+		res[idx], _ = redisClient.getPlace(placeId)
 	}
 	return res, nil
 }
@@ -121,9 +122,10 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 // if total number of places in a category for a location is less than minimum, return an empty slice
 // return as many places as possible within the maximum search radius
 func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
-	requestCategory := string(request.PlaceCat)
+	requestCategory := strings.ToLower(string(request.PlaceCat))
+	redisKey := "placeIDs:" + requestCategory
 
-	totalNumCachedResults, err := redisClient.client.ZCount(requestCategory, "-inf", "inf").Result()
+	totalNumCachedResults, err := redisClient.client.ZCount(redisKey, "-inf", "inf").Result()
 	utils.CheckErrImmediate(err, utils.LogInfo)
 	if uint(totalNumCachedResults) < request.MinNumResults {
 		return
@@ -148,7 +150,7 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 			Unit:   "m",
 			Sort:   "ASC", // sort ascending
 		}
-		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
+		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
 		utils.CheckErrImmediate(err, utils.LogError)
 
 		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
@@ -170,11 +172,11 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 // cache the mapping from user input location name to geo-coding-corrected location name
 // correct location name is an alias of itself
 func (redisClient *RedisClient) CacheLocationAlias(query GeocodeQuery, correctedQuery GeocodeQuery) (err error) {
-	_, err = redisClient.client.HSet("city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
+	_, err = redisClient.client.HSet("location_name_alias_mapping:city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
 	if err != nil {
 		return
 	}
-	_, err = redisClient.client.HSet("country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
+	_, err = redisClient.client.HSet("location_name_alias_mapping:country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
 	if err != nil {
 		return
 	}
@@ -184,12 +186,12 @@ func (redisClient *RedisClient) CacheLocationAlias(query GeocodeQuery, corrected
 // retrieve corrected location name from cache. return empty string if not exist
 // if corrected location name exists, corrects geocode query
 func (redisClient *RedisClient) GetLocationWithAlias(query *GeocodeQuery) string {
-	resCity, err := redisClient.client.HGet("city_names", strings.ToLower(query.City)).Result()
+	resCity, err := redisClient.client.HGet("location_name_alias_mapping:city_names", strings.ToLower(query.City)).Result()
 	if err != nil {
 		return ""
 	}
 
-	resCountry, err := redisClient.client.HGet("country_names", strings.ToLower(query.Country)).Result()
+	resCountry, err := redisClient.client.HGet("location_name_alias_mapping:country_names", strings.ToLower(query.Country)).Result()
 	if err != nil {
 		return ""
 	}
@@ -200,7 +202,7 @@ func (redisClient *RedisClient) GetLocationWithAlias(query *GeocodeQuery) string
 }
 
 func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, exist bool) {
-	redisKey := "cities"
+	redisKey := "geocode:cities"
 	redisField := redisClient.GetLocationWithAlias(query)
 	if redisField == "" {
 		log.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
@@ -219,7 +221,7 @@ func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, ln
 }
 
 func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng float64, originalQuery GeocodeQuery) {
-	redisKey := "cities"
+	redisKey := "geocode:cities"
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
 	redisVal := strings.Join([]string{fmt.Sprintf("%.6f", lat), fmt.Sprintf("%.6f", lng)}, ",") // 1/9 meter precision
 	res, err := redisClient.client.HSet(redisKey, redisField, redisVal).Result()
