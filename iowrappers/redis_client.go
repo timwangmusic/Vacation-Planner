@@ -69,7 +69,8 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 			Longitude: place.Location.Coordinates[0],
 			Latitude:  place.Location.Coordinates[1],
 		}
-		cmdVal, cmdErr := redisClient.client.GeoAdd(string(placeCategory), geolocation).Result()
+		redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
+		cmdVal, cmdErr := redisClient.client.GeoAdd(redisKey, geolocation).Result()
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
 		if cmdVal == 1 {
 			geoAddSuccessCount++
@@ -121,9 +122,10 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 // if total number of places in a category for a location is less than minimum, return an empty slice
 // return as many places as possible within the maximum search radius
 func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
-	requestCategory := string(request.PlaceCat)
+	requestCategory := strings.ToLower(string(request.PlaceCat))
+	redisKey := "placeIDs:" + requestCategory
 
-	totalNumCachedResults, err := redisClient.client.ZCount(requestCategory, "-inf", "inf").Result()
+	totalNumCachedResults, err := redisClient.client.ZCount(redisKey, "-inf", "inf").Result()
 	utils.CheckErrImmediate(err, utils.LogInfo)
 	if uint(totalNumCachedResults) < request.MinNumResults {
 		return
@@ -148,7 +150,7 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 			Unit:   "m",
 			Sort:   "ASC", // sort ascending
 		}
-		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(requestCategory, requestLng, requestLat, &geoQuery).Result()
+		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
 		utils.CheckErrImmediate(err, utils.LogError)
 
 		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
