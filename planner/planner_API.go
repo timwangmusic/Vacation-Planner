@@ -374,7 +374,8 @@ func (planner *MyPlanner) HandlingRequests(serverPort string) {
 
 	myRouter.HandleFunc("/planning/v1", planner.postPlanningApi).Methods("POST")
 
-	myRouter.HandleFunc("/planning/{country}/{city}/{radius}", planner.planningApi).Methods("GET")
+	myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
+		"radius", "{radius}").HandlerFunc(planner.planningApi).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(serverPort, myRouter))
 }
