@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"html/template"
-	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -327,6 +327,14 @@ func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
 	country := vars["country"]
 	city := vars["city"]
 	radius := vars["radius"]
+	weekday := vars["weekday"]
+
+	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
+	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("invalid weekday"))
+		return
+	}
 
 	if !validateSearchRadius(radius) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -342,7 +350,7 @@ func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
 
 	cityCountry := city + "," + country
 
-	planningReq := solution.GetStandardRequest()
+	planningReq := solution.GetStandardRequest(POI.Weekday(weekdayUint))
 	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
 	planningReq.SearchRadius = uint(searchRadius_)
 
@@ -375,7 +383,7 @@ func (planner *MyPlanner) HandlingRequests(serverPort string) {
 	myRouter.HandleFunc("/planning/v1", planner.postPlanningApi).Methods("POST")
 
 	myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
-		"radius", "{radius}").HandlerFunc(planner.planningApi).Methods("GET")
+		"radius", "{radius}", "weekday", "{weekday}").HandlerFunc(planner.planningApi).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(serverPort, myRouter))
 }

@@ -263,7 +263,7 @@ func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
 }
 
 // Generate a standard request while we seek a better way to represent complex REST requests
-func GetStandardRequest() (req PlanningRequest) {
+func GetStandardRequest(weekday POI.Weekday) (req PlanningRequest) {
 	slot12 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 9, End: 10}}
 	slot13 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
 	stayTimes1 := []matching.TimeSlot{slot12, slot13}
@@ -290,6 +290,6 @@ func GetStandardRequest() (req PlanningRequest) {
 	}
 
 	req.SlotRequests = append(req.SlotRequests, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
-	req.Weekday = POI.DATE_FRIDAY
+	req.Weekday = weekday
 	return
 }
