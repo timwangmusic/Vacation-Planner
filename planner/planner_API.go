@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,14 +14,18 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"html/template"
 	"net/http"
+	"os"
+	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
 	MaxPlacesPerSlot = 4
 	MaxPlacesPerDay  = 12
+	ServerTimeout = time.Second * 15
 )
 
 type Planner interface {
@@ -385,5 +390,31 @@ func (planner *MyPlanner) HandlingRequests(serverPort string) {
 	myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
 		"radius", "{radius}", "weekday", "{weekday}").HandlerFunc(planner.planningApi).Methods("GET")
 
-	log.Fatal(http.ListenAndServe(serverPort, myRouter))
+	svr := &http.Server{
+		Addr:         serverPort,
+		Handler:      myRouter,
+		ReadTimeout:  ServerTimeout,
+		WriteTimeout: ServerTimeout,
+	}
+
+	go func() {
+		if err := svr.ListenAndServe(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	// block until receiving interrupting signal
+	<-c
+
+	// create a deadline for other connections to complete IO
+	ctx, cancel := context.WithTimeout(context.Background(), ServerTimeout)
+	defer cancel()
+
+	utils.CheckErrImmediate(svr.Shutdown(ctx), utils.LogError)
+
+	log.Info("Server gracefully shut down")
+	os.Exit(0)
 }
