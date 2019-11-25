@@ -24,7 +24,7 @@ type Config struct {
 func RunDevServer() {
 	conf := DevelopmentConfig{}
   
-	ymlFile, err := ioutil.ReadFile("Config/server_config.yml")
+	ymlFile, err := ioutil.ReadFile("config/server_config.yml")
 	utils.CheckErrImmediate(err, utils.LogFatal)
   
 	err = yaml.Unmarshal(ymlFile, &conf)
