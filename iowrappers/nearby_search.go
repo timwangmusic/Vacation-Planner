@@ -238,9 +238,5 @@ func parseFields(fields string) ([]maps.PlaceDetailsFieldMask, error) {
 }
 
 func logErr(err error, logLevel uint) bool {
-	utils.CheckErrImmediate(err, logLevel)
-	if err != nil {
-		return true
-	}
-	return false
+	return utils.CheckErrImmediate(err, logLevel)
 }

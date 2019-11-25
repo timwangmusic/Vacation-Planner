@@ -126,15 +126,15 @@ func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place,
 	log.Debugf("Redis update complete")
 }
 
-//TODO: use bulk insert for new places
 //update MongoDB if number of results is not sufficient
 func (poiSearcher *PoiSearcher) UpdateMongo(placeCat POI.PlaceCategory, places []POI.Place) {
 	numNewDocs := 0
 	for _, place := range places {
 		err := poiSearcher.dbHandler.InsertPlace(place, placeCat)
 		if !mgo.IsDup(err) { // if error is not caused by primary key duplication, further check the error
-			utils.CheckErrImmediate(err, utils.LogError)
-			numNewDocs++
+			if !utils.CheckErrImmediate(err, utils.LogError) {
+				numNewDocs++
+			}
 		}
 	}
 	log.Printf("Inserted %d places into the database", numNewDocs)

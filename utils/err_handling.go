@@ -25,7 +25,8 @@ func (error Error) Error() (res string) {
 	return res
 }
 
-func CheckErrImmediate(err error, level uint) {
+// check if error is nil and log error with severity if not
+func CheckErrImmediate(err error, level uint) bool {
 	if err != nil {
 		switch level {
 		case LogPanic:
@@ -49,7 +50,9 @@ func CheckErrImmediate(err error, level uint) {
 		if level < LogWarning {
 			debug.PrintStack()
 		}
+		return true
 	}
+	return false
 }
 
 func CheckErr(err Error) {
