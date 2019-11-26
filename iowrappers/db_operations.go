@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	"sync"
+	"sync/atomic"
 )
 
 type DatabaseHandler interface {
@@ -95,13 +98,23 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 	return
 }
 
-func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCategory) error {
+func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCategory, wg *sync.WaitGroup, newDocCounter *uint64) {
+	defer wg.Done()
 	collName := string(placeCat)
 	if _, exist := dbHandler.handlers[collName]; !exist {
-		return fmt.Errorf("collection %s does not exist", collName)
+		log.Error(fmt.Errorf("collection %s does not exist", collName))
+		return
 	}
 	collHandler := dbHandler.handlers[collName]
-	return collHandler.InsertPlace(place)
+	err := collHandler.InsertPlace(place)
+	if err != nil {
+		log.Error(err)
+		if mgo.IsDup(err) {
+			log.Debugf("Duplicate insertion of %s to the database", place.Name)
+		}
+	} else {
+		atomic.AddUint64(newDocCounter, 1)
+	}
 }
 
 // ensure the 2d-sphere index exist
