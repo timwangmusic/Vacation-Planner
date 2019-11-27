@@ -37,7 +37,7 @@ func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	json_, err := json.Marshal(place)
 	utils.CheckErrImmediate(err, utils.LogError)
 
-	redisClient.client.Set("place_details:place_ID:" + place.ID, json_, -1)
+	redisClient.client.Set("place_details:place_ID:"+place.ID, json_, -1)
 }
 
 // currently not used, but it is still a primitive implementation that might have faster search time compared
@@ -71,13 +71,15 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 		}
 		redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
 		cmdVal, cmdErr := redisClient.client.GeoAdd(redisKey, geolocation).Result()
-		utils.CheckErrImmediate(cmdErr, utils.LogError)
-		if cmdVal == 1 {
+
+		if !utils.CheckErrImmediate(cmdErr, utils.LogError) && cmdVal == 1 {
 			geoAddSuccessCount++
 			redisClient.cachePlace(place)
 		}
 	}
-	log.Infof("%d places geo added to Redis", geoAddSuccessCount)
+	if geoAddSuccessCount > 0 {
+		log.Infof("%d places geo added to Redis", geoAddSuccessCount)
+	}
 }
 
 // obtain place info from Redis based with key place_details:place_ID:placeID

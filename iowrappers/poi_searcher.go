@@ -2,11 +2,11 @@ package iowrappers
 
 import (
 	"fmt"
-	"github.com/globalsign/mgo"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"strings"
+	"sync"
 )
 
 const (
@@ -128,14 +128,14 @@ func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place,
 
 //update MongoDB if number of results is not sufficient
 func (poiSearcher *PoiSearcher) UpdateMongo(placeCat POI.PlaceCategory, places []POI.Place) {
-	numNewDocs := 0
+	var wg sync.WaitGroup
+	var numNewDocs uint64 = 0
+	wg.Add(len(places))
 	for _, place := range places {
-		err := poiSearcher.dbHandler.InsertPlace(place, placeCat)
-		if !mgo.IsDup(err) { // if error is not caused by primary key duplication, further check the error
-			if !utils.CheckErrImmediate(err, utils.LogError) {
-				numNewDocs++
-			}
-		}
+		go poiSearcher.dbHandler.InsertPlace(place, placeCat, &wg, &numNewDocs)
 	}
-	log.Printf("Inserted %d places into the database", numNewDocs)
+	wg.Wait()
+	if numNewDocs > 0 {
+		log.Printf("Inserted %d places into the database", numNewDocs)
+	}
 }
