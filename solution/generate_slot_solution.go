@@ -96,6 +96,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 				PlaceNames:      candidate.PlaceNames,
 				PlaceIDS:        candidate.PlaceIds,
 				PlaceLocations:  candidate.PlaceLocations,
+				PlaceAddresses:  candidate.PlaceAddresses,
 				EndPlaceDefault: matching.Place{},
 				Score:           candidate.Score,
 				IsSet:           true,
@@ -147,7 +148,6 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 		if curCandidate.IsSet {
 			_, travelTimeInMin := GetTravelTimeByDistance(categorizedPlaces, mdIter)
 			if travelTimeInMin <= float64(minuteLimit) {
-				//FIXME: ADD TRIP EVENT GENERATION FUNCTION CALL
 				slotCandidates = append(slotCandidates, curCandidate)
 			}
 		}
@@ -166,6 +166,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 			Score:          slotSolutionCandidate.Score,
 			PlaceNames:     slotSolutionCandidate.PlaceNames,
 			PlaceLocations: slotSolutionCandidate.PlaceLocations,
+			PlaceAddresses: slotSolutionCandidate.PlaceAddresses,
 		}
 		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
 	}

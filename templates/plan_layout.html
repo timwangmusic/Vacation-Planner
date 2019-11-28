@@ -36,6 +36,7 @@
                 <th> Start Time (Hour) </th>
                 <th> End Time (Hour) </th>
                 <th> Place Name </th>
+                <th> Address </th>
             </tr>
             {{range $p}}
                 {{range .Places}}
@@ -43,6 +44,7 @@
                         <td> {{.StartTime}} </td>
                         <td> {{.EndTime}} </td>
                         <td> {{.PlaceName}} </td>
+                        <td> {{.Address}} </td>
                     </tr>
                 {{end}}
             {{end}}
