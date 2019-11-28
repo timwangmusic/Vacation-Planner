@@ -2,7 +2,7 @@ Thank you for your contribution to the repo.
 Before submitting this PR, please make sure:
 
 ## Description
-clearly describe your problem, bug or new feature
+clearly describe changes in your PR, new feature or bug fixes
 
 ## Root Cause
 Briefly describe the root cause and analysis of the problem
