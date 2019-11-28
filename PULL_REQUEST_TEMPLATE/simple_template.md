@@ -10,11 +10,12 @@ Briefly describe the root cause and analysis of the problem
 ## Solution description
 Describe your code changes in detail for reviewers. Explain the solution and how it fixes the issue case
 
-## Covered Unit tests/E2E tests
+## Covered E2E tests
 Were any new tests recorded for this fix, or manually tested
 
 
 ## Final Checks
-- [ ] Your code builds clean without any errors or warnings
+- [ ] Have you removed commented code ?
+- [ ] Have you used gofmt to format your code ?
 - [ ] You are using approved terminology
 - [ ] You have added unit tests
