@@ -7,7 +7,7 @@ clearly describe your problem, bug or new feature
 ## Root Cause
 Briefly describe the root cause and analysis of the problem
 
-## Solution desciption
+## Solution description
 Describe your code changes in detail for reviewers. Explain the solution and how it fixes the issue case
 
 ## Covered Unit tests/E2E tests
