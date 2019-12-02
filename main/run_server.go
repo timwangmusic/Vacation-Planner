@@ -12,14 +12,14 @@ type Config struct {
 		ServerPort string `envconfig:"PORT" default:":10000"`
 	}
 	Database struct {
-		MongoDBName string `envconfig:"MONGO_DB_NAME" default:"VacationPlanner"`
+		MongoDBName string `envconfig:"MONGODB_NAME" default:"VacationPlanner"`
 		MongoDBUrl  string `envconfig:"MONGODB_URI" required:"true"`
 	}
 	Redis struct {
 		RedisUrl        string `envconfig:"REDISCLOUD_URL" required:"true"`
-		RedisStreamName string `default:"stream:planning_api_usage"`
+		RedisStreamName string `default:"stream:planning_api_usage" split_words:"true"`
 	}
-	MapsClientApiKey string `envconfig:"MAPS_CLIENT_API_KEY" required:"true"`
+	MapsClientApiKey string `required:"true" split_words:"true"`
 }
 
 func RunDevServer() {
