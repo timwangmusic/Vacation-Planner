@@ -4,6 +4,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"net/url"
 	"testing"
 )
 
@@ -16,7 +17,9 @@ func TestNearbySearch(t *testing.T) {
 	defer mockServer.Close()
 
 	redisClient := iowrappers.RedisClient{}
-	redisClient.Init(mockServer.Addr(), "", 0)
+	redisUrl := "redis://" + mockServer.Addr()
+	redisURL, _ := url.Parse(redisUrl)
+	redisClient.Init(redisURL)
 
 	places := make([]POI.Place, 2)
 	places[0] = POI.Place{

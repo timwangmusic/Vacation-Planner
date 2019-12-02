@@ -4,6 +4,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"net/url"
 	"testing"
 )
 
@@ -54,7 +55,9 @@ func TestGetPlaces(t *testing.T) {
 	}
 
 	redisClient := iowrappers.RedisClient{}
-	redisClient.Init(mockServer.Addr(), "", 0)
+	redisUrl := "redis://" + mockServer.Addr()
+	redisURL, _ := url.Parse(redisUrl)
+	redisClient.Init(redisURL)
 
 	// cache places
 	redisClient.SetPlacesOnCategory(places)

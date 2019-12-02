@@ -1,43 +1,44 @@
 package main
 
 import (
+	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/planner"
-	"github.com/weihesdlegend/Vacation-planner/utils"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"os"
+	"net/url"
 )
 
-type DevelopmentConfig struct {
-	Conf Config `yaml:"development_config"`
-}
-
 type Config struct {
-	MongoDBUrl       string `yaml:"mongo_url"`
-	RedisUrl         string `yaml:"redis_url"`
-	MapsClientApiKey string `yaml:"maps_client_api_key"`
-	RedisStreamName  string `yaml:"redis_stream_name"`
-	ServerPort		 string `yaml:"server_port"`
+	Server struct {
+		ServerPort string `envconfig:"PORT" default:":10000"`
+	}
+	Database struct {
+		MongoDBName string `envconfig:"MONGO_DB_NAME" default:"VacationPlanner"`
+		MongoDBUrl  string `envconfig:"MONGODB_URI" required:"true"`
+	}
+	Redis struct {
+		RedisUrl        string `envconfig:"REDISCLOUD_URL" required:"true"`
+		RedisStreamName string `default:"stream:planning_api_usage"`
+	}
+	MapsClientApiKey string `envconfig:"MAPS_CLIENT_API_KEY" required:"true"`
 }
 
 func RunDevServer() {
-	conf := DevelopmentConfig{}
-  
-	ymlFile, err := ioutil.ReadFile("config/server_config.yml")
-	utils.CheckErrImmediate(err, utils.LogFatal)
-  
-	err = yaml.Unmarshal(ymlFile, &conf)
-	utils.CheckErrImmediate(err, utils.LogFatal)
-
-	conf.Conf.MapsClientApiKey = os.Getenv("MAPS_CLIENT_API_KEY")
-	if conf.Conf.MapsClientApiKey == "" {
-		log.Fatal("environment variable maps client API key is not set")
+	conf := Config{}
+	err := envconfig.Process("", &conf)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	log.Info(conf.Redis.RedisUrl)
+	redisURL, err := url.Parse(conf.Redis.RedisUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	myPlanner := planner.MyPlanner{}
-	conf_ := conf.Conf
-	myPlanner.Init(conf_.MapsClientApiKey, conf_.MongoDBUrl, conf_.RedisUrl, conf_.RedisStreamName)
-	myPlanner.HandlingRequests(conf_.ServerPort)
+	myPlanner.Init(conf.MapsClientApiKey, conf.Database.MongoDBName, conf.Database.MongoDBUrl, redisURL,
+		conf.Redis.RedisStreamName)
+	myPlanner.HandlingRequests(conf.Server.ServerPort)
 }
 
 func main() {

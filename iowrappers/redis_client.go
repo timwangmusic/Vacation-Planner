@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -24,11 +25,11 @@ type RedisClient struct {
 	client redis.Client
 }
 
-func (redisClient *RedisClient) Init(addr string, password string, databaseIdx int) {
+func (redisClient *RedisClient) Init(url *url.URL) {
+	password, _ := url.User.Password()
 	redisClient.client = *redis.NewClient(&redis.Options{
-		Addr:     addr,
+		Addr:     url.Host,
 		Password: password,
-		DB:       databaseIdx,
 	})
 }
 
