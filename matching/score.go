@@ -2,10 +2,9 @@
 package matching
 
 import (
+	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"gonum.org/v1/gonum/floats"
-	"Vacation-planner/POI"
-	"Vacation-planner/utils"
 	"gonum.org/v1/gonum/stat"
 	"math"
 )
@@ -106,9 +105,8 @@ func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place){
 
 func Score(places []Place) float64{
 	if len(places) == 1{
-		maxRating := 5.0
 		if places[0].Price == 0{
-			return float64(places[0].Rating) / maxRating
+			return AvgRating / AvgPricing // set to average single place rating-price ratio
 		}
 		return float64(places[0].Rating) / places[0].Price
 	}
