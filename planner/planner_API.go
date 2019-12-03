@@ -14,6 +14,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"html/template"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"regexp"
@@ -118,11 +119,10 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 	return
 }
 
-func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisAddr string, redisStreamName string) {
-	dbName := "VacationPlanner"
-	planner.Solver.Init(mapsClientApiKey, dbName, dbUrl, redisAddr, "", 0)
+func (planner *MyPlanner) Init(mapsClientApiKey string, dbName string, dbUrl string, redisUrl *url.URL, redisStreamName string) {
+	planner.Solver.Init(mapsClientApiKey, dbName, dbUrl, redisUrl)
 
-	planner.RedisLogger.Init(redisAddr, "", 0)
+	planner.RedisLogger.Init(redisUrl)
 	planner.RedisStreamName = redisStreamName
 	if redisStreamName == "" {
 		planner.RedisStreamName = "stream:planning_api_usage"

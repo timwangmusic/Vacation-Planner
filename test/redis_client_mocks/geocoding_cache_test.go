@@ -3,6 +3,7 @@ package redis_client_mocks
 import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -16,7 +17,9 @@ func TestGeoCodingCache(t *testing.T) {
 	defer mockServer.Close()
 
 	redisClient := iowrappers.RedisClient{}
-	redisClient.Init(mockServer.Addr(), "", 0)
+	redisUrl := "redis://" + mockServer.Addr()
+	redisURL, _ := url.Parse(redisUrl)
+	redisClient.Init(redisURL)
 
 	geoCodeQuery := iowrappers.GeocodeQuery{
 		City:    "New York City",

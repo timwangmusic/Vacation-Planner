@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	"net/url"
 	"strings"
 	"sync"
 )
@@ -29,7 +30,7 @@ type GeocodeQuery struct {
 }
 
 func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUrl string,
-	redisAddr string, redisPsw string, redisIdx int) {
+	redisUrl *url.URL) {
 	if mapsClient == nil || mapsClient.client == nil {
 		log.Fatal("maps client is nil")
 	}
@@ -40,7 +41,7 @@ func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUr
 	poiSearcher.dbHandler.Init(dbName, dbUrl)
 
 	poiSearcher.redisClient = &RedisClient{}
-	poiSearcher.redisClient.Init(redisAddr, redisPsw, redisIdx)
+	poiSearcher.redisClient.Init(redisUrl)
 }
 
 // currently geocode is equivalent to mapping city and country to latitude and longitude
