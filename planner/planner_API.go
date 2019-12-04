@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/didip/tollbooth"
+	"github.com/didip/tollbooth/limiter"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -24,9 +26,11 @@ import (
 )
 
 const (
-	MaxPlacesPerSlot = 4
-	MaxPlacesPerDay  = 12
-	ServerTimeout = time.Second * 15
+	MaxPlacesPerSlot         = 4
+	MaxPlacesPerDay          = 12
+	MaxGetRequestsPerSecond  = 10.0 // max GET QPS
+	MaxPostRequestsPerSecond = 8.0  // max POST QPS
+	ServerTimeout            = time.Second * 15
 )
 
 type Planner interface {
@@ -131,7 +135,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbName string, dbUrl str
 }
 
 // API definitions
-func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
+func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, _ *http.Request) {
 	_, err := fmt.Fprint(w, "Welcome to use the Vacation Planner system!")
 	utils.CheckErrImmediate(err, utils.LogError)
 }
@@ -383,12 +387,20 @@ func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
 func (planner *MyPlanner) HandlingRequests(serverPort string) {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
+	getLimiter := tollbooth.NewLimiter(MaxGetRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
+	getLimiter.SetMethods([]string{"GET"})
+	getLimiter.SetMessage("You have reached maximum GET API limit")
+
 	myRouter.HandleFunc("/", planner.welcomeApi)
 
-	myRouter.HandleFunc("/planning/v1", planner.postPlanningApi).Methods("POST")
-
 	myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
-		"radius", "{radius}", "weekday", "{weekday}").HandlerFunc(planner.planningApi).Methods("GET")
+		"radius", "{radius}", "weekday", "{weekday}").Handler(tollbooth.LimitFuncHandler(getLimiter, planner.planningApi)).Methods("GET")
+
+	postLimiter := tollbooth.NewLimiter(MaxPostRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
+	postLimiter.SetMethods([]string{"POST"})
+	postLimiter.SetMessage("You have reached maximum POST API limit")
+
+	myRouter.Handle("/planning/v1", tollbooth.LimitFuncHandler(postLimiter, planner.postPlanningApi)).Methods("POST")
 
 	svr := &http.Server{
 		Addr:         serverPort,
