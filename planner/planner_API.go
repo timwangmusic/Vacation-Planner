@@ -38,7 +38,7 @@ type Planner interface {
 }
 
 type MyPlanner struct {
-	RedisLogger        iowrappers.RedisClient
+	RedisClient        iowrappers.RedisClient
 	RedisStreamName    string
 	Solver             solution.Solver
 	ResultHTMLTemplate *template.Template
@@ -80,9 +80,26 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
+func (planner *MyPlanner) Init(mapsClientApiKey string, dbName string, dbUrl string, redisUrl *url.URL, redisStreamName string) {
+	planner.RedisClient.Init(redisUrl)
+	planner.RedisStreamName = redisStreamName
+	if redisStreamName == "" {
+		planner.RedisStreamName = "stream:planning_api_usage"
+	}
+
+	PoiSearcher := &iowrappers.PoiSearcher{}
+	mapsClient := &iowrappers.MapsClient{}
+	utils.CheckErrImmediate(mapsClient.Init(mapsClientApiKey), utils.LogFatal)
+	PoiSearcher.Init(mapsClient, dbName, dbUrl, redisUrl)
+
+	planner.Solver.Init(PoiSearcher)
+
+	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
+}
+
 // single-day, single-city planning method
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
-	planningResp, err := planner.Solver.Solve(*req, planner.RedisLogger)
+	planningResp, err := planner.Solver.Solve(*req, planner.RedisClient)
 	utils.CheckErrImmediate(err, utils.LogInfo)
 	if err != nil {
 		resp.Err = err.Error()
@@ -121,17 +138,6 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		resp.TravelDestination = "Dream Vacation Destination"
 	}
 	return
-}
-
-func (planner *MyPlanner) Init(mapsClientApiKey string, dbName string, dbUrl string, redisUrl *url.URL, redisStreamName string) {
-	planner.Solver.Init(mapsClientApiKey, dbName, dbUrl, redisUrl)
-
-	planner.RedisLogger.Init(redisUrl)
-	planner.RedisStreamName = redisStreamName
-	if redisStreamName == "" {
-		planner.RedisStreamName = "stream:planning_api_usage"
-	}
-	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
 }
 
 // API definitions
