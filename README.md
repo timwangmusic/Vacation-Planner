@@ -21,9 +21,11 @@ The service then suggest several travel plans for the user.
 ## Installation (Mac)
 * git clone the repository
 * update Homebrew `brew update`
-* Install MongoDB using Homebrew with `brew install mongodb`. The database data by default locates in `/data/db`.
-You need to give permission to write the directory using `sudo chown -R id -un /data/db` and enter your password.
-* Install Redis using Homebrew with `brew install redis`
+* Install MongoDB using Homebrew as
+*   + For mongodb please follow the latest instructions at - https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/
+    + Create the folder `/data/db` . The database data by default locates in `/data/db`.
+* You need to give permission to write the directory using `sudo chmod 0755 /data/db && sudo chown $USER /data/db` and enter your password if prompted.
+* Install Redis using Homebrew with `brew install redis`, if redis is already present, use `brew upgrade redis`
 
 ## Run REST server
 * Obtain Google Maps API key and set the `MAPS_CLIENT_API_KEY`, `MONGODB_URI=:27017`,
