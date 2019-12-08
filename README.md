@@ -22,10 +22,10 @@ The service then suggest several travel plans for the user.
 * git clone the repository
 * update Homebrew `brew update`
 * Install MongoDB using Homebrew
-*   + Follow the latest instructions at - https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/
-    + After downloading Mongo, create the “db” directory. This is where the Mongo data files will live. You can create the directory in the default location by running **mkdir -p /data/db**
-    + Run the Mongo daemon, in one of your terminal windows **run mongod**. This should start the Mongo server
-* You need to give permission to write the directory using `sudo chmod 0755 /data/db && sudo chown $USER /data/db` and enter your password if prompted.
+    + Follow the latest instructions at - https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/
+    + After downloading MongoDB, optionally create the **DB** directory. This is where the Mongo data files will live
+* Run the Mongo daemon, in one of your terminal windows do **brew services start mongodb-community**. This should start the Mongo server
+* You need to give permission to write the directory using `sudo chmod 0755 /data/db && sudo chown $USER /data/db` and enter your password if prompted
 * Install Redis using Homebrew with `brew install redis`, if redis is already present, consider execute`brew upgrade redis`
 
 ## Run REST server
@@ -33,7 +33,7 @@ The service then suggest several travel plans for the user.
 `REDISCLOUD_URL=redis://localhost:6379` environment variables.
 * Start (in background) Redis service with `brew services start redis`
 * Start (in background) MongoDB service with `mongod --fork --syslog`
-* Execute `go run main/run_server.go` to start the REST server.
+* Execute `go run main/run_server.go` to start the REST server and query the REST API link above to check the http response
 
 ## Future Releases
 * Multi-city, multi-day vacation planning
