@@ -10,5 +10,5 @@ func (planner MyPlanner) PlanningEventLogging(event PlanningEvent) {
 		"city":    event.City,
 		"country": event.Country,
 	}
-	planner.RedisLogger.StreamsLogging(planner.RedisStreamName, eventData)
+	planner.RedisClient.StreamsLogging(planner.RedisStreamName, eventData)
 }

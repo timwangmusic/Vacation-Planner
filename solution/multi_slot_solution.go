@@ -7,7 +7,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -31,12 +30,8 @@ const (
 	NoValidSolution              = 404
 )
 
-func (solver *Solver) Init(apiKey string, dbName string, dbUrl string, redisUrl *url.URL) {
+func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
 	solver.matcher = &matching.TimeMatcher{}
-	poiSearcher := &iowrappers.PoiSearcher{}
-	mapsClient := &iowrappers.MapsClient{}
-	utils.CheckErrImmediate(mapsClient.Create(apiKey), utils.LogFatal)
-	poiSearcher.Init(mapsClient, dbName, dbUrl, redisUrl)
 	solver.matcher.Init(poiSearcher)
 }
 

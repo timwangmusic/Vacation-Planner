@@ -7,7 +7,7 @@ import (
 )
 
 type SearchClient interface {
-	Create(apiKey string) error
+	Init(apiKey string) error
 }
 
 type MapsClient struct {
@@ -17,7 +17,7 @@ type MapsClient struct {
 }
 
 // create google maps client with api key
-func (c *MapsClient) Create(apiKey string) error {
+func (c *MapsClient) Init(apiKey string) error {
 	var err error
 	c.client, err = maps.NewClient(maps.WithAPIKey(apiKey))
 	if err != nil {
