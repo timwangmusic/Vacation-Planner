@@ -15,22 +15,25 @@ The service then suggest several travel plans for the user.
 ## REST API
 * The Planning REST API takes in user request with destination and time info and response with suggested trip details.
 
-    `url: http://hostname/planning/country/city/search_radius`
+    `http://localhost:10000/planning/v1?/country=us&city=chicago&radius=20000&weekday=5`
 
 
 ## Installation (Mac)
 * git clone the repository
 * update Homebrew `brew update`
-* Install MongoDB using Homebrew with `brew install mongodb`. The database data by default locates in `/data/db`.
-You need to give permission to write the directory using `sudo chown -R id -un /data/db` and enter your password.
-* Install Redis using Homebrew with `brew install redis`
+* Install MongoDB using Homebrew
+    + Follow the latest instructions at - https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/
+    + After downloading MongoDB, optionally create the **DB** directory. This is where the Mongo data files will live
+* Run the Mongo daemon, in one of your terminal windows do **brew services start mongodb-community**. This should start the Mongo server
+* You need to give permission to write the directory using `sudo chmod 0755 /data/db && sudo chown $USER /data/db` and enter your password if prompted
+* Install Redis using Homebrew with `brew install redis`, if redis is already present, consider execute`brew upgrade redis`
 
 ## Run REST server
 * Obtain Google Maps API key and set the `MAPS_CLIENT_API_KEY`, `MONGODB_URI=:27017`,
 `REDISCLOUD_URL=redis://localhost:6379` environment variables.
 * Start (in background) Redis service with `brew services start redis`
 * Start (in background) MongoDB service with `mongod --fork --syslog`
-* Execute `go run main/run_server.go` to start the REST server.
+* Execute `go run main/run_server.go` to start the REST server and query the REST API link above to check the http response
 
 ## Future Releases
 * Multi-city, multi-day vacation planning
