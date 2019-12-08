@@ -48,6 +48,7 @@ type TimeSectionPlace struct {
 	PlaceName string   `json:"place_name"`
 	StartTime POI.Hour `json:"start_time"`
 	EndTime   POI.Hour `json:"end_time"`
+	Address   string   `json:"address"`
 }
 
 type TimeSectionPlaces struct {
@@ -125,6 +126,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 					PlaceName: placeName,
 					StartTime: req.SlotRequests[idx].StayTimes[pIdx].Slot.Start,
 					EndTime:   req.SlotRequests[idx].StayTimes[pIdx].Slot.End,
+					Address:   slotSol.PlaceAddresses[pIdx],
 				})
 			}
 			resp.Places[sIdx] = append(resp.Places[sIdx], timeSectionPlaces)

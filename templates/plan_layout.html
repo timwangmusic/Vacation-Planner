@@ -14,9 +14,25 @@
         table {
             border-style: solid;
             border-width: thin;
+            border-collapse: collapse;
         }
         th {
-            color: dodgerblue;
+            border: 1px solid #cecfd5;
+            padding: 10px 15px;
+        }
+        td {
+            border: 1px solid #cecfd5;
+            padding: 10px 15px;
+        }
+        h3 {
+            color: mediumvioletred;
+        }
+        tbody tr:nth-child(even) {
+            background: #f0f0f2;
+        }
+        thead {
+            background: #395870;
+            color: antiquewhite;
         }
     </style>
 </head>
@@ -31,22 +47,34 @@
     {{/*    iterate over multi-slot solutions*/}}
     {{range $i, $p := .Places}}
         {{/*        create one table for each multi-slot solution*/}}
-        <table>
-            <tr>
-                <th> Start Time (Hour) </th>
-                <th> End Time (Hour) </th>
-                <th> Place Name </th>
-            </tr>
-            {{range $p}}
-                {{range .Places}}
-                    <tr>
-                        <td> {{.StartTime}} </td>
-                        <td> {{.EndTime}} </td>
-                        <td> {{.PlaceName}} </td>
-                    </tr>
+            <h3> One-day Plan </h3>
+            <p>
+                <table>
+                <thead>
+                <tr>
+                    <th> Place Name </th>
+                    <th> From (Hour) </th>
+                    <th> To (Hour) </th>
+                    <th> Address </th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {{range $p}}
+                    {{range .Places}}
+                        <tr>
+                            <td> {{.PlaceName}} </td>
+                            <td> {{.StartTime}} </td>
+                            <td> {{.EndTime}} </td>
+                            <td> {{.Address}} </td>
+                        </tr>
+                    {{end}}
                 {{end}}
-            {{end}}
-        </table>
+                </tbody>
+
+                </table>
+            </p>
+
     {{end}}
 {{end}}
 
