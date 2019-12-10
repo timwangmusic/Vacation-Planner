@@ -1,9 +1,5 @@
-.DS_Store
-.log
-.vscode
+.env
+.docker_build/
+bin/
 .idea
-/main/main.go
-Gopkg.lock
-Gopkg.toml
-vendor
-/test/.empty/
+.DS_Store
