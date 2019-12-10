@@ -38,6 +38,8 @@ func RunDevServer() {
 	myPlanner := planner.MyPlanner{}
 	myPlanner.Init(conf.MapsClientApiKey, conf.Database.MongoDBName, conf.Database.MongoDBUrl, redisURL,
 		conf.Redis.RedisStreamName)
+	log.Info("planner init success!")
+	log.Info(conf)
 	myPlanner.HandlingRequests(conf.Server.ServerPort)
 }
 
