@@ -81,8 +81,8 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
-func (planner *MyPlanner) Init(mapsClientApiKey string, dbName string, dbUrl string, redisUrl *url.URL, redisStreamName string) {
-	planner.RedisClient.Init(redisUrl)
+func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *url.URL, redisStreamName string, dbName string) {
+	planner.RedisClient.Init(redisURL)
 	planner.RedisStreamName = redisStreamName
 	if redisStreamName == "" {
 		planner.RedisStreamName = "stream:planning_api_usage"
@@ -91,7 +91,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbName string, dbUrl str
 	PoiSearcher := &iowrappers.PoiSearcher{}
 	mapsClient := &iowrappers.MapsClient{}
 	utils.CheckErrImmediate(mapsClient.Init(mapsClientApiKey), utils.LogFatal)
-	PoiSearcher.Init(mapsClient, dbName, dbUrl, redisUrl)
+	PoiSearcher.Init(mapsClient, dbName, dbUrl, redisURL)
 
 	planner.Solver.Init(PoiSearcher)
 
@@ -399,7 +399,7 @@ func (planner *MyPlanner) HandlingRequests(serverPort string) {
 	getLimiter.SetMethods([]string{"GET"})
 	getLimiter.SetMessage("You have reached maximum GET API limit")
 
-	myRouter.HandleFunc("/", planner.welcomeApi)
+	myRouter.HandleFunc("/", planner.welcomeApi).Methods("GET")
 
 	myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
 		"radius", "{radius}", "weekday", "{weekday}").Handler(tollbooth.LimitFuncHandler(getLimiter, planner.planningApi)).Methods("GET")
@@ -411,7 +411,7 @@ func (planner *MyPlanner) HandlingRequests(serverPort string) {
 	myRouter.Handle("/planning/v1", tollbooth.LimitFuncHandler(postLimiter, planner.postPlanningApi)).Methods("POST")
 
 	svr := &http.Server{
-		Addr:         serverPort,
+		Addr:         ":" + serverPort,
 		Handler:      myRouter,
 		ReadTimeout:  ServerTimeout,
 		WriteTimeout: ServerTimeout,
