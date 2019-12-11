@@ -1,6 +1,7 @@
 package solution
 
 import (
+	"container/heap"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -11,8 +12,7 @@ import (
 	"time"
 )
 
-const CandidateQueueLength = 20
-const CandidateQueueDisplay = 15
+const CandidateQueueLength = 15
 
 type TripEvent struct {
 	tag        uint8
@@ -33,28 +33,24 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 		m[candidateKey] = candidate
 	}
 	// use limited-size minimum priority queue
-	priorityQueue := graph.MinPriorityQueue{Nodes: make([]graph.Vertex, 0)}
+	priorityQueue := &graph.MinPriorityQueueVertex{}
 	for _, vertex := range vertexes {
-		if priorityQueue.Size() == CandidateQueueLength {
-			top := priorityQueue.GetRoot()
-			if top.Name != "" && vertex.Key > top.Key { // protect against the case of CandidateQueueLength == 0
-				priorityQueue.ExtractTop()
+		if priorityQueue.Len() == CandidateQueueLength {
+			top := (*priorityQueue)[0]
+			if vertex.Key > top.Key {
+				heap.Pop(priorityQueue)
 			} else {
 				continue
 			}
 		}
-		priorityQueue.Insert(vertex)
-	}
-
-	// remove extra vertexes from priority queue
-	for priorityQueue.Size() > CandidateQueueDisplay {
-		priorityQueue.ExtractTop()
+		heap.Push(priorityQueue, vertex)
 	}
 
 	res := make([]SlotSolutionCandidate, 0)
 
-	for priorityQueue.Size() > 0 {
-		res = append(res, m[priorityQueue.ExtractTop()])
+	for priorityQueue.Len() > 0 {
+		top := heap.Pop(priorityQueue).(graph.Vertex)
+		res = append(res, m[top.Name])
 	}
 
 	return res
