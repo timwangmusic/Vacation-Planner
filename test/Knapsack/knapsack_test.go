@@ -1,9 +1,9 @@
 package test
 
 import (
-	"Vacation-planner/POI"
-	"Vacation-planner/matching"
-	"Vacation-planner/utils"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"testing"
 )
 
@@ -34,5 +34,6 @@ func TestKnapsack(t *testing.T){
 	if len(result)==0 {
 		t.Error("No result is returned.")
 	}
-	t.Log(result)
+	t.Log(len(result))
+	print(result)
 }
