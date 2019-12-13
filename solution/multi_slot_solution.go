@@ -71,17 +71,26 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		candidates[idx] = make([]SlotSolutionCandidate, 0)
 	}
 
+	slotSolutionRedisKeys := make([]string, len(req.SlotRequests))
 	for idx, slotRequest := range req.SlotRequests {
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
+		slotSolution, slotSolutionRedisKey := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
 		for _, candidate := range slotSolution.SlotSolutionCandidates {
 			candidates[idx] = append(candidates[idx], candidate)
 		}
+		slotSolutionRedisKeys[idx] = slotSolutionRedisKey
 	}
 
 	resp.Solutions = genBestMultiSlotSolutions(candidates)
+	if len(resp.Solutions) == 0 {
+		invalidateSlotSolutionCache(&redisCli, slotSolutionRedisKeys)
+	}
 	return
+}
+
+func invalidateSlotSolutionCache(redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
+	redisCli.RemoveKeys(slotSolutionRedisKeys)
 }
 
 // return false if travel time between clusters exceed limit
