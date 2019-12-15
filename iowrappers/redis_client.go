@@ -25,6 +25,10 @@ type RedisClient struct {
 	client redis.Client
 }
 
+func (redisClient RedisClient) RemoveKeys(keys []string) {
+	redisClient.client.Del(keys...)
+}
+
 func (redisClient *RedisClient) Init(url *url.URL) {
 	password, _ := url.User.Password()
 	redisClient.client = *redis.NewClient(&redis.Options{
@@ -320,8 +324,8 @@ func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, 
 	}
 }
 
-func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (solution SlotSolutionCacheResponse, err error) {
-	redisKey := genSlotSolutionCacheKey(req)
+func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (solution SlotSolutionCacheResponse, redisKey string, err error) {
+	redisKey = genSlotSolutionCacheKey(req)
 	json_, err := redisClient.client.Get(redisKey).Result()
 	if err != nil {
 		log.Errorf("get slot solution cache failure for request with key: %s", redisKey)
