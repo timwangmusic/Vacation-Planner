@@ -75,6 +75,9 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
 		slotSolution := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
+		if len(slotSolution.SlotSolutionCandidates) == 0 {
+			continue
+		}
 		for _, candidate := range slotSolution.SlotSolutionCandidates {
 			candidates[idx] = append(candidates[idx], candidate)
 		}
