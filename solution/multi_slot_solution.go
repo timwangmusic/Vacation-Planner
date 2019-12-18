@@ -28,6 +28,7 @@ const (
 	ValidSolutionFound           = 200
 	InvalidSolverReqTimeInterval = 400
 	InvalidRequestLocation       = 400
+	InvalidSlot					 = 400
 	NoValidSolution              = 404
 )
 
@@ -73,10 +74,11 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 
 	for idx, slotRequest := range req.SlotRequests {
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
+		slotSolution, err := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
-		if len(slotSolution.SlotSolutionCandidates) == 0 {
-			continue
+		if err != nil {
+			resp.Errcode = InvalidSlot
+			return resp, err
 		}
 		for _, candidate := range slotSolution.SlotSolutionCandidates {
 			candidates[idx] = append(candidates[idx], candidate)

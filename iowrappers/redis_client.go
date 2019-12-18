@@ -324,7 +324,7 @@ func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (s
 	redisKey := genSlotSolutionCacheKey(req)
 	json_, err := redisClient.client.Get(redisKey).Result()
 	if err != nil {
-		log.Errorf("get slot solution cache failure for request with key: %s", redisKey)
+		log.Infof("redis server find no result for key: %s", redisKey)
 		return
 	}
 	err = json.Unmarshal([]byte(json_), &solution)
