@@ -1,6 +1,7 @@
 package iowrappers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
@@ -81,16 +82,16 @@ func (dbHandler *DbHandler) FindUser(username string) (u *user.User, err error) 
 	return
 }
 
-func (dbHandler *DbHandler) UserLogin(credential user.Credential) (err error, token string) {
+func (dbHandler *DbHandler) UserLogin(credential user.Credential) (token string, err error) {
 	u, userFindErr := dbHandler.FindUser(credential.Username)
 	if userFindErr != nil { // user not found
-		err = userFindErr
+		err = errors.New("user not found")
 		return
 	}
 
 	pswCompErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(credential.Password))
 	if pswCompErr != nil { // wrong password
-		err = pswCompErr
+		err = errors.New("wrong password")
 		return
 	}
 
