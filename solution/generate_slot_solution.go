@@ -3,8 +3,6 @@ package solution
 import (
 	"container/heap"
 	"errors"
-	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
@@ -64,13 +62,11 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient) (slotSolution SlotSolution, err error) {
 	if len(stayTimes) != len(evTag) {
 		err = errors.New("user designated stay time does not match tag.")
-		log.Error(err.Error())
 		return
 	}
 
-	slotSolution.SetTag(evTag)
-	if !slotSolution.IsSlotTagValid() {
-		err = errors.New(fmt.Sprintf("Slot tag %s is invalid.", evTag))
+	err = slotSolution.SetTag(evTag)
+	if err != nil {
 		return
 	}
 
@@ -94,8 +90,8 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 		Weekday:   weekday,
 	}
 
-	slotSolutionCacheResp, err := redisClient.GetSlotSolution(redisReq)
-	if err == nil { // cache hit
+	slotSolutionCacheResp, err2 := redisClient.GetSlotSolution(redisReq)
+	if err2 == nil { // cache hit
 		for _, candidate := range slotSolutionCacheResp.SlotSolutionCandidate {
 			slotSolutionCandidate := SlotSolutionCandidate{
 				PlaceNames:      candidate.PlaceNames,
@@ -109,9 +105,6 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 			slotSolution.SlotSolutionCandidates = append(slotSolution.SlotSolutionCandidates, slotSolutionCandidate)
 		}
 		return
-	} else {
-		//clear the error so that subsequent code does not handle this error
-		err = nil
 	}
 
 	slotSolution.SlotSolutionCandidates = make([]SlotSolutionCandidate, 0)
@@ -142,7 +135,6 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 	mdIter := MDtagIter{}
 	if !mdIter.Init(evTag, categorizedPlaces) {
 		err = errors.New("time slot place category tag iterator init failure")
-		log.Error(err.Error())
 		return
 	}
 

@@ -1,6 +1,8 @@
 package solution
 
 import (
+	"errors"
+	"fmt"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"strings"
 	"time"
@@ -42,21 +44,26 @@ type SlotSolutionCandidate struct {
 	IsSet           bool           `json:"is_set"`
 }
 
-func (slotSolution *SlotSolution) SetTag(tag string) {
-	slotSolution.SlotTag = tag
+func (slotSolution *SlotSolution) SetTag(tag string) (err error){
+	if slotSolution.IsSlotTagValid(tag){
+		slotSolution.SlotTag = tag
+	} else {
+		err = errors.New(fmt.Sprintf("Slot tag %s is invalid.", tag))
+	}
+	return err
 }
 
 /*
 *This function checks if the slots in the solution fits the
 *solution requirement
  */
-func (slotSolution *SlotSolution) IsSlotTagValid() bool {
-	if slotSolution.SlotTag == "" {
+func (slotSolution *SlotSolution) IsSlotTagValid(tag string) bool {
+	if tag == "" {
 		return false
 	} else {
 		var eatcount uint8 = 0
 		var vstcount uint8 = 0
-		for _, c := range slotSolution.SlotTag {
+		for _, c := range tag {
 			if c == 'e' || c == 'E' {
 				eatcount++
 			} else if c == 'v' || c == 'V' {
