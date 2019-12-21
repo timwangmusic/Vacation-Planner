@@ -5,6 +5,8 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
+	"os"
+	"strings"
 )
 
 type UserLoginResponse struct {
@@ -24,6 +26,16 @@ func (planner MyPlanner) UserSignup(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(decodeErr)
 		return
 	}
+
+	userLevel := user.LevelRegular
+	adminUsers := strings.Split(os.Getenv("ADMIN_USERS"), ",")
+	for _, username := range adminUsers {
+		if username == u.Username {
+			userLevel = user.LevelAdmin
+		}
+	}
+
+	u.UserLevel = userLevel
 
 	createErr := planner.LoginHandler.CreateUser(u)
 	if createErr != nil {
@@ -64,4 +76,25 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 		Username: c.Username,
 		Jwt:      token,
 	})
+}
+
+// remove user handler
+func (planner MyPlanner) RemoveUser(w http.ResponseWriter, r *http.Request) {
+	removeReq := user.RemoveUserRequest{}
+
+	decodeErr := json.NewDecoder(r.Body).Decode(&removeReq)
+	if decodeErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(decodeErr)
+		return
+	}
+
+	err := planner.LoginHandler.RemoveUser(removeReq.CurrentUser, removeReq.UserToRemove)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+
+	_ = json.NewEncoder(w).Encode("Removal success")
 }

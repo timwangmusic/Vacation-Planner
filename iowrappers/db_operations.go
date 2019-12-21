@@ -12,6 +12,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/crypto/bcrypt"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -73,6 +74,32 @@ func (dbHandler *DbHandler) CreateUser(user user.User) (err error) {
 	psw, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(psw)
 	err = dbHandler.handlers[UserCollection].GetCollection().Insert(user)
+	return
+}
+
+// only admin user can remove users
+// admin users cannot be removed
+func (dbHandler *DbHandler) RemoveUser(currentUsername string, username string) (err error) {
+	currentUser, e := dbHandler.FindUser(currentUsername)
+	if e != nil {
+		err = e
+		return
+	}
+	isAdmin := currentUser.UserLevel == user.LevelAdmin
+	if !isAdmin {
+		err = errors.New("operation forbidden, not an admin user")
+		return
+	}
+
+	adminUsers := strings.Split(os.Getenv("ADMIN_USERS"), ",")
+	for _, u := range adminUsers {
+		if username == u {
+			err = errors.New("operation forbidden, cannot remove admin user")
+			return
+		}
+	}
+
+	err = dbHandler.handlers[UserCollection].GetCollection().RemoveId(username)
 	return
 }
 
