@@ -80,11 +80,12 @@ func (dbHandler *DbHandler) CreateUser(user user.User) (err error) {
 // only admin user can remove users
 // admin users cannot be removed
 func (dbHandler *DbHandler) RemoveUser(currentUsername string, username string) (err error) {
-	currentUser, e := dbHandler.FindUser(currentUsername)
-	if e != nil {
-		err = e
+	currentUser, userFindErr := dbHandler.FindUser(currentUsername)
+	if userFindErr != nil {
+		err = userFindErr
 		return
 	}
+
 	isAdmin := currentUser.UserLevel == user.LevelAdmin
 	if !isAdmin {
 		err = errors.New("operation forbidden, not an admin user")
@@ -109,6 +110,7 @@ func (dbHandler *DbHandler) FindUser(username string) (u *user.User, err error) 
 	return
 }
 
+// user login is used when a new user that holds no JWT or an existing user with expired JWT
 func (dbHandler *DbHandler) UserLogin(credential user.Credential) (token string, err error) {
 	u, userFindErr := dbHandler.FindUser(credential.Username)
 	if userFindErr != nil { // user not found
