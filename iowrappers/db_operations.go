@@ -79,7 +79,7 @@ func (dbHandler *DbHandler) CreateUser(user user.User) (err error) {
 
 // only admin user can remove users
 // admin users cannot be removed
-func (dbHandler *DbHandler) RemoveUser(currentUsername string, username string) (err error) {
+func (dbHandler *DbHandler) RemoveUser(currentUsername string, currentUserPassword string, username string) (err error) {
 	currentUser, userFindErr := dbHandler.FindUser(currentUsername)
 	if userFindErr != nil {
 		err = userFindErr
@@ -89,6 +89,15 @@ func (dbHandler *DbHandler) RemoveUser(currentUsername string, username string) 
 	isAdmin := currentUser.UserLevel == user.LevelAdmin
 	if !isAdmin {
 		err = errors.New("operation forbidden, not an admin user")
+		return
+	}
+
+	_, loginErr := dbHandler.UserLogin(user.Credential{
+		Username: currentUsername,
+		Password: currentUserPassword,
+	}, false)
+	if loginErr != nil {
+		err = loginErr
 		return
 	}
 
@@ -111,7 +120,7 @@ func (dbHandler *DbHandler) FindUser(username string) (u *user.User, err error) 
 }
 
 // user login is used when a new user that holds no JWT or an existing user with expired JWT
-func (dbHandler *DbHandler) UserLogin(credential user.Credential) (token string, err error) {
+func (dbHandler *DbHandler) UserLogin(credential user.Credential, issueJWT bool) (token string, err error) {
 	u, userFindErr := dbHandler.FindUser(credential.Username)
 	if userFindErr != nil { // user not found
 		err = errors.New("user not found")
@@ -124,16 +133,22 @@ func (dbHandler *DbHandler) UserLogin(credential user.Credential) (token string,
 		return
 	}
 
+	lastLoginTime := time.Now() // UTC time
+	_ = dbHandler.handlers[UserCollection].GetCollection().UpdateId(credential.Username,
+		bson.M{"$set": bson.M{"last_login_time": lastLoginTime}})
+
 	// issue JWT
-	expiresAt := time.Now().Add(user.JWTExpirationTime).Unix() // expires after 10 days
-	jwtSigningSecret := os.Getenv("JWT_SIGNING_SECRET")
+	if issueJWT {
+		expiresAt := lastLoginTime.Add(user.JWTExpirationTime).Unix() // expires after 10 days
+		jwtSigningSecret := os.Getenv("JWT_SIGNING_SECRET")
 
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username":   u.Username,
-		"expires_at": expiresAt,
-	})
+		jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"username":   u.Username,
+			"expires_at": expiresAt,
+		})
 
-	token, err = jwtToken.SignedString([]byte(jwtSigningSecret))
+		token, err = jwtToken.SignedString([]byte(jwtSigningSecret))
+	}
 	return
 }
 

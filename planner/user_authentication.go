@@ -62,7 +62,7 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, loginErr := planner.LoginHandler.UserLogin(c)
+	token, loginErr := planner.LoginHandler.UserLogin(c, true)
 	if loginErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(UserLoginResponse{
@@ -89,7 +89,7 @@ func (planner MyPlanner) RemoveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := planner.LoginHandler.RemoveUser(removeReq.CurrentUser, removeReq.UserToRemove)
+	err := planner.LoginHandler.RemoveUser(removeReq.CurrentUser, removeReq.CurrentUserPassword, removeReq.UserToRemove)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(err.Error())

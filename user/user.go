@@ -11,10 +11,11 @@ const (
 )
 
 type User struct {
-	Username  string `bson:"_id"`
-	Password  string `bson:"password"`
-	Email     string `bson:"email"`
-	UserLevel string `bson:"user_level"`
+	Username      string    `bson:"_id"`
+	Password      string    `bson:"password"`
+	Email         string    `bson:"email"`
+	UserLevel     string    `bson:"user_level"`
+	LastLoginTime time.Time `bson:"last_login_time"`
 }
 
 type Credential struct {
@@ -23,6 +24,7 @@ type Credential struct {
 }
 
 type RemoveUserRequest struct {
-	CurrentUser  string `json:"current_user"`
-	UserToRemove string `json:"user_to_remove"`
+	CurrentUser         string `json:"current_user"`
+	CurrentUserPassword string `json:"current_user_password"`
+	UserToRemove        string `json:"user_to_remove"`
 }
