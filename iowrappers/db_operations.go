@@ -1,14 +1,25 @@
 package iowrappers
 
 import (
+	"errors"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	"golang.org/x/crypto/bcrypt"
+	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
+)
+
+const (
+	UserCollection = "User"
 )
 
 type DatabaseHandler interface {
@@ -39,6 +50,8 @@ func (dbHandler *DbHandler) Init(DbName string, url string) {
 	dbHandler.handlers = make(map[string]*CollHandler)
 	dbHandler.dbName = DbName
 	dbHandler.CreateSession(url)
+
+	dbHandler.SetCollHandler(UserCollection)
 }
 
 func (dbHandler *DbHandler) CreateSession(uri string) {
@@ -53,6 +66,90 @@ func (dbHandler *DbHandler) SetCollHandler(collectionName string) {
 		dbHandler.handlers[collectionName] = collHandler
 		collHandler.Init(dbHandler, dbHandler.dbName, collectionName)
 	}
+}
+
+// create a user and persist in database
+// username is primary key
+func (dbHandler *DbHandler) CreateUser(user user.User) (err error) {
+	psw, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	user.Password = string(psw)
+	err = dbHandler.handlers[UserCollection].GetCollection().Insert(user)
+	return
+}
+
+// only admin user can remove users
+// admin users cannot be removed
+func (dbHandler *DbHandler) RemoveUser(currentUsername string, currentUserPassword string, username string) (err error) {
+	currentUser, userFindErr := dbHandler.FindUser(currentUsername)
+	if userFindErr != nil {
+		err = userFindErr
+		return
+	}
+
+	isAdmin := currentUser.UserLevel == user.LevelAdmin
+	if !isAdmin {
+		err = errors.New("operation forbidden, not an admin user")
+		return
+	}
+
+	_, loginErr := dbHandler.UserLogin(user.Credential{
+		Username: currentUsername,
+		Password: currentUserPassword,
+	}, false)
+	if loginErr != nil {
+		err = loginErr
+		return
+	}
+
+	adminUsers := strings.Split(os.Getenv("ADMIN_USERS"), ",")
+	for _, u := range adminUsers {
+		if username == u {
+			err = errors.New("operation forbidden, cannot remove admin user")
+			return
+		}
+	}
+
+	err = dbHandler.handlers[UserCollection].GetCollection().RemoveId(username)
+	return
+}
+
+func (dbHandler *DbHandler) FindUser(username string) (u *user.User, err error) {
+	u = &user.User{}
+	err = dbHandler.handlers[UserCollection].GetCollection().FindId(username).One(&u)
+	return
+}
+
+// user login is used when a new user that holds no JWT or an existing user with expired JWT
+func (dbHandler *DbHandler) UserLogin(credential user.Credential, issueJWT bool) (token string, err error) {
+	u, userFindErr := dbHandler.FindUser(credential.Username)
+	if userFindErr != nil { // user not found
+		err = errors.New("user not found")
+		return
+	}
+
+	pswCompErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(credential.Password))
+	if pswCompErr != nil { // wrong password
+		err = errors.New("wrong password")
+		return
+	}
+
+	lastLoginTime := time.Now() // UTC time
+	_ = dbHandler.handlers[UserCollection].GetCollection().UpdateId(credential.Username,
+		bson.M{"$set": bson.M{"last_login_time": lastLoginTime}})
+
+	// issue JWT
+	if issueJWT {
+		expiresAt := lastLoginTime.Add(user.JWTExpirationTime).Unix() // expires after 10 days
+		jwtSigningSecret := os.Getenv("JWT_SIGNING_SECRET")
+
+		jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"username":   u.Username,
+			"expires_at": expiresAt,
+		})
+
+		token, err = jwtToken.SignedString([]byte(jwtSigningSecret))
+	}
+	return
 }
 
 // This design make sure that explicit call to SetCollHandler have to be made for new collection creation.
