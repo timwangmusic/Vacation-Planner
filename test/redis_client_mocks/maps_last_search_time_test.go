@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestMapsLastSearchTime (t *testing.T) {
+func TestMapsLastSearchTime(t *testing.T) {
 	// set up mock server
 	mockServer, err := miniredis.Run()
 	if err != nil {
@@ -23,14 +23,14 @@ func TestMapsLastSearchTime (t *testing.T) {
 	redisClient.Init(redisURL)
 
 	request := iowrappers.PlaceSearchRequest{
-		Location:      "Beijing,China",
-		PlaceCat:      "Visit",
+		Location: "Beijing,China",
+		PlaceCat: "Visit",
 	}
 
 	currentTime := time.Now().Format(time.RFC3339)
-	_ = redisClient.CacheMapsLastSearchTime(request, currentTime)
+	_ = redisClient.SetMapsLastSearchTime(request.Location, request.PlaceCat, currentTime)
 
-	cachedTime, err := redisClient.GetMapsLastSearchTime(request)
+	cachedTime, err := redisClient.GetMapsLastSearchTime(request.Location, request.PlaceCat)
 
 	if err != nil || currentTime != cachedTime.Format(time.RFC3339) {
 		t.Error("maps cached time retrieval failure")

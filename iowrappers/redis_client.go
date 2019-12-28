@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	SlotSolutionExpirationTime = time.Duration(24 * time.Hour)
+	SlotSolutionExpirationTime = 24 * time.Hour
 )
 
 type RedisClient struct {
@@ -45,11 +45,11 @@ func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	redisClient.client.Set("place_details:place_ID:"+place.ID, json_, -1)
 }
 
-func (redisClient *RedisClient) GetMapsLastSearchTime(request PlaceSearchRequest) (lastSearchTime time.Time, err error) {
+func (redisClient *RedisClient) GetMapsLastSearchTime(location string, category POI.PlaceCategory) (lastSearchTime time.Time, err error) {
 	redisKey := "MapsLastSearchTime"
-	location := strings.Split(request.Location, ",")
-	city, country := location[0], location[1]
-	redisField := country + city + string(request.PlaceCat)
+	cityCountry := strings.Split(location, ",")
+	city, country := cityCountry[0], cityCountry[1]
+	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
 	lst, cacheErr := redisClient.client.HGet(redisKey, redisField).Result()
 	if cacheErr != nil {
 		err = cacheErr
@@ -65,11 +65,11 @@ func (redisClient *RedisClient) GetMapsLastSearchTime(request PlaceSearchRequest
 	return
 }
 
-func (redisClient *RedisClient) CacheMapsLastSearchTime(request PlaceSearchRequest, requestTime string) (err error) {
+func (redisClient *RedisClient) SetMapsLastSearchTime(location string, category POI.PlaceCategory, requestTime string) (err error) {
 	redisKey := "MapsLastSearchTime"
-	location := strings.Split(request.Location, ",")
-	city, country := location[0], location[1]
-	redisField := country + city + string(request.PlaceCat)
+	cityCountry := strings.Split(location, ",")
+	city, country := cityCountry[0], cityCountry[1]
+	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
 	_, err = redisClient.client.HSet(redisKey, redisField, requestTime).Result()
 	return
 }
