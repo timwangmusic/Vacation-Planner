@@ -45,6 +45,35 @@ func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	redisClient.client.Set("place_details:place_ID:"+place.ID, json_, -1)
 }
 
+func (redisClient *RedisClient) GetMapsLastSearchTime(request PlaceSearchRequest) (lastSearchTime time.Time, err error) {
+	redisKey := "MapsLastSearchTime"
+	location := strings.Split(request.Location, ",")
+	city, country := location[0], location[1]
+	redisField := country + city + string(request.PlaceCat)
+	lst, cacheErr := redisClient.client.HGet(redisKey, redisField).Result()
+	if cacheErr != nil {
+		err = cacheErr
+		return
+	}
+
+	ParsedLastSearchTime, parseErr := time.Parse(time.RFC3339, lst)
+	if parseErr != nil {
+		err = parseErr
+		return
+	}
+	lastSearchTime = ParsedLastSearchTime
+	return
+}
+
+func (redisClient *RedisClient) CacheMapsLastSearchTime(request PlaceSearchRequest, requestTime string) (err error) {
+	redisKey := "MapsLastSearchTime"
+	location := strings.Split(request.Location, ",")
+	city, country := location[0], location[1]
+	redisField := country + city + string(request.PlaceCat)
+	_, err = redisClient.client.HSet(redisKey, redisField, requestTime).Result()
+	return
+}
+
 // currently not used, but it is still a primitive implementation that might have faster search time compared
 // with all places stored under one key
 // store places obtained from database or external API in Redis
