@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	SlotSolutionExpirationTime = time.Duration(24 * time.Hour)
+	SlotSolutionExpirationTime = 24 * time.Hour
 )
 
 type RedisClient struct {
@@ -43,6 +43,35 @@ func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	utils.CheckErrImmediate(err, utils.LogError)
 
 	redisClient.client.Set("place_details:place_ID:"+place.ID, json_, -1)
+}
+
+func (redisClient *RedisClient) GetMapsLastSearchTime(location string, category POI.PlaceCategory) (lastSearchTime time.Time, err error) {
+	redisKey := "MapsLastSearchTime"
+	cityCountry := strings.Split(location, ",")
+	city, country := cityCountry[0], cityCountry[1]
+	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
+	lst, cacheErr := redisClient.client.HGet(redisKey, redisField).Result()
+	if cacheErr != nil {
+		err = cacheErr
+		return
+	}
+
+	ParsedLastSearchTime, parseErr := time.Parse(time.RFC3339, lst)
+	if parseErr != nil {
+		err = parseErr
+		return
+	}
+	lastSearchTime = ParsedLastSearchTime
+	return
+}
+
+func (redisClient *RedisClient) SetMapsLastSearchTime(location string, category POI.PlaceCategory, requestTime string) (err error) {
+	redisKey := "MapsLastSearchTime"
+	cityCountry := strings.Split(location, ",")
+	city, country := cityCountry[0], cityCountry[1]
+	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
+	_, err = redisClient.client.HSet(redisKey, redisField, requestTime).Result()
+	return
 }
 
 // currently not used, but it is still a primitive implementation that might have faster search time compared
@@ -328,7 +357,7 @@ func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (s
 	redisKey = genSlotSolutionCacheKey(req)
 	json_, err := redisClient.client.Get(redisKey).Result()
 	if err != nil {
-		log.Errorf("get slot solution cache failure for request with key: %s", redisKey)
+		log.Debugf("get slot solution cache failure for request with key: %s", redisKey)
 		return
 	}
 	err = json.Unmarshal([]byte(json_), &solution)
