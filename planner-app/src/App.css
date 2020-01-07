@@ -1,0 +1,7 @@
+.container {
+  text-align: center;
+}
+
+.container > h1 {
+  color: slateblue;
+}

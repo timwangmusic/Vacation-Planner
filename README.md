@@ -49,3 +49,36 @@ When taking in time and financial constraints, this manual planning process quic
 
 ## Programming Languages
 * Backend: Golang
+* Frontend: React
+
+## To Run the React App
+- Have `npm` and `node` installed
+- npx create-react-app my-app `In this case it is planner-app`
+- cd my-app
+- npm start
+- With Linux OS (Ubuntu 18.04), if you encounter issues, do `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
+- For build and deploy (on a webpage of choice) please read - https://create-react-app.dev/docs/deployment/
+- After changing the `app.js`, the cache will not update but just building, please do `sudo npm run start` to refresh the cache and React to load the new `app.js` by
+
+```
+function App() {
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+```
