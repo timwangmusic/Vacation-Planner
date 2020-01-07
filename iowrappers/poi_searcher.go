@@ -8,10 +8,12 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
-	MaxSearchRadius = 16000 // 10 miles
+	MaxSearchRadius              = 16000          // 10 miles
+	MinMapsResultRefreshDuration = time.Hour * 24 // 1 day
 )
 
 type PlaceSearcher interface {
@@ -90,16 +92,21 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	} else {
 		dbStoredPlaces, err := dbHandler.PlaceSearch(request)
 		utils.CheckErr(err)
-		// if PlaceSearch in database has error, use maps client for place search
 		if uint(len(dbStoredPlaces)) < request.MinNumResults {
-			// Call external API only when both cache and database cannot fulfill request
-			newPlaces, err := poiSearcher.mapsClient.NearbySearch(request)
-			logErr(err, utils.LogError)
+			lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(location, request.PlaceCat)
+			currentTime := time.Now()
 
-			maxResultNum := utils.MinInt(len(newPlaces), int(request.MaxNumResults))
-			places = append(places, newPlaces[:maxResultNum]...)
-			// update database
-			poiSearcher.UpdateMongo(request.PlaceCat, newPlaces)
+			// balances trade-off between data staleness and the number of Maps API calls
+			if cacheErr != nil || currentTime.Sub(lastSearchTime) > MinMapsResultRefreshDuration {
+				newPlaces, err := poiSearcher.mapsClient.NearbySearch(request)
+				logErr(err, utils.LogError)
+				_ = poiSearcher.redisClient.SetMapsLastSearchTime(location, request.PlaceCat, currentTime.Format(time.RFC3339))
+
+				maxResultNum := utils.MinInt(len(newPlaces), int(request.MaxNumResults))
+				places = append(places, newPlaces[:maxResultNum]...)
+				// update database
+				poiSearcher.UpdateMongo(request.PlaceCat, newPlaces)
+			}
 		} else {
 			log.Infof("Using MongoDB to fulfill request. Place Type: %s \n", request.PlaceCat)
 			maxResultNum := utils.MinInt(len(dbStoredPlaces), int(request.MaxNumResults))

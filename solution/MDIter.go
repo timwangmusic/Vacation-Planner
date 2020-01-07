@@ -1,6 +1,9 @@
 package solution
 
-import "log"
+import (
+	log "github.com/sirupsen/logrus"
+	"strings"
+)
 
 type MDtagIter struct {
 	Tag    string
@@ -17,19 +20,24 @@ func (this *MDtagIter) Init(tag string, categorizedPlaces []CategorizedPlaces) b
 		log.Printf("tag length is different from categorized places")
 		return false
 	}
+	tag = strings.ToLower(tag)
 
 	this.Tag = tag
 	this.Status = make([]int, len(tag))
 	this.Size = make([]int, len(tag))
 	for pos, char := range tag {
 		this.Status[pos] = 0
-		if char == 'E' || char == 'e' {
+		if char == 'e' {
 			this.Size[pos] = len(categorizedPlaces[pos].EateryPlaces)
-		} else if char == 'V' || char == 'v' {
+		} else if char == 'v' {
 			this.Size[pos] = len(categorizedPlaces[pos].VisitPlaces)
 		}
 		if this.Size[pos] == 0 {
-			log.Printf("iterator size is 0 at position %d \n", pos)
+			if char == 'e' {
+				log.Infof("number of places for category eatery is 0, tag index is %d \n", pos)
+			} else if char == 'v' {
+				log.Infof("number of places for category visit is 0, tag index is %d \n", pos)
+			}
 			return false
 		}
 	}

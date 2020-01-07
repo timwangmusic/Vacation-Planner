@@ -59,7 +59,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 // Generate slot solution candidates
 // Parameter list matches slot request
 func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot,
-	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient) (slotSolution SlotSolution, err error) {
+	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
 	if len(stayTimes) != len(evTag) {
 		err = errors.New("user designated stay time does not match tag.")
 		return
@@ -90,8 +90,9 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 		Weekday:   weekday,
 	}
 
-	slotSolutionCacheResp, err2 := redisClient.GetSlotSolution(redisReq)
-	if err2 == nil { // cache hit
+
+	slotSolutionCacheResp, slotSolutionRedisKey, err2 := redisClient.GetSlotSolution(redisReq)
+	if err == nil { // cache hit
 		for _, candidate := range slotSolutionCacheResp.SlotSolutionCandidate {
 			slotSolutionCandidate := SlotSolutionCandidate{
 				PlaceNames:      candidate.PlaceNames,

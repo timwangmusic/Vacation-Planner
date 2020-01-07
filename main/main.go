@@ -22,7 +22,7 @@ type Config struct {
 	MapsClientApiKey string `required:"true" split_words:"true"`
 }
 
-func RunDevServer() {
+func RunServer() {
 	conf := Config{}
 	err := envconfig.Process("", &conf)
 	if err != nil {
@@ -41,5 +41,5 @@ func RunDevServer() {
 }
 
 func main() {
-	RunDevServer()
+	RunServer()
 }

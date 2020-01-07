@@ -42,6 +42,7 @@ type MyPlanner struct {
 	RedisStreamName    string
 	Solver             solution.Solver
 	ResultHTMLTemplate *template.Template
+	LoginHandler       *iowrappers.DbHandler
 }
 
 type TimeSectionPlace struct {
@@ -92,6 +93,9 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 	mapsClient := &iowrappers.MapsClient{}
 	utils.CheckErrImmediate(mapsClient.Init(mapsClientApiKey), utils.LogFatal)
 	PoiSearcher.Init(mapsClient, dbName, dbUrl, redisURL)
+
+	planner.LoginHandler = &iowrappers.DbHandler{}
+	planner.LoginHandler.Init(dbName, dbUrl)
 
 	planner.Solver.Init(PoiSearcher)
 
@@ -392,7 +396,7 @@ func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
 	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(w, planningResp), utils.LogError)
 }
 
-func (planner *MyPlanner) HandlingRequests(serverPort string) {
+func (planner MyPlanner) HandlingRequests(serverPort string) {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
 	getLimiter := tollbooth.NewLimiter(MaxGetRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
@@ -409,6 +413,10 @@ func (planner *MyPlanner) HandlingRequests(serverPort string) {
 	postLimiter.SetMessage("You have reached maximum POST API limit")
 
 	myRouter.Handle("/planning/v1", tollbooth.LimitFuncHandler(postLimiter, planner.postPlanningApi)).Methods("POST")
+
+	myRouter.Path("/signup").HandlerFunc(planner.UserSignup).Methods("POST")
+	myRouter.Path("/login").HandlerFunc(planner.UserLogin).Methods("POST")
+	myRouter.Path("/removeuser").HandlerFunc(planner.RemoveUser).Methods("POST")
 
 	svr := &http.Server{
 		Addr:         ":" + serverPort,

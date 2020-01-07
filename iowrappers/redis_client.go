@@ -18,11 +18,15 @@ import (
 )
 
 const (
-	SlotSolutionExpirationTime = time.Duration(24 * time.Hour)
+	SlotSolutionExpirationTime = 24 * time.Hour
 )
 
 type RedisClient struct {
 	client redis.Client
+}
+
+func (redisClient RedisClient) RemoveKeys(keys []string) {
+	redisClient.client.Del(keys...)
 }
 
 func (redisClient *RedisClient) Init(url *url.URL) {
@@ -39,6 +43,35 @@ func (redisClient *RedisClient) cachePlace(place POI.Place) {
 	utils.CheckErrImmediate(err, utils.LogError)
 
 	redisClient.client.Set("place_details:place_ID:"+place.ID, json_, -1)
+}
+
+func (redisClient *RedisClient) GetMapsLastSearchTime(location string, category POI.PlaceCategory) (lastSearchTime time.Time, err error) {
+	redisKey := "MapsLastSearchTime"
+	cityCountry := strings.Split(location, ",")
+	city, country := cityCountry[0], cityCountry[1]
+	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
+	lst, cacheErr := redisClient.client.HGet(redisKey, redisField).Result()
+	if cacheErr != nil {
+		err = cacheErr
+		return
+	}
+
+	ParsedLastSearchTime, parseErr := time.Parse(time.RFC3339, lst)
+	if parseErr != nil {
+		err = parseErr
+		return
+	}
+	lastSearchTime = ParsedLastSearchTime
+	return
+}
+
+func (redisClient *RedisClient) SetMapsLastSearchTime(location string, category POI.PlaceCategory, requestTime string) (err error) {
+	redisKey := "MapsLastSearchTime"
+	cityCountry := strings.Split(location, ",")
+	city, country := cityCountry[0], cityCountry[1]
+	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
+	_, err = redisClient.client.HSet(redisKey, redisField, requestTime).Result()
+	return
 }
 
 // currently not used, but it is still a primitive implementation that might have faster search time compared
@@ -320,8 +353,8 @@ func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, 
 	}
 }
 
-func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (solution SlotSolutionCacheResponse, err error) {
-	redisKey := genSlotSolutionCacheKey(req)
+func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (solution SlotSolutionCacheResponse, redisKey string, err error) {
+	redisKey = genSlotSolutionCacheKey(req)
 	json_, err := redisClient.client.Get(redisKey).Result()
 	if err != nil {
 		log.Debugf("redis server find no result for key: %s", redisKey)
