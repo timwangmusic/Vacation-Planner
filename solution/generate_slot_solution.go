@@ -134,7 +134,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 
 	mdIter := MDtagIter{}
 	if !mdIter.Init(evTag, categorizedPlaces) {
-		err = errors.New("time slot place category tag iterator init failure")
+		err = errors.New("categorized places iterator init failure")
 		return
 	}
 

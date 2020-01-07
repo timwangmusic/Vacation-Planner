@@ -45,19 +45,19 @@ type SlotSolutionCandidate struct {
 }
 
 func (slotSolution *SlotSolution) SetTag(tag string) (err error){
-	if slotSolution.IsSlotTagValid(tag){
+	if slotSolution.isSlotTagValid(tag){
 		slotSolution.SlotTag = tag
 	} else {
 		err = errors.New(fmt.Sprintf("Slot tag %s is invalid.", tag))
 	}
-	return err
+	return
 }
 
 /*
 *This function checks if the slots in the solution fits the
 *solution requirement
  */
-func (slotSolution *SlotSolution) IsSlotTagValid(tag string) bool {
+func (slotSolution *SlotSolution) isSlotTagValid(tag string) bool {
 	if tag == "" {
 		return false
 	} else {
