@@ -92,7 +92,7 @@ func (dbHandler *DbHandler) RemoveUser(currentUsername string, currentUserPasswo
 		return
 	}
 
-	_, loginErr := dbHandler.UserLogin(user.Credential{
+	_, _, loginErr := dbHandler.UserLogin(user.Credential{
 		Username: currentUsername,
 		Password: currentUserPassword,
 	}, false)
@@ -120,7 +120,7 @@ func (dbHandler *DbHandler) FindUser(username string) (u *user.User, err error) 
 }
 
 // user login is used when a new user that holds no JWT or an existing user with expired JWT
-func (dbHandler *DbHandler) UserLogin(credential user.Credential, issueJWT bool) (token string, err error) {
+func (dbHandler *DbHandler) UserLogin(credential user.Credential, issueJWT bool) (token string, tokenExpirationTime time.Time, err error) {
 	u, userFindErr := dbHandler.FindUser(credential.Username)
 	if userFindErr != nil { // user not found
 		err = errors.New("user not found")
@@ -139,7 +139,8 @@ func (dbHandler *DbHandler) UserLogin(credential user.Credential, issueJWT bool)
 
 	// issue JWT
 	if issueJWT {
-		expiresAt := lastLoginTime.Add(user.JWTExpirationTime).Unix() // expires after 10 days
+		tokenExpirationTime = lastLoginTime.Add(user.JWTExpirationTime)
+		expiresAt := tokenExpirationTime.Unix() // expires after 10 days
 		jwtSigningSecret := os.Getenv("JWT_SIGNING_SECRET")
 
 		jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

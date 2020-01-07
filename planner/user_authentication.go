@@ -62,7 +62,7 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, loginErr := planner.LoginHandler.UserLogin(c, true)
+	token, tokenExpirationTime, loginErr := planner.LoginHandler.UserLogin(c, true)
 	if loginErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(UserLoginResponse{
@@ -72,9 +72,10 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(UserLoginResponse{
-		Username: c.Username,
-		Jwt:      token,
+	http.SetCookie(w, &http.Cookie{
+		Name:    "JWT",
+		Value:   token,
+		Expires: tokenExpirationTime,
 	})
 }
 
