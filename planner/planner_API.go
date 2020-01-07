@@ -147,13 +147,25 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 }
 
 // API definitions
-func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, _ *http.Request) {
+func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
+	authenticationErr := planner.UserAuthentication(r)
+	if authenticationErr != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
+		return
+	}
 	_, err := fmt.Fprint(w, "Welcome to use the Vacation Planner system!")
 	utils.CheckErrImmediate(err, utils.LogError)
 }
 
 // HTTP POST API end-point
 func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request) {
+	authenticationErr := planner.UserAuthentication(r)
+	if authenticationErr != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	req := PlanningPostRequest{}
@@ -344,6 +356,12 @@ func checkPostReqTimePlaceNum(req *PlanningPostRequest) (err error) {
 // HTTP GET API end-point
 // Return top planning result to user
 func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
+	authenticationErr := planner.UserAuthentication(r)
+	if authenticationErr != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
+		return
+	}
 	vars := mux.Vars(r)
 	country := vars["country"]
 	city := vars["city"]

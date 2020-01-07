@@ -144,8 +144,8 @@ func (dbHandler *DbHandler) UserLogin(credential user.Credential, issueJWT bool)
 		jwtSigningSecret := os.Getenv("JWT_SIGNING_SECRET")
 
 		jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"username":   u.Username,
-			"expires_at": expiresAt,
+			"username":       u.Username,
+			"StandardClaims": jwt.StandardClaims{ExpiresAt: expiresAt},
 		})
 
 		token, err = jwtToken.SignedString([]byte(jwtSigningSecret))

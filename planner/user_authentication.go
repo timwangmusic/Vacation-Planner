@@ -2,6 +2,8 @@ package planner
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
@@ -98,4 +100,26 @@ func (planner MyPlanner) RemoveUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = json.NewEncoder(w).Encode("Removal success")
+}
+
+func (planner MyPlanner) UserAuthentication(r *http.Request) error {
+	cookie, cookieErr := r.Cookie("JWT")
+	if cookieErr != nil {
+		return cookieErr
+	}
+
+	jwtKey := []byte(os.Getenv("JWT_SIGNING_SECRET"))
+	token, tokenErr := jwt.Parse(cookie.Value, func(tkn *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if tokenErr != nil {
+		return tokenErr
+	}
+
+	if !token.Valid {
+		return errors.New("invalid token")
+	}
+
+	return nil
 }
