@@ -1,10 +1,22 @@
-import React from "react"
+import React, {useState} from "react"
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Col from 'react-bootstrap/Col'
 
 const Login = () => {
-  return (
+  const[email, setEmail] = useState("")
+  const[password, setPassword] = useState("")
+
+  function validateForm() {
+      return email.length > 0 && password.length > 0
+  }
+
+  function handleSubmit(event) {
+      event.preventDefault()
+  }
+	
+	
+	return (
 <Form>
     <Form.Row>
         <Form.Group as={Col} controlId="formGridFirstName">
@@ -20,7 +32,13 @@ const Login = () => {
 
     <Form.Group controlId="formBasicEmail">
         <Form.Label>Email address</Form.Label>
-        <Form.Control type="email" placeholder="Enter email" />
+        <Form.Control 
+        autoFocus 
+        type="email" 
+        value={email} 
+        onChange={e => setEmail(e.target.value)} 
+        placeholder="Enter email" 
+        />
         <Form.Text className="text-muted">
             We'll never share your email with anyone else.
         </Form.Text>
@@ -28,13 +46,21 @@ const Login = () => {
 
   <Form.Group controlId="formBasicPassword">
     <Form.Label>Password</Form.Label>
-    <Form.Control type="password" placeholder="Password" />
+    <Form.Control 
+        autoFocus
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder="Password" />
     </Form.Group>
         <Form.Group controlId="formBasicCheckbox">
             <Form.Check type="checkbox" label="Check me out" />
     </Form.Group>
 
-    <Button variant="primary" type="submit">
+    <Button 
+        variant="primary"
+        disabled={!validateForm()}
+        type="submit">
         Submit
     </Button>
 
