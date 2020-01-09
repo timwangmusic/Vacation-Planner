@@ -44,8 +44,8 @@ type SlotSolutionCandidate struct {
 	IsSet           bool           `json:"is_set"`
 }
 
-func (slotSolution *SlotSolution) SetTag(tag string) (err error){
-	if slotSolution.isSlotTagValid(tag){
+func (slotSolution *SlotSolution) SetTag(tag string) (err error) {
+	if isSlotTagValid(tag) {
 		slotSolution.SlotTag = tag
 	} else {
 		err = errors.New(fmt.Sprintf("Slot tag %s is invalid.", tag))
@@ -57,21 +57,21 @@ func (slotSolution *SlotSolution) SetTag(tag string) (err error){
 *This function checks if the slots in the solution fits the
 *solution requirement
  */
-func (slotSolution *SlotSolution) isSlotTagValid(tag string) bool {
+func isSlotTagValid(tag string) bool {
 	if tag == "" {
 		return false
 	} else {
-		var eatcount uint8 = 0
-		var vstcount uint8 = 0
+		var eateryCount uint8 = 0
+		var visitCount uint8 = 0
 		for _, c := range tag {
 			if c == 'e' || c == 'E' {
-				eatcount++
+				eateryCount++
 			} else if c == 'v' || c == 'V' {
-				vstcount++
+				visitCount++
 			} else {
 				return false
 			}
-			if eatcount+vstcount > LimitPerSlot {
+			if eateryCount+visitCount > LimitPerSlot {
 				return false
 			}
 		}
