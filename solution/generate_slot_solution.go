@@ -2,7 +2,7 @@ package solution
 
 import (
 	"container/heap"
-	log "github.com/sirupsen/logrus"
+	"errors"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
@@ -12,7 +12,11 @@ import (
 	"time"
 )
 
-const CandidateQueueLength = 15
+const (
+	CandidateQueueLength                  = 15
+	ReqTimeSlotsTagMismatchErrMsg         = "user designated stay times list length does not match tag length"
+	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
+)
 
 type TripEvent struct {
 	tag        uint8
@@ -59,9 +63,14 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 // Generate slot solution candidates
 // Parameter list matches slot request
 func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot,
-	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient) (slotSolution SlotSolution, slotSolutionRedisKey string) {
+	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
 	if len(stayTimes) != len(evTag) {
-		log.Fatal("User designated stay time does not match tag.")
+		err = errors.New(ReqTimeSlotsTagMismatchErrMsg)
+		return
+	}
+
+	err = slotSolution.SetTag(evTag)
+	if err != nil {
 		return
 	}
 
@@ -85,8 +94,8 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 		Weekday:   weekday,
 	}
 
-	slotSolutionCacheResp, slotSolutionRedisKey, err := redisClient.GetSlotSolution(redisReq)
-	if err == nil { // cache hit
+	slotSolutionCacheResp, slotSolutionRedisKey, cacheErr := redisClient.GetSlotSolution(redisReq)
+	if cacheErr == nil { // cache hit
 		for _, candidate := range slotSolutionCacheResp.SlotSolutionCandidate {
 			slotSolutionCandidate := SlotSolutionCandidate{
 				PlaceNames:      candidate.PlaceNames,
@@ -99,12 +108,6 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 			}
 			slotSolution.SlotSolutionCandidates = append(slotSolution.SlotSolutionCandidates, slotSolutionCandidate)
 		}
-		return
-	}
-
-	slotSolution.SetTag(evTag)
-	if !slotSolution.IsSlotTagValid() {
-		log.Fatalf("Slot tag %s is invalid.", evTag)
 		return
 	}
 
@@ -135,7 +138,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 
 	mdIter := MDtagIter{}
 	if !mdIter.Init(evTag, categorizedPlaces) {
-		log.Println("time slot place category tag iterator init failure")
+		err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
 		return
 	}
 

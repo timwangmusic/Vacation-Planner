@@ -28,6 +28,9 @@ const (
 	ValidSolutionFound           = 200
 	InvalidSolverReqTimeInterval = 400
 	InvalidRequestLocation       = 400
+	ReqTimeSlotsTagMismatch      = 400
+	ReqTagInvalid                = 400
+	CatPlaceIterInitFailure      = 400
 	NoValidSolution              = 404
 )
 
@@ -74,8 +77,18 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 	slotSolutionRedisKeys := make([]string, len(req.SlotRequests))
 	for idx, slotRequest := range req.SlotRequests {
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution, slotSolutionRedisKey := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
+		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
+		if err != nil {
+			if err.Error() == ReqTimeSlotsTagMismatchErrMsg {
+				resp.Errcode = ReqTimeSlotsTagMismatch
+			} else if err.Error() == CategorizedPlaceIterInitFailureErrMsg {
+				resp.Errcode = CatPlaceIterInitFailure
+			} else {
+				resp.Errcode = ReqTagInvalid
+			}
+			return resp, err
+		}
 		for _, candidate := range slotSolution.SlotSolutionCandidates {
 			candidates[idx] = append(candidates[idx], candidate)
 		}

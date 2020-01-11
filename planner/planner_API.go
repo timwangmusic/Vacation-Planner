@@ -105,7 +105,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 // single-day, single-city planning method
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req, planner.RedisClient)
-	utils.CheckErrImmediate(err, utils.LogInfo)
+	utils.CheckErrImmediate(err, utils.LogError)
 	if err != nil {
 		resp.Err = err.Error()
 		resp.StatusCode = planningResp.Errcode
