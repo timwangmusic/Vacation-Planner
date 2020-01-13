@@ -205,9 +205,11 @@ func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCateg
 	collHandler := dbHandler.handlers[collName]
 	err := collHandler.InsertPlace(place)
 	if err != nil {
-		log.Error(err)
 		if mgo.IsDup(err) {
-			log.Debugf("Duplicate insertion of %s to the database", place.Name)
+			log.Debugf("Database updating %s", place.Name)
+			_ = collHandler.UpdatePlace(place)
+		} else {
+			log.Error(err)
 		}
 	} else {
 		atomic.AddUint64(newDocCounter, 1)
@@ -236,6 +238,12 @@ func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
 
 func (collHandler *CollHandler) InsertPlace(place POI.Place) error {
 	err := collHandler.GetCollection().Insert(place)
+	return err
+}
+
+func (collHandler *CollHandler) UpdatePlace(place POI.Place) error {
+	query := bson.M{"_id": place.ID}
+	err := collHandler.GetCollection().Update(query, place)
 	return err
 }
 
