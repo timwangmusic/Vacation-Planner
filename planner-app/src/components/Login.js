@@ -1,32 +1,54 @@
-import React, {useState} from "react"
+import React  from "react"
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Col from 'react-bootstrap/Col'
+import useForm from './useForm.js'
+// Using hooks instead of a Class and constructor
 
-const Login = () => {
-  const[email, setEmail] = useState("")
-  const[password, setPassword] = useState("")
 
-  function validateForm() {
-      return email.length > 0 && password.length > 0
-  }
+const Login = () => {   
+    const { values, handleChange, handleSubmit } = useForm(signup)  
+    
+    function signup(){
+        console.log(values)  
+    }
 
-  function handleSubmit(event) {
-      event.preventDefault()
-  }
+    fetch('http://vacation-planner-v1.herokuapp.com/login', {
+        method: 'POST',
+        headers: { 'content-Type': 'application/json', 'Access-Control-Allow-Origin' : 'true'  },
+        body: JSON.stringify(values)
+    }).then(function(response) {
+        return response.json()
+    }).then(function(value) {
+        console.log('Created Gist:')
+    });
+    
 	
-	
-	return (
-<Form>
+    return (
+<Form noValidate onSubmit={handleSubmit}>
     <Form.Row>
         <Form.Group as={Col} controlId="formGridFirstName">
             <Form.Label>First Name</Form.Label>
-            <Form.Control type='first name' placeholder="First name" />
+            <Form.Control
+            autoFocus
+            name={'firstname'}
+            value={values.firstname}
+            type='first name' 
+            placeholder="First name" 
+            onChange={handleChange}
+            />
         </Form.Group>
 
         <Form.Group as={Col} controlId="formGridSecondName">
             <Form.Label>Last Name</Form.Label>
-            <Form.Control type='last name' placeholder="Last name"/>
+            <Form.Control 
+            autoFocus
+            name={'lastname'}
+            value={values.lastname}
+            type='last name' 
+            placeholder="Last name"
+            onChange={handleChange}
+            />
         </Form.Group>
     </Form.Row>
 
@@ -35,8 +57,9 @@ const Login = () => {
         <Form.Control 
         autoFocus 
         type="email" 
-        value={email} 
-        onChange={e => setEmail(e.target.value)} 
+        name={'email'}
+        value={values.email} 
+        onChange={handleChange}
         placeholder="Enter email" 
         />
         <Form.Text className="text-muted">
@@ -49,19 +72,21 @@ const Login = () => {
     <Form.Control 
         autoFocus
         type="password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
+        name={'password'}
+        value={values.password}
+        onChange={handleChange}
         placeholder="Password" />
     </Form.Group>
         <Form.Group controlId="formBasicCheckbox">
             <Form.Check type="checkbox" label="Check me out" />
     </Form.Group>
-
+    
     <Button 
         variant="primary"
-        disabled={!validateForm()}
-        type="submit">
-        Submit
+        type="submit"
+        value="Submit"
+        >
+        Login
     </Button>
 
 </Form>
