@@ -13,20 +13,41 @@ const Login = () => {
         console.log(values)  
     }
 
-    fetch('http://vacation-planner-v1.herokuapp.com/login', {
-        method: 'POST',
-        headers: { 'content-Type': 'application/json', 'Access-Control-Allow-Origin' : 'true'  },
+    var proxyUrl = 'https://cors-anywhere.herokuapp.com/',
+        targetUrl = 'http://vacation-planner-v1.herokuapp.com/login'
+    
+    fetch ( proxyUrl+targetUrl, {
+            method: 'POST',
+            headers: {
+		        'content-Type': 'application/json', 
+		        'Accept' : 'application/json',
+		    },
         body: JSON.stringify(values)
-    }).then(function(response) {
-        return response.json()
-    }).then(function(value) {
-        console.log('Created Gist:')
-    });
+    })
+    .then((response) => response.json())
+    .then((values) => {
+        console.log('Success:', values)
+    })
+    .catch((error) => {
+        console.error('Error:', error)
+    })
     
 	
     return (
 <Form noValidate onSubmit={handleSubmit}>
     <Form.Row>
+        <Form.Group as={Col} controlId="formGridUserName">
+            <Form.Label>UserName</Form.Label>
+            <Form.Control
+                autoFocus
+                name={'username'}
+                value={values.username}
+                type='username'
+                placeholder="username"
+                onChange={handleChange}
+            />
+        </Form.Group>
+        
         <Form.Group as={Col} controlId="formGridFirstName">
             <Form.Label>First Name</Form.Label>
             <Form.Control
