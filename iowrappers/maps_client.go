@@ -32,9 +32,9 @@ func (c *MapsClient) createLogger() error {
 	var logger *zap.Logger
 
 	if currentEnv == "" || currentEnv == "development" {
-		logger, err = zap.NewDevelopment()  // logging at debug level and above
+		logger, err = zap.NewDevelopment() // logging at debug level and above
 	} else {
-		logger, err = zap.NewProduction()  // logging at info level and above
+		logger, err = zap.NewProduction() // logging at info level and above
 	}
 	if err != nil {
 		return err
