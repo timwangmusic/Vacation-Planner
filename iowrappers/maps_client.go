@@ -13,7 +13,6 @@ type SearchClient interface {
 type MapsClient struct {
 	client *maps.Client
 	apiKey string
-	logger *zap.SugaredLogger
 }
 
 // create google maps client with api key
@@ -23,10 +22,10 @@ func (c *MapsClient) Init(apiKey string) error {
 	if err != nil {
 		return err
 	}
-	return c.createLogger()
+	return createLogger()
 }
 
-func (c *MapsClient) createLogger() error {
+func createLogger() error {
 	currentEnv := os.Getenv("ENVIRONMENT")
 	var err error
 	var logger *zap.Logger
@@ -40,7 +39,7 @@ func (c *MapsClient) createLogger() error {
 		return err
 	}
 
-	c.logger = logger.Sugar()
+	Logger = logger.Sugar()
 
 	return nil
 }

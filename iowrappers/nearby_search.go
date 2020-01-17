@@ -138,7 +138,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 	searchDuration := time.Since(searchStartTime)
 
 	// logging
-	c.logger.Infow("Logging nearby search",
+	Logger.Infow("Logging nearby search",
 		"Maps API call time", searchDuration,
 		"center location (lat,lng)", request.Location,
 		"place category", request.PlaceCat,
@@ -188,7 +188,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 	searchDuration := time.Since(startSearchTime)
 
 	// logging
-	c.logger.Debugw("Logging detailed place search",
+	Logger.Debugw("Logging detailed place search",
 		"Maps API call time", searchDuration,
 		"place name", resp.Name,
 		"place formatted address", resp.FormattedAddress,

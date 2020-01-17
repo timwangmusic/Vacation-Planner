@@ -90,9 +90,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 	}
 
 	PoiSearcher := &iowrappers.PoiSearcher{}
-	mapsClient := &iowrappers.MapsClient{}
-	utils.CheckErrImmediate(mapsClient.Init(mapsClientApiKey), utils.LogFatal)
-	PoiSearcher.Init(mapsClient, dbName, dbUrl, redisURL)
+	PoiSearcher.Init(mapsClientApiKey, dbUrl, redisURL, dbName)
 
 	planner.LoginHandler = &iowrappers.DbHandler{}
 	planner.LoginHandler.Init(dbName, dbUrl)

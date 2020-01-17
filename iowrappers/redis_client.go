@@ -112,7 +112,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 		}
 	}
 	if geoAddSuccessCount > 0 {
-		log.Infof("%d places geo added to Redis", geoAddSuccessCount)
+		Logger.Infof("%d places geo added to Redis", geoAddSuccessCount)
 	}
 }
 
@@ -241,12 +241,12 @@ func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, ln
 	redisKey := "geocode:cities"
 	redisField := redisClient.GetLocationWithAlias(query)
 	if redisField == "" {
-		log.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
+		Logger.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
 		return
 	}
 	geocode, err := redisClient.client.HGet(redisKey, redisField).Result()
 	if err != nil {
-		log.Infof("geocode of location %s, %s does not exist in cache", query.City, query.Country)
+		Logger.Infof("geocode of location %s, %s does not exist in cache", query.City, query.Country)
 		return // location does not exist
 	}
 	latLng, _ := utils.ParseLocation(geocode)
@@ -263,7 +263,7 @@ func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng 
 	res, err := redisClient.client.HSet(redisKey, redisField, redisVal).Result()
 	utils.CheckErrImmediate(err, utils.LogError)
 	if res {
-		log.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
+		Logger.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
 	}
 	utils.CheckErrImmediate(redisClient.CacheLocationAlias(originalQuery, query), utils.LogError)
 }
