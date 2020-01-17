@@ -1,9 +1,9 @@
 package iowrappers
 
 import (
-	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"googlemaps.github.io/maps"
+	"os"
 )
 
 type SearchClient interface {
@@ -13,7 +13,7 @@ type SearchClient interface {
 type MapsClient struct {
 	client *maps.Client
 	apiKey string
-	logger *logrus.Logger
+	logger *zap.SugaredLogger
 }
 
 // create google maps client with api key
@@ -23,20 +23,24 @@ func (c *MapsClient) Init(apiKey string) error {
 	if err != nil {
 		return err
 	}
-	c.createLogger("")
-	return nil
+	return c.createLogger()
 }
 
-func (c *MapsClient) createLogger(formatterSelection string) {
-	c.logger = log.New()
-	if formatterSelection == "JSON" { // TextFormatter by default
-		c.logger.Formatter = &log.JSONFormatter{
-			PrettyPrint: true,
-		}
+func (c *MapsClient) createLogger() error {
+	currentEnv := os.Getenv("ENVIRONMENT")
+	var err error
+	var logger *zap.Logger
+
+	if currentEnv == "" || currentEnv == "development" {
+		logger, err = zap.NewDevelopment()  // logging at debug level and above
 	} else {
-		c.logger.Formatter = &log.TextFormatter{
-			DisableColors: false,
-			FullTimestamp: true,
-		}
+		logger, err = zap.NewProduction()  // logging at info level and above
 	}
+	if err != nil {
+		return err
+	}
+
+	c.logger = logger.Sugar()
+
+	return nil
 }
