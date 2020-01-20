@@ -22,10 +22,10 @@ func (c *MapsClient) Init(apiKey string) error {
 	if err != nil {
 		return err
 	}
-	return createLogger()
+	return CreateLogger()
 }
 
-func createLogger() error {
+func CreateLogger() error {
 	currentEnv := os.Getenv("ENVIRONMENT")
 	var err error
 	var logger *zap.Logger
