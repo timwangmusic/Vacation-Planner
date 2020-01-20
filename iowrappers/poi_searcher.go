@@ -48,6 +48,10 @@ func (poiSearcher *PoiSearcher) Init(mapsApiKey string, dbUrl string, redisUrl *
 	poiSearcher.redisClient.Init(redisUrl)
 }
 
+func DestroyLogger() {
+	_ = Logger.Sync()
+}
+
 // currently geocode is equivalent to mapping city and country to latitude and longitude
 func (poiSearcher *PoiSearcher) Geocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
 	originalGeocodeQuery := GeocodeQuery{}

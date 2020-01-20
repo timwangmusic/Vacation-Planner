@@ -100,6 +100,10 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
 }
 
+func (planner *MyPlanner) Destroy() {
+	iowrappers.DestroyLogger()
+}
+
 // single-day, single-city planning method
 func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req, planner.RedisClient)
@@ -434,6 +438,8 @@ func (planner MyPlanner) HandlingRequests(serverPort string) {
 
 	// block until receiving interrupting signal
 	<-c
+
+	defer planner.Destroy()
 
 	// create a deadline for other connections to complete IO
 	ctx, cancel := context.WithTimeout(context.Background(), ServerTimeout)
