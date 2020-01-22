@@ -130,6 +130,8 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 
 	categorizedPlaces := make([]CategorizedPlaces, len(placeClusters))
 
+	// place clusters are clustered by time slot
+	// now cluster by place category
 	for idx, placeCluster := range placeClusters {
 		categorizedPlaces[idx] = Categorize(placeCluster)
 	}

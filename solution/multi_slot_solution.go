@@ -30,7 +30,7 @@ const (
 	InvalidRequestLocation       = 400
 	ReqTimeSlotsTagMismatch      = 400
 	ReqTagInvalid                = 400
-	CatPlaceIterInitFailure      = 400
+	CatPlaceIterInitFailure      = 404
 	NoValidSolution              = 404
 )
 
