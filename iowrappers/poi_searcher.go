@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	"go.uber.org/zap"
 	"net/url"
 	"strings"
 	"sync"
@@ -31,11 +32,12 @@ type GeocodeQuery struct {
 	Country string
 }
 
-func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUrl string,
-	redisUrl *url.URL) {
-	if mapsClient == nil || mapsClient.client == nil {
-		log.Fatal("maps client is nil")
-	}
+var Logger *zap.SugaredLogger
+
+func (poiSearcher *PoiSearcher) Init(mapsApiKey string, dbUrl string, redisUrl *url.URL, dbName string) {
+	mapsClient := &MapsClient{}
+	utils.CheckErrImmediate(mapsClient.Init(mapsApiKey), utils.LogFatal)
+
 	poiSearcher.mapsClient = mapsClient
 
 	poiSearcher.dbHandler = &DbHandler{}
@@ -44,6 +46,10 @@ func (poiSearcher *PoiSearcher) Init(mapsClient *MapsClient, dbName string, dbUr
 
 	poiSearcher.redisClient = &RedisClient{}
 	poiSearcher.redisClient.Init(redisUrl)
+}
+
+func DestroyLogger() {
+	_ = Logger.Sync()
 }
 
 // currently geocode is equivalent to mapping city and country to latitude and longitude
@@ -85,7 +91,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	cachedPlaces := poiSearcher.redisClient.GetPlaces(request)
 	log.Debugf("number of results from redis is %d", len(cachedPlaces))
 	if uint(len(cachedPlaces)) >= request.MinNumResults {
-		log.Infof("Using Redis to fulfill request. Place Type: %s \n", request.PlaceCat)
+		Logger.Infof("Using Redis to fulfill request. Place Type: %s", request.PlaceCat)
 		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
 		places = append(places, cachedPlaces[:maxResultNum]...)
 		return
@@ -108,7 +114,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 				poiSearcher.UpdateMongo(request.PlaceCat, newPlaces)
 			}
 		} else {
-			log.Infof("Using MongoDB to fulfill request. Place Type: %s \n", request.PlaceCat)
+			Logger.Infof("Using MongoDB to fulfill request. Place Type: %s", request.PlaceCat)
 			maxResultNum := utils.MinInt(len(dbStoredPlaces), int(request.MaxNumResults))
 			places = append(places, dbStoredPlaces[:maxResultNum]...)
 		}
@@ -144,6 +150,6 @@ func (poiSearcher *PoiSearcher) UpdateMongo(placeCat POI.PlaceCategory, places [
 	}
 	wg.Wait()
 	if numNewDocs > 0 {
-		log.Printf("Inserted %d places into the database", numNewDocs)
+		Logger.Infof("Inserted %d places into the database", numNewDocs)
 	}
 }

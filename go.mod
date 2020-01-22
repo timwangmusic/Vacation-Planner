@@ -18,6 +18,7 @@ require (
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
+	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20191219195013-becbf705a915
 	golang.org/x/sys v0.0.0-20190812172437-4e8604ab3aff // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect

@@ -90,9 +90,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 	}
 
 	PoiSearcher := &iowrappers.PoiSearcher{}
-	mapsClient := &iowrappers.MapsClient{}
-	utils.CheckErrImmediate(mapsClient.Init(mapsClientApiKey), utils.LogFatal)
-	PoiSearcher.Init(mapsClient, dbName, dbUrl, redisURL)
+	PoiSearcher.Init(mapsClientApiKey, dbUrl, redisURL, dbName)
 
 	planner.LoginHandler = &iowrappers.DbHandler{}
 	planner.LoginHandler.Init(dbName, dbUrl)
@@ -100,6 +98,10 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 	planner.Solver.Init(PoiSearcher)
 
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
+}
+
+func (planner *MyPlanner) Destroy() {
+	iowrappers.DestroyLogger()
 }
 
 // single-day, single-city planning method
@@ -436,6 +438,8 @@ func (planner MyPlanner) HandlingRequests(serverPort string) {
 
 	// block until receiving interrupting signal
 	<-c
+
+	defer planner.Destroy()
 
 	// create a deadline for other connections to complete IO
 	ctx, cancel := context.WithTimeout(context.Background(), ServerTimeout)

@@ -34,9 +34,9 @@ func (this *MDtagIter) Init(tag string, categorizedPlaces []CategorizedPlaces) b
 		}
 		if this.Size[pos] == 0 {
 			if char == 'e' {
-				log.Infof("number of places for category eatery is 0, tag index is %d \n", pos)
+				log.Debugf("number of places for category eatery is 0, tag index is %d \n", pos)
 			} else if char == 'v' {
-				log.Infof("number of places for category visit is 0, tag index is %d \n", pos)
+				log.Debugf("number of places for category visit is 0, tag index is %d \n", pos)
 			}
 			return false
 		}
