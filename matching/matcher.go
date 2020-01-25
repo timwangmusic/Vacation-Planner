@@ -7,6 +7,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"sort"
 )
 
 type Matcher interface {
@@ -55,7 +56,7 @@ func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
 	matcher.TouringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 }
 
-func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (PlaceClusters []PlaceCluster) {
+func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (clusters []PlaceCluster) {
 	// place search and time clustering
 	matcher.placeSearch(req, POI.PlaceCategoryEatery) // search catering
 	matcher.placeSearch(req, POI.PlaceCategoryVisit)  // search visit locations
@@ -65,9 +66,20 @@ func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (PlaceClusters []
 	matcher.processCluster(POI.PlaceCategoryEatery, clusterMap)
 	matcher.processCluster(POI.PlaceCategoryVisit, clusterMap)
 
-	for _, cluster := range clusterMap {
-		PlaceClusters = append(PlaceClusters, *cluster)
+	clusters = make([]PlaceCluster, len(clusterMap))
+	timeIntervals := make([]POI.TimeInterval, 0)
+	for _, cluster := range clusterMap { // clusters and timeIntervals are of same length
+		timeIntervals = append(timeIntervals, cluster.Slot.Slot)
 	}
+	// sort time intervals in place by start time
+	sort.Sort(POI.ByStartTime(timeIntervals))
+
+	for idx, interval := range timeIntervals {
+		intervalKey := interval.Serialize()
+		clusters[idx] = *clusterMap[intervalKey]
+		req.TimeSlots[idx] = TimeSlot{Slot: interval} // update time slots in request
+	}
+
 	return
 }
 
