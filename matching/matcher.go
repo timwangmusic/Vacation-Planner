@@ -3,10 +3,10 @@
 package matching
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"log"
 )
 
 type Matcher interface {
@@ -23,7 +23,6 @@ type TimeSlot struct {
 	Slot POI.TimeInterval
 }
 
-// Request from planner
 type TimeMatchingRequest struct {
 	Location  string      // city,country
 	Radius    uint        // search Radius
@@ -56,11 +55,10 @@ func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
 	matcher.TouringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 }
 
-// Matching takes requests from planner and a valid client, returns place clusters with time slot
 func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (PlaceClusters []PlaceCluster) {
 	// place search and time clustering
-	matcher.placeSearch(req, POI.PlaceCategoryEatery, matcher.PoiSearcher) // search catering
-	matcher.placeSearch(req, POI.PlaceCategoryVisit, matcher.PoiSearcher)  // search visit locations
+	matcher.placeSearch(req, POI.PlaceCategoryEatery) // search catering
+	matcher.placeSearch(req, POI.PlaceCategoryVisit)  // search visit locations
 
 	clusterMap := make(map[string]*PlaceCluster)
 
@@ -98,7 +96,7 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 
 }
 
-func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory, poiSearcher *iowrappers.PoiSearcher) {
+func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory) {
 	var mgr *graph.TimeClustersManager
 
 	switch placeCat {
@@ -116,8 +114,8 @@ func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.P
 	}
 
 	// this is how to use TimeClustersManager
-	mgr.Init(poiSearcher, placeCat, intervals, req.Weekday)
-	mgr.PlaceSearch(req.Location, req.Radius, "")
+	mgr.Init(matcher.PoiSearcher, placeCat, intervals, req.Weekday)
+	mgr.PlaceSearch(req.Location, req.Radius)
 	mgr.Clustering(req.Weekday)
 
 	return
