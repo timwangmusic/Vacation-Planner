@@ -63,8 +63,8 @@ func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (clusters []Place
 
 	clusterMap := make(map[string]*PlaceCluster)
 
-	matcher.processCluster(POI.PlaceCategoryEatery, clusterMap)
-	matcher.processCluster(POI.PlaceCategoryVisit, clusterMap)
+	matcher.timeClustering(POI.PlaceCategoryEatery, clusterMap)
+	matcher.timeClustering(POI.PlaceCategoryVisit, clusterMap)
 
 	clusters = make([]PlaceCluster, len(clusterMap))
 	timeIntervals := make([]POI.TimeInterval, 0)
@@ -83,7 +83,7 @@ func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (clusters []Place
 	return
 }
 
-func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMap map[string]*PlaceCluster) {
+func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMap map[string]*PlaceCluster) {
 	var mgr *graph.TimeClustersManager
 
 	switch placeCat {
