@@ -77,7 +77,6 @@ func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (clusters []Place
 	for idx, interval := range timeIntervals {
 		intervalKey := interval.Serialize()
 		clusters[idx] = *clusterMap[intervalKey]
-		req.TimeSlots[idx] = TimeSlot{Slot: interval} // update time slots in request
 	}
 
 	return

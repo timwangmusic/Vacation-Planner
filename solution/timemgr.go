@@ -8,14 +8,13 @@ import (
 const Dis2minTest = 0.05
 
 func GetTimeSlotLengthInMin(placeClusters []matching.PlaceCluster) int {
+	if len(placeClusters) == 0 {
+		return 0
+	}
 	var start = placeClusters[0].Slot.Slot.Start
 	var end = placeClusters[len(placeClusters)-1].Slot.Slot.End
 	var min = int((end - start) * 60)
-	if min <= 0 {
-		return 0
-	} else {
-		return min
-	}
+	return utils.MaxInt(0, min)
 }
 
 func GetTravelTimeByDistance(cclusters []CategorizedPlaces, mdti MDtagIter) ([]float64, float64) {
