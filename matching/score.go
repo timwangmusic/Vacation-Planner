@@ -17,6 +17,50 @@ const (
 const SelectionThreshold = -1
 
 
+
+type KnapsackRecordTable struct{
+	timeLimit uint8
+	budget uint
+	SavedRecord map[uint]KnapsackNodeRecord
+	NewRecord map[uint]KnapsackNodeRecord
+}
+
+func (this KnapsackRecordTable) Init(timeLimit uint8, budget uint){
+	this.timeLimit = timeLimit
+	this.budget = budget
+	start := KnapsackNodeRecord{0,0,SelectionThreshold, make([]Place, 0)}
+	this.SavedRecord[0] = start
+}
+func (this KnapsackRecordTable) getKey(timeLimit uint8, budget uint) (key uint) {
+	key = uint(timeLimit)*this.budget+budget
+	return
+}
+func (this KnapsackRecordTable) getTimeLimitAndDelay(key uint) (timeLimt uint8, budget uint){
+	budget = key % this.budget
+	timeLimt = uint8((key - budget)/this.budget)
+	return
+}
+func (this KnapsackRecordTable) update() {
+	for key, record := range(this.NewRecord){
+		if oldRecord, ok := this.SavedRecord[key]; ok {
+			if oldRecord.score < record.score {
+				this.SavedRecord[key] = record
+			}
+		} else {
+			this.SavedRecord[key] = record
+		}
+		//delete new record entries
+		delete(this.NewRecord, key)
+	}
+}
+
+type KnapsackNodeRecord struct {
+	timeUsed uint8
+	cost uint
+	score float64
+	solution []Place
+}
+
 type KnapsackNode struct {
 	score float64
 	solution []Place
@@ -102,6 +146,45 @@ func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place){
 	}
 	return optimalNode.solution
 }
+/*
+Knapsack v2 uses sparse matrix like storage for step values and saves memory
+ */
+func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place){
+	//INIT
+	var recordtable KnapsackRecordTable
+	recordtable.Init(timeLimit, budget)
+	optimalNode := KnapsackNodeRecord{0,0, SelectionThreshold,make([]Place,0)}
+	//MAIN
+	var staytime POI.StayingTime
+	for k:=0;k<len(places);k++ {
+		recordtable.update()
+		staytime = POI.GetStayingTimeForLocationType(places[k].PlaceType)
+		for key, record := range recordtable.SavedRecord {
+			timeLimitBase, cost := recordtable.getTimeLimitAndDelay(key)
+			newTimeLimit := timeLimitBase + uint8(staytime)
+			newCost := cost + uint(math.Ceil(places[k].Price))
+			if newTimeLimit < recordtable.timeLimit && newCost < budget {
+				newKey := recordtable.getKey(newTimeLimit, newCost)
+				newSolution := append(record.solution, places[k])
+				newScore := Score(newSolution)
+				newRecord := KnapsackNodeRecord{newTimeLimit, newCost, newScore, newSolution}
+				if alreadyRecord, ok := recordtable.NewRecord[newKey]; ok {
+					if alreadyRecord.score < newRecord.score {
+						recordtable.NewRecord[newKey] = newRecord
+					}
+				} else {
+					recordtable.NewRecord[newKey] = newRecord
+				}
+				if newScore > optimalNode.score {
+					optimalNode.score = newScore
+					optimalNode.solution = append(make([]Place, 0, len(newSolution)), newSolution...)
+				}
+			}
+		}
+	}
+	return optimalNode.solution
+}
+
 
 func Score(places []Place) float64{
 	if len(places) == 1{

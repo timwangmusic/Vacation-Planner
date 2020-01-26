@@ -34,6 +34,8 @@ func TestKnapsack(t *testing.T){
 	if len(result)==0 {
 		t.Error("No result is returned.")
 	}
+	result2 := matching.KnapSackv2(places, 35, 1500)
 	t.Log(len(result))
+	t.Log(len(result2))
 	print(result)
 }
