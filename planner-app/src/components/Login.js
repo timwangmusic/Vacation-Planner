@@ -3,14 +3,21 @@ import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Col from 'react-bootstrap/Col'
 import useForm from './useForm.js'
+import validate from './LoginFormValidationRules.js'
 // Using hooks instead of a Class and constructor
 
 
-const Login = () => {   
-    const { values, handleChange, handleSubmit } = useForm(signup)  
-    
+const Login = () => {
+
+    const { 
+        values, 
+        errors,
+        handleChange, 
+        handleSubmit 
+    } = useForm(signup, validate)
+
     function signup(){
-        console.log(values)  
+        console.log('No errors, submit callback called !')  
     }
 
     var proxyUrl = 'https://cors-anywhere.herokuapp.com/',
@@ -31,8 +38,7 @@ const Login = () => {
     .catch((error) => {
         console.error('Error:', error)
     })
-    
-	
+
     return (
 <Form noValidate onSubmit={handleSubmit}>
     <Form.Row>
