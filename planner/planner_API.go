@@ -345,12 +345,21 @@ func checkPostReqTimePlaceNum(req *PlanningPostRequest) (err error) {
 
 // HTTP GET API end-point
 // Return top planning result to user
-func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
+func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	country := vars["country"]
 	city := vars["city"]
 	radius := vars["radius"]
 	weekday := vars["weekday"]
+	numResults := vars["numberResults"]
+
+	numResultsInt, numResultsParsingErr := strconv.ParseUint(numResults, 10, 64)
+	if numResultsParsingErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("invalid number of planning results"))
+		return
+	}
+	log.Debugf("number of requested planning results is %s", numResults)
 
 	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
 	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
@@ -373,7 +382,7 @@ func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
 
 	cityCountry := city + "," + country
 
-	planningReq := solution.GetStandardRequest(POI.Weekday(weekdayUint))
+	planningReq := solution.GetStandardRequest(POI.Weekday(weekdayUint), numResultsInt)
 	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
 	planningReq.SearchRadius = uint(searchRadius_)
 
@@ -408,7 +417,7 @@ func (planner MyPlanner) HandlingRequests(serverPort string) {
 	myRouter.HandleFunc("/", planner.welcomeApi).Methods("GET")
 
 	myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
-		"radius", "{radius}", "weekday", "{weekday}").Handler(tollbooth.LimitFuncHandler(getLimiter, planner.planningApi)).Methods("GET")
+		"radius", "{radius}", "weekday", "{weekday}", "numberResults", "{numberResults}").Handler(tollbooth.LimitFuncHandler(getLimiter, planner.getPlanningApi)).Methods("GET")
 
 	postLimiter := tollbooth.NewLimiter(MaxPostRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
 	postLimiter.SetMethods([]string{"POST"})
