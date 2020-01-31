@@ -25,7 +25,7 @@ func TestTimeIntervalSort(t *testing.T) {
 	sort.Sort(POI.ByStartTime(intervals))
 
 	for idx, interval := range intervals {
-		if idx < len(intervals) - 1 {
+		if idx < len(intervals)-1 {
 			if interval.Start > intervals[idx+1].Start {
 				t.Error("intervals are not sort correctly")
 			}
