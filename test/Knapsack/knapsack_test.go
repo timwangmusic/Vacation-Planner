@@ -1,7 +1,6 @@
 package test
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"testing"
@@ -23,19 +22,36 @@ func TestKnapsack(t *testing.T){
 		} else {
 			//places[j].Price = math.Round(rand.ExpFloat64()*10+10)
 		}
-		t.Logf("stay time %d", POI.GetStayingTimeForLocationType(p.PlaceType))
+		//t.Logf("stay time %d", POI.GetStayingTimeForLocationType(p.PlaceType))
 	}
 	//utils.WriteJsonToFile("../../test_visit_random_gen.json", &places)
 	if priceAllZero == false {
-		t.Log("All price is Zero.")
+		t.Error("All price is Zero.")
 	}
 	//t.Log(places)
 	result := matching.Knapsack(places, 35, 1500)
 	if len(result)==0 {
 		t.Error("No result is returned.")
 	}
-	result2 := matching.KnapSackv2(places, 35, 1500)
+	result2 := matching.Knapsackv2(places, 35, 1500)
+	if len(result)==0 {
+		t.Error("No result is returned by v2")
+	}
+	for _, p := range result{
+		t.Log(p.Name)
+	}
 	t.Log(len(result))
+	for _, p := range result2{
+		t.Log(p.Name)
+	}
 	t.Log(len(result2))
+	if len(result) != len(result2){
+		t.Error("v2 result doesn't match")
+	}
+	for i := range result {
+		if result[i].PlaceId != result2[i].PlaceId {
+			t.Error("v2 result is not the same")
+		}
+	}
 	print(result)
 }
