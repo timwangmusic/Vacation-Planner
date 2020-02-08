@@ -172,19 +172,6 @@ func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.P
 
 	collHandler := dbHandler.handlers[collName]
 
-	totalNumDocs, err := collHandler.GetCollection().Count()
-	if err != nil {
-		uErr = utils.GenerateErr(err, utils.LogError)
-		return
-	}
-
-	if uint(totalNumDocs) < req.MinNumResults {
-		err = fmt.Errorf("the number of documents in database %d is less than the minimum %d requested",
-			totalNumDocs, req.MinNumResults)
-		uErr = utils.GenerateErr(err, utils.LogInfo)
-		return
-	}
-
 	latLng, _ := utils.ParseLocation(req.Location)
 	lat := latLng[0]
 	lng := latLng[1]

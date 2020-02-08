@@ -161,12 +161,6 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 	requestCategory := strings.ToLower(string(request.PlaceCat))
 	redisKey := "placeIDs:" + requestCategory
 
-	totalNumCachedResults, err := redisClient.client.ZCount(redisKey, "-inf", "inf").Result()
-	utils.CheckErrImmediate(err, utils.LogInfo)
-	if uint(totalNumCachedResults) < request.MinNumResults {
-		return
-	}
-
 	latLng, _ := utils.ParseLocation(request.Location)
 	requestLat, requestLng := latLng[0], latLng[1]
 
@@ -186,7 +180,7 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 			Unit:   "m",
 			Sort:   "ASC", // sort ascending
 		}
-		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
+		cachedQualifiedPlaces, err := redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
 		utils.CheckErrImmediate(err, utils.LogError)
 
 		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
