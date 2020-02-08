@@ -164,29 +164,21 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 	latLng, _ := utils.ParseLocation(request.Location)
 	requestLat, requestLng := latLng[0], latLng[1]
 
-	radiusMultiplier := uint(1)
-	numQualifiedCachedPlaces := 0
-	cachedQualifiedPlaces := make([]redis.GeoLocation, 0)
 	searchRadius := request.Radius
 
 	if searchRadius > MaxSearchRadius {
 		searchRadius = MaxSearchRadius
 	}
 
-	for searchRadius <= MaxSearchRadius && uint(numQualifiedCachedPlaces) < request.MinNumResults {
-		log.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
-		geoQuery := redis.GeoRadiusQuery{
-			Radius: float64(searchRadius),
-			Unit:   "m",
-			Sort:   "ASC", // sort ascending
-		}
-		cachedQualifiedPlaces, err := redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
-		utils.CheckErrImmediate(err, utils.LogError)
-
-		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
-		radiusMultiplier *= 2
-		searchRadius = request.Radius * radiusMultiplier
+	log.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
+	geoQuery := redis.GeoRadiusQuery{
+		Radius: float64(searchRadius),
+		Unit:   "m",
+		Sort:   "ASC", // sort ascending
 	}
+	cachedQualifiedPlaces, err := redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
+	utils.CheckErrImmediate(err, utils.LogError)
+
 	request.Radius = searchRadius
 
 	places = make([]POI.Place, 0)

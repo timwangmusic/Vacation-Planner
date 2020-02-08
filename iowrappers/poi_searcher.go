@@ -97,6 +97,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 		return
 	} else {
 		dbStoredPlaces, err := dbHandler.PlaceSearch(request)
+		maxResultNum := utils.MinInt(len(dbStoredPlaces), int(request.MaxNumResults))
 		utils.CheckErr(err)
 		if uint(len(dbStoredPlaces)) < request.MinNumResults {
 			lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(location, request.PlaceCat)
@@ -104,6 +105,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 			// balances trade-off between data staleness and the number of Maps API calls
 			if cacheErr != nil || currentTime.Sub(lastSearchTime) > MinMapsResultRefreshDuration {
+				request.Radius = MaxSearchRadius // use a large search radius whenever we call external maps service
 				newPlaces, err := poiSearcher.mapsClient.NearbySearch(request)
 				logErr(err, utils.LogError)
 				_ = poiSearcher.redisClient.SetMapsLastSearchTime(location, request.PlaceCat, currentTime.Format(time.RFC3339))
@@ -112,10 +114,12 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 				places = append(places, newPlaces[:maxResultNum]...)
 				// update database
 				poiSearcher.UpdateMongo(request.PlaceCat, newPlaces)
+			} else { // return whatever POI data available in the database
+				places = append(places, dbStoredPlaces[:maxResultNum]...)
+				log.Debugf("cache miss, returning %d of POI results from DB", len(places))
 			}
 		} else {
 			Logger.Infof("Using MongoDB to fulfill request. Place Type: %s", request.PlaceCat)
-			maxResultNum := utils.MinInt(len(dbStoredPlaces), int(request.MaxNumResults))
 			places = append(places, dbStoredPlaces[:maxResultNum]...)
 		}
 	}
