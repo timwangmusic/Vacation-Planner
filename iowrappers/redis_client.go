@@ -155,8 +155,6 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 	return res, nil
 }
 
-// if total number of places in a category for a location is less than minimum, return an empty slice
-// return as many places as possible within the maximum search radius
 func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
 	requestCategory := strings.ToLower(string(request.PlaceCat))
 	redisKey := "placeIDs:" + requestCategory
