@@ -239,7 +239,8 @@ func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request)
 			_, _ = w.Write([]byte(err))
 		} else if planningResp.StatusCode == solution.NoValidSolution {
 			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("No valid solution is found"))
+			_, _ = w.Write([]byte("No valid solution is found.\n"))
+			_, _ = w.Write([]byte("Please try to search with larger radius."))
 		}
 		return
 	}
