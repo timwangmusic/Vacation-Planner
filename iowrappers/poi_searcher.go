@@ -102,7 +102,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 		utils.CheckErrImmediate(dbSearchErr, utils.LogError)
 
 		maxResultNum := utils.MinInt(len(dbStoredPlaces), int(request.MaxNumResults))
-		if uint(len(dbStoredPlaces)) < request.MinNumResults {
+		if dbSearchErr != nil || uint(len(dbStoredPlaces)) < request.MinNumResults {
 			lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(location, request.PlaceCat)
 			currentTime := time.Now()
 
