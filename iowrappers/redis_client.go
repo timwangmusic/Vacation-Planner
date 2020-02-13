@@ -155,44 +155,28 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 	return res, nil
 }
 
-// if total number of places in a category for a location is less than minimum, return an empty slice
-// return as many places as possible within the maximum search radius
 func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
 	requestCategory := strings.ToLower(string(request.PlaceCat))
 	redisKey := "placeIDs:" + requestCategory
 
-	totalNumCachedResults, err := redisClient.client.ZCount(redisKey, "-inf", "inf").Result()
-	utils.CheckErrImmediate(err, utils.LogInfo)
-	if uint(totalNumCachedResults) < request.MinNumResults {
-		return
-	}
-
 	latLng, _ := utils.ParseLocation(request.Location)
 	requestLat, requestLng := latLng[0], latLng[1]
 
-	radiusMultiplier := uint(1)
-	numQualifiedCachedPlaces := 0
-	cachedQualifiedPlaces := make([]redis.GeoLocation, 0)
 	searchRadius := request.Radius
 
 	if searchRadius > MaxSearchRadius {
 		searchRadius = MaxSearchRadius
 	}
 
-	for searchRadius <= MaxSearchRadius && uint(numQualifiedCachedPlaces) < request.MinNumResults {
-		log.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
-		geoQuery := redis.GeoRadiusQuery{
-			Radius: float64(searchRadius),
-			Unit:   "m",
-			Sort:   "ASC", // sort ascending
-		}
-		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
-		utils.CheckErrImmediate(err, utils.LogError)
-
-		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
-		radiusMultiplier *= 2
-		searchRadius = request.Radius * radiusMultiplier
+	log.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
+	geoQuery := redis.GeoRadiusQuery{
+		Radius: float64(searchRadius),
+		Unit:   "m",
+		Sort:   "ASC", // sort ascending
 	}
+	cachedQualifiedPlaces, err := redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
+	utils.CheckErrImmediate(err, utils.LogError)
+
 	request.Radius = searchRadius
 
 	places = make([]POI.Place, 0)

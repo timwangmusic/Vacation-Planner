@@ -59,6 +59,8 @@ func TestGetPlaces(t *testing.T) {
 	redisURL, _ := url.Parse(redisUrl)
 	redisClient.Init(redisURL)
 
+	_ = iowrappers.CreateLogger()
+
 	// cache places
 	redisClient.SetPlacesOnCategory(places)
 
@@ -85,11 +87,13 @@ func TestGetPlaces(t *testing.T) {
 		t.Error("failed to get cached Visit place")
 	}
 
+	// the setup of this test case guarantees that the Peter Luger's Steakhouse is located
+	// OUTSIDE the search radius coverage
 	placeSearchRequest = iowrappers.PlaceSearchRequest{
 		Location:      nycLatLng,
 		PlaceCat:      "Eatery",
 		Radius:        uint(5000),
-		MinNumResults: 1,
+		MinNumResults: 2,
 	}
 
 	cachedEateryPlaces := redisClient.GetPlaces(&placeSearchRequest)
@@ -103,18 +107,5 @@ func TestGetPlaces(t *testing.T) {
 	cachedVisitPlaces = redisClient.GetPlaces(&iowrappers.PlaceSearchRequest{MinNumResults: 2, PlaceCat: "Visit"})
 	if len(cachedVisitPlaces) != 0 {
 		t.Error("should return empty slice if total number of cached places in a category is less than requested minimum")
-	}
-
-	// expect to return all qualified places when total number of qualified places within max search radius is less than requested minimum
-	// the setup of this test case guarantees that the Peter Luger's Steakhouse is located OUTSIDE the max search radius coverage
-	cachedEateryPlaces = redisClient.GetPlaces(&iowrappers.PlaceSearchRequest{
-		Location:      nycLatLng,
-		PlaceCat:      "Eatery",
-		MinNumResults: 2,
-		Radius:        uint(2000),
-	})
-	if len(cachedEateryPlaces) != 1 {
-		t.Logf("found %d eatery places \n", len(cachedEateryPlaces))
-		t.Error("should return all qualified places")
 	}
 }
