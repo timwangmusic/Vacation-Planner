@@ -211,7 +211,7 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.
 		location := strings.Join([]string{lat, lng}, ",")
 		addr := ""
 		if microAddrMap != nil {
-			addr = microAddrMap[res.ID]
+			addr = microAddrMap[id]
 		}
 		priceLevel := res.PriceLevel
 		h := &POI.OpeningHours{}
