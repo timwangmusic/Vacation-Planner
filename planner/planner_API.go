@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -30,6 +31,8 @@ const (
 	MaxGetRequestsPerSecond  = 10.0 // max GET QPS
 	MaxPostRequestsPerSecond = 8.0  // max POST QPS
 	ServerTimeout            = time.Second * 15
+	jobQueueBufferSize       = 1000
+	numWorkers               = 5
 )
 
 type Planner interface {
@@ -42,6 +45,7 @@ type MyPlanner struct {
 	Solver             solution.Solver
 	ResultHTMLTemplate *template.Template
 	LoginHandler       *iowrappers.DbHandler
+	PlanningEvents     chan iowrappers.PlanningEvent
 }
 
 type TimeSectionPlace struct {
@@ -82,6 +86,7 @@ type PlanningPostRequest struct {
 }
 
 func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *url.URL, redisStreamName string, dbName string) {
+	planner.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	planner.RedisClient.Init(redisURL)
 	planner.RedisStreamName = redisStreamName
 	if redisStreamName == "" {
@@ -111,6 +116,20 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		resp.Err = err.Error()
 		resp.StatusCode = planningResp.Errcode
 		return
+	}
+
+	// logging planning API usage for valid requests
+	if len(req.SlotRequests) > 0 {
+		countryCity := req.SlotRequests[0].Location
+		countryAndCity := strings.Split(countryCity, ",")
+		event := iowrappers.PlanningEvent{
+			User:      "",
+			Country:   countryAndCity[1],
+			City:      countryAndCity[0],
+			Timestamp: time.Now().Format(time.RFC3339),
+		}
+		planner.PlanningEvents <- event
+		planner.PlanningEventLogging(event)
 	}
 
 	if len(planningResp.Solutions) == 0 {
@@ -214,12 +233,6 @@ func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// logging planning API usage
-	planner.PlanningEventLogging(PlanningEvent{
-		City:    city,
-		Country: country,
-	})
-
 	cityCountry := city + "," + country
 
 	planningReq := solution.GetStandardRequest(POI.Weekday(weekdayUint), numResultsInt)
@@ -277,6 +290,13 @@ func (planner MyPlanner) HandlingRequests(serverPort string) {
 		WriteTimeout: ServerTimeout,
 	}
 
+	wg := &sync.WaitGroup{}
+	wg.Add(numWorkers)
+	// dispatch workers
+	for worker := 0; worker < numWorkers; worker++ {
+		go planner.ProcessPlanningEvent(worker, wg)
+	}
+
 	go func() {
 		if err := svr.ListenAndServe(); err != nil {
 			log.Fatal(err)
@@ -288,6 +308,10 @@ func (planner MyPlanner) HandlingRequests(serverPort string) {
 
 	// block until receiving interrupting signal
 	<-c
+
+	// closing event channel after server shuts down
+	close(planner.PlanningEvents)
+	wg.Wait()
 
 	defer planner.Destroy()
 

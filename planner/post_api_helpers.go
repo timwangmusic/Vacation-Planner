@@ -167,4 +167,3 @@ func checkPostReqTimePlaceNum(req *PlanningPostRequest) (err error) {
 	}
 	return
 }
-
