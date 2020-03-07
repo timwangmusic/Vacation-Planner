@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
 	"os"
@@ -79,6 +80,11 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 		Value:   token,
 		Expires: tokenExpirationTime,
 	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  "Username",
+		Value: c.Username,
+	})
 }
 
 // remove user handler
@@ -102,10 +108,10 @@ func (planner MyPlanner) RemoveUser(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode("Removal success")
 }
 
-func (planner MyPlanner) UserAuthentication(r *http.Request) error {
+func (planner MyPlanner) UserAuthentication(r *http.Request) (username string, err error) {
 	cookie, cookieErr := r.Cookie("JWT")
 	if cookieErr != nil {
-		return cookieErr
+		return "", cookieErr
 	}
 
 	jwtKey := []byte(os.Getenv("JWT_SIGNING_SECRET"))
@@ -114,12 +120,15 @@ func (planner MyPlanner) UserAuthentication(r *http.Request) error {
 	})
 
 	if tokenErr != nil {
-		return tokenErr
+		return "", tokenErr
 	}
 
 	if !token.Valid {
-		return errors.New("invalid token")
+		return "", errors.New("invalid token")
 	}
 
-	return nil
+	userCookie, _ := r.Cookie("Username")
+	username = userCookie.Value
+	log.Debugf("the current user is %s", username)
+	return username, nil
 }

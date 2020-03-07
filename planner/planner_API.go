@@ -148,7 +148,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 
 // API definitions
 func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
-	authenticationErr := planner.UserAuthentication(r)
+	_, authenticationErr := planner.UserAuthentication(r)
 	if authenticationErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
@@ -160,7 +160,7 @@ func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
 
 // HTTP POST API end-point
 func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request) {
-	authenticationErr := planner.UserAuthentication(r)
+	_, authenticationErr := planner.UserAuthentication(r)
 	if authenticationErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
@@ -356,7 +356,7 @@ func checkPostReqTimePlaceNum(req *PlanningPostRequest) (err error) {
 // HTTP GET API end-point
 // Return top planning result to user
 func (planner *MyPlanner) planningApi(w http.ResponseWriter, r *http.Request) {
-	authenticationErr := planner.UserAuthentication(r)
+	_, authenticationErr := planner.UserAuthentication(r)
 	if authenticationErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
