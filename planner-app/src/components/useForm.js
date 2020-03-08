@@ -17,8 +17,10 @@ const useForm = (callback) => {
 		    },
             body: JSON.stringify(values)
         })
-        .then((response) => {
-            return response.json()
+        .then(response => {
+            return response.text().then(text => {
+                console.log('Logged In..')
+            })
             })
         .then((values) => {
             console.log('Success:')
