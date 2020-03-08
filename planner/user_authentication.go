@@ -2,7 +2,10 @@ package planner
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
 	"os"
@@ -62,7 +65,7 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, loginErr := planner.LoginHandler.UserLogin(c, true)
+	token, tokenExpirationTime, loginErr := planner.LoginHandler.UserLogin(c, true)
 	if loginErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(UserLoginResponse{
@@ -72,9 +75,15 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(UserLoginResponse{
-		Username: c.Username,
-		Jwt:      token,
+	http.SetCookie(w, &http.Cookie{
+		Name:    "JWT",
+		Value:   token,
+		Expires: tokenExpirationTime,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  "Username",
+		Value: c.Username,
 	})
 }
 
@@ -97,4 +106,29 @@ func (planner MyPlanner) RemoveUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = json.NewEncoder(w).Encode("Removal success")
+}
+
+func (planner MyPlanner) UserAuthentication(r *http.Request) (username string, err error) {
+	cookie, cookieErr := r.Cookie("JWT")
+	if cookieErr != nil {
+		return "", cookieErr
+	}
+
+	jwtKey := []byte(os.Getenv("JWT_SIGNING_SECRET"))
+	token, tokenErr := jwt.Parse(cookie.Value, func(tkn *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if tokenErr != nil {
+		return "", tokenErr
+	}
+
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	userCookie, _ := r.Cookie("Username")
+	username = userCookie.Value
+	log.Debugf("the current user is %s", username)
+	return username, nil
 }
