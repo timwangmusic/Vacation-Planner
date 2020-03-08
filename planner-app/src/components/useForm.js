@@ -17,9 +17,10 @@ const useForm = (callback) => {
 		    },
             body: JSON.stringify(values)
         })
-        .then((response) => {
-            response.json()
-            alert('Logged in..')
+        .then(response => {
+            return response.text().then(text => {
+                console.log('Logged In..')
+            })
             })
         .then((values) => {
             console.log('Success:')
@@ -40,7 +41,7 @@ const useForm = (callback) => {
     return {
         handleChange,
         handleSubmit,
-        values,
+        values
     }
 }
 
