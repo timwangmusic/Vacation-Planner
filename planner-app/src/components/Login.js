@@ -7,11 +7,16 @@ import useForm from './useForm.js'
 
 
 const Login = () => {
-    const { values, handleChange, handleSubmit } = useForm(signup)
-
     function signup(){
         console.log(values)
     }
+
+    const {
+        values,
+        errors,
+        handleChange,
+        handleSubmit
+    } = useForm(signup)
 
     return (
 <Form noValidate onSubmit={handleSubmit}>
