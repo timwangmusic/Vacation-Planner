@@ -28,6 +28,9 @@ const (
 	ValidSolutionFound           = 200
 	InvalidSolverReqTimeInterval = 400
 	InvalidRequestLocation       = 400
+	ReqTimeSlotsTagMismatch      = 400
+	ReqTagInvalid                = 400
+	CatPlaceIterInitFailure      = 404
 	NoValidSolution              = 404
 )
 
@@ -65,6 +68,12 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 			return
 		}
 	}
+
+	// set default number of planning results
+	if req.NumResults == 0 {
+		req.NumResults = NumSolutions
+	}
+
 	// each row contains candidates in one slot
 	candidates := make([][]SlotSolutionCandidate, len(req.SlotRequests))
 	for idx := range req.SlotRequests {
@@ -74,15 +83,25 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 	slotSolutionRedisKeys := make([]string, len(req.SlotRequests))
 	for idx, slotRequest := range req.SlotRequests {
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution, slotSolutionRedisKey := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
+		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
+		if err != nil {
+			if err.Error() == ReqTimeSlotsTagMismatchErrMsg {
+				resp.Errcode = ReqTimeSlotsTagMismatch
+			} else if err.Error() == CategorizedPlaceIterInitFailureErrMsg {
+				resp.Errcode = CatPlaceIterInitFailure
+			} else {
+				resp.Errcode = ReqTagInvalid
+			}
+			return resp, err
+		}
 		for _, candidate := range slotSolution.SlotSolutionCandidates {
 			candidates[idx] = append(candidates[idx], candidate)
 		}
 		slotSolutionRedisKeys[idx] = slotSolutionRedisKey
 	}
 
-	resp.Solutions = genBestMultiSlotSolutions(candidates)
+	resp.Solutions = genBestMultiSlotSolutions(candidates, req.NumResults)
 	if len(resp.Solutions) == 0 {
 		invalidateSlotSolutionCache(&redisCli, slotSolutionRedisKeys)
 	}
@@ -117,7 +136,7 @@ func travelTime(fromLoc string, toLoc string, fromLocRadius uint, toLocRadius ui
 	return uint(distance / (TravelSpeed * 16.67)) // 16.67 is the ratio of m/minute and km/hour
 }
 
-func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate) []MultiSlotSolution {
+func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate, numResults uint64) []MultiSlotSolution {
 	res := make([]MultiSlotSolution, 0)
 	slotSolutionResults := make([][]SlotSolutionCandidate, 0)
 	path := make([]SlotSolutionCandidate, 0)
@@ -135,7 +154,7 @@ func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate) []MultiSlot
 		}
 		res = append(res, multiSlotSolution)
 	}
-	bestSolutions := FindBestSolutions(res)
+	bestSolutions := FindBestSolutions(res, numResults)
 	for solutionIdx := range bestSolutions {
 		calTravelTime(&bestSolutions[solutionIdx])
 	}
@@ -221,6 +240,7 @@ type PlanningRequest struct {
 	SlotRequests []SlotRequest
 	SearchRadius uint
 	Weekday      POI.Weekday
+	NumResults   uint64
 }
 
 type SlotRequest struct {
@@ -236,7 +256,13 @@ type PlanningResponse struct {
 }
 
 // Find top multi-slot solutions
-func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
+func FindBestSolutions(candidates []MultiSlotSolution, numResults uint64) []MultiSlotSolution {
+	res := make([]MultiSlotSolution, 0)
+
+	if numResults == 0 {
+		return res
+	}
+
 	m := make(map[string]MultiSlotSolution) // map for result extraction
 	vertexes := make([]graph.Vertex, len(candidates))
 	for idx, candidate := range candidates {
@@ -248,7 +274,7 @@ func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
 	// use limited-size minimum priority queue
 	priorityQueue := &graph.MinPriorityQueueVertex{}
 	for _, vertex := range vertexes {
-		if priorityQueue.Len() == NumSolutions {
+		if priorityQueue.Len() == int(numResults) {
 			top := (*priorityQueue)[0]
 			if vertex.Key > top.Key {
 				heap.Pop(priorityQueue)
@@ -259,8 +285,6 @@ func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
 		heap.Push(priorityQueue, vertex)
 	}
 
-	res := make([]MultiSlotSolution, 0)
-
 	for priorityQueue.Len() > 0 {
 		top := heap.Pop(priorityQueue).(graph.Vertex)
 		res = append(res, m[top.Name])
@@ -270,7 +294,7 @@ func FindBestSolutions(candidates []MultiSlotSolution) []MultiSlotSolution {
 }
 
 // Generate a standard request while we seek a better way to represent complex REST requests
-func GetStandardRequest(weekday POI.Weekday) (req PlanningRequest) {
+func GetStandardRequest(weekday POI.Weekday, numResults uint64) (req PlanningRequest) {
 	slot12 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 9, End: 10}}
 	slot13 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
 	stayTimes1 := []matching.TimeSlot{slot12, slot13}
@@ -298,5 +322,6 @@ func GetStandardRequest(weekday POI.Weekday) (req PlanningRequest) {
 
 	req.SlotRequests = append(req.SlotRequests, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
 	req.Weekday = weekday
+	req.NumResults = numResults
 	return
 }

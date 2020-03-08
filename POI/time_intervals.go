@@ -15,6 +15,20 @@ type TimeInterval struct {
 	End   Hour
 }
 
+type ByStartTime []TimeInterval
+
+func (timeIntervals ByStartTime) Len() int {
+	return len(timeIntervals)
+}
+
+func (timeIntervals ByStartTime) Swap(i, j int) {
+	timeIntervals[i], timeIntervals[j] = timeIntervals[j], timeIntervals[i]
+}
+
+func (timeIntervals ByStartTime) Less(i, j int) bool {
+	return timeIntervals[i].Start <= timeIntervals[j].Start
+}
+
 func (interval *TimeInterval) Serialize() string {
 	return strconv.FormatUint(uint64(interval.Start), 10) + "_" + strconv.FormatUint(uint64(interval.End), 10)
 }

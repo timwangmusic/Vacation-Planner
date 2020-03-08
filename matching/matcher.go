@@ -3,10 +3,11 @@
 package matching
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"log"
+	"sort"
 )
 
 type Matcher interface {
@@ -23,7 +24,6 @@ type TimeSlot struct {
 	Slot POI.TimeInterval
 }
 
-// Request from planner
 type TimeMatchingRequest struct {
 	Location  string      // city,country
 	Radius    uint        // search Radius
@@ -56,24 +56,33 @@ func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
 	matcher.TouringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 }
 
-// Matching takes requests from planner and a valid client, returns place clusters with time slot
-func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (PlaceClusters []PlaceCluster) {
+func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (clusters []PlaceCluster) {
 	// place search and time clustering
-	matcher.placeSearch(req, POI.PlaceCategoryEatery, matcher.PoiSearcher) // search catering
-	matcher.placeSearch(req, POI.PlaceCategoryVisit, matcher.PoiSearcher)  // search visit locations
+	matcher.placeSearch(req, POI.PlaceCategoryEatery) // search catering
+	matcher.placeSearch(req, POI.PlaceCategoryVisit)  // search visit locations
 
 	clusterMap := make(map[string]*PlaceCluster)
 
-	matcher.processCluster(POI.PlaceCategoryEatery, clusterMap)
-	matcher.processCluster(POI.PlaceCategoryVisit, clusterMap)
+	matcher.timeClustering(POI.PlaceCategoryEatery, clusterMap)
+	matcher.timeClustering(POI.PlaceCategoryVisit, clusterMap)
 
-	for _, cluster := range clusterMap {
-		PlaceClusters = append(PlaceClusters, *cluster)
+	clusters = make([]PlaceCluster, len(clusterMap))
+	timeIntervals := make([]POI.TimeInterval, 0)
+	for _, cluster := range clusterMap { // clusters and timeIntervals are of same length
+		timeIntervals = append(timeIntervals, cluster.Slot.Slot)
 	}
+	// sort time intervals in place by start time
+	sort.Sort(POI.ByStartTime(timeIntervals))
+
+	for idx, interval := range timeIntervals {
+		intervalKey := interval.Serialize()
+		clusters[idx] = *clusterMap[intervalKey]
+	}
+
 	return
 }
 
-func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMap map[string]*PlaceCluster) {
+func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMap map[string]*PlaceCluster) {
 	var mgr *graph.TimeClustersManager
 
 	switch placeCat {
@@ -98,7 +107,7 @@ func (matcher *TimeMatcher) processCluster(placeCat POI.PlaceCategory, clusterMa
 
 }
 
-func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory, poiSearcher *iowrappers.PoiSearcher) {
+func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory) {
 	var mgr *graph.TimeClustersManager
 
 	switch placeCat {
@@ -116,8 +125,8 @@ func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.P
 	}
 
 	// this is how to use TimeClustersManager
-	mgr.Init(poiSearcher, placeCat, intervals, req.Weekday)
-	mgr.PlaceSearch(req.Location, req.Radius, "")
+	mgr.Init(matcher.PoiSearcher, placeCat, intervals, req.Weekday)
+	mgr.PlaceSearch(req.Location, req.Radius)
 	mgr.Clustering(req.Weekday)
 
 	return

@@ -11,8 +11,12 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
 
+const (
+	TimeClusterMinResults = 20
+)
+
 type ClusterManager interface {
-	PlaceSearch(string, uint, string) // location, search radius and search type
+	PlaceSearch(string, uint) // location and search radius
 }
 
 // TimeCluster consists of a set of Places and a time interval
@@ -72,18 +76,13 @@ func (placeManager *TimeClustersManager) Init(poiSearcher *iowrappers.PoiSearche
 }
 
 // searchType is a selector for MinNumResults in PlaceSearchRequest
-func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint, searchType string) {
+func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint) {
 	request := iowrappers.PlaceSearchRequest{
 		Location:      location,
 		PlaceCat:      placeManager.PlaceCat,
 		Radius:        searchRadius,
 		RankBy:        "prominence",
-		MinNumResults: 20,
-	}
-	if searchType == "" {
-		request.MinNumResults = 20
-	} else {
-		request.MinNumResults = 30
+		MinNumResults: TimeClusterMinResults,
 	}
 	request.MaxNumResults = 2 * request.MinNumResults
 	placeManager.places, _ = placeManager.poiSearcher.NearbySearch(&request)

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	log "go.uber.org/zap"
 	"googlemaps.github.io/maps"
 	"strings"
 	"sync"
@@ -138,12 +138,12 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 	searchDuration := time.Since(searchStartTime)
 
 	// logging
-	c.logger.WithFields(log.Fields{
-		"center location (lat,lng)": request.Location,
-		"place category":            request.PlaceCat,
-		"total results":             totalResult,
-		"Maps API call time":        searchDuration,
-	}).Info("Logging nearby search")
+	Logger.Infow("Logging nearby search",
+		"Maps API call time", searchDuration,
+		"center location (lat,lng)", request.Location,
+		"place category", request.PlaceCat,
+		"total results", totalResult,
+	)
 
 	return
 }
@@ -188,11 +188,11 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 	searchDuration := time.Since(startSearchTime)
 
 	// logging
-	c.logger.WithFields(log.Fields{
-		"place name":              resp.Name,
-		"place formatted address": resp.FormattedAddress,
-		"Maps API call time":      searchDuration,
-	}).Debug("Logging detailed place search")
+	Logger.Debugw("Logging detailed place search",
+		"Maps API call time", searchDuration,
+		"place name", resp.Name,
+		"place formatted address", resp.FormattedAddress,
+	)
 
 	return resp, err
 }
@@ -211,7 +211,7 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.
 		location := strings.Join([]string{lat, lng}, ",")
 		addr := ""
 		if microAddrMap != nil {
-			addr = microAddrMap[res.ID]
+			addr = microAddrMap[id]
 		}
 		priceLevel := res.PriceLevel
 		h := &POI.OpeningHours{}

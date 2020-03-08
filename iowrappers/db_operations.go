@@ -157,34 +157,20 @@ func (dbHandler *DbHandler) UserLogin(credential user.Credential, issueJWT bool)
 // Prevent accidentally creating collections in PlaceSearch method.
 // Since the nearby search in Redis has considered maximum search radius, in this method we only need to use the updated
 // search radius to search one more time in database.
-func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, uErr utils.Error) {
+func (dbHandler *DbHandler) PlaceSearch(req *PlaceSearchRequest) (places []POI.Place, err error) {
 	collName := string(req.PlaceCat)
 	dbHandler.SetCollHandler(collName)
-	err := EnsureSpatialIndex(dbHandler.handlers[collName].GetCollection())
+	err = EnsureSpatialIndex(dbHandler.handlers[collName].GetCollection())
 	if err != nil {
 		return
 	}
 
 	if _, exist := dbHandler.handlers[collName]; !exist {
-		err := fmt.Errorf("collection %s does not exist", collName)
-		uErr = utils.GenerateErr(err, utils.LogError)
+		err = fmt.Errorf("collection %s does not exist", collName)
 		return
 	}
 
 	collHandler := dbHandler.handlers[collName]
-
-	totalNumDocs, err := collHandler.GetCollection().Count()
-	if err != nil {
-		uErr = utils.GenerateErr(err, utils.LogError)
-		return
-	}
-
-	if uint(totalNumDocs) < req.MinNumResults {
-		err = fmt.Errorf("the number of documents in database %d is less than the minimum %d requested",
-			totalNumDocs, req.MinNumResults)
-		uErr = utils.GenerateErr(err, utils.LogInfo)
-		return
-	}
 
 	latLng, _ := utils.ParseLocation(req.Location)
 	lat := latLng[0]
@@ -206,9 +192,11 @@ func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCateg
 	collHandler := dbHandler.handlers[collName]
 	err := collHandler.InsertPlace(place)
 	if err != nil {
-		log.Error(err)
 		if mgo.IsDup(err) {
-			log.Debugf("Duplicate insertion of %s to the database", place.Name)
+			log.Debugf("Database updating %s", place.Name)
+			_ = collHandler.UpdatePlace(place)
+		} else {
+			log.Error(err)
 		}
 	} else {
 		atomic.AddUint64(newDocCounter, 1)
@@ -237,6 +225,12 @@ func (collHandler *CollHandler) GetCollection() (coll *mgo.Collection) {
 
 func (collHandler *CollHandler) InsertPlace(place POI.Place) error {
 	err := collHandler.GetCollection().Insert(place)
+	return err
+}
+
+func (collHandler *CollHandler) UpdatePlace(place POI.Place) error {
+	query := bson.M{"_id": place.ID}
+	err := collHandler.GetCollection().Update(query, place)
 	return err
 }
 

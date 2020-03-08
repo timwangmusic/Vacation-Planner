@@ -112,7 +112,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 		}
 	}
 	if geoAddSuccessCount > 0 {
-		log.Infof("%d places geo added to Redis", geoAddSuccessCount)
+		Logger.Infof("%d places geo added to Redis", geoAddSuccessCount)
 	}
 }
 
@@ -155,44 +155,28 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 	return res, nil
 }
 
-// if total number of places in a category for a location is less than minimum, return an empty slice
-// return as many places as possible within the maximum search radius
 func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
 	requestCategory := strings.ToLower(string(request.PlaceCat))
 	redisKey := "placeIDs:" + requestCategory
 
-	totalNumCachedResults, err := redisClient.client.ZCount(redisKey, "-inf", "inf").Result()
-	utils.CheckErrImmediate(err, utils.LogInfo)
-	if uint(totalNumCachedResults) < request.MinNumResults {
-		return
-	}
-
 	latLng, _ := utils.ParseLocation(request.Location)
 	requestLat, requestLng := latLng[0], latLng[1]
 
-	radiusMultiplier := uint(1)
-	numQualifiedCachedPlaces := 0
-	cachedQualifiedPlaces := make([]redis.GeoLocation, 0)
 	searchRadius := request.Radius
 
 	if searchRadius > MaxSearchRadius {
 		searchRadius = MaxSearchRadius
 	}
 
-	for searchRadius <= MaxSearchRadius && uint(numQualifiedCachedPlaces) < request.MinNumResults {
-		log.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
-		geoQuery := redis.GeoRadiusQuery{
-			Radius: float64(searchRadius),
-			Unit:   "m",
-			Sort:   "ASC", // sort ascending
-		}
-		cachedQualifiedPlaces, err = redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
-		utils.CheckErrImmediate(err, utils.LogError)
-
-		numQualifiedCachedPlaces = len(cachedQualifiedPlaces)
-		radiusMultiplier *= 2
-		searchRadius = request.Radius * radiusMultiplier
+	log.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
+	geoQuery := redis.GeoRadiusQuery{
+		Radius: float64(searchRadius),
+		Unit:   "m",
+		Sort:   "ASC", // sort ascending
 	}
+	cachedQualifiedPlaces, err := redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
+	utils.CheckErrImmediate(err, utils.LogError)
+
 	request.Radius = searchRadius
 
 	places = make([]POI.Place, 0)
@@ -241,12 +225,12 @@ func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, ln
 	redisKey := "geocode:cities"
 	redisField := redisClient.GetLocationWithAlias(query)
 	if redisField == "" {
-		log.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
+		Logger.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
 		return
 	}
 	geocode, err := redisClient.client.HGet(redisKey, redisField).Result()
 	if err != nil {
-		log.Infof("geocode of location %s, %s does not exist in cache", query.City, query.Country)
+		Logger.Infof("geocode of location %s, %s does not exist in cache", query.City, query.Country)
 		return // location does not exist
 	}
 	latLng, _ := utils.ParseLocation(geocode)
@@ -263,7 +247,7 @@ func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng 
 	res, err := redisClient.client.HSet(redisKey, redisField, redisVal).Result()
 	utils.CheckErrImmediate(err, utils.LogError)
 	if res {
-		log.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
+		Logger.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
 	}
 	utils.CheckErrImmediate(redisClient.CacheLocationAlias(originalQuery, query), utils.LogError)
 }
@@ -357,7 +341,7 @@ func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (s
 	redisKey = genSlotSolutionCacheKey(req)
 	json_, err := redisClient.client.Get(redisKey).Result()
 	if err != nil {
-		log.Debugf("get slot solution cache failure for request with key: %s", redisKey)
+		log.Debugf("redis server find no result for key: %s", redisKey)
 		return
 	}
 	err = json.Unmarshal([]byte(json_), &solution)
