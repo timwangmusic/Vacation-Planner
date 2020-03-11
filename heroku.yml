@@ -3,6 +3,3 @@
 build:
   languages:
     - go
-
-run:
-  web: go-getting-started
