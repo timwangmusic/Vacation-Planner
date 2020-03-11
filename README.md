@@ -2,9 +2,9 @@
 [![CircleCI](https://circleci.com/gh/weihesdlegend/Vacation-Planner/tree/master.svg?style=svg&circle-token=7f88a49fd72bbe5020c873e24bc5f8a6e47bad63)](https://circleci.com/gh/weihesdlegend/Vacation-Planner/tree/master)
 
 ## Motivation
-* Planning for travel is essential for having a most enjoyable trip. 
-Meanwhile, travel planning is time consuming and the results are sometimes frustrating. 
-People typically rely on electronic maps and online resources to plan their trips. 
+* Planning for travel is essential for having a most enjoyable trip.
+Meanwhile, travel planning is time consuming and the results are sometimes frustrating.
+People typically rely on electronic maps and online resources to plan their trips.
 Querying for different routes are tedious at best, and often times it is hard to remember which sources and destinations have been researched.
 When taking in time and financial constraints, this manual planning process quickly becomes mind-boggling.
 * Our goal is to provide a service that helps travellers plan for their ideal vacations under financial budget or time constraint.
@@ -58,27 +58,4 @@ When taking in time and financial constraints, this manual planning process quic
 - npm start
 - With Linux OS (Ubuntu 18.04), if you encounter issues, do `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
 - For build and deploy (on a webpage of choice) please read - https://create-react-app.dev/docs/deployment/
-- After changing the `app.js`, the cache will not update but just building, please do `sudo npm run start` to refresh the cache and React to load the new `app.js` by
-
-```
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
-```
+- After changing the `app.js`, the cache will not update but just build, please do `sudo npm run start` to refresh the cache and React to load the new `app.js`

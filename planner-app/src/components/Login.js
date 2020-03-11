@@ -3,8 +3,6 @@ import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Col from 'react-bootstrap/Col'
 import useForm from './useForm.js'
-import { useHistory } from 'react-router-dom';
-import { Card, CardBody, CardGroup, Container, Input, InputGroup, InputGroupAddon, InputGroupText, Row, NavLink  } from 'reactstrap';
 
 // Using hooks instead of a Class and constructor
 
@@ -17,10 +15,8 @@ const Login = () => {
 
         const {
         values,
-        errors,
         handleChange,
-        handleSubmit,
-        routeChange
+        handleSubmit
     } = useForm(signup)
 
     return (
@@ -37,46 +33,7 @@ const Login = () => {
                 onChange={handleChange}
             />
         </Form.Group>
-
-        <Form.Group as={Col} controlId="formGridFirstName">
-            <Form.Label>First Name</Form.Label>
-            <Form.Control
-            autoFocus
-            name={'firstname'}
-            value={values.firstname}
-            type='first name'
-            placeholder="First name"
-            onChange={handleChange}
-            />
-        </Form.Group>
-
-        <Form.Group as={Col} controlId="formGridSecondName">
-            <Form.Label>Last Name</Form.Label>
-            <Form.Control
-            autoFocus
-            name={'lastname'}
-            value={values.lastname}
-            type='last name'
-            placeholder="Last name"
-            onChange={handleChange}
-            />
-        </Form.Group>
     </Form.Row>
-
-    <Form.Group controlId="formBasicEmail">
-        <Form.Label>Email address</Form.Label>
-        <Form.Control
-        autoFocus
-        type="email"
-        name={'email'}
-        value={values.email}
-        onChange={handleChange}
-        placeholder="Enter email"
-        />
-        <Form.Text className="text-muted">
-            We'll never share your email with anyone else.
-        </Form.Text>
-  </Form.Group>
 
   <Form.Group controlId="formBasicPassword">
     <Form.Label>Password</Form.Label>
@@ -96,7 +53,6 @@ const Login = () => {
         variant="primary"
         type="submit"
         value="Submit"
-        onClick={routeChange}
         >
         Login
     </Button>
