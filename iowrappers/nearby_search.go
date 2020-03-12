@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	log "go.uber.org/zap"
 	"googlemaps.github.io/maps"
 	"strings"
 	"sync"
@@ -157,7 +156,7 @@ func (c *MapsClient) DetailedSearchWrapper(idx int, placeId string, detailSearch
 	defer wg.Done()
 	searchRes, err := c.PlaceDetailedSearch(placeId)
 	if err != nil {
-		log.Error(err)
+		Logger.Error(err)
 		return
 	}
 	*detailSearchRes = PlaceDetailSearchRes{Res: &searchRes, RespIdx: idx}

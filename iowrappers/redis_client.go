@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v7"
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
@@ -168,7 +167,7 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 		searchRadius = MaxSearchRadius
 	}
 
-	log.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
+	Logger.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
 	geoQuery := redis.GeoRadiusQuery{
 		Radius: float64(searchRadius),
 		Unit:   "m",
@@ -261,7 +260,7 @@ func (redisClient *RedisClient) StreamsLogging(streamName string, data map[strin
 	}
 	streamsId, err := redisClient.client.XAdd(&xArgs).Result()
 	if err != nil {
-		log.Info(err)
+		Logger.Info(err)
 	}
 	return streamsId
 }
@@ -331,7 +330,7 @@ func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, 
 	utils.CheckErrImmediate(err, utils.LogError)
 
 	if err != nil {
-		log.Errorf("cache slot solution failure for request with key: %s", redisKey)
+		Logger.Errorf("cache slot solution failure for request with key: %s", redisKey)
 	} else {
 		redisClient.client.Set(redisKey, json_, SlotSolutionExpirationTime)
 	}
@@ -341,7 +340,7 @@ func (redisClient *RedisClient) GetSlotSolution(req SlotSolutionCacheRequest) (s
 	redisKey = genSlotSolutionCacheKey(req)
 	json_, err := redisClient.client.Get(redisKey).Result()
 	if err != nil {
-		log.Debugf("redis server find no result for key: %s", redisKey)
+		Logger.Debugf("redis server find no result for key: %s", redisKey)
 		return
 	}
 	err = json.Unmarshal([]byte(json_), &solution)

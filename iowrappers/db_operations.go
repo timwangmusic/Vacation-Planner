@@ -6,7 +6,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -186,17 +185,17 @@ func (dbHandler *DbHandler) InsertPlace(place POI.Place, placeCat POI.PlaceCateg
 	defer wg.Done()
 	collName := string(placeCat)
 	if _, exist := dbHandler.handlers[collName]; !exist {
-		log.Error(fmt.Errorf("collection %s does not exist", collName))
+		Logger.Error(fmt.Errorf("collection %s does not exist", collName))
 		return
 	}
 	collHandler := dbHandler.handlers[collName]
 	err := collHandler.InsertPlace(place)
 	if err != nil {
 		if mgo.IsDup(err) {
-			log.Debugf("Database updating %s", place.Name)
+			Logger.Debugf("Database updating %s", place.Name)
 			_ = collHandler.UpdatePlace(place)
 		} else {
-			log.Error(err)
+			Logger.Error(err)
 		}
 	} else {
 		atomic.AddUint64(newDocCounter, 1)
