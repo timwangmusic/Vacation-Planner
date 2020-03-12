@@ -38,5 +38,9 @@
     "mdbreact": "^4.24.0",
     "react-bootstrap": "^1.0.0-beta.16",
     "reload": "^3.0.3"
-  }
+  },
+  "description": "This project was bootstrapped with [Create React App].",
+  "main": "clear",
+  "author": "",
+  "license": "ISC"
 }
