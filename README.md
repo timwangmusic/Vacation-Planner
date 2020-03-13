@@ -58,4 +58,4 @@ When taking in time and financial constraints, this manual planning process quic
 - npm start
 - With Linux OS (Ubuntu 18.04), if you encounter issues, do `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
 - For build and deploy (on a webpage of choice) please read - https://create-react-app.dev/docs/deployment/
-- After changing the `app.js`, the cache will not update but just build, please do `sudo npm run start` to refresh the cache and React to load the new `app.js` by
+- After changing the `app.js`, the cache will not update but just build, please do `sudo npm run start` to refresh the cache and React to load the new `app.js`
