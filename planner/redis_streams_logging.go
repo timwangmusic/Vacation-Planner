@@ -1,14 +1,25 @@
 package planner
 
-type PlanningEvent struct {
-	City    string `json:"city"`
-	Country string `json:"country"`
-}
+import (
+	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"sync"
+)
 
-func (planner MyPlanner) PlanningEventLogging(event PlanningEvent) {
+func (planner MyPlanner) PlanningEventLogging(event iowrappers.PlanningEvent) {
 	eventData := map[string]string{
-		"city":    event.City,
-		"country": event.Country,
+		"user":      event.User,
+		"city":      event.City,
+		"country":   event.Country,
+		"timestamp": event.Timestamp,
 	}
 	planner.RedisClient.StreamsLogging(planner.RedisStreamName, eventData)
+}
+
+func (planner MyPlanner) ProcessPlanningEvent(worker int, wg *sync.WaitGroup) {
+	for event := range planner.PlanningEvents {
+		log.Debugf("worker %d processing event %s", worker, event.City+" "+event.Country)
+		planner.LoginHandler.CreatePlanningEvent(event)
+	}
+	wg.Done()
 }

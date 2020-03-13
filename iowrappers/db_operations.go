@@ -20,6 +20,7 @@ import (
 
 const (
 	UserCollection = "User"
+	PlanningEventsCollection = "PlanningEvents"
 )
 
 type DatabaseHandler interface {
@@ -46,12 +47,24 @@ type CollHandler struct {
 	collName string
 }
 
+type PlanningEvent struct {
+	User    string `json:"user"`
+	City    string `json:"city"`
+	Country string `json:"country"`
+	Timestamp string `json:"timestamp"`
+}
+
 func (dbHandler *DbHandler) Init(DbName string, url string) {
 	dbHandler.handlers = make(map[string]*CollHandler)
 	dbHandler.dbName = DbName
 	dbHandler.CreateSession(url)
 
 	dbHandler.SetCollHandler(UserCollection)
+	dbHandler.SetCollHandler(PlanningEventsCollection)
+}
+
+func (dbHandler DbHandler) CreatePlanningEvent(event PlanningEvent) {
+	_ = dbHandler.handlers[PlanningEventsCollection].GetCollection().Insert(event)
 }
 
 func (dbHandler *DbHandler) CreateSession(uri string) {
