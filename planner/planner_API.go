@@ -236,7 +236,7 @@ func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request)
 		_, _ = w.Write([]byte("invalid number of planning results"))
 		return
 	}
-	log.Debugf("number of requested planning results is %s", numResults)
+	iowrappers.Logger.Debugf("number of requested planning results is %s", numResults)
 
 	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
 	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {

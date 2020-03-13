@@ -2,7 +2,6 @@ package iowrappers
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"go.uber.org/zap"
@@ -65,7 +64,7 @@ func (poiSearcher *PoiSearcher) Geocode(query *GeocodeQuery) (lat float64, lng f
 		}
 		// either redisClient or mapsClient may have corrected location name in the query
 		poiSearcher.redisClient.SetGeocode(*query, lat, lng, originalGeocodeQuery)
-		log.Debugf("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
+		Logger.Debugf("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
 			query.City, query.Country, lat, lng)
 	}
 	return
@@ -91,7 +90,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
 	cachedPlaces := poiSearcher.redisClient.GetPlaces(request)
-	log.Debugf("number of results from redis is %d", len(cachedPlaces))
+	Logger.Debugf("number of results from redis is %d", len(cachedPlaces))
 	if uint(len(cachedPlaces)) >= request.MinNumResults {
 		Logger.Infof("Using Redis to fulfill request. Place Type: %s", request.PlaceCat)
 		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
@@ -136,24 +135,24 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 		Logger.Debugf("Using MongoDB to fulfill request. Returning %d places of type: %s", len(places), request.PlaceCat)
 	}
 	// update cache
-	poiSearcher.UpdateRedis(request.Location, places, request.PlaceCat)
+	poiSearcher.UpdateRedis(places)
 
 	if uint(len(places)) < request.MinNumResults {
-		log.Debugf("Found %d POI results for place type %s, less than requested number of %d",
+		Logger.Debugf("Found %d POI results for place type %s, less than requested number of %d",
 			len(places), request.PlaceCat, request.MinNumResults)
 	}
 	if len(places) == 0 {
-		log.Debugf("No qualified POI result found in the given location %s, radius %d, and place type: %s",
+		Logger.Debugf("No qualified POI result found in the given location %s, radius %d, and place type: %s",
 			request.Location, request.Radius, request.PlaceCat)
-		log.Debugf("location may be invalid")
+		Logger.Debugf("location may be invalid")
 	}
 	return
 }
 
 //update Redis when hitting cache miss
-func (poiSearcher *PoiSearcher) UpdateRedis(location string, places []POI.Place, placeCategory POI.PlaceCategory) {
+func (poiSearcher *PoiSearcher) UpdateRedis(places []POI.Place) {
 	poiSearcher.redisClient.SetPlacesOnCategory(places)
-	log.Debugf("Redis update complete")
+	Logger.Debugf("Redis update complete")
 }
 
 //update MongoDB if number of results is not sufficient
