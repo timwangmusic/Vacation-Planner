@@ -17,56 +17,58 @@ const (
 
 const SelectionThreshold = -1
 
-type KnapsackNodeRecord struct {
+type knapsackNodeRecord struct {
 	timeUsed uint8
 	cost     uint
 	score    float64
 	Solution []Place
 }
-
-type KnapsackNode struct {
+type knapsackNode struct {
 	score    float64
 	solution []Place
 }
-type KnapsackRecordTable struct {
+type knapsackRecordTable struct {
 	timeLimit   uint8
 	budget      uint
-	SavedRecord map[uint]KnapsackNodeRecord
-	NewRecord   map[uint]KnapsackNodeRecord
+	SavedRecord map[uint]knapsackNodeRecord
+	NewRecord   map[uint]knapsackNodeRecord
 }
 
-func (this *KnapsackRecordTable) Init(timeLimit uint8, budget uint) {
-	this.timeLimit = timeLimit
-	this.budget = budget
-	this.SavedRecord = make(map[uint]KnapsackNodeRecord)
-	this.NewRecord = make(map[uint]KnapsackNodeRecord)
-	start := KnapsackNodeRecord{0, 0, SelectionThreshold, make([]Place, 0)}
-	this.SavedRecord[this.getKey(0, 0)] = start
+func (recordTable *knapsackRecordTable) Init(timeLimit uint8, budget uint) {
+	recordTable.timeLimit = timeLimit
+	recordTable.budget = budget
+	recordTable.SavedRecord = make(map[uint]knapsackNodeRecord)
+	recordTable.NewRecord = make(map[uint]knapsackNodeRecord)
+	start := knapsackNodeRecord{0, 0, SelectionThreshold, make([]Place, 0)}
+	recordTable.SavedRecord[recordTable.getKey(0, 0)] = start
 }
-func (this *KnapsackRecordTable) getKey(timeLimit uint8, budget uint) (key uint) {
-	key = uint(timeLimit)*this.budget + budget
+
+func (recordTable *knapsackRecordTable) getKey(timeLimit uint8, budget uint) (key uint) {
+	key = uint(timeLimit)*recordTable.budget + budget
 	return
 }
-func (this *KnapsackRecordTable) getTimeLimitAndCost(key uint) (timeLimt uint8, budget uint) {
-	budget = key % this.budget
-	timeLimt = uint8((key - budget) / this.budget)
+
+func (recordTable *knapsackRecordTable) getTimeLimitAndCost(key uint) (timeLimt uint8, budget uint) {
+	budget = key % recordTable.budget
+	timeLimt = uint8((key - budget) / recordTable.budget)
 	return
 }
-func (this *KnapsackRecordTable) update() {
-	for key, record := range this.NewRecord {
-		if oldRecord, ok := this.SavedRecord[key]; ok {
+
+func (recordTable *knapsackRecordTable) update() {
+	for key, record := range recordTable.NewRecord {
+		if oldRecord, ok := recordTable.SavedRecord[key]; ok {
 			if oldRecord.score < record.score {
-				this.SavedRecord[key] = record
+				recordTable.SavedRecord[key] = record
 			}
 		} else {
-			this.SavedRecord[key] = record
+			recordTable.SavedRecord[key] = record
 		}
 		//delete new record entries
-		delete(this.NewRecord, key)
+		delete(recordTable.NewRecord, key)
 	}
 }
 
-func KnapsackMatrixCopy(dst [][]KnapsackNode, src [][]KnapsackNode) {
+func KnapsackMatrixCopy(dst [][]knapsackNode, src [][]knapsackNode) {
 	rowDst := len(dst)
 	rowSrc := len(src)
 	if rowDst != rowSrc || rowDst == 0 || rowSrc == 0 {
@@ -84,23 +86,24 @@ func KnapsackMatrixCopy(dst [][]KnapsackNode, src [][]KnapsackNode) {
 		}
 	}
 }
+
 func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place) {
 	//INIT
-	current := make([][]KnapsackNode, timeLimit+1)
+	current := make([][]knapsackNode, timeLimit+1)
 	for i := 0; i < int(timeLimit)+1; i++ {
-		current[i] = make([]KnapsackNode, budget+1)
+		current[i] = make([]knapsackNode, budget+1)
 		for j := 0; j < int(budget)+1; j++ {
 			current[i][j].score = SelectionThreshold
 		}
 	}
-	next := make([][]KnapsackNode, timeLimit+1)
+	next := make([][]knapsackNode, timeLimit+1)
 	for i := 0; i < int(timeLimit)+1; i++ {
-		next[i] = make([]KnapsackNode, budget+1)
+		next[i] = make([]knapsackNode, budget+1)
 		for j := 0; j < int(budget)+1; j++ {
 			next[i][j].score = SelectionThreshold
 		}
 	}
-	optimalNode := KnapsackNode{SelectionThreshold, make([]Place, 0)}
+	optimalNode := knapsackNode{SelectionThreshold, make([]Place, 0)}
 	tempPlaces := make([]Place, 0)
 	var tempScore float64 = SelectionThreshold
 	tempi := 0
@@ -154,10 +157,10 @@ Knapsack v2 uses sparse matrix like storage for step values and saves memory
 */
 func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place) {
 	//INIT
-	var recordtable KnapsackRecordTable
+	var recordtable knapsackRecordTable
 	rt := &recordtable
 	rt.Init(timeLimit, budget)
-	optimalNode := KnapsackNodeRecord{0, 0, SelectionThreshold, make([]Place, 0)}
+	optimalNode := knapsackNodeRecord{0, 0, SelectionThreshold, make([]Place, 0)}
 	//MAIN
 	var staytime POI.StayingTime
 	for k := 0; k < len(places); k++ {
@@ -173,7 +176,7 @@ func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place) 
 				copy(newSolution, record.Solution)
 				newSolution = append(newSolution, places[k])
 				newScore := Score(newSolution)
-				newRecord := KnapsackNodeRecord{newTimeLimit, newCost, newScore, newSolution}
+				newRecord := knapsackNodeRecord{newTimeLimit, newCost, newScore, newSolution}
 				if alreadyRecord, ok := rt.NewRecord[newKey]; ok {
 					if alreadyRecord.score < newRecord.score {
 						rt.NewRecord[newKey] = newRecord
