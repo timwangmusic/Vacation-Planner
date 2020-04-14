@@ -1,4 +1,4 @@
-package test
+package knapsack
 
 import (
 	"github.com/weihesdlegend/Vacation-planner/matching"
@@ -6,12 +6,12 @@ import (
 	"testing"
 )
 
-func TestKnapsack(t *testing.T){
+func TestKnapsack(t *testing.T) {
 	var priceAllZero bool
 	priceAllZero = false
 	places := make([]matching.Place, 20, 20)
 	err := utils.ReadFromFile("../../test_visit_random_gen.json", &places)
-	if err != nil || len(places)==0 {
+	if err != nil || len(places) == 0 {
 		t.Error("Json file read error")
 	}
 	t.Log(len(places))
@@ -30,22 +30,22 @@ func TestKnapsack(t *testing.T){
 	}
 	//t.Log(places)
 	result := matching.Knapsack(places, 35, 1500)
-	if len(result)==0 {
+	if len(result) == 0 {
 		t.Error("No result is returned.")
 	}
 	result2 := matching.Knapsackv2(places, 35, 1500)
-	if len(result)==0 {
+	if len(result) == 0 {
 		t.Error("No result is returned by v2")
 	}
-	for _, p := range result{
+	for _, p := range result {
 		t.Log(p.Name)
 	}
 	t.Log(len(result))
-	for _, p := range result2{
+	for _, p := range result2 {
 		t.Log(p.Name)
 	}
 	t.Log(len(result2))
-	if len(result) != len(result2){
+	if len(result) != len(result2) {
 		t.Error("v2 result doesn't match")
 	}
 	for i := range result {
@@ -54,4 +54,5 @@ func TestKnapsack(t *testing.T){
 		}
 	}
 	print(result)
+
 }

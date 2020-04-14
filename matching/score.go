@@ -147,7 +147,7 @@ func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place){
 			}
 		}
 	}
-	log.Debug("Optimal rate %f", optimalNode.score)
+	log.Debugf("Optimal rate %f", optimalNode.score)
 	return optimalNode.solution
 }
 /*
@@ -189,7 +189,7 @@ func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place){
 			}
 		}
 	}
-	log.Debug("Optimal rate %f", optimalNode.score)
+	log.Debugf("Optimal rate %f", optimalNode.score)
 	return optimalNode.Solution
 }
 
