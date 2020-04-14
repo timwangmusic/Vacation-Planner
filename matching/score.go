@@ -17,6 +17,17 @@ const (
 
 const SelectionThreshold = -1
 
+type KnapsackNodeRecord struct {
+	timeUsed uint8
+	cost     uint
+	score    float64
+	Solution []Place
+}
+
+type KnapsackNode struct {
+	score    float64
+	solution []Place
+}
 type KnapsackRecordTable struct {
 	timeLimit   uint8
 	budget      uint
@@ -53,18 +64,6 @@ func (this *KnapsackRecordTable) update() {
 		//delete new record entries
 		delete(this.NewRecord, key)
 	}
-}
-
-type KnapsackNodeRecord struct {
-	timeUsed uint8
-	cost     uint
-	score    float64
-	Solution []Place
-}
-
-type KnapsackNode struct {
-	score    float64
-	solution []Place
 }
 
 func KnapsackMatrixCopy(dst [][]KnapsackNode, src [][]KnapsackNode) {
