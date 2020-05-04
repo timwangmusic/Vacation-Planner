@@ -1,11 +1,18 @@
 package main
 
 import (
+	"context"
 	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/planner"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
+	"os"
+	"os/signal"
+	"sync"
 )
+
+const numWorkers = 5
 
 type Config struct {
 	Server struct {
@@ -37,7 +44,41 @@ func RunServer() {
 	myPlanner := planner.MyPlanner{}
 	myPlanner.Init(conf.MapsClientApiKey, conf.Database.MongoDBUrl, redisURL,
 		conf.Redis.RedisStreamName, conf.Database.MongoDBName)
-	myPlanner.HandlingRequests(conf.Server.ServerPort)
+	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(numWorkers)
+	// dispatch workers
+	for worker := 0; worker < numWorkers; worker++ {
+		go myPlanner.ProcessPlanningEvent(worker, wg)
+	}
+
+	go func() {
+		if err := svr.ListenAndServe(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	// block until receiving interrupting signal
+	<-c
+
+	// closing event channel after server shuts down
+	close(myPlanner.PlanningEvents)
+	wg.Wait()
+
+	defer myPlanner.Destroy()
+
+	// create a deadline for other connections to complete IO
+	ctx, cancel := context.WithTimeout(context.Background(), planner.ServerTimeout)
+	defer cancel()
+
+	utils.CheckErrImmediate(svr.Shutdown(ctx), utils.LogError)
+
+	log.Info("Server gracefully shut down")
+	os.Exit(0)
 }
 
 func main() {
