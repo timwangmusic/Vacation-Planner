@@ -1,14 +1,12 @@
 package planner
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/solution"
@@ -16,12 +14,9 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
-	"os"
-	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -32,11 +27,10 @@ const (
 	MaxPostRequestsPerSecond = 8.0  // max POST QPS
 	ServerTimeout            = time.Second * 15
 	jobQueueBufferSize       = 1000
-	numWorkers               = 5
 )
 
 type Planner interface {
-	Planning(req *solution.PlanningRequest) (resp PlanningResponse)
+	Planning(req *solution.PlanningRequest, user string) (resp PlanningResponse)
 }
 
 type MyPlanner struct {
@@ -109,7 +103,7 @@ func (planner *MyPlanner) Destroy() {
 }
 
 // single-day, single-city planning method
-func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp PlanningResponse) {
+func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (resp PlanningResponse) {
 	planningResp, err := planner.Solver.Solve(*req, planner.RedisClient)
 	utils.CheckErrImmediate(err, utils.LogError)
 	if err != nil {
@@ -123,7 +117,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 		countryCity := req.SlotRequests[0].Location
 		countryAndCity := strings.Split(countryCity, ",")
 		event := iowrappers.PlanningEvent{
-			User:      "",
+			User:      user,
 			Country:   countryAndCity[1],
 			City:      countryAndCity[0],
 			Timestamp: time.Now().Format(time.RFC3339),
@@ -167,20 +161,14 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest) (resp Planning
 }
 
 // API definitions
-func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, r *http.Request) {
-	_, authenticationErr := planner.UserAuthentication(r)
-	if authenticationErr != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
-		return
-	}
+func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, _ *http.Request) {
 	_, err := fmt.Fprint(w, "Welcome to use the Vacation Planner system!")
 	utils.CheckErrImmediate(err, utils.LogError)
 }
 
 // HTTP POST API end-point
 func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request) {
-	_, authenticationErr := planner.UserAuthentication(r)
+	username, authenticationErr := planner.UserAuthentication(r)
 	if authenticationErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
@@ -204,7 +192,7 @@ func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	planningResp := planner.Planning(&planningReq)
+	planningResp := planner.Planning(&planningReq, username)
 	if planningResp.Err != "" && planningResp.StatusCode == http.StatusNotFound {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte("No solution is found"))
@@ -217,7 +205,7 @@ func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request
 // HTTP GET API end-point
 // Return top planning result to user
 func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request) {
-	_, authenticationErr := planner.UserAuthentication(r)
+	username, authenticationErr := planner.UserAuthentication(r)
 	if authenticationErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
@@ -261,7 +249,7 @@ func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request)
 		planningReq.SlotRequests[slotReqIdx].Location = cityCountry // set to the same location from URL
 	}
 
-	planningResp := planner.Planning(&planningReq)
+	planningResp := planner.Planning(&planningReq, username)
 
 	err := planningResp.Err
 	if err != "" {
@@ -279,7 +267,7 @@ func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request)
 	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(w, planningResp), utils.LogError)
 }
 
-func (planner MyPlanner) HandlingRequests(serverPort string) {
+func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
 	getLimiter := tollbooth.NewLimiter(MaxGetRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
@@ -308,37 +296,5 @@ func (planner MyPlanner) HandlingRequests(serverPort string) {
 		WriteTimeout: ServerTimeout,
 	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(numWorkers)
-	// dispatch workers
-	for worker := 0; worker < numWorkers; worker++ {
-		go planner.ProcessPlanningEvent(worker, wg)
-	}
-
-	go func() {
-		if err := svr.ListenAndServe(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	// block until receiving interrupting signal
-	<-c
-
-	// closing event channel after server shuts down
-	close(planner.PlanningEvents)
-	wg.Wait()
-
-	defer planner.Destroy()
-
-	// create a deadline for other connections to complete IO
-	ctx, cancel := context.WithTimeout(context.Background(), ServerTimeout)
-	defer cancel()
-
-	utils.CheckErrImmediate(svr.Shutdown(ctx), utils.LogError)
-
-	log.Info("Server gracefully shut down")
-	os.Exit(0)
+	return svr
 }
