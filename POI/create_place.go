@@ -1,6 +1,7 @@
 package POI
 
 import (
+	"googlemaps.github.io/maps"
 	"strconv"
 	"strings"
 )
@@ -9,18 +10,19 @@ type OpeningHours struct {
 	Hours []string
 }
 
-func CreatePlace(name string, location string, addr string, formattedAddr string, locationType LocationType, openingHours *OpeningHours, placeID string, priceLevel int, rating float32) (place Place) {
+func CreatePlace(name string, location string, addr string, formattedAddr string, locationType LocationType,
+	openingHours *OpeningHours, placeID string, priceLevel int, rating float32, url string, photo *maps.Photo) (place Place) {
 	place.SetType(locationType)
 	place.SetName(name)
 	place.SetID(placeID)
 	var i Weekday
 	if openingHours != nil && openingHours.Hours != nil {
-		for i = DATE_MONDAY; i <= DATE_SUNDAY; i++ {
+		for i = DateMonday; i <= DateSunday; i++ {
 			place.SetHour(i, openingHours.Hours[i])
 		}
 	}
 	// set default
-	for i = DATE_MONDAY; i <= DATE_SUNDAY; i++ {
+	for i = DateMonday; i <= DateSunday; i++ {
 		if place.GetHour(i) == "" {
 			place.SetHour(i, "8:30 am – 9:30 pm")
 		}
@@ -34,5 +36,7 @@ func CreatePlace(name string, location string, addr string, formattedAddr string
 	place.SetFormattedAddress(formattedAddr)
 	place.SetPriceLevel(priceLevel)
 	place.SetRating(rating)
+	place.SetURL(url)
+	place.SetPhoto(photo)
 	return
 }

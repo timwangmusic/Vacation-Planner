@@ -10,7 +10,7 @@ import (
 )
 
 func processPlanningPostRequest(req *PlanningPostRequest) (planningRequest solution.PlanningRequest, err error) {
-	if req.Weekday > POI.DATE_SUNDAY || req.Weekday < POI.DATE_MONDAY {
+	if req.Weekday > POI.DateSunday || req.Weekday < POI.DateMonday {
 		err = errors.New("invalid weekday in the request")
 		return
 	}
