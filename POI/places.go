@@ -17,6 +17,15 @@ const (
 	DATE_SUNDAY
 )
 
+type PlacePhoto struct {
+	// reference from Google Images
+	Reference string
+	// the maximum height of the image
+	Height    int
+	// the maximum width of the image
+	Width     int
+}
+
 type Place struct {
 	ID               string       `bson:"_id"`
 	Name             string       `bson:"name"`
@@ -27,6 +36,8 @@ type Place struct {
 	PriceLevel       int          `bson:"price_level"`
 	Rating           float32      `bson:"rating"`
 	Hours            [7]string    `bson:"hours"`
+	URL              string       `bson:"url"`
+	Photo            PlacePhoto   `bson:"photo"`
 }
 
 type Location struct {
