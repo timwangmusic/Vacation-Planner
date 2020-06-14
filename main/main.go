@@ -1,11 +1,10 @@
 package main
 
 import (
-	"context"
+	"github.com/braintree/manners"
 	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/planner"
-	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
 	"os"
 	"os/signal"
@@ -46,6 +45,26 @@ func RunServer() {
 		conf.Redis.RedisStreamName, conf.Database.MongoDBName)
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+
+	graceSvr := manners.NewWithServer(svr)
+
+	go listenForShutDownServer(c, graceSvr, &myPlanner)
+
+	err = graceSvr.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Info("Server gracefully shut down")
+}
+
+func main() {
+	RunServer()
+}
+
+func listenForShutDownServer(ch <-chan os.Signal, svr *manners.GracefulServer, myPlanner *planner.MyPlanner) {
 	wg := &sync.WaitGroup{}
 	wg.Add(numWorkers)
 	// dispatch workers
@@ -53,34 +72,14 @@ func RunServer() {
 		go myPlanner.ProcessPlanningEvent(worker, wg)
 	}
 
-	go func() {
-		if err := svr.ListenAndServe(); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	// block and wait for shut-down signal
+	<- ch
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	// block until receiving interrupting signal
-	<-c
-
-	// closing event channel after server shuts down
+	// destroy zap logger
+	defer myPlanner.Destroy()
+	// close worker channels
 	close(myPlanner.PlanningEvents)
 	wg.Wait()
 
-	defer myPlanner.Destroy()
-
-	// create a deadline for other connections to complete IO
-	ctx, cancel := context.WithTimeout(context.Background(), planner.ServerTimeout)
-	defer cancel()
-
-	utils.CheckErrImmediate(svr.Shutdown(ctx), utils.LogError)
-
-	log.Info("Server gracefully shut down")
-	os.Exit(0)
-}
-
-func main() {
-	RunServer()
+	svr.Close()
 }
