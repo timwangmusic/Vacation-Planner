@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	UserCollection = "User"
+	UserCollection           = "User"
 	PlanningEventsCollection = "PlanningEvents"
 )
 
@@ -47,9 +47,9 @@ type CollHandler struct {
 }
 
 type PlanningEvent struct {
-	User    string `json:"user"`
-	City    string `json:"city"`
-	Country string `json:"country"`
+	User      string `json:"user"`
+	City      string `json:"city"`
+	Country   string `json:"country"`
 	Timestamp string `json:"timestamp"`
 }
 

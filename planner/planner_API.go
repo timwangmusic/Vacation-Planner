@@ -27,7 +27,6 @@ const (
 	MaxPostRequestsPerSecond = 8.0  // max POST QPS
 	ServerTimeout            = time.Second * 15
 	jobQueueBufferSize       = 1000
-	GoogleSearchHome         = "www.google.com"
 )
 
 type Planner interface {
@@ -147,12 +146,8 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (
 					StartTime: req.SlotRequests[idx].StayTimes[pIdx].Slot.Start,
 					EndTime:   req.SlotRequests[idx].StayTimes[pIdx].Slot.End,
 					Address:   slotSol.PlaceAddresses[pIdx],
+					URL: slotSol.PlaceURLs[pIdx],
 				})
-				if len(slotSol.PlaceURLs) > pIdx {
-					timeSectionPlaces.Places[pIdx].URL = slotSol.PlaceURLs[pIdx]
-				} else {
-					timeSectionPlaces.Places[pIdx].URL = GoogleSearchHome
-				}
 			}
 			resp.Places[sIdx] = append(resp.Places[sIdx], timeSectionPlaces)
 		}
