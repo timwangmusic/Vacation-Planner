@@ -1,21 +1,32 @@
 package POI
 
 import (
+	"googlemaps.github.io/maps"
 	"log"
+	"reflect"
 	"regexp"
 )
 
 type Weekday uint8
 
 const (
-	DATE_MONDAY Weekday = iota
-	DATE_TUESDAY
-	DATE_WEDNESDAY
-	DATE_THURSAY
-	DATE_FRIDAY
-	DATE_SATURDAY
-	DATE_SUNDAY
+	DateMonday Weekday = iota
+	DateTuesday
+	DateWednesday
+	DateThursday
+	DateFriday
+	DateSaturday
+	DateSunday
 )
+
+type PlacePhoto struct {
+	// reference from Google Images
+	Reference string `bson:"reference"`
+	// the maximum height of the image
+	Height int `bson:"height"`
+	// the maximum width of the image
+	Width int `bson:"width"`
+}
 
 type Place struct {
 	ID               string       `bson:"_id"`
@@ -27,6 +38,8 @@ type Place struct {
 	PriceLevel       int          `bson:"price_level"`
 	Rating           float32      `bson:"rating"`
 	Hours            [7]string    `bson:"hours"`
+	URL              string       `bson:"url"`
+	Photo            PlacePhoto   `bson:"photo"`
 }
 
 type Location struct {
@@ -103,19 +116,19 @@ func (v *Place) SetType(t LocationType) {
 // Set time if POI opening hour changed for some day in a week
 func (v *Place) SetHour(day Weekday, hour string) {
 	switch day {
-	case DATE_SUNDAY:
+	case DateSunday:
 		v.Hours[day] = hour
-	case DATE_MONDAY:
+	case DateMonday:
 		v.Hours[day] = hour
-	case DATE_TUESDAY:
+	case DateTuesday:
 		v.Hours[day] = hour
-	case DATE_WEDNESDAY:
+	case DateWednesday:
 		v.Hours[day] = hour
-	case DATE_THURSAY:
+	case DateThursday:
 		v.Hours[day] = hour
-	case DATE_FRIDAY:
+	case DateFriday:
 		v.Hours[day] = hour
-	case DATE_SATURDAY:
+	case DateSaturday:
 		v.Hours[day] = hour
 	default:
 		log.Fatalf("day specified (%d) is not in range of 0-6", day)
@@ -168,4 +181,16 @@ func (v *Place) SetPriceLevel(priceRange int) {
 
 func (v *Place) SetRating(rating float32) {
 	v.Rating = rating
+}
+
+func (v *Place) SetURL(url string) {
+	v.URL = url
+}
+
+func (v *Place) SetPhoto(photo *maps.Photo) {
+	if val := reflect.ValueOf(photo); !val.IsNil() {
+		v.Photo.Reference = photo.PhotoReference
+		v.Photo.Height = photo.Height
+		v.Photo.Width = photo.Width
+	}
 }

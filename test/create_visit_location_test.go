@@ -14,7 +14,7 @@ func TestCreatePlace(t *testing.T) {
 				<span class="region">CA</span> <span class="postal-code">94133-4507</span>,
 				<span class="country-name">USA</span>`
 
-	place := POI.CreatePlace(name, location, microAddr, addr, "stay", nil, "lincolnpark_mtv", 3, 4.5)
+	place := POI.CreatePlace(name, location, microAddr, addr, "stay", nil, "landmark_mtv", 3, 4.5, "", nil)
 	if place.GetName() != name {
 		t.Errorf("Name setting is not correct. \n Expected: %s, got: %s",
 			name, place.GetName())

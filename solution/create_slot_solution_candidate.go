@@ -11,12 +11,12 @@ import (
 const (
 	EventEatery = iota + 10 // avoid default 0s
 	EventVisit
-	EventTravel
 )
 
-const EateryLimitPerSlot = 1
-const VisitLimitPerSlot = 3
-const LimitPerSlot = 4
+const (
+	LimitPerSlot            = 4
+	GoogleSearchHomePageURL = "https://www.google.com/"
+)
 
 type TripEvents struct {
 	tag        uint8
@@ -38,6 +38,7 @@ type SlotSolutionCandidate struct {
 	PlaceIDS        []string       `json:"place_ids"`
 	PlaceLocations  [][2]float64   `json:"place_locations"`
 	PlaceAddresses  []string       `json:"place_addresses"`
+	PlaceURLs       []string       `json:"place_urls"`
 	Candidate       []TripEvents   `json:"candidate"`
 	EndPlaceDefault matching.Place `json:"end_place_default"`
 	Score           float64        `json:"score"`
@@ -106,48 +107,43 @@ func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolution
 	return true
 }
 
-func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, categorizedPlaces []CategorizedPlaces) SlotSolutionCandidate {
-	res := SlotSolutionCandidate{}
-	res.IsSet = false
+func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, categorizedPlaces []CategorizedPlaces) (res SlotSolutionCandidate) {
 	if len(iter.Status) != len(slotSolution.SlotTag) {
-		return res
+		return
 	}
-	//create a hashtable for deduplication
+	// deduplication of repeating places in the result
 	record := make(map[string]bool)
 	places := make([]matching.Place, len(iter.Status))
 	for i, placeIdx := range iter.Status {
 		placesByCategory := categorizedPlaces[i]
 		visitPlaces := placesByCategory.VisitPlaces
 		eateryPlaces := placesByCategory.EateryPlaces
-		if slotSolution.SlotTag[i] == 'E' || slotSolution.SlotTag[i] == 'e' {
-			_, ok := record[eateryPlaces[placeIdx].PlaceId]
-			if ok == true {
-				return res
-			} else {
-				record[eateryPlaces[placeIdx].PlaceId] = true
-				places[i] = eateryPlaces[placeIdx]
-				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
-				res.PlaceNames = append(res.PlaceNames, places[i].Name)
-				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
-				res.PlaceAddresses = append(res.PlaceAddresses, places[i].Address)
-			}
-		} else if slotSolution.SlotTag[i] == 'V' || slotSolution.SlotTag[i] == 'v' {
-			_, ok := record[visitPlaces[placeIdx].PlaceId]
-			if ok == true {
-				return res
-			} else {
-				record[visitPlaces[placeIdx].PlaceId] = true
-				places[i] = visitPlaces[placeIdx]
-				res.PlaceIDS = append(res.PlaceIDS, places[i].PlaceId)
-				res.PlaceNames = append(res.PlaceNames, places[i].Name)
-				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
-				res.PlaceAddresses = append(res.PlaceAddresses, places[i].Address)
-			}
-		} else { // abandon previous results even if part of the tag is valid
-			return SlotSolutionCandidate{}
+		// a single-letter place category identifier
+		categoryIdentifier := strings.ToLower(string(slotSolution.SlotTag[i]))
+		var place matching.Place
+		if categoryIdentifier == "e" {
+			place = eateryPlaces[placeIdx]
+		} else if categoryIdentifier == "v" {
+			place = visitPlaces[placeIdx]
 		}
+
+		// if the same place appears in two indexes, return incomplete result
+		if _, exist := record[place.PlaceId]; exist {
+			return
+		}
+
+		record[place.PlaceId] = true
+		places[i] = place
+		res.PlaceIDS = append(res.PlaceIDS, place.PlaceId)
+		res.PlaceNames = append(res.PlaceNames, place.Name)
+		res.PlaceLocations = append(res.PlaceLocations, place.Location)
+		res.PlaceAddresses = append(res.PlaceAddresses, place.Address)
+		if len(strings.TrimSpace(place.URL)) == 0 {
+			place.URL = GoogleSearchHomePageURL
+		}
+		res.PlaceURLs = append(res.PlaceURLs, place.URL)
 	}
 	res.Score = matching.Score(places)
 	res.IsSet = true
-	return res
+	return
 }

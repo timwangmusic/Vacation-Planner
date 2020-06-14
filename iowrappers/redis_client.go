@@ -271,6 +271,7 @@ type SlotSolutionCandidateCache struct {
 	PlaceNames     []string     `json:"place_names"`
 	PlaceLocations [][2]float64 `json:"place_locations"`
 	PlaceAddresses []string     `json:"place_addresses"`
+	PlaceURLs      []string     `json:"place_urls"`
 }
 
 type SlotSolutionCacheResponse struct {
