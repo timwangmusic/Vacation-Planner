@@ -40,6 +40,7 @@ type Place struct {
 	Price     float64           `json:"price"`
 	Rating    float32           `json:"rating"`
 	Location  [2]float64        `json:"geolocation"`
+	URL       string            `json:"url"`
 }
 
 type PlaceCluster struct {
@@ -142,5 +143,6 @@ func (matcher *TimeMatcher) createPlace(place POI.Place, catTag POI.PlaceCategor
 	Place_.Location = place.GetLocation()
 	Place_.CatTag = catTag
 	Place_.PlaceType = place.LocationType
+	Place_.URL = place.URL
 	return Place_
 }

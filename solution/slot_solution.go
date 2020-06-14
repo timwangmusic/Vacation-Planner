@@ -38,6 +38,7 @@ type SlotSolutionCandidate struct {
 	PlaceIDS        []string       `json:"place_ids"`
 	PlaceLocations  [][2]float64   `json:"place_locations"`
 	PlaceAddresses  []string       `json:"place_addresses"`
+	PlaceURLs       []string       `json:"place_urls"`
 	Candidate       []TripEvents   `json:"candidate"`
 	EndPlaceDefault matching.Place `json:"end_place_default"`
 	Score           float64        `json:"score"`
@@ -130,6 +131,7 @@ func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, categorizedPla
 				res.PlaceNames = append(res.PlaceNames, places[i].Name)
 				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
 				res.PlaceAddresses = append(res.PlaceAddresses, places[i].Address)
+				res.PlaceURLs = append(res.PlaceURLs, places[i].URL)
 			}
 		} else if slotSolution.SlotTag[i] == 'V' || slotSolution.SlotTag[i] == 'v' {
 			_, ok := record[visitPlaces[placeIdx].PlaceId]
@@ -142,6 +144,7 @@ func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, categorizedPla
 				res.PlaceNames = append(res.PlaceNames, places[i].Name)
 				res.PlaceLocations = append(res.PlaceLocations, places[i].Location)
 				res.PlaceAddresses = append(res.PlaceAddresses, places[i].Address)
+				res.PlaceURLs = append(res.PlaceURLs, places[i].URL)
 			}
 		} else { // abandon previous results even if part of the tag is valid
 			return SlotSolutionCandidate{}

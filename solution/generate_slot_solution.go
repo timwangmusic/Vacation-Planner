@@ -80,7 +80,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 	}
 
 	cityCountry := strings.Split(location, ",")
-	evTags := make([]string, len(stayTimes))
+	evTags := make([]string, len(evTag))
 	for idx, c := range evTag {
 		evTags[idx] = string(c)
 	}
@@ -102,6 +102,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 				PlaceIDS:        candidate.PlaceIds,
 				PlaceLocations:  candidate.PlaceLocations,
 				PlaceAddresses:  candidate.PlaceAddresses,
+				PlaceURLs:       candidate.PlaceURLs,
 				EndPlaceDefault: matching.Place{},
 				Score:           candidate.Score,
 				IsSet:           true,
@@ -169,6 +170,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 			PlaceNames:     slotSolutionCandidate.PlaceNames,
 			PlaceLocations: slotSolutionCandidate.PlaceLocations,
 			PlaceAddresses: slotSolutionCandidate.PlaceAddresses,
+			PlaceURLs:      slotSolutionCandidate.PlaceURLs,
 		}
 		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
 	}

@@ -63,7 +63,7 @@
                 {{range $p}}
                     {{range .Places}}
                         <tr>
-                            <td> {{.PlaceName}} </td>
+                            <td> <a href={{.URL}}> {{.PlaceName}} </a> </td>
                             <td> {{.StartTime}} </td>
                             <td> {{.EndTime}} </td>
                             <td> {{.Address}} </td>
