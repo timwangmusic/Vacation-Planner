@@ -4,8 +4,26 @@
     <meta charset="UTF-8">
     <title>Vacation Plans</title>
     <style>
+        .container{
+            display: flex;
+            flex-flow: row wrap;
+            justify-content: space-around;
+        }
+        .item{
+            background: lightcyan;
+            padding: 10px;
+            margin: 15px;
+            width: 1000px;
+            height: auto;
+            justify-content: center;
+            border-radius: 5%;
+        }
         h1 {
-            color: darkorange;
+            text-align: center;
+            color: coral;
+            line-height: 100px;
+            margin: 0;
+            background-color: whitesmoke;
         }
         body {
             background-color: azure;
@@ -15,6 +33,7 @@
             border-style: solid;
             border-width: thin;
             border-collapse: collapse;
+            width: auto;
         }
         th {
             border: 1px solid #cecfd5;
@@ -45,37 +64,42 @@
     Error code: {{.StatusCode}}<br>
 {{else}}
     {{/*    iterate over multi-slot solutions*/}}
-    {{range $i, $p := .Places}}
-        {{/*        create one table for each multi-slot solution*/}}
-            <h3> One-day Plan </h3>
-            <p>
+    <div class="container">
+        {{range $i, $p := .Places}}
+            {{/*        create one table for each multi-slot solution*/}}
+            <div class="item">
+                <h3> One-day Plan </h3>
                 <table>
-                <thead>
-                <tr>
-                    <th> Place Name </th>
-                    <th> From (Hour) </th>
-                    <th> To (Hour) </th>
-                    <th> Address </th>
-                </tr>
-                </thead>
-                <tbody>
+                    <thead>
+                    <tr>
+                        <th> Place Name </th>
+                        <th> From (Hour) </th>
+                        <th> To (Hour) </th>
+                        <th> Address </th>
+                    </tr>
+                    </thead>
+                    <tbody>
 
-                {{range $p}}
-                    {{range .Places}}
-                        <tr>
-                            <td> <a href={{.URL}}> {{.PlaceName}} </a> </td>
-                            <td> {{.StartTime}} </td>
-                            <td> {{.EndTime}} </td>
-                            <td> {{.Address}} </td>
-                        </tr>
+                    {{range $p}}
+                        {{range .Places}}
+                            <tr>
+                                <td> <a href={{.URL}}> {{.PlaceName}} </a></td>
+                                <td> {{.StartTime}} </td>
+                                <td> {{.EndTime}} </td>
+                                <td> {{.Address}} </td>
+                            </tr>
+                        {{end}}
                     {{end}}
-                {{end}}
-                </tbody>
+                    </tbody>
 
                 </table>
-            </p>
+            </div>
 
-    {{end}}
+
+
+        {{end}}
+    </div>
+
 {{end}}
 
 </body>
