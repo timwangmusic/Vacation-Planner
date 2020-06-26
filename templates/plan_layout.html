@@ -2,10 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Vacation Plans</title>
     <style>
+        .container{
+            display: flex;
+            flex-flow: row wrap;
+            justify-content: space-around;
+        }
+        .item{
+            background: lightcyan;
+            padding: 10px;
+            margin: 15px;
+            width: 1000px;
+            height: auto;
+            justify-content: center;
+            border-radius: 5%;
+        }
         h1 {
-            color: darkorange;
+            text-align: center;
+            color: coral;
+            line-height: 100px;
+            margin: 0;
+            background-color: whitesmoke;
         }
         body {
             background-color: azure;
@@ -15,6 +34,7 @@
             border-style: solid;
             border-width: thin;
             border-collapse: collapse;
+            width: auto;
         }
         th {
             border: 1px solid #cecfd5;
@@ -35,6 +55,8 @@
             color: antiquewhite;
         }
     </style>
+    <!--Bootstrap CSS-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
 <body>
 <h1>
@@ -45,37 +67,42 @@
     Error code: {{.StatusCode}}<br>
 {{else}}
     {{/*    iterate over multi-slot solutions*/}}
-    {{range $i, $p := .Places}}
-        {{/*        create one table for each multi-slot solution*/}}
-            <h3> One-day Plan </h3>
-            <p>
+    <div class="container">
+        {{range $i, $p := .Places}}
+            {{/*        create one table for each multi-slot solution*/}}
+            <div class="item">
+                <h3> One-day Plan </h3>
                 <table>
-                <thead>
-                <tr>
-                    <th> Place Name </th>
-                    <th> From (Hour) </th>
-                    <th> To (Hour) </th>
-                    <th> Address </th>
-                </tr>
-                </thead>
-                <tbody>
+                    <thead>
+                    <tr>
+                        <th> Place Name </th>
+                        <th> From (Hour) </th>
+                        <th> To (Hour) </th>
+                        <th> Address </th>
+                    </tr>
+                    </thead>
+                    <tbody>
 
-                {{range $p}}
-                    {{range .Places}}
-                        <tr>
-                            <td> <a href={{.URL}}> {{.PlaceName}} </a> </td>
-                            <td> {{.StartTime}} </td>
-                            <td> {{.EndTime}} </td>
-                            <td> {{.Address}} </td>
-                        </tr>
+                    {{range $p}}
+                        {{range .Places}}
+                            <tr>
+                                <td> <a href={{.URL}}> {{.PlaceName}} </a></td>
+                                <td> {{.StartTime}} </td>
+                                <td> {{.EndTime}} </td>
+                                <td> {{.Address}} </td>
+                            </tr>
+                        {{end}}
                     {{end}}
-                {{end}}
-                </tbody>
+                    </tbody>
 
                 </table>
-            </p>
+            </div>
 
-    {{end}}
+
+
+        {{end}}
+    </div>
+
 {{end}}
 
 </body>
