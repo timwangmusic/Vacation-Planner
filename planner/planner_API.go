@@ -14,6 +14,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -40,6 +41,7 @@ type MyPlanner struct {
 	ResultHTMLTemplate *template.Template
 	LoginHandler       *iowrappers.DbHandler
 	PlanningEvents     chan iowrappers.PlanningEvent
+	Environment        string
 }
 
 type TimeSectionPlace struct {
@@ -97,6 +99,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 	planner.Solver.Init(PoiSearcher)
 
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
+	planner.Environment = os.Getenv("ENVIRONMENT")
 }
 
 func (planner *MyPlanner) Destroy() {
@@ -146,7 +149,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (
 					StartTime: req.SlotRequests[idx].StayTimes[pIdx].Slot.Start,
 					EndTime:   req.SlotRequests[idx].StayTimes[pIdx].Slot.End,
 					Address:   slotSol.PlaceAddresses[pIdx],
-					URL: slotSol.PlaceURLs[pIdx],
+					URL:       slotSol.PlaceURLs[pIdx],
 				})
 			}
 			resp.Places[sIdx] = append(resp.Places[sIdx], timeSectionPlaces)
@@ -170,12 +173,17 @@ func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, _ *http.Request) {
 
 // HTTP POST API end-point
 func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request) {
-	username, authenticationErr := planner.UserAuthentication(r)
-	if authenticationErr != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
-		return
+	var username = "guest" // default username
+	if planner.Environment == "production" {
+		var authenticationErr error
+		username, authenticationErr = planner.UserAuthentication(r)
+		if authenticationErr != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(authenticationErr.Error())
+			return
+		}
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 
 	req := PlanningPostRequest{}
@@ -207,12 +215,17 @@ func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request
 // HTTP GET API end-point
 // Return top planning result to user
 func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request) {
-	username, authenticationErr := planner.UserAuthentication(r)
-	if authenticationErr != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(authenticationErr.Error())
-		return
+	var username = "guest" // default username
+	if planner.Environment == "production" {
+		var authenticationErr error
+		username, authenticationErr = planner.UserAuthentication(r)
+		if authenticationErr != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(authenticationErr.Error())
+			return
+		}
 	}
+
 	vars := mux.Vars(r)
 	country := vars["country"]
 	city := vars["city"]
