@@ -72,8 +72,6 @@ func (poiSearcher *PoiSearcher) Geocode(query *GeocodeQuery) (lat float64, lng f
 
 // if client API key is invalid but not empty string, nearby search result will be empty
 func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
-	dbHandler := poiSearcher.dbHandler
-
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
 	lat, lng, err := poiSearcher.Geocode(&GeocodeQuery{
@@ -91,51 +89,38 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
 	cachedPlaces := poiSearcher.redisClient.GetPlaces(request)
 	Logger.Debugf("number of results from redis is %d", len(cachedPlaces))
-	if uint(len(cachedPlaces)) >= request.MinNumResults {
+
+	lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(location, request.PlaceCat)
+
+	currentTime := time.Now()
+	if uint(len(cachedPlaces)) >= request.MinNumResults || currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration {
 		Logger.Infof("Using Redis to fulfill request. Place Type: %s", request.PlaceCat)
 		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
 		places = append(places, cachedPlaces[:maxResultNum]...)
 		return
-	} else {
-		dbStoredPlaces, dbSearchErr := dbHandler.PlaceSearch(request)
-		utils.CheckErrImmediate(dbSearchErr, utils.LogError)
-
-		maxResultNum := utils.MinInt(len(dbStoredPlaces), int(request.MaxNumResults))
-		if dbSearchErr != nil || uint(len(dbStoredPlaces)) < request.MinNumResults {
-			lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(location, request.PlaceCat)
-			currentTime := time.Now()
-
-			// balances trade-off between data staleness and the number of Maps API calls
-			if cacheErr != nil || currentTime.Sub(lastSearchTime) > MinMapsResultRefreshDuration {
-				originalSearchRadius := request.Radius
-				request.Radius = MaxSearchRadius // use a large search radius whenever we call external maps service
-				newPlaces, mapsNearbySearchErr := poiSearcher.mapsClient.NearbySearch(request)
-				utils.CheckErrImmediate(mapsNearbySearchErr, utils.LogError)
-
-				// record search start time
-				_ = poiSearcher.redisClient.SetMapsLastSearchTime(location, request.PlaceCat, currentTime.Format(time.RFC3339))
-
-				maxResultNum = utils.MinInt(len(newPlaces), int(request.MaxNumResults))
-				places = append(places, newPlaces[:maxResultNum]...)
-
-				// update database
-				poiSearcher.UpdateMongo(request.PlaceCat, newPlaces)
-
-				request.Radius = originalSearchRadius // restore search radius
-
-				// refresh results from the database
-				dbStoredPlaces, dbSearchErr = dbHandler.PlaceSearch(request)
-				utils.CheckErrImmediate(dbSearchErr, utils.LogError)
-				maxResultNum = utils.MinInt(len(dbStoredPlaces), int(request.MaxNumResults))
-			}
-		}
-		if len(dbStoredPlaces) > 0 {
-			places = append(places, dbStoredPlaces[:maxResultNum]...)
-		}
-		Logger.Debugf("Using MongoDB to fulfill request. Returning %d places of type: %s", len(places), request.PlaceCat)
 	}
-	// update cache
-	poiSearcher.UpdateRedis(places)
+
+	cacheErr = poiSearcher.redisClient.SetMapsLastSearchTime(location, request.PlaceCat, currentTime.Format(time.RFC3339))
+	utils.CheckErrImmediate(cacheErr, utils.LogError)
+
+	maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
+
+	originalSearchRadius := request.Radius
+
+	request.Radius = MaxSearchRadius // use a large search radius whenever we call external maps service
+
+	// initiate a new external search
+	newPlaces, mapsNearbySearchErr := poiSearcher.mapsClient.NearbySearch(request)
+	utils.CheckErrImmediate(mapsNearbySearchErr, utils.LogError)
+
+	request.Radius = originalSearchRadius // restore search radius
+
+	maxResultNum = utils.MinInt(len(newPlaces), int(request.MaxNumResults))
+
+	// update Redis with all the new places obtained
+	poiSearcher.UpdateRedis(newPlaces)
+
+	places = append(places, newPlaces[:maxResultNum]...)
 
 	if uint(len(places)) < request.MinNumResults {
 		Logger.Debugf("Found %d POI results for place type %s, less than requested number of %d",
