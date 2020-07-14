@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v7"
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
@@ -18,10 +19,37 @@ import (
 
 const (
 	SlotSolutionExpirationTime = 24 * time.Hour
+	PlanningStatExpirationTime = 24 * time.Hour
+
+	NumVisitorsPlanningAPI = "visitor_count:planning_APIs"
+	NumVisitorsPrefix      = "visitor_count"
 )
 
 type RedisClient struct {
 	client redis.Client
+}
+
+// analytics of total number of unique visitors to the planning APIs in the last 24 hours
+// analytics of number of unique users planning for each city
+func (redisClient *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
+	c := redisClient.client
+
+	pipeline := c.Pipeline()
+
+	pipeline.PFAdd(NumVisitorsPlanningAPI, event.User)
+
+	// set expiration time
+	if _, err := pipeline.Exists(NumVisitorsPlanningAPI).Result(); err != nil && err == redis.Nil {
+		pipeline.Expire(NumVisitorsPlanningAPI, PlanningStatExpirationTime)
+	}
+
+	city := strings.ToLower(strings.Join(strings.Split(event.City, " "), "_"))
+	redisKey := strings.Join([]string{NumVisitorsPrefix, event.Country, city}, ":")
+	pipeline.PFAdd(redisKey, event.User)
+
+	if _, err := pipeline.Exec(); err != nil {
+		log.Error(err)
+	}
 }
 
 func (redisClient RedisClient) RemoveKeys(keys []string) {

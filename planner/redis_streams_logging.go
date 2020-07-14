@@ -3,6 +3,7 @@ package planner
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"strings"
 	"sync"
 )
 
@@ -18,8 +19,8 @@ func (planner MyPlanner) PlanningEventLogging(event iowrappers.PlanningEvent) {
 
 func (planner MyPlanner) ProcessPlanningEvent(worker int, wg *sync.WaitGroup) {
 	for event := range planner.PlanningEvents {
-		log.Debugf("worker %d processing event %s", worker, event.City+" "+event.Country)
-		planner.LoginHandler.CreatePlanningEvent(event)
+		log.Debugf("worker %d processing event for %s", worker, strings.Title(event.City)+", "+strings.ToUpper(event.Country))
+		planner.RedisClient.CollectPlanningAPIStats(event)
 	}
 	wg.Done()
 }
