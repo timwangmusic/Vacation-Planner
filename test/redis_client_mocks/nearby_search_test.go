@@ -1,26 +1,12 @@
 package redis_client_mocks
 
 import (
-	"github.com/alicebob/miniredis/v2"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"net/url"
 	"testing"
 )
 
 func TestNearbySearch(t *testing.T) {
-	// set up
-	mockServer, err := miniredis.Run()
-	if err != nil {
-		panic(err)
-	}
-	defer mockServer.Close()
-
-	redisClient := iowrappers.RedisClient{}
-	redisUrl := "redis://" + mockServer.Addr()
-	redisURL, _ := url.Parse(redisUrl)
-	redisClient.Init(redisURL)
-
 	places := make([]POI.Place, 2)
 	places[0] = POI.Place{
 		ID:               "1001",
@@ -50,9 +36,9 @@ func TestNearbySearch(t *testing.T) {
 		City:    "New York City",
 		Country: "US",
 	}
-	redisClient.SetGeocode(geocodeQuery, 40.712800, -74.006000, geocodeQuery)
+	RedisClient.SetGeocode(geocodeQuery, 40.712800, -74.006000, geocodeQuery)
 
-	err = redisClient.StorePlacesForLocation("40.712800,-74.006000", places)
+	err := RedisClient.StorePlacesForLocation("40.712800,-74.006000", places)
 
 	if err != nil {
 		t.Error(err)
@@ -64,7 +50,7 @@ func TestNearbySearch(t *testing.T) {
 		Radius:   uint(2511),
 	}
 
-	cachedPlaces, err := redisClient.NearbySearch(&placeSearchRequest)
+	cachedPlaces, err := RedisClient.NearbySearch(&placeSearchRequest)
 
 	if err != nil {
 		t.Error(err)

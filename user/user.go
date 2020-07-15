@@ -11,11 +11,10 @@ const (
 )
 
 type User struct {
-	Username      string    `bson:"_id"`
-	Password      string    `bson:"password"`
-	Email         string    `bson:"email"`
-	UserLevel     string    `bson:"user_level"`
-	LastLoginTime time.Time `bson:"last_login_time"`
+	Username      string    `json:"username"`
+	Password      string    `json:"password"`
+	Email         string    `json:"email"`
+	UserLevel     string    `json:"user_level"`
 }
 
 type Credential struct {

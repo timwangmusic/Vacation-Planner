@@ -1,21 +1,12 @@
 package redis_client_mocks
 
 import (
-	"github.com/alicebob/miniredis/v2"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"net/url"
 	"testing"
 )
 
 func TestGetPlaces(t *testing.T) {
-	// set up mock server
-	mockServer, err := miniredis.Run()
-	if err != nil {
-		panic(err)
-	}
-	defer mockServer.Close()
-
 	// set up data
 	places := make([]POI.Place, 3)
 	places[0] = POI.Place{
@@ -54,19 +45,14 @@ func TestGetPlaces(t *testing.T) {
 		Hours:            [7]string{},
 	}
 
-	redisClient := iowrappers.RedisClient{}
-	redisUrl := "redis://" + mockServer.Addr()
-	redisURL, _ := url.Parse(redisUrl)
-	redisClient.Init(redisURL)
-
 	_ = iowrappers.CreateLogger()
 
 	// cache places
-	redisClient.SetPlacesOnCategory(places)
+	RedisClient.SetPlacesOnCategory(places)
 
 	// if place are not cached, it is possibly because of GeoAdd failure
 	for _, place := range places {
-		if !mockServer.Exists("place_details:place_ID:" + place.ID) {
+		if !RedisMockSvr.Exists("place_details:place_ID:" + place.ID) {
 			t.Errorf("place with ID %s does not exist in Redis", place.ID)
 		}
 	}
@@ -80,7 +66,7 @@ func TestGetPlaces(t *testing.T) {
 		MinNumResults: 1,
 	}
 
-	cachedVisitPlaces := redisClient.GetPlaces(&placeSearchRequest)
+	cachedVisitPlaces := RedisClient.GetPlaces(&placeSearchRequest)
 
 	if len(cachedVisitPlaces) != 1 || cachedVisitPlaces[0].ID != places[0].ID {
 		t.Logf("number of nearby visit places obtained from Redis is %d", len(cachedVisitPlaces))
@@ -96,7 +82,7 @@ func TestGetPlaces(t *testing.T) {
 		MinNumResults: 2,
 	}
 
-	cachedEateryPlaces := redisClient.GetPlaces(&placeSearchRequest)
+	cachedEateryPlaces := RedisClient.GetPlaces(&placeSearchRequest)
 
 	if len(cachedEateryPlaces) != 1 || cachedEateryPlaces[0].ID != places[2].ID {
 		t.Logf("number of nearby eatery places obtained from Redis is %d", len(cachedEateryPlaces))
@@ -104,7 +90,7 @@ func TestGetPlaces(t *testing.T) {
 	}
 
 	// expect to return empty slice if total number of cached places in a category is less than requested minimum
-	cachedVisitPlaces = redisClient.GetPlaces(&iowrappers.PlaceSearchRequest{MinNumResults: 2, PlaceCat: "Visit"})
+	cachedVisitPlaces = RedisClient.GetPlaces(&iowrappers.PlaceSearchRequest{MinNumResults: 2, PlaceCat: "Visit"})
 	if len(cachedVisitPlaces) != 0 {
 		t.Error("should return empty slice if total number of cached places in a category is less than requested minimum")
 	}
