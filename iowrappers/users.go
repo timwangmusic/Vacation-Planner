@@ -2,9 +2,12 @@ package iowrappers
 
 import (
 	"errors"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"golang.org/x/crypto/bcrypt"
+	"os"
 	"strings"
+	"time"
 )
 
 const UserKeyPrefix = "user"
@@ -21,23 +24,55 @@ func (redisClient *RedisClient) FindUser(username string) (user.User, error) {
 	usr.Username = u["username"]
 	usr.Email = u["email"]
 	usr.UserLevel = u["user_level"]
+	usr.Password = u["password"]
 	return usr, nil
 }
 
 // create a new user
-func (redisClient *RedisClient) CreateUser(user user.User) error {
-	redisKey := strings.Join([]string{UserKeyPrefix, user.Username}, ":")
+func (redisClient *RedisClient) CreateUser(usr user.User) error {
+	redisKey := strings.Join([]string{UserKeyPrefix, usr.Username}, ":")
 	if redisClient.client.Exists(redisKey).Val() == 1 {
 		return errors.New("user already exists")
 	}
 
-	psw, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	psw, _ := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
+	if usr.UserLevel == "" {
+		usr.UserLevel = user.LevelRegular
+	}
+
 	userData := map[string]interface{}{
-		"username":   user.Username,
-		"user_level": user.UserLevel,
+		"username":   usr.Username,
+		"user_level": usr.UserLevel,
 		"password":   string(psw),
-		"email":      user.Email,
+		"email":      usr.Email,
 	}
 	_, err := redisClient.client.HMSet(redisKey, userData).Result()
 	return err
+}
+
+// authenticate an user when a new user that holds no JWT or an existing user with expired JWT
+func (redisClient *RedisClient) Authenticate(credential user.Credential) (string, time.Time, error) {
+	u, err := redisClient.FindUser(credential.Username)
+	if err != nil {
+		return "", time.Now(), err
+	}
+
+	pswCompErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(credential.Password))
+	if pswCompErr != nil { // wrong password
+		err = errors.New("wrong password")
+		return "", time.Now(), err
+	}
+
+	lastLoginTime := time.Now()
+	tokenExpirationTime := lastLoginTime.Add(user.JWTExpirationTime)
+	expiresAt := tokenExpirationTime.Unix() // expires after 10 days
+	jwtSigningSecret := os.Getenv("JWT_SIGNING_SECRET")
+
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username":       u.Username,
+		"StandardClaims": jwt.StandardClaims{ExpiresAt: expiresAt},
+	})
+
+	token, jwtSignErr := jwtToken.SignedString([]byte(jwtSigningSecret))
+	return token, tokenExpirationTime, jwtSignErr
 }

@@ -7,8 +7,27 @@ import (
 	"testing"
 )
 
-func TestUserFind(t *testing.T) {
+func TestUserAuthentication(t *testing.T) {
+	// create an user
 	username := "johnny_depp"
+	password := "33521"
+	userEmail := "johnny_depp@gmail.com"
+	if err := RedisClient.CreateUser(user.User{Username: username, Password: password, Email: userEmail}); err != nil {
+		t.Error(err)
+	}
+
+	// authenticate the user
+	_, _, err := RedisClient.Authenticate(user.Credential{
+		Username: username,
+		Password: password,
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUserFind(t *testing.T) {
+	username := "jenny"
 
 	var err error
 	_, err = RedisClient.FindUser(username)
@@ -20,8 +39,8 @@ func TestUserFind(t *testing.T) {
 }
 
 func TestUserCreation(t *testing.T) {
-	username := "johnny_depp"
-	userEmail := "johnny_depp@gmail.com"
+	username := "tom_cruise"
+	userEmail := "tom_cruise@gmail.com"
 	userLevel := user.LevelRegular
 
 	expectedUser := user.User{
@@ -42,5 +61,7 @@ func TestUserCreation(t *testing.T) {
 		t.Error(err)
 	}
 
+	// ignore comparing password in this test
+	usr.Password = ""
 	assert.Equal(t, expectedUser, usr)
 }
