@@ -1,36 +1,21 @@
 package redis_client_mocks
 
 import (
-	"github.com/alicebob/miniredis/v2"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"net/url"
 	"testing"
 	"time"
 )
 
 func TestMapsLastSearchTime(t *testing.T) {
-	// set up mock server
-	mockServer, err := miniredis.Run()
-	if err != nil {
-		panic(err)
-	}
-	defer mockServer.Close()
-
-	// client initialization
-	redisClient := iowrappers.RedisClient{}
-	redisUrl := "redis://" + mockServer.Addr()
-	redisURL, _ := url.Parse(redisUrl)
-	redisClient.Init(redisURL)
-
 	request := iowrappers.PlaceSearchRequest{
 		Location: "Beijing,China",
 		PlaceCat: "Visit",
 	}
 
 	currentTime := time.Now().Format(time.RFC3339)
-	_ = redisClient.SetMapsLastSearchTime(request.Location, request.PlaceCat, currentTime)
+	_ = RedisClient.SetMapsLastSearchTime(request.Location, request.PlaceCat, currentTime)
 
-	cachedTime, err := redisClient.GetMapsLastSearchTime(request.Location, request.PlaceCat)
+	cachedTime, err := RedisClient.GetMapsLastSearchTime(request.Location, request.PlaceCat)
 
 	if err != nil || currentTime != cachedTime.Format(time.RFC3339) {
 		t.Error("maps cached time retrieval failure")

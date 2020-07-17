@@ -29,6 +29,13 @@ type RedisClient struct {
 	client redis.Client
 }
 
+// close Redis connection
+func (redisClient *RedisClient) Destroy() {
+	if err := redisClient.client.Close(); err != nil {
+		log.Error(err)
+	}
+}
+
 // analytics of total number of unique visitors to the planning APIs in the last 24 hours
 // analytics of number of unique users planning for each city
 func (redisClient *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {

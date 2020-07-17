@@ -40,7 +40,7 @@ func (planner MyPlanner) UserSignup(w http.ResponseWriter, r *http.Request) {
 
 	u.UserLevel = userLevel
 
-	createErr := planner.LoginHandler.CreateUser(u)
+	createErr := planner.RedisClient.CreateUser(u)
 	if createErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		if mgo.IsDup(createErr) {
@@ -65,8 +65,9 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, tokenExpirationTime, loginErr := planner.LoginHandler.UserLogin(c, true)
+	token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(c)
 	if loginErr != nil {
+		log.Debug(loginErr)
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(UserLoginResponse{
 			Username: c.Username,

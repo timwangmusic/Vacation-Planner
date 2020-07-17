@@ -104,6 +104,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 
 func (planner *MyPlanner) Destroy() {
 	iowrappers.DestroyLogger()
+	planner.RedisClient.Destroy()
 }
 
 // single-day, single-city planning method
