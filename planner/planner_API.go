@@ -303,7 +303,6 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 
 	myRouter.Path("/signup").HandlerFunc(planner.UserSignup).Methods("POST")
 	myRouter.Path("/login").HandlerFunc(planner.UserLogin).Methods("POST")
-	myRouter.Path("/removeuser").HandlerFunc(planner.RemoveUser).Methods("POST")
 
 	svr := &http.Server{
 		Addr:         ":" + serverPort,
