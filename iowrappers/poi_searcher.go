@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -22,7 +21,6 @@ type PlaceSearcher interface {
 
 type PoiSearcher struct {
 	mapsClient  *MapsClient
-	dbHandler   *DbHandler
 	redisClient *RedisClient
 }
 
@@ -33,15 +31,11 @@ type GeocodeQuery struct {
 
 var Logger *zap.SugaredLogger
 
-func (poiSearcher *PoiSearcher) Init(mapsApiKey string, dbUrl string, redisUrl *url.URL, dbName string) {
+func (poiSearcher *PoiSearcher) Init(mapsApiKey string, redisUrl *url.URL) {
 	mapsClient := &MapsClient{}
 	utils.CheckErrImmediate(mapsClient.Init(mapsApiKey), utils.LogFatal)
 
 	poiSearcher.mapsClient = mapsClient
-
-	poiSearcher.dbHandler = &DbHandler{}
-	// delegate error check of db handler to dbHandler.Init
-	poiSearcher.dbHandler.Init(dbName, dbUrl)
 
 	poiSearcher.redisClient = &RedisClient{}
 	poiSearcher.redisClient.Init(redisUrl)
@@ -138,18 +132,4 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 func (poiSearcher *PoiSearcher) UpdateRedis(places []POI.Place) {
 	poiSearcher.redisClient.SetPlacesOnCategory(places)
 	Logger.Debugf("Redis update complete")
-}
-
-//update MongoDB if number of results is not sufficient
-func (poiSearcher *PoiSearcher) UpdateMongo(placeCat POI.PlaceCategory, places []POI.Place) {
-	var wg sync.WaitGroup
-	var numNewDocs uint64 = 0
-	wg.Add(len(places))
-	for _, place := range places {
-		go poiSearcher.dbHandler.InsertPlace(place, placeCat, &wg, &numNewDocs)
-	}
-	wg.Wait()
-	if numNewDocs > 0 {
-		Logger.Infof("Inserted %d places into the database", numNewDocs)
-	}
 }

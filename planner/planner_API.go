@@ -39,7 +39,6 @@ type MyPlanner struct {
 	RedisStreamName    string
 	Solver             solution.Solver
 	ResultHTMLTemplate *template.Template
-	LoginHandler       *iowrappers.DbHandler
 	PlanningEvents     chan iowrappers.PlanningEvent
 	Environment        string
 }
@@ -82,7 +81,7 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
-func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *url.URL, redisStreamName string, dbName string) {
+func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string) {
 	planner.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	planner.RedisClient.Init(redisURL)
 	planner.RedisStreamName = redisStreamName
@@ -91,10 +90,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, dbUrl string, redisURL *
 	}
 
 	PoiSearcher := &iowrappers.PoiSearcher{}
-	PoiSearcher.Init(mapsClientApiKey, dbUrl, redisURL, dbName)
-
-	planner.LoginHandler = &iowrappers.DbHandler{}
-	planner.LoginHandler.Init(dbName, dbUrl)
+	PoiSearcher.Init(mapsClientApiKey, redisURL)
 
 	planner.Solver.Init(PoiSearcher)
 
