@@ -17,10 +17,6 @@ type Config struct {
 	Server struct {
 		ServerPort string `envconfig:"PORT" default:"10000"`
 	}
-	Database struct {
-		MongoDBName string `envconfig:"MONGO_DB_NAME" default:"VacationPlanner"`
-		MongoDBUrl  string `envconfig:"MONGODB_URI" required:"true"`
-	}
 	Redis struct {
 		RedisUrl        string `envconfig:"REDISCLOUD_URL" required:"true"`
 		RedisStreamName string `default:"stream:planning_api_usage"`
@@ -41,8 +37,7 @@ func RunServer() {
 	}
 
 	myPlanner := planner.MyPlanner{}
-	myPlanner.Init(conf.MapsClientApiKey, conf.Database.MongoDBUrl, redisURL,
-		conf.Redis.RedisStreamName, conf.Database.MongoDBName)
+	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName)
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
 	c := make(chan os.Signal, 1)

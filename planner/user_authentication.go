@@ -88,27 +88,6 @@ func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// remove user handler
-func (planner MyPlanner) RemoveUser(w http.ResponseWriter, r *http.Request) {
-	removeReq := user.RemoveUserRequest{}
-
-	decodeErr := json.NewDecoder(r.Body).Decode(&removeReq)
-	if decodeErr != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(decodeErr)
-		return
-	}
-
-	err := planner.LoginHandler.RemoveUser(removeReq.CurrentUser, removeReq.CurrentUserPassword, removeReq.UserToRemove)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(err.Error())
-		return
-	}
-
-	_ = json.NewEncoder(w).Encode("Removal success")
-}
-
 func (planner MyPlanner) UserAuthentication(r *http.Request) (username string, err error) {
 	cookie, cookieErr := r.Cookie("JWT")
 	if cookieErr != nil {
