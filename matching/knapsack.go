@@ -51,21 +51,21 @@ func (recordTable *knapsackRecordTable) update() {
 		} else {
 			recordTable.SavedRecord[key] = record
 		}
-		//delete new record entries
 		delete(recordTable.NewRecord, key)
 	}
 }
 
 /*
-Knapsack v2 uses sparse matrix like storage for step values and saves memory
+	Knapsack v2 uses sparse matrix like storage for step values and saves memory
+	Knapsack v1 is migrated to knapsack_old_testonly.go
 */
 func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place) {
-	//INIT
+	//Initialize knapsack data structures
 	var recordtable knapsackRecordTable
 	rt := &recordtable
 	rt.Init(timeLimit, budget)
 	optimalNode := knapsackNodeRecord{0, 0, SelectionThreshold, make([]Place, 0)}
-	//MAIN
+	//DP process
 	var staytime POI.StayingTime
 	for k := 0; k < len(places); k++ {
 		rt.update()
@@ -95,6 +95,5 @@ func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place) 
 			}
 		}
 	}
-	log.Debugf("Optimal rate %f", optimalNode.score)
 	return optimalNode.Solution
 }
