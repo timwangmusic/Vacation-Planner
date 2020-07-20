@@ -3,7 +3,7 @@ package planner
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gorilla/mux"
@@ -38,6 +38,7 @@ type MyPlanner struct {
 	RedisClient        iowrappers.RedisClient
 	RedisStreamName    string
 	Solver             solution.Solver
+	HomeHTMLTemplate   *template.Template
 	ResultHTMLTemplate *template.Template
 	PlanningEvents     chan iowrappers.PlanningEvent
 	Environment        string
@@ -94,6 +95,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 
 	planner.Solver.Init(PoiSearcher)
 
+	planner.HomeHTMLTemplate = template.Must(template.ParseFiles("templates/index.html"))
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
 	planner.Environment = os.Getenv("ENVIRONMENT")
 }
@@ -164,8 +166,7 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (
 
 // API definitions
 func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, _ *http.Request) {
-	_, err := fmt.Fprint(w, "Welcome to use the Vacation Planner system!")
-	utils.CheckErrImmediate(err, utils.LogError)
+	utils.CheckErrImmediate(planner.HomeHTMLTemplate.Execute(w, nil), utils.LogError)
 }
 
 // HTTP POST API end-point
@@ -280,13 +281,17 @@ func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request)
 }
 
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
-	myRouter := mux.NewRouter().StrictSlash(true)
+	myRouter := mux.NewRouter()
 
 	getLimiter := tollbooth.NewLimiter(MaxGetRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
 	getLimiter.SetMethods([]string{"GET"})
 	getLimiter.SetMessage("You have reached maximum GET API limit")
 
-	myRouter.HandleFunc("/", planner.welcomeApi).Methods("GET")
+	riceBox := rice.MustFindBox("../statics/scripts")
+	jsServingPath := "/statics/scripts"
+	jsFileServer := http.StripPrefix(jsServingPath, http.FileServer(riceBox.HTTPBox()))
+	myRouter.PathPrefix(jsServingPath).Handler(jsFileServer)
+	myRouter.HandleFunc("/", planner.welcomeApi)
 
 	myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
 		"radius", "{radius}", "weekday", "{weekday}", "numberResults", "{numberResults}").Handler(tollbooth.LimitFuncHandler(getLimiter, planner.getPlanningApi)).Methods("GET")
