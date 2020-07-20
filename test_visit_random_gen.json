@@ -1,0 +1,431 @@
+[
+    {
+        "id": "ChIJ36yUcg3xNIgRtvNioeVfK7E",
+        "name": "Glade Mountain",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "Pittsburgh, PA 15219, USA",
+        "price": 16,
+        "rating": 0,
+        "geolocation": [
+            -79.995886,
+            40.440625
+        ]
+    },
+    {
+        "id": "ChIJoX0ya9bxNIgRxlnrIWLSF-4",
+        "name": "Carnegie science center",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "Pittsburgh, PA 15219, USA",
+        "price": 15,
+        "rating": 0,
+        "geolocation": [
+            -79.995886,
+            40.440625
+        ]
+    },
+    {
+        "id": "ChIJWXN6uVnxNIgRERyK92uq_HU",
+        "name": "Hillman Hall of Minerals and Gems",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "Pittsburgh, PA 15219, USA",
+        "price": 22,
+        "rating": 0,
+        "geolocation": [
+            -79.995886,
+            40.440625
+        ]
+    },
+    {
+        "id": "ChIJJdSWrlnxNIgRYRVIvwGUxuw",
+        "name": "Steel Plaza",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "8 Grant St, Pittsburgh, PA 15219, USA",
+        "price": 17,
+        "rating": 4.3,
+        "geolocation": [
+            -79.99532,
+            40.440916
+        ]
+    },
+    {
+        "id": "ChIJ--N1olnxNIgRfXnkX0F2nVs",
+        "name": "Mellon Green",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "501 Grant St, Pittsburgh, PA 15219, USA",
+        "price": 10,
+        "rating": 4.5,
+        "geolocation": [
+            -79.99532,
+            40.440285
+        ]
+    },
+    {
+        "id": "ChIJkwQn2FnxNIgRXbZ_Wu4cdL0",
+        "name": "Mellon Square",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "Sixth Avenue, Pittsburgh, PA 15222, USA",
+        "price": 12,
+        "rating": 4.2,
+        "geolocation": [
+            -79.99749,
+            40.44096
+        ]
+    },
+    {
+        "id": "ChIJweIaJVnxNIgRrUX-ZF0oqxU",
+        "name": "Crosstown Park",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "Pittsburgh, PA 15219, USA",
+        "price": 11,
+        "rating": 0,
+        "geolocation": [
+            -79.992873,
+            40.441963
+        ]
+    },
+    {
+        "id": "ChIJUR3GDVjxNIgRr5kIlPNHxi8",
+        "name": "ToonSeum",
+        "place_type": "art_gallery",
+        "category": "Visit",
+        "address": "945 Liberty Ave, Pittsburgh, PA 15222, USA",
+        "price": 12,
+        "rating": 3.4,
+        "geolocation": [
+            -79.996521,
+            40.443581
+        ]
+    },
+    {
+        "id": "ChIJH4UXOlbxNIgRhThdPvYbeck",
+        "name": "Wood Street Galleries",
+        "place_type": "art_gallery",
+        "category": "Visit",
+        "address": "601 Wood St, Pittsburgh, PA 15222, USA",
+        "price": 12,
+        "rating": 4.6,
+        "geolocation": [
+            -79.999553,
+            40.442274
+        ]
+    },
+    {
+        "id": "ChIJr7aBzePzNIgRi2Dp2ZCFmUY",
+        "name": "Senator John Heinz History Center",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "1212 Smallman St, Pittsburgh, PA 15222, USA",
+        "price": 13,
+        "rating": 4.7,
+        "geolocation": [
+            -79.99207,
+            40.446841
+        ]
+    },
+    {
+        "id": "ChIJjbGBQav2NIgRoARMOwbkqD4",
+        "name": "Point State Park",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "601 Commonwealth Pl, Pittsburgh, PA 15222, USA",
+        "price": 19,
+        "rating": 4.7,
+        "geolocation": [
+            -80.007854,
+            40.441572
+        ]
+    },
+    {
+        "id": "ChIJq6qqqofxNIgRMCSmPhfoAcs",
+        "name": "The Andy Warhol Museum",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "117 Sandusky St, Pittsburgh, PA 15212, USA",
+        "price": 20,
+        "rating": 4.6,
+        "geolocation": [
+            -80.002491,
+            40.448375
+        ]
+    },
+    {
+        "id": "ChIJXzT5vqv2NIgRfqEmldPesjc",
+        "name": "Point State Park Fountain",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "Three Rivers Heritage Trail, Pittsburgh, PA 15222, USA",
+        "price": 12,
+        "rating": 4.8,
+        "geolocation": [
+            -80.012785,
+            40.441831
+        ]
+    },
+    {
+        "id": "ChIJdbsbJt3zNIgROnL8QaQEths",
+        "name": "Contemporary Craft",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "2100 Smallman St, Pittsburgh, PA 15222, USA",
+        "price": 24,
+        "rating": 4.5,
+        "geolocation": [
+            -79.984572,
+            40.452193
+        ]
+    },
+    {
+        "id": "ChIJKSw4X_jzNIgRdqmTZBPZFso",
+        "name": "Children's Museum of Pittsburgh",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "10 Children's Way, Pittsburgh, PA 15212, USA",
+        "price": 18,
+        "rating": 4.6,
+        "geolocation": [
+            -80.006498,
+            40.452771
+        ]
+    },
+    {
+        "id": "ChIJq6qqqofxNIgR-D-Y_7LMQ9s",
+        "name": "Carnegie Science Center",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "1 Allegheny Ave, Pittsburgh, PA 15212, USA",
+        "price": 14,
+        "rating": 4.5,
+        "geolocation": [
+            -80.018171,
+            40.445688
+        ]
+    },
+    {
+        "id": "ChIJTfpr7Qj0NIgRdO4BjOIRB0c",
+        "name": "Mattress Factory Museum",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "500 Sampsonia Way, Pittsburgh, PA 15212, USA",
+        "price": 11,
+        "rating": 4.4,
+        "geolocation": [
+            -80.012848,
+            40.456832
+        ]
+    },
+    {
+        "id": "ChIJuzBTLXrxNIgRL5ZeHTA2FSQ",
+        "name": "Pittsburgh Parks Conservancy",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "45 S 23rd St #101, Pittsburgh, PA 15203, USA",
+        "price": 12,
+        "rating": 4.7,
+        "geolocation": [
+            -79.972615,
+            40.429858
+        ]
+    },
+    {
+        "id": "ChIJf3NTSXbxNIgRMIhGWMnx4B0",
+        "name": "Shop412",
+        "place_type": "art_gallery",
+        "category": "Visit",
+        "address": "420 S 27th St, Pittsburgh, PA 15203, USA",
+        "price": 17,
+        "rating": 2,
+        "geolocation": [
+            -79.965914,
+            40.42841
+        ]
+    },
+    {
+        "id": "ChIJ2fsFJOTxNIgRhhbQcq7Rk0Q",
+        "name": "Arlington Spray Park",
+        "place_type": "amusement_park",
+        "category": "Visit",
+        "address": "1523 Fernleaf St, Pittsburgh, PA 15210, USA",
+        "price": 16,
+        "rating": 5,
+        "geolocation": [
+            -79.974992,
+            40.417744
+        ]
+    },
+    {
+        "id": "ChIJtXxIMCnyNIgRGFR6_AYkEnM",
+        "name": "Soldiers \u0026 Sailors Memorial Hall \u0026 Museum",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "4141 Fifth Ave, Pittsburgh, PA 15213, USA",
+        "price": 11,
+        "rating": 4.7,
+        "geolocation": [
+            -79.95643,
+            40.4451
+        ]
+    },
+    {
+        "id": "ChIJeU6jvSL0NIgRmXGevQ1pUjA",
+        "name": "Bicycle Heaven",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "1800 Preble Ave, Pittsburgh, PA 15233, USA",
+        "price": 19,
+        "rating": 4.9,
+        "geolocation": [
+            -80.032187,
+            40.456215
+        ]
+    },
+    {
+        "id": "ChIJAQCQuyfyNIgRJSwOGptUhkw",
+        "name": "University Art Gallery",
+        "place_type": "art_gallery",
+        "category": "Visit",
+        "address": "Frick Fine Arts Bldg, Pittsburgh, PA 15260, USA",
+        "price": 28,
+        "rating": 4.4,
+        "geolocation": [
+            -79.95104,
+            40.441621
+        ]
+    },
+    {
+        "id": "ChIJBYa_TybyNIgRwu-E2-TnaIk",
+        "name": "Carnegie Museum of Natural History",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "4400 Forbes Ave, Pittsburgh, PA 15213, USA",
+        "price": 16,
+        "rating": 4.7,
+        "geolocation": [
+            -79.950705,
+            40.44345
+        ]
+    },
+    {
+        "id": "ChIJMfTiXCbyNIgRRMbZ3o9hZzk",
+        "name": "Carnegie Museums of Pittsburgh",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "4400 Forbes Ave, Pittsburgh, PA 15213, USA",
+        "price": 30,
+        "rating": 4.8,
+        "geolocation": [
+            -79.950485,
+            40.443325
+        ]
+    },
+    {
+        "id": "ChIJMfTiXCbyNIgRdvqfBv4hy2M",
+        "name": "Carnegie Museum of Art",
+        "place_type": "museum",
+        "category": "Visit",
+        "address": "4400 Forbes Ave, Pittsburgh, PA 15213, USA",
+        "price": 14,
+        "rating": 4.6,
+        "geolocation": [
+            -79.948973,
+            40.443705
+        ]
+    },
+    {
+        "id": "ChIJBZlC-InxNIgRDUaGB-UvoSg",
+        "name": "Phipps Conservatory and Botanical Gardens",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "1 Schenley Drive, Pittsburgh, PA 15213, USA",
+        "price": 30,
+        "rating": 4.8,
+        "geolocation": [
+            -79.947379,
+            40.439197
+        ]
+    },
+    {
+        "id": "ChIJA0RsGIvxNIgRJuH3-K4PStI",
+        "name": "Schenley Park",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "Pittsburgh, PA 15213, USA",
+        "price": 20,
+        "rating": 4.7,
+        "geolocation": [
+            -79.942489,
+            40.434849
+        ]
+    },
+    {
+        "id": "ChIJTy0MZA3yNIgRqj7gwtC3hnA",
+        "name": "Galerie Werner",
+        "place_type": "art_gallery",
+        "category": "Visit",
+        "address": "5105 Fifth Ave, Pittsburgh, PA 15232, USA",
+        "price": 19,
+        "rating": 0,
+        "geolocation": [
+            -79.938337,
+            40.448053
+        ]
+    },
+    {
+        "id": "ChIJhZhTsnz0NIgRsaToQja_FNo",
+        "name": "Riverview Park",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "159 Riverview Ave, Pittsburgh, PA 15214, USA",
+        "price": 22,
+        "rating": 4.5,
+        "geolocation": [
+            -80.020655,
+            40.482567
+        ]
+    },
+    {
+        "id": "ChIJleNoe27yNIgRxlN_hp_msbM",
+        "name": "Pittsburgh Glass Center",
+        "place_type": "art_gallery",
+        "category": "Visit",
+        "address": "5472 Penn Ave, Pittsburgh, PA 15206, USA",
+        "price": 41,
+        "rating": 4.7,
+        "geolocation": [
+            -79.932883,
+            40.46408
+        ]
+    },
+    {
+        "id": "ChIJp7IiJQ3yNIgRRso1qN0tc0g",
+        "name": "Mendelson Gallery",
+        "place_type": "art_gallery",
+        "category": "Visit",
+        "address": "5874 Ellsworth Ave, Pittsburgh, PA 15232, USA",
+        "price": 17,
+        "rating": 4.8,
+        "geolocation": [
+            -79.928294,
+            40.457493
+        ]
+    },
+    {
+        "id": "ChIJG7npSPTtNIgRiSMbNqoVL_k",
+        "name": "Mellon Park",
+        "place_type": "park",
+        "category": "Visit",
+        "address": "1047 Shady Ave, Pittsburgh, PA 15232, USA",
+        "price": 11,
+        "rating": 4.5,
+        "geolocation": [
+            -79.919449,
+            40.451765
+        ]
+    }
+]

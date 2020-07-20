@@ -14,9 +14,6 @@ const (
 )
 
 func Score(places []Place) float64 {
-	if len(places) == 0 {
-		return 0.0
-	}
 	if len(places) == 1 {
 		if places[0].Price == 0 {
 			return AvgRating / AvgPricing // set to average single place rating-price ratio
