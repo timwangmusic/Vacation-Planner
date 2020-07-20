@@ -1,7 +1,6 @@
 package matching
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"math"
 )

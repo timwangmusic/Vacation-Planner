@@ -1,7 +1,6 @@
 package matching
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"math"
 )
@@ -71,16 +70,16 @@ func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place) 
 		rt.update()
 		staytime = POI.GetStayingTimeForLocationType(places[k].PlaceType)
 		for key, record := range rt.SavedRecord {
-			timeLimitBase, cost := rt.getTimeLimitAndCost(key)
-			newTimeLimit := timeLimitBase + uint8(staytime)
+			currentTravelTime, cost := rt.getTimeLimitAndCost(key)
+			newTravelTime := currentTravelTime + uint8(staytime)
 			newCost := cost + uint(math.Ceil(places[k].Price))
-			if newTimeLimit <= rt.timeLimit && newCost <= budget {
-				newKey := rt.getKey(newTimeLimit, newCost)
+			if newTravelTime <= rt.timeLimit && newCost <= budget {
+				newKey := rt.getKey(newTravelTime, newCost)
 				newSolution := make([]Place, len(record.Solution))
 				copy(newSolution, record.Solution)
 				newSolution = append(newSolution, places[k])
 				newScore := Score(newSolution)
-				newRecord := knapsackNodeRecord{newTimeLimit, newCost, newScore, newSolution}
+				newRecord := knapsackNodeRecord{newTravelTime, newCost, newScore, newSolution}
 				if alreadyRecord, ok := rt.NewRecord[newKey]; ok {
 					if alreadyRecord.score < newRecord.score {
 						rt.NewRecord[newKey] = newRecord

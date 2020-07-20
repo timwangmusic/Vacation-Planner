@@ -1,6 +1,7 @@
 package knapsack
 
 import (
+	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"testing"
@@ -19,16 +20,11 @@ func TestKnapsack(t *testing.T) {
 	for _, p := range places {
 		if p.Price != 0.0 {
 			priceAllZero = true
-		} else {
-			//places[j].Price = math.Round(rand.ExpFloat64()*10+10)
 		}
-		//t.Logf("stay time %d", POI.GetStayingTimeForLocationType(p.PlaceType))
 	}
-	//utils.WriteJsonToFile("../../test_visit_random_gen.json", &places)
-	if priceAllZero == false {
+	if !priceAllZero {
 		t.Error("All price is Zero.")
 	}
-	//t.Log(places)
 	result := matching.Knapsack(places, 35, 1500)
 	if len(result) == 0 {
 		t.Error("No result is returned.")
@@ -38,13 +34,13 @@ func TestKnapsack(t *testing.T) {
 		t.Error("No result is returned by v2")
 	}
 	for _, p := range result {
-		t.Log(p.Name)
+		t.Logf("Placename: %s, ID: %s", p.Name, p.PlaceId)
 	}
-	t.Log(len(result))
+	t.Logf("Knapsack V1 result size: %d", len(result))
 	for _, p := range result2 {
-		t.Log(p.Name)
+		t.Logf("Placename: %s, ID: %s", p.Name, p.PlaceId)
 	}
-	t.Log(len(result2))
+	t.Logf("Knapsack V2 result size: %d", len(result2))
 	if len(result) != len(result2) {
 		t.Error("v2 result doesn't match")
 	}
@@ -53,6 +49,8 @@ func TestKnapsack(t *testing.T) {
 			t.Error("v2 result is not the same")
 		}
 	}
+	assert.Equal(t,result2[0].PlaceId, "ChIJkwQn2FnxNIgRXbZ_Wu4cdL0", "Assert result[0] is expected")
+	assert.Equal(t,result2[2].PlaceId, "ChIJr7aBzePzNIgRi2Dp2ZCFmUY", "Assert result[2] is expected")
+	assert.Equal(t,result2[4].PlaceId, "ChIJTfpr7Qj0NIgRdO4BjOIRB0c", "Assert result[4] is expected")
 	print(result)
-
 }
