@@ -1,3 +1,13 @@
+const weekdayMap = {
+    Monday: 0,
+    Tuesday: 1,
+    Wednesday: 2,
+    Thursday: 3,
+    Friday: 4,
+    Saturday: 5,
+    Sunday: 6,
+}
+
 function query(event) {
     const city = document.getElementById("city").value;
     const country = document.getElementById("country").value;
@@ -9,7 +19,8 @@ function query(event) {
     let searchData = new Map();
     searchData.set("city", city);
     searchData.set("country", country);
-    searchData.set("weekday", weekday);
+    searchData.set("weekday", weekdayMap[weekday]);
+    console.log("weekdayMap[weekday]")
     searchData.set("radius", distance);
     searchData.set("numberResults", 5);
 
