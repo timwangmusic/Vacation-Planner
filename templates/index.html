@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>vacation planner</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
+    <link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
+          rel = "stylesheet">
+    <script src = "https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src = "https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+</head>
+<body style="background-color: lightcyan">
+<h2 style="color: mediumseagreen; text-align: center">
+    Vacation Planner
+</h2>
+<div class="container">
+    <h4 style="color: cornflowerblue">
+        Please enter the city, country and weekday you want to visit
+    </h4>
+    <form>
+        <div class="form-group">
+            <label for="city">City:
+            </label>
+            <input type="text" class= "form-control" id="city" placeholder="San Francisco">
+
+        </div>
+        <div class="form-group">
+            <label for="country">Country:</label>
+            <input type="text" class="form-control" id="country" placeholder="USA">
+        </div>
+        <div class="form-group">
+            <label for="weekday">Weekday:</label>
+            <select type="text" class="form-control" id="weekday">
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option>Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+                <option>Saturday</option>
+                <option>Sunday</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="distance">Distance to city center:</label>
+            <select type="number" class="form-control" id="distance">
+                <option>5000</option>
+                <option>10000</option>
+                <option>20000</option>
+            </select>
+        </div>
+        <button type="submit" id="search_button"> Search </button>
+    </form>
+</div>
+
+<script src="../statics/scripts/app.js"></script>
+<script>
+    const cities = [
+        "San Jose",
+        "San Diego",
+        "San Francisco",
+        "Los Angeles",
+        "New York",
+        "Chicago",
+        "Houston",
+        "Philadelphia",
+        "Phoenix",
+        "San Antonio",
+        "Dallas",
+        "Indianapolis",
+        "Austin",
+        "Columbus",
+        "Baltimore",
+        "Boston",
+        "Seattle",
+        "Washington",
+        "Portland",
+        "Las Vegas",
+        "Paris",
+        "Rome",
+        "Vancouver",
+        "New Delhi",
+        "Beijing",
+        "Shanghai",
+    ];
+
+    const countries = [
+        "USA",
+        "Italy",
+        "France",
+        "Canada",
+        "China",
+        "India",
+    ]
+
+    $(function () {
+        $("#city").autocomplete({
+            source: cities
+        })
+
+        $("#country").autocomplete({
+            source: countries
+        })
+    });
+</script>
+</body>
+</html>

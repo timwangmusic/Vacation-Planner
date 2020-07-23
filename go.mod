@@ -3,6 +3,7 @@ module github.com/weihesdlegend/Vacation-planner
 go 1.12
 
 require (
+	github.com/GeertJohan/go.rice v1.0.0
 	github.com/alicebob/miniredis/v2 v2.10.1
 	github.com/braintree/manners v0.0.0-20160418043613-82a8879fc5fd
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
