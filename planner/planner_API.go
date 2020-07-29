@@ -3,10 +3,7 @@ package planner
 import (
 	"encoding/json"
 	"errors"
-	rice "github.com/GeertJohan/go.rice"
-	"github.com/didip/tollbooth"
-	"github.com/didip/tollbooth/limiter"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/solution"
@@ -212,43 +209,38 @@ func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request
 
 // HTTP GET API end-point
 // Return top planning result to user
-func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request) {
+func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
 	var username = "guest" // default username
-	if planner.Environment == "production" {
+	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(r)
+		username, authenticationErr = planner.UserAuthentication(c.Request)
 		if authenticationErr != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(authenticationErr.Error())
+			c.JSON(http.StatusUnauthorized, gin.H{ "error": authenticationErr.Error()})
 			return
 		}
 	}
 
-	vars := mux.Vars(r)
-	country := vars["country"]
-	city := vars["city"]
-	radius := vars["radius"]
-	weekday := vars["weekday"]
-	numResults := vars["numberResults"]
+	country := c.DefaultQuery("country", "USA")
+	city := c.DefaultQuery("city", "San Diego")
+	radius := c.DefaultQuery("radius", "10000")
+	weekday := c.DefaultQuery("weekday", "5") // Saturday
+	numResults := c.DefaultQuery("numberResults", "5")
 
 	numResultsInt, numResultsParsingErr := strconv.ParseUint(numResults, 10, 64)
 	if numResultsParsingErr != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("invalid number of planning results"))
+		c.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
 		return
 	}
 	iowrappers.Logger.Debugf("number of requested planning results is %s", numResults)
 
 	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
 	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("invalid weekday"))
+		c.String(http.StatusBadRequest, "invalid weekday %d", weekdayUint)
 		return
 	}
 
 	if !validateSearchRadius(radius) {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("invalid search radius"))
+		c.String(http.StatusBadRequest, "invalid search radius of %s", radius)
 		return
 	}
 
@@ -267,43 +259,44 @@ func (planner *MyPlanner) getPlanningApi(w http.ResponseWriter, r *http.Request)
 	err := planningResp.Err
 	if err != "" {
 		if planningResp.StatusCode == solution.InvalidRequestLocation {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(err))
+			c.String(http.StatusBadRequest, err)
 		} else if planningResp.StatusCode == solution.NoValidSolution {
-			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("No valid solution is found.\n"))
-			_, _ = w.Write([]byte("Please try to search with larger radius."))
+			errString := "No valid solution is found.\n Please try to search with larger radius."
+			c.String(http.StatusBadRequest, errString)
 		}
 		return
 	}
 
-	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(w, planningResp), utils.LogError)
+	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(c.Writer, planningResp), utils.LogError)
 }
 
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
-	myRouter := mux.NewRouter()
+	myRouter := gin.Default()
+	//myRouter.GET("", planner.welcomeApi)
 
-	getLimiter := tollbooth.NewLimiter(MaxGetRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
-	getLimiter.SetMethods([]string{"GET"})
-	getLimiter.SetMessage("You have reached maximum GET API limit")
+	v1 := myRouter.Group("/v1")
+	{
+		v1.GET("/plans", planner.getPlanningApi)
+		//v1.POST("", planner.postPlanningApi)
+	}
 
-	riceBox := rice.MustFindBox("../statics/scripts")
-	jsServingPath := "/statics/scripts"
-	jsFileServer := http.StripPrefix(jsServingPath, http.FileServer(riceBox.HTTPBox()))
-	myRouter.PathPrefix(jsServingPath).Handler(jsFileServer)
-	myRouter.HandleFunc("/", planner.welcomeApi)
-
-	myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
-		"radius", "{radius}", "weekday", "{weekday}", "numberResults", "{numberResults}").Handler(tollbooth.LimitFuncHandler(getLimiter, planner.getPlanningApi)).Methods("GET")
-
-	postLimiter := tollbooth.NewLimiter(MaxPostRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
-	postLimiter.SetMethods([]string{"POST"})
-	postLimiter.SetMessage("You have reached maximum POST API limit")
-
-	myRouter.Handle("/planning/v1", tollbooth.LimitFuncHandler(postLimiter, planner.postPlanningApi)).Methods("POST")
-
-	myRouter.Path("/signup").HandlerFunc(planner.UserSignup).Methods("POST")
-	myRouter.Path("/login").HandlerFunc(planner.UserLogin).Methods("POST")
+	//riceBox := rice.MustFindBox("../statics/scripts")
+	//jsServingPath := "/statics/scripts"
+	//jsFileServer := http.StripPrefix(jsServingPath, http.FileServer(riceBox.HTTPBox()))
+	//myRouter.PathPrefix(jsServingPath).Handler(jsFileServer)
+	//myRouter.HandleFunc("/", planner.welcomeApi)
+	//
+	//myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
+	//	"radius", "{radius}", "weekday", "{weekday}", "numberResults", "{numberResults}").Handler(tollbooth.LimitFuncHandler(getLimiter, planner.getPlanningApi)).Methods("GET")
+	//
+	//postLimiter := tollbooth.NewLimiter(MaxPostRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
+	//postLimiter.SetMethods([]string{"POST"})
+	//postLimiter.SetMessage("You have reached maximum POST API limit")
+	//
+	//myRouter.Handle("/planning/v1", tollbooth.LimitFuncHandler(postLimiter, planner.postPlanningApi)).Methods("POST")
+	//
+	//myRouter.Path("/signup").HandlerFunc(planner.UserSignup).Methods("POST")
+	//myRouter.Path("/login").HandlerFunc(planner.UserLogin).Methods("POST")
 
 	svr := &http.Server{
 		Addr:         ":" + serverPort,
