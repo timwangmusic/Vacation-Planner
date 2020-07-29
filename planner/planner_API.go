@@ -21,8 +21,6 @@ import (
 const (
 	MaxPlacesPerSlot         = 4
 	MaxPlacesPerDay          = 12
-	MaxGetRequestsPerSecond  = 10.0 // max GET QPS
-	MaxPostRequestsPerSecond = 8.0  // max POST QPS
 	ServerTimeout            = time.Second * 15
 	jobQueueBufferSize       = 1000
 )
@@ -162,8 +160,8 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (
 }
 
 // API definitions
-func (planner *MyPlanner) welcomeApi(w http.ResponseWriter, _ *http.Request) {
-	utils.CheckErrImmediate(planner.HomeHTMLTemplate.Execute(w, nil), utils.LogError)
+func (planner *MyPlanner) indexPageHandler(c *gin.Context) {
+	utils.CheckErrImmediate(planner.HomeHTMLTemplate.Execute(c.Writer, nil), utils.LogError)
 }
 
 // HTTP POST API end-point
@@ -272,10 +270,10 @@ func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
 
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	myRouter := gin.Default()
-	//myRouter.GET("", planner.welcomeApi)
 
 	v1 := myRouter.Group("/v1")
 	{
+		v1.GET("", planner.indexPageHandler)
 		v1.GET("/plans", planner.getPlanningApi)
 		//v1.POST("", planner.postPlanningApi)
 	}
@@ -284,17 +282,9 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	//jsServingPath := "/statics/scripts"
 	//jsFileServer := http.StripPrefix(jsServingPath, http.FileServer(riceBox.HTTPBox()))
 	//myRouter.PathPrefix(jsServingPath).Handler(jsFileServer)
-	//myRouter.HandleFunc("/", planner.welcomeApi)
+	//myRouter.HandleFunc("/", planner.indexPageHandler)
 	//
-	//myRouter.Path("/planning/v1").Queries("country", "{country}", "city", "{city}",
-	//	"radius", "{radius}", "weekday", "{weekday}", "numberResults", "{numberResults}").Handler(tollbooth.LimitFuncHandler(getLimiter, planner.getPlanningApi)).Methods("GET")
-	//
-	//postLimiter := tollbooth.NewLimiter(MaxPostRequestsPerSecond, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Second})
-	//postLimiter.SetMethods([]string{"POST"})
-	//postLimiter.SetMessage("You have reached maximum POST API limit")
-	//
-	//myRouter.Handle("/planning/v1", tollbooth.LimitFuncHandler(postLimiter, planner.postPlanningApi)).Methods("POST")
-	//
+
 	//myRouter.Path("/signup").HandlerFunc(planner.UserSignup).Methods("POST")
 	//myRouter.Path("/login").HandlerFunc(planner.UserLogin).Methods("POST")
 
