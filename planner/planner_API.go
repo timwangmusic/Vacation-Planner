@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	MaxPlacesPerSlot         = 4
-	MaxPlacesPerDay          = 12
-	ServerTimeout            = time.Second * 15
-	jobQueueBufferSize       = 1000
+	MaxPlacesPerSlot   = 4
+	MaxPlacesPerDay    = 12
+	ServerTimeout      = time.Second * 15
+	jobQueueBufferSize = 1000
 )
 
 type Planner interface {
@@ -170,7 +170,7 @@ func (planner *MyPlanner) postPlanningApi(c *gin.Context) {
 		var authenticationErr error
 		username, authenticationErr = planner.UserAuthentication(c.Request)
 		if authenticationErr != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{ "error": authenticationErr.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 			return
 		}
 	}
@@ -207,7 +207,7 @@ func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
 		var authenticationErr error
 		username, authenticationErr = planner.UserAuthentication(c.Request)
 		if authenticationErr != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{ "error": authenticationErr.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 			return
 		}
 	}

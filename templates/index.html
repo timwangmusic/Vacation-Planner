@@ -31,7 +31,7 @@
         </div>
         <div class="form-group">
             <label for="weekday">Weekday:</label>
-            <select type="text" class="form-control" id="weekday">
+            <select class="form-control" id="weekday">
                 <option>Monday</option>
                 <option>Tuesday</option>
                 <option>Wednesday</option>
@@ -43,7 +43,7 @@
         </div>
         <div class="form-group">
             <label for="distance">Distance to city center:</label>
-            <select type="number" class="form-control" id="distance">
+            <select class="form-control" id="distance">
                 <option>5000</option>
                 <option>10000</option>
                 <option>20000</option>
@@ -88,7 +88,7 @@
         }
 
         const query = arr.join("&");
-        window.location.href = "https://best-vacation-planner.herokuapp.com/planning/v1?" + query;
+        window.location.href = "https://best-vacation-planner.herokuapp.com/v1/plans?" + query;
     }
 
     const mySearchButton = document.getElementById("search_button");

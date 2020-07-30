@@ -55,7 +55,7 @@ func (planner MyPlanner) UserLogin(ctx *gin.Context) {
 
 	decodeErr := ctx.ShouldBindJSON(&c)
 	if decodeErr != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{ "error": decodeErr.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
 		return
 	}
 
