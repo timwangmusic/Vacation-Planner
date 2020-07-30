@@ -1,7 +1,6 @@
 package planner
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -165,44 +164,39 @@ func (planner *MyPlanner) indexPageHandler(c *gin.Context) {
 }
 
 // HTTP POST API end-point
-func (planner *MyPlanner) postPlanningApi(w http.ResponseWriter, r *http.Request) {
+func (planner *MyPlanner) postPlanningApi(c *gin.Context) {
 	var username = "guest" // default username
 	if planner.Environment == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(r)
+		username, authenticationErr = planner.UserAuthentication(c.Request)
 		if authenticationErr != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(authenticationErr.Error())
+			c.JSON(http.StatusUnauthorized, gin.H{ "error": authenticationErr.Error()})
 			return
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
 	req := PlanningPostRequest{}
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := c.ShouldBindJSON(&req)
 	utils.CheckErrImmediate(err, utils.LogInfo)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	planningReq, err := processPlanningPostRequest(&req)
 	utils.CheckErrImmediate(err, utils.LogInfo)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	planningResp := planner.Planning(&planningReq, username)
 	if planningResp.Err != "" && planningResp.StatusCode == http.StatusNotFound {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte("No solution is found"))
+		c.JSON(http.StatusNotFound, gin.H{"error": "No solution is found"})
 		return
 	}
 	// generate valid solution
-	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(w, planningResp), utils.LogError)
+	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(c.Writer, planningResp), utils.LogError)
 }
 
 // HTTP GET API end-point
@@ -233,7 +227,7 @@ func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
 
 	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
 	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
-		c.String(http.StatusBadRequest, "invalid weekday %d", weekdayUint)
+		c.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
 		return
 	}
 
@@ -275,18 +269,10 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	{
 		v1.GET("", planner.indexPageHandler)
 		v1.GET("/plans", planner.getPlanningApi)
-		//v1.POST("", planner.postPlanningApi)
+		v1.POST("/plans", planner.postPlanningApi)
+		v1.POST("/signup", planner.UserSignup)
+		v1.POST("/login", planner.UserLogin)
 	}
-
-	//riceBox := rice.MustFindBox("../statics/scripts")
-	//jsServingPath := "/statics/scripts"
-	//jsFileServer := http.StripPrefix(jsServingPath, http.FileServer(riceBox.HTTPBox()))
-	//myRouter.PathPrefix(jsServingPath).Handler(jsFileServer)
-	//myRouter.HandleFunc("/", planner.indexPageHandler)
-	//
-
-	//myRouter.Path("/signup").HandlerFunc(planner.UserSignup).Methods("POST")
-	//myRouter.Path("/login").HandlerFunc(planner.UserLogin).Methods("POST")
 
 	svr := &http.Server{
 		Addr:         ":" + serverPort,

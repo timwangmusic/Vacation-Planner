@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/globalsign/mgo"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
@@ -15,18 +15,18 @@ import (
 type UserLoginResponse struct {
 	Username string `json:"username"`
 	Jwt      string `json:"jwt"`
+	Status   string `json:"status"`
 }
 
 // user signup POST request handler
 // user submit username/password/email and user is created
 // return bad request if creation fails
-func (planner MyPlanner) UserSignup(w http.ResponseWriter, r *http.Request) {
+func (planner MyPlanner) UserSignup(c *gin.Context) {
 	u := user.User{}
 
-	decodeErr := json.NewDecoder(r.Body).Decode(&u)
+	decodeErr := c.ShouldBindJSON(&u)
 	if decodeErr != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(decodeErr)
+		c.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
 		return
 	}
 
@@ -42,49 +42,49 @@ func (planner MyPlanner) UserSignup(w http.ResponseWriter, r *http.Request) {
 
 	createErr := planner.RedisClient.CreateUser(u)
 	if createErr != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		if mgo.IsDup(createErr) {
-			_ = json.NewEncoder(w).Encode("User already exists")
-		} else {
-			_ = json.NewEncoder(w).Encode(createErr.Error())
-		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
 		return
 	}
-	_ = json.NewEncoder(w).Encode("user created")
+	_ = json.NewEncoder(c.Writer).Encode("user created")
 }
 
 // user login POST request handler
 // user submit credentials and return JWT if login is successful
-func (planner MyPlanner) UserLogin(w http.ResponseWriter, r *http.Request) {
+func (planner MyPlanner) UserLogin(ctx *gin.Context) {
 	c := user.Credential{}
 
-	decodeErr := json.NewDecoder(r.Body).Decode(&c)
+	decodeErr := ctx.ShouldBindJSON(&c)
 	if decodeErr != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(decodeErr)
+		ctx.JSON(http.StatusBadRequest, gin.H{ "error": decodeErr.Error()})
 		return
 	}
 
 	token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(c)
 	if loginErr != nil {
 		log.Debug(loginErr)
-		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(UserLoginResponse{
+		ctx.JSON(http.StatusUnauthorized, UserLoginResponse{
 			Username: c.Username,
 			Jwt:      "",
+			Status:   "unauthorized",
 		})
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:    "JWT",
 		Value:   token,
 		Expires: tokenExpirationTime,
 	})
 
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:  "Username",
 		Value: c.Username,
+	})
+
+	ctx.JSON(http.StatusOK, UserLoginResponse{
+		Username: c.Username,
+		Jwt:      token,
+		Status:   "you are logged in",
 	})
 }
 
