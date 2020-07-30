@@ -8,6 +8,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -91,7 +92,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 
 	planner.HomeHTMLTemplate = template.Must(template.ParseFiles("templates/index.html"))
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
-	planner.Environment = os.Getenv("ENVIRONMENT")
+	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 }
 
 func (planner *MyPlanner) Destroy() {
@@ -263,6 +264,12 @@ func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
 }
 
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
+	gin.SetMode(gin.ReleaseMode)
+	if planner.Environment == "debug" {
+		gin.SetMode(gin.DebugMode)
+	}
+	gin.DefaultWriter = ioutil.Discard
+
 	myRouter := gin.Default()
 
 	v1 := myRouter.Group("/v1")
