@@ -95,9 +95,7 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 			}
 			return resp, err
 		}
-		for _, candidate := range slotSolution.SlotSolutionCandidates {
-			candidates[idx] = append(candidates[idx], candidate)
-		}
+		candidates[idx] = append(candidates[idx], slotSolution.SlotSolutionCandidates...)
 		slotSolutionRedisKeys[idx] = slotSolutionRedisKey
 	}
 
