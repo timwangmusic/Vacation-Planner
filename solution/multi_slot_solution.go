@@ -109,7 +109,7 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		redisRequests[idx] = GenerateSlotSolutionRedisRequest(location, evTag, stayTimes, req.SearchRadius, req.Weekday)
 	}
 
-	slotSolutionCacheResponses := redisCli.GetMultiSlotSolution(redisRequests)
+	slotSolutionCacheResponses := redisCli.GetMultiSlotSolutions(redisRequests)
 
 	slotSolutionRedisKeys := make([]string, len(req.SlotRequests))
 	for idx, slotRequest := range req.SlotRequests {

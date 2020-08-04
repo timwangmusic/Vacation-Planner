@@ -393,7 +393,7 @@ func (redisClient *RedisClient) GetSlotSolution(redisKey string, cacheResponses 
 	}
 }
 
-func (redisClient *RedisClient) GetMultiSlotSolution(requests []SlotSolutionCacheRequest) (responses []SlotSolutionCacheResponse) {
+func (redisClient *RedisClient) GetMultiSlotSolutions(requests []SlotSolutionCacheRequest) (responses []SlotSolutionCacheResponse) {
 	var wg sync.WaitGroup
 	wg.Add(len(requests))
 
