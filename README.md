@@ -1,5 +1,10 @@
-# Vacation planner
+# Unwind
 [![CircleCI](https://circleci.com/gh/weihesdlegend/Vacation-Planner/tree/master.svg?style=svg&circle-token=7f88a49fd72bbe5020c873e24bc5f8a6e47bad63)](https://circleci.com/gh/weihesdlegend/Vacation-Planner/tree/master)
+
+
++ Website: https://best-vacation-planner.herokuapp.com/
+
+![Unwind Logo](https://github.com/weihesdlegend/Vacation-Planner/blob/pr_logo/planner-app/public/logo.png?raw=true)
 
 ## Motivation
 * Planning for travel is essential for having a most enjoyable trip.
