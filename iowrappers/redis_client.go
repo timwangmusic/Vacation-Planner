@@ -374,22 +374,21 @@ func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, 
 	}
 }
 
-func (redisClient *RedisClient) GetSlotSolution(redisKey string, cacheResponses map[string]*SlotSolutionCacheResponse, wg *sync.WaitGroup) {
+func (redisClient *RedisClient) GetSlotSolution(redisKey string, cacheResponses []SlotSolutionCacheResponse, wg *sync.WaitGroup, idx int) {
 	defer wg.Done()
 
-	var solution SlotSolutionCacheResponse
-	cacheResponses[redisKey] = &solution
 	json_, err := redisClient.client.Get(redisKey).Result()
 	if err != nil {
 		Logger.Debugf("redis server find no result for key: %s", redisKey)
-		cacheResponses[redisKey].Err = err
+		cacheResponses[idx].Err = err
 		return
 	}
 
-	err = json.Unmarshal([]byte(json_), &solution)
+	err = json.Unmarshal([]byte(json_), &cacheResponses[idx])
 	if err != nil {
 		Logger.Error(err)
-		cacheResponses[redisKey].Err = err
+		cacheResponses[idx].Err = err
+		return
 	}
 }
 
@@ -397,19 +396,12 @@ func (redisClient *RedisClient) GetMultiSlotSolutions(requests []SlotSolutionCac
 	var wg sync.WaitGroup
 	wg.Add(len(requests))
 
-	m := make(map[string]*SlotSolutionCacheResponse)
 	responses = make([]SlotSolutionCacheResponse, len(requests))
-	redisKeys := make([]string, len(requests))
 
 	for idx, request := range requests {
 		redisKey := genSlotSolutionCacheKey(request)
-		redisKeys[idx] = redisKey
-		go redisClient.GetSlotSolution(redisKey, m, &wg)
+		go redisClient.GetSlotSolution(redisKey, responses, &wg, idx)
 	}
 	wg.Wait()
-
-	for idx, redisKey := range redisKeys {
-		responses[idx] = *m[redisKey]
-	}
 	return
 }
