@@ -8,7 +8,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -63,7 +62,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 // Generate slot solution candidates
 // Parameter list matches slot request
 func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot,
-	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
+	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
 	if len(stayTimes) != len(evTag) {
 		err = errors.New(ReqTimeSlotsTagMismatchErrMsg)
 		return
@@ -71,44 +70,6 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 
 	err = slotSolution.SetTag(evTag)
 	if err != nil {
-		return
-	}
-
-	intervals := make([]POI.TimeInterval, len(stayTimes))
-	for idx, stayTime := range stayTimes {
-		intervals[idx] = stayTime.Slot
-	}
-
-	cityCountry := strings.Split(location, ",")
-	evTags := make([]string, len(evTag))
-	for idx, c := range evTag {
-		evTags[idx] = string(c)
-	}
-
-	redisReq := iowrappers.SlotSolutionCacheRequest{
-		Country:   cityCountry[1],
-		City:      cityCountry[0],
-		Radius:    uint64(radius),
-		EVTags:    evTags,
-		Intervals: intervals,
-		Weekday:   weekday,
-	}
-
-	slotSolutionCacheResp, slotSolutionRedisKey, cacheErr := redisClient.GetSlotSolution(redisReq)
-	if cacheErr == nil { // cache hit
-		for _, candidate := range slotSolutionCacheResp.SlotSolutionCandidate {
-			slotSolutionCandidate := SlotSolutionCandidate{
-				PlaceNames:      candidate.PlaceNames,
-				PlaceIDS:        candidate.PlaceIds,
-				PlaceLocations:  candidate.PlaceLocations,
-				PlaceAddresses:  candidate.PlaceAddresses,
-				PlaceURLs:       candidate.PlaceURLs,
-				EndPlaceDefault: matching.Place{},
-				Score:           candidate.Score,
-				IsSet:           true,
-			}
-			slotSolution.SlotSolutionCandidates = append(slotSolution.SlotSolutionCandidates, slotSolutionCandidate)
-		}
 		return
 	}
 

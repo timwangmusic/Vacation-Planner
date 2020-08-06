@@ -53,6 +53,29 @@ func (solver *Solver) ValidateLocation(slotRequestLocation *string) bool {
 	return true
 }
 
+func GenerateSlotSolutionRedisRequest(location string, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) iowrappers.SlotSolutionCacheRequest {
+	intervals := make([]POI.TimeInterval, len(stayTimes))
+	for idx, stayTime := range stayTimes {
+		intervals[idx] = stayTime.Slot
+	}
+
+	cityCountry := strings.Split(location, ",")
+	evTags := make([]string, len(evTag))
+	for idx, c := range evTag {
+		evTags[idx] = string(c)
+	}
+
+	req := iowrappers.SlotSolutionCacheRequest{
+		Country:   cityCountry[1],
+		City:      cityCountry[0],
+		Radius:    uint64(radius),
+		EVTags:    evTags,
+		Intervals: intervals,
+		Weekday:   weekday,
+	}
+	return req
+}
+
 func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient) (resp PlanningResponse, err error) {
 	if !travelTimeValidation(req) {
 		err = errors.New("travel time limit exceeded for current selection")
@@ -80,10 +103,37 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		candidates[idx] = make([]SlotSolutionCandidate, 0)
 	}
 
-	slotSolutionRedisKeys := make([]string, len(req.SlotRequests))
+	redisRequests := make([]iowrappers.SlotSolutionCacheRequest, len(req.SlotRequests))
 	for idx, slotRequest := range req.SlotRequests {
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli)
+		redisRequests[idx] = GenerateSlotSolutionRedisRequest(location, evTag, stayTimes, req.SearchRadius, req.Weekday)
+	}
+
+	slotSolutionCacheResponses := redisCli.GetMultiSlotSolutions(redisRequests)
+
+	slotSolutionRedisKeys := make([]string, len(req.SlotRequests))
+	for idx, slotRequest := range req.SlotRequests {
+		solution := slotSolutionCacheResponses[idx]
+		var slotSolution SlotSolution
+		if solution.Err == nil {
+			for _, candidate := range solution.SlotSolutionCandidate {
+				slotSolutionCandidate := SlotSolutionCandidate{
+					PlaceNames:      candidate.PlaceNames,
+					PlaceIDS:        candidate.PlaceIds,
+					PlaceLocations:  candidate.PlaceLocations,
+					PlaceAddresses:  candidate.PlaceAddresses,
+					PlaceURLs:       candidate.PlaceURLs,
+					EndPlaceDefault: matching.Place{},
+					Score:           candidate.Score,
+					IsSet:           true,
+				}
+				slotSolution.SlotSolutionCandidates = append(slotSolution.SlotSolutionCandidates, slotSolutionCandidate)
+			}
+			candidates[idx] = append(candidates[idx], slotSolution.SlotSolutionCandidates...)
+			continue
+		}
+		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
+		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
 		if err != nil {
 			if err.Error() == ReqTimeSlotsTagMismatchErrMsg {
@@ -95,9 +145,7 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 			}
 			return resp, err
 		}
-		for _, candidate := range slotSolution.SlotSolutionCandidates {
-			candidates[idx] = append(candidates[idx], candidate)
-		}
+		candidates[idx] = append(candidates[idx], slotSolution.SlotSolutionCandidates...)
 		slotSolutionRedisKeys[idx] = slotSolutionRedisKey
 	}
 
