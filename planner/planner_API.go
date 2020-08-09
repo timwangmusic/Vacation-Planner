@@ -272,9 +272,10 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 
 	myRouter := gin.Default()
 
+	myRouter.GET("", planner.indexPageHandler)
+
 	v1 := myRouter.Group("/v1")
 	{
-		v1.GET("", planner.indexPageHandler)
 		v1.GET("/plans", planner.getPlanningApi)
 		v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
