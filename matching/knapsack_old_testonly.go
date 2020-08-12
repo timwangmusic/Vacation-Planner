@@ -29,7 +29,7 @@ func KnapsackMatrixCopy(dst [][]knapsackNode, src [][]knapsackNode) {
 	}
 }
 
-func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place) {
+func KnapsackV1(places []Place, timeLimit uint8, budget uint) (results []Place) {
 	//INIT KNAPSACK MATRIX
 	current := make([][]knapsackNode, timeLimit+1)
 	for i := 0; i < int(timeLimit)+1; i++ {

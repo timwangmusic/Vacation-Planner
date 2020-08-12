@@ -13,21 +13,25 @@ func TestKnapsack(t *testing.T) {
 	placesFromData := make([]POI.Place, 20, 20)
 	err := utils.ReadFromFile("data/random_gen_visiting_places_for_test.json", &placesFromData)
 	if err != nil || len(places) == 0 {
-		t.Error("Json file read error")
+		t.Fatal("Json file read error")
 	}
-
 	for idx, p := range placesFromData {
 		if idx >= len(places) {
 			break
 		}
 		places[idx] = matching.CreatePlace(p, POI.PlaceCategoryVisit)
 	}
-
-	result := matching.Knapsack(places, 35, 1500)
+	result := matching.KnapsackV1(places, 35, 1500)
 	if len(result) == 0 {
 		t.Error("No result is returned.")
 	}
-	result2 := matching.Knapsackv2(places, 35, 1500)
+	result2, totalCost, totalTimeSpent := matching.Knapsack(places, timeLimit, budget)
+	t.Logf("total cost of the trip is %d", totalCost)
+	t.Logf("total time of the trip is %d", totalTimeSpent)
+
+	assert.LessOrEqual(t, totalTimeSpent, timeLimit, "")
+	assert.LessOrEqual(t, totalCost, budget, "")
+
 	if len(result) == 0 {
 		t.Error("No result is returned by v2")
 	}
