@@ -1,7 +1,7 @@
 package knapsack
 
 import (
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -21,11 +21,14 @@ func TestKnapsack(t *testing.T) {
 		}
 		places[idx] = matching.CreatePlace(p, POI.PlaceCategoryVisit)
 	}
-	result := matching.KnapsackV1(places, 35, 1500)
+	timeLimit := uint8(8)
+	budget := uint(80)
+	querystart := matching.QueryTimeStart{StartHour:8, Day:POI.DateMonday}
+	result := matching.KnapsackV1(places, querystart, timeLimit, budget)
 	if len(result) == 0 {
 		t.Error("No result is returned.")
 	}
-	result2, totalCost, totalTimeSpent := matching.Knapsack(places, timeLimit, budget)
+	result2, totalCost, totalTimeSpent := matching.Knapsack(places, querystart, timeLimit, budget)
 	t.Logf("total cost of the trip is %d", totalCost)
 	t.Logf("total time of the trip is %d", totalTimeSpent)
 

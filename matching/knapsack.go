@@ -58,7 +58,7 @@ func (recordTable *knapsackRecordTable) update() {
 	KnapsackV1 v2 uses sparse matrix like storage for step values and saves memory
 	KnapsackV1 v1 is migrated to knapsack_old_test_only.go
 */
-func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place, totalCost uint, totalTimeSpent uint8) {
+func Knapsack(places []Place, startTime QueryTimeStart,timeLimit uint8, budget uint) (results []Place, totalCost uint, totalTimeSpent uint8) {
 	//Initialize knapsack data structures
 	var recordTable knapsackRecordTable
 	rt := &recordTable
@@ -71,9 +71,10 @@ func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place, to
 		stayTime = POI.GetStayingTimeForLocationType(place.PlaceType)
 		for key, record := range rt.SavedRecord {
 			currentTimeSpent, curCost := rt.getTimeLimitAndCost(key)
+			currentQueryStartTime, _ := startTime.AddOffsetHours(currentTimeSpent)
 			newTimeSpent := currentTimeSpent + uint8(stayTime)
 			newCost := curCost + uint(math.Ceil(place.Price))
-			if newTimeSpent <= rt.timeLimit && newCost <= budget {
+			if newTimeSpent <= rt.timeLimit && newCost <= budget && place.IsOpenBetween(currentQueryStartTime, uint8(stayTime)){
 				newKey := rt.getKey(newTimeSpent, newCost)
 				newSolution := make([]Place, len(record.Solution))
 				copy(newSolution, record.Solution)

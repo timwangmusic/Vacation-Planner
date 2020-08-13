@@ -26,6 +26,11 @@ type TimeSlot struct {
 	Slot POI.TimeInterval
 }
 
+type QueryTimeStart struct {
+	 Day POI.Weekday
+	 StartHour uint8
+}
+
 type TimeMatchingRequest struct {
 	Location  string      // city,country
 	Radius    uint        // search Radius
@@ -36,6 +41,28 @@ type TimeMatchingRequest struct {
 type TimePlacesCluster struct {
 	Places []Place  `json:"places"`
 	Slot   TimeSlot `json:"time slot"`
+}
+
+func (thisquerytime *QueryTimeStart) AddOffsetHours(offsethour uint8) (newquerytime QueryTimeStart, valid bool){
+	newquerytime.Day = thisquerytime.Day
+	newquerytime.StartHour = thisquerytime.StartHour
+	//If a stay time after the start time exceeds the end of day, return false
+	if newquerytime.StartHour + offsethour > 24 {
+		valid = false
+		return
+	}
+	newquerytime.StartHour += offsethour
+	valid = true
+	return
+}
+
+func (thisplace *Place) IsOpenBetween(startTime QueryTimeStart, stayhours uint8)(bool){
+	//TODO: Query whither this place is open at this period in the future after POI.PLACE contains open hour.
+	//Dummy implementation, only checks if the time period is valid
+	if startTime.StartHour + stayhours > 24 {
+		return false
+	}
+	return true
 }
 
 func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
