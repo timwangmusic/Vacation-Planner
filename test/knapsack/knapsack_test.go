@@ -23,7 +23,7 @@ func TestKnapsack(t *testing.T) {
 	}
 	timeLimit := uint8(8)
 	budget := uint(80)
-	querystart := matching.QueryTimeStart{StartHour:8, Day:POI.DateMonday}
+	querystart := matching.QueryTimeStart{StartHour:8, Day:POI.DateMonday, EndHour:24}
 	result := matching.KnapsackV1(places, querystart, timeLimit, budget)
 	if len(result) == 0 {
 		t.Error("No result is returned.")
