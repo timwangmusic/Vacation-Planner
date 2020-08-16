@@ -52,6 +52,7 @@ func (thisquerytime *QueryTimeStart) AddOffsetHours(offsethour uint8) (newqueryt
 	}
 	newquerytime.Day = thisquerytime.Day
 	newquerytime.StartHour = thisquerytime.StartHour + offsethour
+	newquerytime.EndHour = thisquerytime.EndHour
 	valid = true
 	return
 }
