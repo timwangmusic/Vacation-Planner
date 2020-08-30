@@ -7,23 +7,23 @@ import (
 )
 
 func TestGetMultiSlotSolutions(t *testing.T) {
-	cacheRequest1 := iowrappers.SlotSolutionCacheRequest {
-		City: "Beijing",
+	cacheRequest1 := iowrappers.SlotSolutionCacheRequest{
+		City:    "Beijing",
 		Country: "China",
 	}
 	cacheResponse1 := iowrappers.SlotSolutionCacheResponse{}
 	cacheResponse1.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, 1)
-	cacheResponse1.SlotSolutionCandidate[0].PlaceIds = []string{"1","2","3"}
+	cacheResponse1.SlotSolutionCandidate[0].PlaceIds = []string{"1", "2", "3"}
 
 	RedisClient.CacheSlotSolution(cacheRequest1, cacheResponse1)
 
-	cacheRequest2 := iowrappers.SlotSolutionCacheRequest {
-		City: "San Francisco",
+	cacheRequest2 := iowrappers.SlotSolutionCacheRequest{
+		City:    "San Francisco",
 		Country: "USA",
 	}
 	cacheResponse2 := iowrappers.SlotSolutionCacheResponse{}
 	cacheResponse2.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, 1)
-	cacheResponse2.SlotSolutionCandidate[0].PlaceIds = []string{"11","22","33"}
+	cacheResponse2.SlotSolutionCandidate[0].PlaceIds = []string{"11", "22", "33"}
 
 	RedisClient.CacheSlotSolution(cacheRequest2, cacheResponse2)
 

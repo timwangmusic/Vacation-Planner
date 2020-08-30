@@ -1,34 +1,41 @@
 package test
 
 import (
+	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"math"
 	"testing"
 )
 
 func TestScoreFunction(t *testing.T) {
 	// test regular non-zero-price place
-	place1 := matching.Place{Price: 40.0, Rating: 4.0, Location: [2]float64{40.730610, -73.935242}}
+	place1 := matching.CreatePlace(POI.Place{
+		PriceLevel: 3,
+		Rating:     50.0,
+	}, POI.PlaceCategoryVisit)
 
+	expectedScore := 1.0
 	score := matching.Score([]matching.Place{place1})
-	if score != 0.1 {
-		t.Errorf("Expected score %f, got %f", 0.1, score)
+	if score != expectedScore {
+		t.Errorf("Expected score %f, got %f", expectedScore, score)
 	}
 
 	// test zero-price place
-	place2 := matching.Place{Price: 0.0, Rating: 3.5, Location: [2]float64{40.730610, -73.935242}}
+	place2 := matching.CreatePlace(POI.Place{
+		PriceLevel: 0,
+		Rating:     50.0,
+	}, POI.PlaceCategoryVisit)
 
+	expectedScore = 0.1
 	score = matching.Score([]matching.Place{place2})
-	expected := matching.AvgRating / matching.AvgPricing
-	if score != expected {
-		t.Errorf("Expected score %f, got %f", expected, score)
+	if score != expectedScore {
+		t.Errorf("Expected score %f, got %f", expectedScore, score)
 	}
 
 	// test multiple places with same location (NYC)
 	places := []matching.Place{place1, place2}
 	score = matching.Score(places)
-	expected = (matching.AvgRating/matching.AvgPricing + 0.1) / 2 / math.Max(matching.AvgRating/matching.AvgPricing, 0.1)
-	if score != expected {
-		t.Errorf("Expected score %f, got %f", expected, score)
+	expectedScore = 0.55
+	if score != expectedScore {
+		t.Errorf("Expected score %f, got %f", expectedScore, score)
 	}
 }

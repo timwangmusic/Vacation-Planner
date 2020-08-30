@@ -48,7 +48,7 @@ type Location struct {
 }
 
 type Address struct {
-	PObox        string
+	POBox        string
 	ExtendedAddr string
 	StreetAddr   string
 	Locality     string
@@ -96,6 +96,10 @@ func (v *Place) GetPriceLevel() int {
 
 func (v *Place) GetRating() float32 {
 	return v.Rating
+}
+
+func (v *Place) GetURL() string {
+	return v.URL
 }
 
 // Set name if POI name changed
@@ -153,7 +157,7 @@ func (v *Place) SetAddress(addr string) {
 		val := value[1 : len(value)-1]
 		switch fieldName {
 		case `"post-office-box"`:
-			v.Address.PObox = val
+			v.Address.POBox = val
 		case `"extended-address"`:
 			v.Address.ExtendedAddr = val
 		case `"street-address"`:

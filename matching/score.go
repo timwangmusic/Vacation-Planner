@@ -10,15 +10,15 @@ import (
 
 const (
 	AvgRating  = 3.0
-	AvgPricing = PRICE_LEVEL_2
+	AvgPricing = PriceLevel2
 )
 
 func Score(places []Place) float64 {
 	if len(places) == 1 {
-		if places[0].Price == 0 {
-			return AvgRating / AvgPricing // set to average single place rating-price ratio
+		if places[0].GetPrice() == 0 {
+			return AvgRating / AvgPricing // set to average single Place rating-price ratio
 		}
-		return float64(places[0].Rating) / places[0].Price
+		return float64(places[0].GetRating()) / places[0].GetPrice()
 	}
 	distances := calDistances(places)                     // Haversine distances
 	maxDist := math.Max(0.001, calMaxDistance(distances)) // protect against maximum distance being zero
@@ -34,8 +34,8 @@ func calDistances(places []Place) []float64 {
 	distances := make([]float64, len(places)-1)
 
 	for i := 0; i < len(distances); i++ {
-		locationX := places[i].Location
-		locationY := places[i+1].Location
+		locationX := places[i].GetLocation()
+		locationY := places[i+1].GetLocation()
 		distances[i] = utils.HaversineDist([]float64{locationX[0], locationX[1]}, []float64{locationY[0], locationY[1]})
 	}
 	return distances
@@ -50,10 +50,10 @@ func calAvgRatingPriceRatio(places []Place) float64 {
 	numPlaces := len(places)
 	ratingPriceRatios := make([]float64, numPlaces)
 	for k, place := range places {
-		if place.Price == 0 {
+		if place.GetPrice() == 0 {
 			ratingPriceRatios[k] = AvgRating / AvgPricing
 		} else {
-			ratio := float64(place.Rating) / place.Price
+			ratio := float64(place.GetRating()) / place.GetPrice()
 			ratingPriceRatios[k] = ratio
 		}
 	}

@@ -31,18 +31,6 @@ type TimeMatchingRequest struct {
 	Weekday   POI.Weekday // Weekday
 }
 
-type Place struct {
-	PlaceId   string            `json:"id"`
-	Name      string            `json:"name"`
-	PlaceType POI.LocationType  `json:"place_type"`
-	CatTag    POI.PlaceCategory `json:"category"`
-	Address   string            `json:"address"`
-	Price     float64           `json:"price"`
-	Rating    float32           `json:"rating"`
-	Location  [2]float64        `json:"geolocation"`
-	URL       string            `json:"url"`
-}
-
 type PlaceCluster struct {
 	Places []Place  `json:"places"`
 	Slot   TimeSlot `json:"time slot"`
@@ -58,7 +46,7 @@ func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
 }
 
 func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (clusters []PlaceCluster) {
-	// place search and time clustering
+	// Place search and time clustering
 	matcher.placeSearch(req, POI.PlaceCategoryEatery) // search catering
 	matcher.placeSearch(req, POI.PlaceCategoryVisit)  // search visit locations
 
@@ -72,7 +60,7 @@ func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (clusters []Place
 	for _, cluster := range clusterMap { // clusters and timeIntervals are of same length
 		timeIntervals = append(timeIntervals, cluster.Slot.Slot)
 	}
-	// sort time intervals in place by start time
+	// sort time intervals in Place by start time
 	sort.Sort(POI.ByStartTime(timeIntervals))
 
 	for idx, interval := range timeIntervals {
@@ -102,7 +90,7 @@ func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMa
 		}
 		cluster := mgr.TimeClusters.Clusters[clusterKey]
 		for _, place := range cluster.Places {
-			(*clusterMap[clusterKey]).Places = append((*clusterMap[clusterKey]).Places, matcher.createPlace(place, placeCat))
+			(*clusterMap[clusterKey]).Places = append((*clusterMap[clusterKey]).Places, CreatePlace(place, placeCat))
 		}
 	}
 
@@ -131,18 +119,4 @@ func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.P
 	mgr.Clustering(req.Weekday)
 
 	return
-}
-
-func (matcher *TimeMatcher) createPlace(place POI.Place, catTag POI.PlaceCategory) Place {
-	Place_ := Place{}
-	Place_.PlaceId = place.GetID()
-	Place_.Address = place.GetFormattedAddress()
-	Place_.Name = place.GetName()
-	Place_.Price = checkPrice(place.GetPriceLevel())
-	Place_.Rating = place.GetRating()
-	Place_.Location = place.GetLocation()
-	Place_.CatTag = catTag
-	Place_.PlaceType = place.LocationType
-	Place_.URL = place.URL
-	return Place_
 }

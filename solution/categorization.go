@@ -1,6 +1,9 @@
 package solution
 
-import "github.com/weihesdlegend/Vacation-planner/matching"
+import (
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/matching"
+)
 
 type CategorizedPlaces struct {
 	EateryPlaces []matching.Place
@@ -14,9 +17,9 @@ func Categorize(cluster matching.PlaceCluster) CategorizedPlaces {
 	}
 
 	for _, place := range cluster.Places {
-		if place.CatTag == "Visit" {
+		if place.GetPlaceCategory() == POI.PlaceCategoryVisit {
 			res.VisitPlaces = append(res.VisitPlaces, place)
-		} else if place.CatTag == "Eatery" {
+		} else if place.GetPlaceCategory() == POI.PlaceCategoryEatery {
 			res.EateryPlaces = append(res.EateryPlaces, place)
 		}
 	}
