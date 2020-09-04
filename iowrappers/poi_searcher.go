@@ -77,7 +77,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	}
 
 	places = make([]POI.Place, 0)
-	// request.Location is overwritten to lat/lng
+	// request.Location is overwritten to lat,lng
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)

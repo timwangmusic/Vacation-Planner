@@ -37,7 +37,7 @@ type PlaceSearchRequest struct {
 
 func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType string, radius uint,
 	pageToken string, rankBy string) (resp maps.PlacesSearchResponse, err error) {
-	latlng, err := maps.ParseLatLng(location)
+	latLng, err := maps.ParseLatLng(location)
 	// since we try to use Redis and database before calling nearby search,
 	// if location cannot be parsed, then the request cannot be fulfilled.
 	if logErr(err, utils.LogError) {
@@ -46,7 +46,7 @@ func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType stri
 
 	mapsReq := maps.NearbySearchRequest{
 		Type:      maps.PlaceType(placeType),
-		Location:  &latlng,
+		Location:  &latLng,
 		Radius:    radius,
 		PageToken: pageToken,
 		RankBy:    maps.RankBy(rankBy),

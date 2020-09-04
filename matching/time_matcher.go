@@ -7,6 +7,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"reflect"
 	"sort"
 )
 
@@ -37,7 +38,7 @@ type PlaceCluster struct {
 }
 
 func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
-	if poiSearcher == nil {
+	if reflect.ValueOf(poiSearcher).IsNil() {
 		log.Fatal("PoiSearcher does not exist")
 	}
 	matcher.PoiSearcher = poiSearcher
