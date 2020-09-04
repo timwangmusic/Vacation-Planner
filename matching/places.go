@@ -7,7 +7,6 @@ type Place struct {
 	Category POI.PlaceCategory `json:"category"`
 	Address  string            `json:"address"`
 	Price    float64           `json:"price"`
-	Rating   float32           `json:"rating"`
 	Location [2]float64        `json:"geolocation"`
 }
 
@@ -60,7 +59,6 @@ func CreatePlace(place POI.Place, category POI.PlaceCategory) Place {
 	Place_.Place = &place
 	Place_.Address = place.GetFormattedAddress()
 	Place_.Price = checkPrice(place.GetPriceLevel())
-	Place_.Rating = place.GetRating()
 	Place_.Location = place.GetLocation()
 	Place_.Category = category
 	return Place_
