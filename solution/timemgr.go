@@ -43,8 +43,8 @@ func GetTravelTimeByDistance(cclusters []CategorizedPlaces, mdti MDtagIter) ([]f
 		if invalid {
 			continue
 		}
-		locationX := startPlace.Location
-		locationY := endPlace.Location
+		locationX := startPlace.GetLocation()
+		locationY := endPlace.GetLocation()
 		travelTime[i] = utils.HaversineDist([]float64{locationX[0], locationX[1]}, []float64{locationY[0], locationY[1]}) * Dis2minTest
 		sumTime += travelTime[i]
 	}

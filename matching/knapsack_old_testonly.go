@@ -55,14 +55,14 @@ func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place) {
 	var staytime POI.StayingTime
 	for k := 0; k < len(places); k++ {
 		KnapsackMatrixCopy(current, next)
-		staytime = POI.GetStayingTimeForLocationType(places[k].PlaceType)
+		staytime = POI.GetStayingTimeForLocationType(places[k].GetPlaceType())
 		//INITIALIZE 0,0
-		if uint8(staytime) <= timeLimit && int(math.Ceil(places[k].Price)) <= int(budget) {
+		if uint8(staytime) <= timeLimit && int(math.Ceil(places[k].GetPrice())) <= int(budget) {
 			tempPlaces = append(current[0][0].solution, places[k])
 			tempScore = Score(tempPlaces)
-			if tempScore > next[staytime][int(math.Ceil(places[k].Price))].score {
-				next[staytime][int(math.Round(places[k].Price))].score = tempScore
-				next[staytime][int(math.Round(places[k].Price))].solution = append(make([]Place, 0, len(tempPlaces)), tempPlaces...)
+			if tempScore > next[staytime][int(math.Ceil(places[k].GetPrice()))].score {
+				next[staytime][int(math.Round(places[k].GetPrice()))].score = tempScore
+				next[staytime][int(math.Round(places[k].GetPrice()))].solution = append(make([]Place, 0, len(tempPlaces)), tempPlaces...)
 			}
 			if tempScore > optimalNode.score {
 				optimalNode.score = tempScore
@@ -73,9 +73,9 @@ func Knapsack(places []Place, timeLimit uint8, budget uint) (results []Place) {
 		for i := 0; i < int(timeLimit); i++ {
 			for j := 0; j < int(budget); j++ {
 				if current[i][j].score > SelectionThreshold {
-					if i+int(staytime) <= int(timeLimit) && j+int(math.Ceil(places[k].Price)) <= int(budget) {
+					if i+int(staytime) <= int(timeLimit) && j+int(math.Ceil(places[k].GetPrice())) <= int(budget) {
 						tempi = i + int(staytime)
-						tempj = j + int(math.Ceil(places[k].Price))
+						tempj = j + int(math.Ceil(places[k].GetPrice()))
 						tempPlaces = append(current[i][j].solution, places[k])
 						tempScore = Score(tempPlaces)
 						if tempScore > next[tempi][tempj].score {

@@ -68,11 +68,11 @@ func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place) 
 	var staytime POI.StayingTime
 	for k := 0; k < len(places); k++ {
 		rt.update()
-		staytime = POI.GetStayingTimeForLocationType(places[k].PlaceType)
+		staytime = POI.GetStayingTimeForLocationType(places[k].GetPlaceType())
 		for key, record := range rt.SavedRecord {
 			currentTravelTime, cost := rt.getTimeLimitAndCost(key)
 			newTravelTime := currentTravelTime + uint8(staytime)
-			newCost := cost + uint(math.Ceil(places[k].Price))
+			newCost := cost + uint(math.Ceil(places[k].GetPrice()))
 			if newTravelTime <= rt.timeLimit && newCost <= budget {
 				newKey := rt.getKey(newTravelTime, newCost)
 				newSolution := make([]Place, len(record.Solution))

@@ -128,20 +128,20 @@ func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, categorizedPla
 		}
 
 		// if the same place appears in two indexes, return incomplete result
-		if _, exist := record[place.PlaceId]; exist {
+		if _, exist := record[place.GetPlaceId()]; exist {
 			return
 		}
 
-		record[place.PlaceId] = true
+		record[place.GetPlaceId()] = true
 		places[i] = place
-		res.PlaceIDS = append(res.PlaceIDS, place.PlaceId)
-		res.PlaceNames = append(res.PlaceNames, place.Name)
-		res.PlaceLocations = append(res.PlaceLocations, place.Location)
-		res.PlaceAddresses = append(res.PlaceAddresses, place.Address)
-		if len(strings.TrimSpace(place.URL)) == 0 {
-			place.URL = GoogleSearchHomePageURL
+		res.PlaceIDS = append(res.PlaceIDS, place.GetPlaceId())
+		res.PlaceNames = append(res.PlaceNames, place.GetPlaceName())
+		res.PlaceLocations = append(res.PlaceLocations, place.GetLocation())
+		res.PlaceAddresses = append(res.PlaceAddresses, place.GetPlaceFormattedAddress())
+		if len(strings.TrimSpace(place.GetURL())) == 0 {
+			place.SetURL(GoogleSearchHomePageURL)
 		}
-		res.PlaceURLs = append(res.PlaceURLs, place.URL)
+		res.PlaceURLs = append(res.PlaceURLs, place.GetURL())
 	}
 	res.Score = matching.Score(places)
 	res.IsSet = true

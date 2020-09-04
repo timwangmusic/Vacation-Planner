@@ -32,7 +32,7 @@ func (m *LocationMatcher) Matching(req *LocationMatchingRequest, mapsClient *iow
 		1) get geo location data
 		2) clustering
 		3) calculate cluster centers
-		4) generate place pairs
+		4) generate Place pairs
 	*/
 	m.createClusterManager(mapsClient, req.NumClusters)
 
