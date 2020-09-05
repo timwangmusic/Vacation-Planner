@@ -18,7 +18,7 @@ func newPlaceDetailsResultMap() *PlaceDetailsResultMap {
 }
 
 func placeNeedUpdate(place *POI.Place) bool {
-	return len(strings.TrimSpace(place.GetURL())) == 0
+	return len(strings.TrimSpace(place.GetURL())) == 0 || place.GetURL() == iowrappers.GoogleSearchHomePageURL
 }
 
 func updatePlacesDetails(searcher *iowrappers.PoiSearcher, places []POI.Place) {
