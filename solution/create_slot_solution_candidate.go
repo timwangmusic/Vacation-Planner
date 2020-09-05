@@ -3,6 +3,7 @@ package solution
 import (
 	"errors"
 	"fmt"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"strings"
 	"time"
@@ -15,7 +16,6 @@ const (
 
 const (
 	LimitPerSlot            = 4
-	GoogleSearchHomePageURL = "https://www.google.com/"
 )
 
 type TripEvents struct {
@@ -139,7 +139,7 @@ func (slotSolution *SlotSolution) CreateCandidate(iter MDtagIter, categorizedPla
 		res.PlaceLocations = append(res.PlaceLocations, place.GetLocation())
 		res.PlaceAddresses = append(res.PlaceAddresses, place.GetPlaceFormattedAddress())
 		if len(strings.TrimSpace(place.GetURL())) == 0 {
-			place.SetURL(GoogleSearchHomePageURL)
+			place.SetURL(iowrappers.GoogleSearchHomePageURL)
 		}
 		res.PlaceURLs = append(res.PlaceURLs, place.GetURL())
 	}
