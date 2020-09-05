@@ -41,6 +41,10 @@ func (poiSearcher *PoiSearcher) Init(mapsApiKey string, redisUrl *url.URL) {
 	poiSearcher.redisClient.Init(redisUrl)
 }
 
+func (poiSearcher *PoiSearcher) GetMapsClient() *MapsClient {
+	return poiSearcher.mapsClient
+}
+
 func DestroyLogger() {
 	_ = Logger.Sync()
 }
@@ -77,7 +81,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	}
 
 	places = make([]POI.Place, 0)
-	// request.Location is overwritten to lat/lng
+	// request.Location is overwritten to lat,lng
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
 	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
