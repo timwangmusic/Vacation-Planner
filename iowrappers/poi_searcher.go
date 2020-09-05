@@ -41,6 +41,10 @@ func (poiSearcher *PoiSearcher) Init(mapsApiKey string, redisUrl *url.URL) {
 	poiSearcher.redisClient.Init(redisUrl)
 }
 
+func (poiSearcher *PoiSearcher) GetMapsClient() *MapsClient {
+	return poiSearcher.mapsClient
+}
+
 func DestroyLogger() {
 	_ = Logger.Sync()
 }

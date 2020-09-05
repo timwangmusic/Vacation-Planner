@@ -86,6 +86,7 @@ func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadi
 	}
 	request.MaxNumResults = 2 * request.MinNumResults
 	placeManager.places, _ = placeManager.poiSearcher.NearbySearch(&request)
+	updatePlacesDetails(placeManager.poiSearcher, placeManager.places)
 }
 
 // assign Places to time Clusters using their time interval info
