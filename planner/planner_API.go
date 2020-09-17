@@ -79,7 +79,7 @@ type PlanningPostRequest struct {
 
 func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string) {
 	planner.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
-	planner.RedisClient.Init(redisURL)
+	planner.RedisClient = iowrappers.CreateRedisClient(redisURL)
 	planner.RedisStreamName = redisStreamName
 	if redisStreamName == "" {
 		planner.RedisStreamName = "stream:planning_api_usage"

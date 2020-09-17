@@ -1,13 +1,19 @@
 package iowrappers
 
 import (
+	"errors"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"go.uber.org/zap"
 	"googlemaps.github.io/maps"
 	"os"
+	"reflect"
 )
 
+// abstraction of a client that performs location-based operations such as nearby search
 type SearchClient interface {
-	Init(apiKey string) error
+	GetGeocode(*GeocodeQuery) (float64, float64, error)    // translate a textual location to latitude and longitude
+	NearbySearch(*PlaceSearchRequest) ([]POI.Place, error) // search nearby places in a category around a central location
 }
 
 type MapsClient struct {
@@ -15,14 +21,17 @@ type MapsClient struct {
 	apiKey string
 }
 
-// create google maps client with api key
-func (c *MapsClient) Init(apiKey string) error {
-	var err error
-	c.client, err = maps.NewClient(maps.WithAPIKey(apiKey))
+// factory method for MapsClient
+func CreateMapsClient(apiKey string) MapsClient {
+	logErr(CreateLogger(), utils.LogError)
+	mapsClient, err := maps.NewClient(maps.WithAPIKey(apiKey))
 	if err != nil {
-		return err
+		Logger.Fatal(err)
 	}
-	return CreateLogger()
+	if reflect.ValueOf(mapsClient).IsNil() {
+		Logger.Fatal(errors.New("maps client does not exist"))
+	}
+	return MapsClient{client: mapsClient, apiKey: apiKey}
 }
 
 func CreateLogger() error {

@@ -36,7 +36,7 @@ func updatePlacesDetails(searcher *iowrappers.PoiSearcher, places []POI.Place) {
 		wg.Add(1)
 		go func(id string) {
 			defer wg.Done()
-			result, err := searcher.GetMapsClient().PlaceDetailedSearch(id)
+			result, err := iowrappers.PlaceDetailedSearch(searcher.GetMapsClient(), id)
 			if err != nil {
 				iowrappers.Logger.Error(err)
 				return

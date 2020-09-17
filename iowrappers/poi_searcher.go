@@ -13,16 +13,12 @@ import (
 const (
 	MaxSearchRadius              = 16000          // 10 miles
 	MinMapsResultRefreshDuration = time.Hour * 24 // 1 day
-	GoogleSearchHomePageURL = "https://www.google.com/"
+	GoogleSearchHomePageURL      = "https://www.google.com/"
 )
 
-type PlaceSearcher interface {
-	NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error)
-}
-
 type PoiSearcher struct {
-	mapsClient  *MapsClient
-	redisClient *RedisClient
+	mapsClient  MapsClient
+	redisClient RedisClient
 }
 
 type GeocodeQuery struct {
@@ -33,17 +29,12 @@ type GeocodeQuery struct {
 var Logger *zap.SugaredLogger
 
 func (poiSearcher *PoiSearcher) Init(mapsApiKey string, redisUrl *url.URL) {
-	mapsClient := &MapsClient{}
-	utils.CheckErrImmediate(mapsClient.Init(mapsApiKey), utils.LogFatal)
-
-	poiSearcher.mapsClient = mapsClient
-
-	poiSearcher.redisClient = &RedisClient{}
-	poiSearcher.redisClient.Init(redisUrl)
+	poiSearcher.mapsClient = CreateMapsClient(mapsApiKey)
+	poiSearcher.redisClient = CreateRedisClient(redisUrl)
 }
 
 func (poiSearcher *PoiSearcher) GetMapsClient() *MapsClient {
-	return poiSearcher.mapsClient
+	return &poiSearcher.mapsClient
 }
 
 func DestroyLogger() {
@@ -51,13 +42,13 @@ func DestroyLogger() {
 }
 
 // currently geocode is equivalent to mapping city and country to latitude and longitude
-func (poiSearcher *PoiSearcher) Geocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
+func (poiSearcher *PoiSearcher) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
 	originalGeocodeQuery := GeocodeQuery{}
 	originalGeocodeQuery.City = query.City
 	originalGeocodeQuery.Country = query.Country
-	lat, lng, exist := poiSearcher.redisClient.GetGeocode(query)
-	if !exist {
-		lat, lng, err = poiSearcher.mapsClient.Geocode(query)
+	lat, lng, geocodeMissingErr := poiSearcher.redisClient.GetGeocode(query)
+	if geocodeMissingErr != nil {
+		lat, lng, err = poiSearcher.mapsClient.GetGeocode(query)
 		if err != nil {
 			return
 		}
@@ -73,7 +64,7 @@ func (poiSearcher *PoiSearcher) Geocode(query *GeocodeQuery) (lat float64, lng f
 func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
-	lat, lng, err := poiSearcher.Geocode(&GeocodeQuery{
+	lat, lng, err := poiSearcher.GetGeocode(&GeocodeQuery{
 		City:    cityCountry[0],
 		Country: cityCountry[1],
 	})

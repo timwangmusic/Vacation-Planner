@@ -8,6 +8,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"googlemaps.github.io/maps"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -56,15 +57,15 @@ func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType stri
 	return
 }
 
-func (c *MapsClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, e error) {
+func (mapsClient *MapsClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, e error) {
 	var maxReqTimes uint = 5
-	places, e = c.ExtensiveNearbySearch(maxReqTimes, request)
+	places, e = mapsClient.ExtensiveNearbySearch(maxReqTimes, request)
 	return
 }
 
 // ExtensiveNearbySearch tries to find a specified number of search results from a place category once for each location type in the category
 // maxRequestTime specifies the number of times to query for each location type having maxRequestTimes provides Google API call protection
-func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place, err error) {
+func (mapsClient *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place, err error) {
 	if request.RankBy == "" {
 		request.RankBy = "prominence" // default rankBy value
 	}
@@ -96,7 +97,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			}
 
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp, error_ := GoogleMapsNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			searchResp, error_ := GoogleMapsNearbySearchWrapper(*mapsClient, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
 			if error_ != nil {
 				err = error_
 				continue
@@ -113,7 +114,7 @@ func (c *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceS
 			var wg sync.WaitGroup
 			wg.Add(len(placeIdMap))
 			for idx, placeId := range placeIdMap {
-				go c.DetailedSearchWrapper(idx, placeId, &detailSearchResults[idx], &wg)
+				go PlaceDetailsSearchWrapper(mapsClient, idx, placeId, &detailSearchResults[idx], &wg)
 			}
 			wg.Wait()
 
@@ -156,9 +157,9 @@ type PlaceDetailSearchRes struct {
 	RespIdx int
 }
 
-func (c *MapsClient) DetailedSearchWrapper(idx int, placeId string, detailSearchRes *PlaceDetailSearchRes, wg *sync.WaitGroup) {
+func PlaceDetailsSearchWrapper(mapsClient *MapsClient, idx int, placeId string, detailSearchRes *PlaceDetailSearchRes, wg *sync.WaitGroup) {
 	defer wg.Done()
-	searchRes, err := c.PlaceDetailedSearch(placeId)
+	searchRes, err := PlaceDetailedSearch(mapsClient, placeId)
 	if err != nil {
 		Logger.Error(err)
 		return
@@ -167,8 +168,8 @@ func (c *MapsClient) DetailedSearchWrapper(idx int, placeId string, detailSearch
 	return
 }
 
-func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResult, error) {
-	if c.client == nil {
+func PlaceDetailedSearch(mapsClient *MapsClient, placeId string) (maps.PlaceDetailsResult, error) {
+	if reflect.ValueOf(mapsClient).IsNil() {
 		return maps.PlaceDetailsResult{}, errors.New("client does not exist")
 	}
 	flag.Parse() // parse detailed search fields
@@ -185,7 +186,7 @@ func (c *MapsClient) PlaceDetailedSearch(placeId string) (maps.PlaceDetailsResul
 
 	startSearchTime := time.Now()
 
-	resp, err := c.client.PlaceDetails(context.Background(), req)
+	resp, err := mapsClient.client.PlaceDetails(context.Background(), req)
 	utils.CheckErrImmediate(err, utils.LogError)
 
 	searchDuration := time.Since(startSearchTime)

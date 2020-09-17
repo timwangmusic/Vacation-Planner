@@ -8,14 +8,14 @@ import (
 )
 
 // Translate city, country to its central location
-func (c MapsClient) Geocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
+func (mapsClient MapsClient) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
 	req := &maps.GeocodingRequest{
 		Components: map[maps.Component]string{
 			maps.ComponentLocality: query.City,
 			maps.ComponentCountry:  query.Country,
 		}}
 
-	resp, err := c.client.Geocode(context.Background(), req)
+	resp, err := mapsClient.client.Geocode(context.Background(), req)
 	if err != nil {
 		utils.CheckErrImmediate(err, utils.LogError)
 		return

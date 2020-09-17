@@ -60,16 +60,17 @@ func (redisClient *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
 	}
 }
 
-func (redisClient RedisClient) RemoveKeys(keys []string) {
-	redisClient.client.Del(keys...)
-}
-
-func (redisClient *RedisClient) Init(url *url.URL) {
+// factory method for RedisClient
+func CreateRedisClient(url *url.URL) RedisClient {
 	password, _ := url.User.Password()
-	redisClient.client = *redis.NewClient(&redis.Options{
+	return RedisClient{client: *redis.NewClient(&redis.Options{
 		Addr:     url.Host,
 		Password: password,
-	})
+	})}
+}
+
+func (redisClient *RedisClient) RemoveKeys(keys []string) {
+	redisClient.client.Del(keys...)
 }
 
 // serialize place using JSON and store in Redis with key place_details:place_ID:placeID
@@ -167,12 +168,12 @@ func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err e
 // if no geocode in Redis, then we assume no nearby place exists either
 func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error) {
 	cityCountry := strings.Split(request.Location, ",")
-	lat, lng, exist := redisClient.GetGeocode(&GeocodeQuery{
+	lat, lng, err := redisClient.GetGeocode(&GeocodeQuery{
 		City:    cityCountry[0],
 		Country: cityCountry[1],
 	})
-	if !exist {
-		return nil, errors.New("no nearby place exist for the requested location")
+	if err != nil {
+		return nil, err
 	}
 	latLng := strings.Join([]string{fmt.Sprintf("%f", lat), fmt.Sprintf("%f", lng)}, ",")
 	sortedSetKey := strings.Join([]string{latLng, string(request.PlaceCat)}, "_")
@@ -256,22 +257,23 @@ func (redisClient *RedisClient) GetLocationWithAlias(query *GeocodeQuery) string
 	return strings.Join([]string{resCity, resCountry}, "_")
 }
 
-func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, exist bool) {
+func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
 	redisKey := "geocode:cities"
 	redisField := redisClient.GetLocationWithAlias(query)
+	errMsg := fmt.Errorf("geocode of location %s, %s does not exist in cache", query.City, query.Country)
 	if redisField == "" {
-		Logger.Infof("location name for %s, %s does not exist in cache", query.City, query.Country)
+		err = errMsg
 		return
 	}
-	geocode, err := redisClient.client.HGet(redisKey, redisField).Result()
+	var geocode string
+	geocode, err = redisClient.client.HGet(redisKey, redisField).Result()
 	if err != nil {
-		Logger.Infof("geocode of location %s, %s does not exist in cache", query.City, query.Country)
-		return // location does not exist
+		err = errMsg
+		return
 	}
 	latLng, _ := utils.ParseLocation(geocode)
 	lat = latLng[0]
 	lng = latLng[1]
-	exist = true
 	return
 }
 
