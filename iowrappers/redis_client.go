@@ -163,10 +163,10 @@ func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err e
 	return
 }
 
-// currently not used
-// use with StorePlacesForLocation method
+// currently NOT used
+// to be used with the StorePlacesForLocation method
 // if no geocode in Redis, then we assume no nearby place exists either
-func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI.Place, error) {
+func (redisClient *RedisClient) NearbySearchNotUsed(request *PlaceSearchRequest) ([]POI.Place, error) {
 	cityCountry := strings.Split(request.Location, ",")
 	lat, lng, err := redisClient.GetGeocode(&GeocodeQuery{
 		City:    cityCountry[0],
@@ -191,7 +191,7 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) ([]POI
 	return res, nil
 }
 
-func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places []POI.Place) {
+func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
 	requestCategory := strings.ToLower(string(request.PlaceCat))
 	redisKey := "placeIDs:" + requestCategory
 
@@ -210,8 +210,12 @@ func (redisClient *RedisClient) GetPlaces(request *PlaceSearchRequest) (places [
 		Unit:   "m",
 		Sort:   "ASC", // sort ascending
 	}
-	cachedQualifiedPlaces, err := redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
-	utils.CheckErrImmediate(err, utils.LogError)
+	var cachedQualifiedPlaces []redis.GeoLocation
+	cachedQualifiedPlaces, err = redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
+	if err != nil {
+		Logger.Error(err)
+		return
+	}
 
 	request.Radius = searchRadius
 

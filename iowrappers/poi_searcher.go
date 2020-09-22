@@ -76,8 +76,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	// request.Location is overwritten to lat,lng
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
-	//cachedPlaces := poiSearcher.redisClient.NearbySearch(request)
-	cachedPlaces := poiSearcher.redisClient.GetPlaces(request)
+	cachedPlaces, _ := poiSearcher.redisClient.NearbySearch(request)
 	Logger.Debugf("number of results from redis is %d", len(cachedPlaces))
 
 	lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(location, request.PlaceCat)

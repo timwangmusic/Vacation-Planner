@@ -50,7 +50,8 @@ func TestNearbySearch(t *testing.T) {
 		Radius:   uint(2511),
 	}
 
-	cachedPlaces, err := RedisClient.NearbySearch(&placeSearchRequest)
+	var cachedPlaces []POI.Place
+	cachedPlaces, err = RedisClient.NearbySearchNotUsed(&placeSearchRequest)
 
 	if err != nil {
 		t.Error(err)

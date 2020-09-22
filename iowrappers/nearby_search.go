@@ -63,8 +63,10 @@ func (mapsClient *MapsClient) NearbySearch(request *PlaceSearchRequest) (places 
 	return
 }
 
-// ExtensiveNearbySearch tries to find a specified number of search results from a place category once for each location type in the category
-// maxRequestTime specifies the number of times to query for each location type having maxRequestTimes provides Google API call protection
+// ExtensiveNearbySearch tries to find a specified number of search results from
+// a place category once for each location type in the category maxRequestTime
+// specifies the number of times to query for each location type having
+// maxRequestTimes provides Google API call protection
 func (mapsClient *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place, err error) {
 	if request.RankBy == "" {
 		request.RankBy = "prominence" // default rankBy value
