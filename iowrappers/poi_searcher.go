@@ -60,7 +60,6 @@ func (poiSearcher *PoiSearcher) GetGeocode(query *GeocodeQuery) (lat float64, ln
 	return
 }
 
-// if client API key is invalid but not empty string, nearby search result will be empty
 func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
@@ -76,7 +75,12 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	// request.Location is overwritten to lat,lng
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
-	cachedPlaces, _ := poiSearcher.redisClient.NearbySearch(request)
+	var cachedPlaces []POI.Place
+	cachedPlaces, err = poiSearcher.redisClient.NearbySearch(request)
+	if err != nil {
+		Logger.Error(err)
+	}
+
 	Logger.Debugf("number of results from redis is %d", len(cachedPlaces))
 
 	lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(location, request.PlaceCat)
@@ -96,7 +100,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 
 	originalSearchRadius := request.Radius
 
-	request.Radius = MaxSearchRadius // use a large search radius whenever we call external maps service
+	request.Radius = MaxSearchRadius // use a large search radius whenever we call external maps services
 
 	// initiate a new external search
 	newPlaces, mapsNearbySearchErr := poiSearcher.mapsClient.NearbySearch(request)
@@ -109,7 +113,10 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	// update Redis with all the new places obtained
 	poiSearcher.UpdateRedis(newPlaces)
 
-	places = append(places, newPlaces[:maxResultNum]...)
+	// safe-guard on accessing elements in a nil slice
+	if len(newPlaces) > 0 {
+		places = append(places, newPlaces[:maxResultNum]...)
+	}
 
 	if uint(len(places)) < request.MinNumResults {
 		Logger.Debugf("Found %d POI results for place type %s, less than requested number of %d",
@@ -118,7 +125,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	if len(places) == 0 {
 		Logger.Debugf("No qualified POI result found in the given location %s, radius %d, and place type: %s",
 			request.Location, request.Radius, request.PlaceCat)
-		Logger.Debugf("location may be invalid")
+		Logger.Debug("location may be invalid")
 	}
 	return
 }
