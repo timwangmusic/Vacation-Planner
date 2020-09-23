@@ -45,7 +45,7 @@ func (solver *Solver) ValidateLocation(slotRequestLocation *string) bool {
 		City:    countryCity[0],
 		Country: countryCity[1],
 	}
-	_, _, err := solver.matcher.PoiSearcher.Geocode(&geoQuery)
+	_, _, err := solver.matcher.PoiSearcher.GetGeocode(&geoQuery)
 	if err != nil {
 		return false
 	}

@@ -15,5 +15,5 @@ func init() {
 
 	redisUrl := "redis://" + RedisMockSvr.Addr()
 	redisURL, _ := url.Parse(redisUrl)
-	RedisClient.Init(redisURL)
+	RedisClient = iowrappers.CreateRedisClient(redisURL)
 }

@@ -18,9 +18,9 @@ func TestGeoCodingCache(t *testing.T) {
 
 	RedisClient.SetGeocode(geoCodeQuery, expectedLat, expectedLng, geoCodeQuery)
 
-	lat, lng, exist := RedisClient.GetGeocode(&geoCodeQuery)
+	lat, lng, geocodeMissingErr := RedisClient.GetGeocode(&geoCodeQuery)
 
-	if !exist || lat != expectedLat || lng != expectedLng {
+	if geocodeMissingErr != nil || lat != expectedLat || lng != expectedLng {
 		t.Errorf("geo-coding for %s fails",
 			strings.Join([]string{geoCodeQuery.City, geoCodeQuery.Country}, ","))
 	}
