@@ -29,6 +29,7 @@ function extract_token() {
 
 function push_docker() {
 	# Push Docker image to Dockerhub
+	echo "Push Step"
 }
 
 
