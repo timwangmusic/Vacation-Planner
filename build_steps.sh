@@ -13,7 +13,7 @@ function check_dir() {
 
 function build_docker() {
 	docker build -t unwindenv:$BUILD_NUMBER .
-	docker images | unwindenv
+	docker images
 }
 
 function run_docker() {
@@ -25,6 +25,10 @@ function extract_token() {
     token="${token%\"}"
     token="${token#\"}"
 	echo $token
+}
+
+function push_docker() {
+	# Push Docker image to Dockerhub
 }
 
 
