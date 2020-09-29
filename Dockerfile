@@ -7,6 +7,6 @@ WORKDIR /app/
 RUN go get -v -t -d ./...
 
 # Check the working directory
-RUN ls -altr && cd main/ && go build -v .
+RUN ls -altr
 RUN adduser -S -D -H -h /app appuser
 USER appuser
