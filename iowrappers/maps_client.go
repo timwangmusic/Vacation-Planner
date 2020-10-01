@@ -14,6 +14,7 @@ import (
 type SearchClient interface {
 	GetGeocode(*GeocodeQuery) (float64, float64, error)    // translate a textual location to latitude and longitude
 	NearbySearch(*PlaceSearchRequest) ([]POI.Place, error) // search nearby places in a category around a central location
+	PlaceDetailsSearch(placeId string) (place POI.Place, err error)
 }
 
 type MapsClient struct {

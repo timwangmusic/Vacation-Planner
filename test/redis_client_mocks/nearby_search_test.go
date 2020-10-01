@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestNearbySearch(t *testing.T) {
+func TestNearbySearchNotUsed(t *testing.T) {
 	places := make([]POI.Place, 2)
 	places[0] = POI.Place{
 		ID:               "1001",
