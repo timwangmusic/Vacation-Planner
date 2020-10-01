@@ -19,7 +19,7 @@ func detailsResultMap() *PlaceDetailsResultMap {
 
 func placeNeedUpdate(place *POI.Place) bool {
 	if len(strings.TrimSpace(place.GetURL())) == 0 || place.GetURL() == iowrappers.GoogleSearchHomePageURL {
-		logrus.Debugf("place with ID: %s need URL update", place.GetID())
+		logrus.Debugf("[REDIS URL UPDATE] place with ID: %s needs URL update", place.GetID())
 		return true
 	}
 	return false
@@ -64,5 +64,5 @@ func UpdatePlacesDetails(searcher iowrappers.SearchClient, places []POI.Place) (
 
 func updatePlaceDetails(place *POI.Place, details POI.Place) {
 	place.SetURL(details.GetURL())
-	logrus.Debugf("place with ID: %s URL updated to %s", place.GetID(), place.GetURL())
+	logrus.Debugf("[REDIS URL UPDATE] the URL of place with ID: %s has been updated to %s", place.GetID(), place.GetURL())
 }
