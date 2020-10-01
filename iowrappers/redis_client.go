@@ -74,7 +74,8 @@ func (redisClient *RedisClient) RemoveKeys(keys []string) {
 }
 
 // serialize place using JSON and store in Redis with key place_details:place_ID:placeID
-func (redisClient *RedisClient) cachePlace(place POI.Place) {
+func (redisClient *RedisClient) cachePlace(place POI.Place, wg *sync.WaitGroup) {
+	defer wg.Done()
 	json_, err := json.Marshal(place)
 	utils.CheckErrImmediate(err, utils.LogError)
 
@@ -118,6 +119,8 @@ func (redisClient *RedisClient) StorePlacesForLocation(geocodeInString string, p
 	client := redisClient.client
 	latLng, _ := utils.ParseLocation(geocodeInString)
 	lat, lng := latLng[0], latLng[1]
+	wg := &sync.WaitGroup{}
+	wg.Add(len(places))
 	for _, place := range places {
 		sortedSetKey := strings.Join([]string{geocodeInString, string(POI.GetPlaceCategory(place.LocationType))}, "_")
 		dist := utils.HaversineDist([]float64{lng, lat}, place.Location.Coordinates[:])
@@ -125,13 +128,15 @@ func (redisClient *RedisClient) StorePlacesForLocation(geocodeInString string, p
 		if err != nil {
 			return err
 		}
-		redisClient.cachePlace(place)
+		redisClient.cachePlace(place, wg)
 	}
+	wg.Wait()
 	return nil
 }
 
 func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
-	var geoAddSuccessCount int
+	wg := &sync.WaitGroup{}
+	wg.Add(len(places))
 	for _, place := range places {
 		placeCategory := POI.GetPlaceCategory(place.LocationType)
 		geolocation := &redis.GeoLocation{
@@ -140,16 +145,13 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 			Latitude:  place.Location.Coordinates[1],
 		}
 		redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
-		cmdVal, cmdErr := redisClient.client.GeoAdd(redisKey, geolocation).Result()
+		_, cmdErr := redisClient.client.GeoAdd(redisKey, geolocation).Result()
 
-		if !utils.CheckErrImmediate(cmdErr, utils.LogError) && cmdVal == 1 {
-			geoAddSuccessCount++
-			redisClient.cachePlace(place)
-		}
+		utils.CheckErrImmediate(cmdErr, utils.LogError)
+
+		redisClient.cachePlace(place, wg)
 	}
-	if geoAddSuccessCount > 0 {
-		Logger.Infof("%d places geo added to Redis", geoAddSuccessCount)
-	}
+	wg.Wait()
 }
 
 // obtain place info from Redis based with key place_details:place_ID:placeID
@@ -226,6 +228,10 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) (place
 			places = append(places, place)
 		}
 	}
+	return
+}
+
+func (redisClient *RedisClient) PlaceDetailsSearch(string) (place POI.Place, err error) {
 	return
 }
 

@@ -5,6 +5,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"go.uber.org/zap"
+	"googlemaps.github.io/maps"
 	"net/url"
 	"strings"
 	"time"
@@ -127,6 +128,17 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 			request.Location, request.Radius, request.PlaceCat)
 		Logger.Debug("location may be invalid")
 	}
+	return
+}
+
+func (poiSearcher *PoiSearcher) PlaceDetailsSearch(placeId string) (place POI.Place, err error) {
+	var res maps.PlaceDetailsResult
+	res, err = PlaceDetailedSearch(&poiSearcher.mapsClient, placeId)
+	if err != nil {
+		return
+	}
+	// for now only updates the URL field
+	place.SetURL(res.URL)
 	return
 }
 

@@ -63,6 +63,10 @@ func (mapsClient *MapsClient) NearbySearch(request *PlaceSearchRequest) (places 
 	return
 }
 
+func (mapsClient *MapsClient) PlaceDetailsSearch(string) (place POI.Place, err error) {
+	return
+}
+
 // ExtensiveNearbySearch attempts to find a specified number of places satisfy the request
 // within the maxRequestTime times of calling external APIs
 func (mapsClient *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place, err error) {
