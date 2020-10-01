@@ -85,8 +85,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 		planner.RedisStreamName = "stream:planning_api_usage"
 	}
 
-	PoiSearcher := &iowrappers.PoiSearcher{}
-	PoiSearcher.Init(mapsClientApiKey, redisURL)
+	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 
 	planner.Solver.Init(PoiSearcher)
 

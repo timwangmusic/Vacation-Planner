@@ -29,12 +29,15 @@ type GeocodeQuery struct {
 
 var Logger *zap.SugaredLogger
 
-func (poiSearcher *PoiSearcher) Init(mapsApiKey string, redisUrl *url.URL) {
-	poiSearcher.mapsClient = CreateMapsClient(mapsApiKey)
-	poiSearcher.redisClient = CreateRedisClient(redisUrl)
+func CreatePoiSearcher(mapsApiKey string, redisUrl *url.URL) *PoiSearcher {
+	poiSearcher := PoiSearcher{
+		mapsClient:  CreateMapsClient(mapsApiKey),
+		redisClient: CreateRedisClient(redisUrl),
+	}
+	return &poiSearcher
 }
 
-func (poiSearcher *PoiSearcher) GetMapsClient() *MapsClient {
+func (poiSearcher PoiSearcher) GetMapsClient() *MapsClient {
 	return &poiSearcher.mapsClient
 }
 
@@ -43,7 +46,7 @@ func DestroyLogger() {
 }
 
 // currently geocode is equivalent to mapping city and country to latitude and longitude
-func (poiSearcher *PoiSearcher) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
+func (poiSearcher PoiSearcher) GetGeocode(query *GeocodeQuery) (lat float64, lng float64, err error) {
 	originalGeocodeQuery := GeocodeQuery{}
 	originalGeocodeQuery.City = query.City
 	originalGeocodeQuery.Country = query.Country
@@ -61,7 +64,7 @@ func (poiSearcher *PoiSearcher) GetGeocode(query *GeocodeQuery) (lat float64, ln
 	return
 }
 
-func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
+func (poiSearcher PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
 	lat, lng, err := poiSearcher.GetGeocode(&GeocodeQuery{
@@ -131,7 +134,7 @@ func (poiSearcher *PoiSearcher) NearbySearch(request *PlaceSearchRequest) (place
 	return
 }
 
-func (poiSearcher *PoiSearcher) PlaceDetailsSearch(placeId string) (place POI.Place, err error) {
+func (poiSearcher PoiSearcher) PlaceDetailsSearch(placeId string) (place POI.Place, err error) {
 	var res maps.PlaceDetailsResult
 	res, err = PlaceDetailedSearch(&poiSearcher.mapsClient, placeId)
 	if err != nil {
@@ -142,8 +145,7 @@ func (poiSearcher *PoiSearcher) PlaceDetailsSearch(placeId string) (place POI.Pl
 	return
 }
 
-//update Redis when hitting cache miss
-func (poiSearcher *PoiSearcher) UpdateRedis(places []POI.Place) {
+func (poiSearcher PoiSearcher) UpdateRedis(places []POI.Place) {
 	poiSearcher.redisClient.SetPlacesOnCategory(places)
 	Logger.Debugf("Redis update complete")
 }
