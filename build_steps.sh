@@ -18,9 +18,7 @@ function build_docker() {
 
 function run_docker() {
 	docker run --rm unwindenv:$BUILD_NUMBER /bin/sh -c "echo $PWD && \
-		go get -v -t -d ./... && \
-		ls -altr && cd main/ && \
-		go build -v . && go test -v ./..."
+		go test -v ./..."
 }
 
 function extract_token() {
