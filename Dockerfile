@@ -9,7 +9,7 @@ RUN ls -altr && cd main/ && go build -v .
 
 # Check the working directory
 RUN ls -altr
-RUN useradd -d /app -ms /bin/bash -c "appuser" -U appuser
+RUN adduser -d /app -ms /bin/bash -c "appuser" -U appuser
 #RUN adduser -S -D -H -h /app -u 1001 appuser
 RUN chown -R appuser:appuser /app
 RUN chmod 755 /app
