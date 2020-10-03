@@ -4,7 +4,7 @@ COPY . /app/
 WORKDIR /app/
 
 #Install deps
-RUN go get -v -t -d ./...
+#RUN go get -v -t -d ./...
 
 # Check the working directory
 RUN ls -altr
