@@ -17,7 +17,7 @@ function build_docker() {
 }
 
 function run_docker() {
-	docker run --rm unwindenv:$BUILD_NUMBER /bin/sh -c "echo $PWD && \
+	docker run --rm --user 1001 unwindenv:$BUILD_NUMBER /bin/sh -c "echo $PWD && \
 		go test -v ./..."
 }
 

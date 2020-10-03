@@ -9,6 +9,6 @@ RUN ls -altr && cd main/ && go build -v .
 
 # Check the working directory
 RUN ls -altr
-RUN adduser -S -D -H -h /app appuser
+RUN adduser -S -D -H -h /app -u 1001 appuser
 USER appuser
 RUN echo $UID
