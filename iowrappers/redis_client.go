@@ -81,12 +81,12 @@ func (redisClient *RedisClient) RemoveKeys(keys []string) {
 }
 
 // serialize place using JSON and store in Redis with key place_details:place_ID:placeID
-func (redisClient *RedisClient) cachePlace(place POI.Place, wg *sync.WaitGroup) {
+func (redisClient *RedisClient) updatePlace(place POI.Place, wg *sync.WaitGroup) {
 	defer wg.Done()
 	json_, err := json.Marshal(place)
 	utils.CheckErrImmediate(err, utils.LogError)
 
-	_, err = redisClient.client.Set(RedisClientContext, "place_details:place_ID:"+place.ID, json_, -1).Result()
+	_, err = redisClient.client.Set(RedisClientContext, "place_details:place_ID:"+place.ID, json_, 0).Result()
 	if err != nil {
 		Logger.Error(err)
 	}
@@ -138,7 +138,7 @@ func (redisClient *RedisClient) StorePlacesForLocation(geocodeInString string, p
 		if err != nil {
 			return err
 		}
-		redisClient.cachePlace(place, wg)
+		redisClient.updatePlace(place, wg)
 	}
 	wg.Wait()
 	return nil
@@ -159,7 +159,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
 
-		redisClient.cachePlace(place, wg)
+		redisClient.updatePlace(place, wg)
 	}
 	wg.Wait()
 }
@@ -314,10 +314,14 @@ func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng 
 // returns redis streams ID if XADD command execution is successful
 func (redisClient *RedisClient) StreamsLogging(streamName string, data map[string]string) string {
 	xArgs := redis.XAddArgs{Stream: streamName}
-	xArgs.Values = data
+	keyValues := make([]string, 0)
+	for key, val := range data {
+		keyValues = append(keyValues, []string{key, val}...)
+	}
+	xArgs.Values = keyValues
 	streamsId, err := redisClient.client.XAdd(RedisClientContext, &xArgs).Result()
 	if err != nil {
-		Logger.Info(err)
+		Logger.Error(err)
 	}
 	return streamsId
 }
