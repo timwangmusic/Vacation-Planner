@@ -4,10 +4,11 @@ package iowrappers
 // serving the caching needs of the Vacation Planner
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -26,6 +27,12 @@ const (
 	NumVisitorsPrefix      = "visitor_count"
 )
 
+var RedisClientContext context.Context
+
+func init() {
+	RedisClientContext = context.Background()
+}
+
 type RedisClient struct {
 	client redis.Client
 }
@@ -37,30 +44,7 @@ func (redisClient *RedisClient) Destroy() {
 	}
 }
 
-// analytics of total number of unique visitors to the planning APIs in the last 24 hours
-// analytics of number of unique users planning for each city
-func (redisClient *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
-	c := redisClient.client
-
-	pipeline := c.Pipeline()
-
-	pipeline.PFAdd(NumVisitorsPlanningAPI, event.User)
-
-	// set expiration time
-	if _, err := pipeline.Exists(NumVisitorsPlanningAPI).Result(); err != nil && err == redis.Nil {
-		pipeline.Expire(NumVisitorsPlanningAPI, PlanningStatExpirationTime)
-	}
-
-	city := strings.ToLower(strings.Join(strings.Split(event.City, " "), "_"))
-	redisKey := strings.Join([]string{NumVisitorsPrefix, event.Country, city}, ":")
-	pipeline.PFAdd(redisKey, event.User)
-
-	if _, err := pipeline.Exec(); err != nil {
-		log.Error(err)
-	}
-}
-
-// factory method for RedisClient
+// CreateRedisClient is a factory method for RedisClient
 func CreateRedisClient(url *url.URL) RedisClient {
 	password, _ := url.User.Password()
 	return RedisClient{client: *redis.NewClient(&redis.Options{
@@ -69,8 +53,31 @@ func CreateRedisClient(url *url.URL) RedisClient {
 	})}
 }
 
+// analytics of total number of unique visitors to the planning APIs in the last 24 hours
+// analytics of number of unique users planning for each city
+func (redisClient *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
+	c := redisClient.client
+
+	pipeline := c.Pipeline()
+
+	pipeline.PFAdd(RedisClientContext, NumVisitorsPlanningAPI, event.User)
+
+	// set expiration time
+	if _, err := pipeline.Exists(RedisClientContext, NumVisitorsPlanningAPI).Result(); err != nil && err == redis.Nil {
+		pipeline.Expire(RedisClientContext, NumVisitorsPlanningAPI, PlanningStatExpirationTime)
+	}
+
+	city := strings.ToLower(strings.Join(strings.Split(event.City, " "), "_"))
+	redisKey := strings.Join([]string{NumVisitorsPrefix, event.Country, city}, ":")
+	pipeline.PFAdd(RedisClientContext, redisKey, event.User)
+
+	if _, err := pipeline.Exec(RedisClientContext); err != nil {
+		log.Error(err)
+	}
+}
+
 func (redisClient *RedisClient) RemoveKeys(keys []string) {
-	redisClient.client.Del(keys...)
+	redisClient.client.Del(RedisClientContext, keys...)
 }
 
 // serialize place using JSON and store in Redis with key place_details:place_ID:placeID
@@ -79,7 +86,10 @@ func (redisClient *RedisClient) cachePlace(place POI.Place, wg *sync.WaitGroup) 
 	json_, err := json.Marshal(place)
 	utils.CheckErrImmediate(err, utils.LogError)
 
-	redisClient.client.Set("place_details:place_ID:"+place.ID, json_, -1)
+	_, err = redisClient.client.Set(RedisClientContext, "place_details:place_ID:"+place.ID, json_, -1).Result()
+	if err != nil {
+		Logger.Error(err)
+	}
 }
 
 func (redisClient *RedisClient) GetMapsLastSearchTime(location string, category POI.PlaceCategory) (lastSearchTime time.Time, err error) {
@@ -87,7 +97,7 @@ func (redisClient *RedisClient) GetMapsLastSearchTime(location string, category 
 	cityCountry := strings.Split(location, ",")
 	city, country := cityCountry[0], cityCountry[1]
 	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
-	lst, cacheErr := redisClient.client.HGet(redisKey, redisField).Result()
+	lst, cacheErr := redisClient.client.HGet(RedisClientContext, redisKey, redisField).Result()
 	if cacheErr != nil {
 		err = cacheErr
 		return
@@ -107,7 +117,7 @@ func (redisClient *RedisClient) SetMapsLastSearchTime(location string, category 
 	cityCountry := strings.Split(location, ",")
 	city, country := cityCountry[0], cityCountry[1]
 	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
-	_, err = redisClient.client.HSet(redisKey, redisField, requestTime).Result()
+	_, err = redisClient.client.HSet(RedisClientContext, redisKey, redisField, requestTime).Result()
 	return
 }
 
@@ -124,7 +134,7 @@ func (redisClient *RedisClient) StorePlacesForLocation(geocodeInString string, p
 	for _, place := range places {
 		sortedSetKey := strings.Join([]string{geocodeInString, string(POI.GetPlaceCategory(place.LocationType))}, "_")
 		dist := utils.HaversineDist([]float64{lng, lat}, place.Location.Coordinates[:])
-		_, err := client.ZAdd(sortedSetKey, &redis.Z{Score: dist, Member: place.ID}).Result()
+		_, err := client.ZAdd(RedisClientContext, sortedSetKey, &redis.Z{Score: dist, Member: place.ID}).Result()
 		if err != nil {
 			return err
 		}
@@ -145,7 +155,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 			Latitude:  place.Location.Coordinates[1],
 		}
 		redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
-		_, cmdErr := redisClient.client.GeoAdd(redisKey, geolocation).Result()
+		_, cmdErr := redisClient.client.GeoAdd(RedisClientContext, redisKey, geolocation).Result()
 
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
 
@@ -156,7 +166,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(places []POI.Place) {
 
 // obtain place info from Redis based with key place_details:place_ID:placeID
 func (redisClient *RedisClient) getPlace(placeId string) (place POI.Place, err error) {
-	res, err := redisClient.client.Get("place_details:place_ID:" + placeId).Result()
+	res, err := redisClient.client.Get(RedisClientContext, "place_details:place_ID:"+placeId).Result()
 	utils.CheckErrImmediate(err, utils.LogError)
 	if err != nil {
 		return
@@ -180,7 +190,7 @@ func (redisClient *RedisClient) NearbySearchNotUsed(request *PlaceSearchRequest)
 	latLng := strings.Join([]string{fmt.Sprintf("%f", lat), fmt.Sprintf("%f", lng)}, ",")
 	sortedSetKey := strings.Join([]string{latLng, string(request.PlaceCat)}, "_")
 
-	placeIds, _ := redisClient.client.ZRangeByScore(sortedSetKey, &redis.ZRangeBy{
+	placeIds, _ := redisClient.client.ZRangeByScore(RedisClientContext, sortedSetKey, &redis.ZRangeBy{
 		Min: "0",
 		Max: fmt.Sprintf("%d", request.Radius),
 	}).Result()
@@ -213,7 +223,7 @@ func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) (place
 		Sort:   "ASC", // sort ascending
 	}
 	var cachedQualifiedPlaces []redis.GeoLocation
-	cachedQualifiedPlaces, err = redisClient.client.GeoRadius(redisKey, requestLng, requestLat, &geoQuery).Result()
+	cachedQualifiedPlaces, err = redisClient.client.GeoRadius(RedisClientContext, redisKey, requestLng, requestLat, &geoQuery).Result()
 	if err != nil {
 		Logger.Error(err)
 		return
@@ -238,11 +248,11 @@ func (redisClient *RedisClient) PlaceDetailsSearch(string) (place POI.Place, err
 // cache the mapping from user input location name to geo-coding-corrected location name
 // correct location name is an alias of itself
 func (redisClient *RedisClient) CacheLocationAlias(query GeocodeQuery, correctedQuery GeocodeQuery) (err error) {
-	_, err = redisClient.client.HSet("location_name_alias_mapping:city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
+	_, err = redisClient.client.HSet(RedisClientContext, "location_name_alias_mapping:city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
 	if err != nil {
 		return
 	}
-	_, err = redisClient.client.HSet("location_name_alias_mapping:country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
+	_, err = redisClient.client.HSet(RedisClientContext, "location_name_alias_mapping:country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
 	if err != nil {
 		return
 	}
@@ -252,12 +262,12 @@ func (redisClient *RedisClient) CacheLocationAlias(query GeocodeQuery, corrected
 // retrieve corrected location name from cache. return empty string if not exist
 // if corrected location name exists, corrects geocode query
 func (redisClient *RedisClient) GetLocationWithAlias(query *GeocodeQuery) string {
-	resCity, err := redisClient.client.HGet("location_name_alias_mapping:city_names", strings.ToLower(query.City)).Result()
+	resCity, err := redisClient.client.HGet(RedisClientContext, "location_name_alias_mapping:city_names", strings.ToLower(query.City)).Result()
 	if err != nil {
 		return ""
 	}
 
-	resCountry, err := redisClient.client.HGet("location_name_alias_mapping:country_names", strings.ToLower(query.Country)).Result()
+	resCountry, err := redisClient.client.HGet(RedisClientContext, "location_name_alias_mapping:country_names", strings.ToLower(query.Country)).Result()
 	if err != nil {
 		return ""
 	}
@@ -276,7 +286,7 @@ func (redisClient *RedisClient) GetGeocode(query *GeocodeQuery) (lat float64, ln
 		return
 	}
 	var geocode string
-	geocode, err = redisClient.client.HGet(redisKey, redisField).Result()
+	geocode, err = redisClient.client.HGet(RedisClientContext, redisKey, redisField).Result()
 	if err != nil {
 		err = errMsg
 		return
@@ -291,9 +301,11 @@ func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng 
 	redisKey := "geocode:cities"
 	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
 	redisVal := strings.Join([]string{fmt.Sprintf("%.6f", lat), fmt.Sprintf("%.6f", lng)}, ",") // 1/9 meter precision
-	res, err := redisClient.client.HSet(redisKey, redisField, redisVal).Result()
+	_, err := redisClient.client.HSet(context.Background(), redisKey, redisField, redisVal).Result()
 	utils.CheckErrImmediate(err, utils.LogError)
-	if res {
+	if err != nil {
+		Logger.Errorf("Failed to cache geolocation for location %s, %s", query.City, query.Country)
+	} else {
 		Logger.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
 	}
 	utils.CheckErrImmediate(redisClient.CacheLocationAlias(originalQuery, query), utils.LogError)
@@ -302,11 +314,8 @@ func (redisClient *RedisClient) SetGeocode(query GeocodeQuery, lat float64, lng 
 // returns redis streams ID if XADD command execution is successful
 func (redisClient *RedisClient) StreamsLogging(streamName string, data map[string]string) string {
 	xArgs := redis.XAddArgs{Stream: streamName}
-	xArgs.Values = make(map[string]interface{}, 0)
-	for field, value := range data {
-		xArgs.Values[field] = strings.ToLower(value)
-	}
-	streamsId, err := redisClient.client.XAdd(&xArgs).Result()
+	xArgs.Values = data
+	streamsId, err := redisClient.client.XAdd(RedisClientContext, &xArgs).Result()
 	if err != nil {
 		Logger.Info(err)
 	}
@@ -382,14 +391,14 @@ func (redisClient *RedisClient) CacheSlotSolution(req SlotSolutionCacheRequest, 
 	if err != nil {
 		Logger.Errorf("cache slot solution failure for request with key: %s", redisKey)
 	} else {
-		redisClient.client.Set(redisKey, json_, SlotSolutionExpirationTime)
+		redisClient.client.Set(RedisClientContext, redisKey, json_, SlotSolutionExpirationTime)
 	}
 }
 
 func (redisClient *RedisClient) GetSlotSolution(redisKey string, cacheResponses []SlotSolutionCacheResponse, wg *sync.WaitGroup, idx int) {
 	defer wg.Done()
 
-	json_, err := redisClient.client.Get(redisKey).Result()
+	json_, err := redisClient.client.Get(RedisClientContext, redisKey).Result()
 	if err != nil {
 		Logger.Debugf("redis server find no result for key: %s", redisKey)
 		cacheResponses[idx].Err = err
