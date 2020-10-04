@@ -45,7 +45,7 @@ func UpdatePlacesDetails(searcher iowrappers.SearchClient, places []POI.Place) (
 			defer wg.Done()
 			result, err := searcher.PlaceDetailsSearch(placeId)
 			if err != nil {
-				iowrappers.Logger.Error(err)
+				iowrappers.Logger.Errorf("PlaceDetailsSearch error %s for placeId: %s", err, placeId)
 				return
 			}
 			defer m.Unlock()
