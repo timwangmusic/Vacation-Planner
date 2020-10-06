@@ -138,10 +138,12 @@ func (poiSearcher PoiSearcher) PlaceDetailsSearch(placeId string) (place POI.Pla
 	var res maps.PlaceDetailsResult
 	res, err = PlaceDetailedSearch(&poiSearcher.mapsClient, placeId)
 	if err != nil {
+		Logger.Errorf("PlaceDetailedSearch(PoiSearcher) error %s", err.Error())
 		return
 	}
 	// for now only updates the URL field
 	place.SetURL(res.URL)
+	Logger.Debugf("Place %s url set to %s", place.Name, res.URL)
 	return
 }
 

@@ -174,14 +174,16 @@ func PlaceDetailsSearchWrapper(mapsClient *MapsClient, idx int, placeId string, 
 
 func PlaceDetailedSearch(mapsClient *MapsClient, placeId string) (maps.PlaceDetailsResult, error) {
 	if reflect.ValueOf(mapsClient).IsNil() {
-		return maps.PlaceDetailsResult{}, errors.New("client does not exist")
+		err := errors.New("client does not exist")
+		Logger.Error(err)
+		return maps.PlaceDetailsResult{}, err
 	}
 	flag.Parse() // parse detailed search fields
-
+	Logger.Debug("Flag parsed for PlaceDetailedSearch")
 	req := &maps.PlaceDetailsRequest{
 		PlaceID: placeId,
 	}
-
+	Logger.Debug("Request place generated, ready to parse request fields")
 	if *detailedSearchFields != "" {
 		fieldMask, err := parseFields(*detailedSearchFields)
 		utils.CheckErrImmediate(err, utils.LogError)
@@ -189,7 +191,7 @@ func PlaceDetailedSearch(mapsClient *MapsClient, placeId string) (maps.PlaceDeta
 	}
 
 	startSearchTime := time.Now()
-
+	Logger.Debug("Ready to parse place details")
 	resp, err := mapsClient.client.PlaceDetails(context.Background(), req)
 	utils.CheckErrImmediate(err, utils.LogError)
 
