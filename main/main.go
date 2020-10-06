@@ -68,7 +68,7 @@ func listenForShutDownServer(ch <-chan os.Signal, svr *manners.GracefulServer, m
 	}
 
 	// block and wait for shut-down signal
-	<- ch
+	<-ch
 
 	// destroy zap logger
 	defer myPlanner.Destroy()

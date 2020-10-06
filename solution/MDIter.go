@@ -45,7 +45,7 @@ func (mdTagIter *MDtagIter) Init(tag string, categorizedPlaces []CategorizedPlac
 }
 
 func (mdTagIter *MDtagIter) HasNext() bool {
-	for i, _ := range mdTagIter.Tag {
+	for i := range mdTagIter.Tag {
 		if mdTagIter.Status[i] < mdTagIter.Size[i]-1 {
 			return true
 		}

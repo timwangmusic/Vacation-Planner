@@ -31,7 +31,7 @@ func TestUpdatePlaceDetails(t *testing.T) {
 
 	places := make([]POI.Place, 1)
 	places[0] = POI.Place{URL: ""}
-	assert.True(t, places[0].GetURL()=="")
+	assert.True(t, places[0].GetURL() == "")
 
 	placesNeedUpdate := graph.UpdatePlacesDetails(searcher, places)
 	if len(placesNeedUpdate) != 1 {

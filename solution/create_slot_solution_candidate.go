@@ -15,7 +15,7 @@ const (
 )
 
 const (
-	LimitPerSlot            = 4
+	LimitPerSlot = 4
 )
 
 type TripEvents struct {

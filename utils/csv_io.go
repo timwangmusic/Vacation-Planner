@@ -10,8 +10,8 @@ import (
 
 // ReadCsv ...
 // input a file name and get a slice of string slices...
-func ReadCsv(filename string) (res [][]string){
-	if !checkExist(filename){
+func ReadCsv(filename string) (res [][]string) {
+	if !checkExist(filename) {
 		return
 	}
 	csvFile, err := os.Open(filename)
@@ -22,11 +22,11 @@ func ReadCsv(filename string) (res [][]string){
 	reader := csv.NewReader(bufio.NewReader(csvFile))
 	for {
 		line, err := reader.Read()
-		if err == io.EOF{
+		if err == io.EOF {
 			break
-		} else if err != nil{
+		} else if err != nil {
 			log.Fatal(err)
-		} else{
+		} else {
 			res = append(res, line)
 		}
 	}
@@ -35,12 +35,12 @@ func ReadCsv(filename string) (res [][]string){
 
 // WriteCsv...
 // write a slice of string slices to specified file
-func WriteCsv(filename string, records [][]string){
-	if !checkExist(filename){
+func WriteCsv(filename string, records [][]string) {
+	if !checkExist(filename) {
 		_, err := os.Create(filename)
 		CheckErrImmediate(err, LogFatal)
 	}
-	file, err := os.OpenFile(filename, os.O_APPEND | os.O_WRONLY, os.ModeAppend)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	CheckErrImmediate(err, LogFatal)
 
 	// close file after writing is done
@@ -50,15 +50,15 @@ func WriteCsv(filename string, records [][]string){
 	// flush before closing the file
 	defer writer.Flush()
 
-	for _, line := range records{
+	for _, line := range records {
 		err := writer.Write(line)
 		CheckErrImmediate(err, LogFatal)
 	}
 }
 
-func checkExist(filename string) bool{
+func checkExist(filename string) bool {
 	info, err := os.Stat(filename)
-	if err != nil{
+	if err != nil {
 		return false
 	}
 	return !info.IsDir() // false if directory

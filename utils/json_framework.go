@@ -11,10 +11,9 @@ import (
 /*
 Base interface, can be extended to arbitrary structs/Json
 Objects.
- */
+*/
 
-
-func ReadFromFile(fname string, ptr interface{}) error{
+func ReadFromFile(fname string, ptr interface{}) error {
 	if fname == "" {
 		/*TODO: Need directory management functions*/
 		fname = "create_visit_location_test_001.json"
@@ -36,7 +35,7 @@ func ReadFromFile(fname string, ptr interface{}) error{
 	return nil
 }
 
-func WriteJsonToFile(fname string, ptr interface{}) error{
+func WriteJsonToFile(fname string, ptr interface{}) error {
 	if fname == "" {
 		err := errors.New("file name can't be empty")
 		logrus.Error(err.Error())
