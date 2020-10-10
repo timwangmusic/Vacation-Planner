@@ -6,8 +6,9 @@ import (
 	"testing"
 )
 
-func TestNearbySearchNotUsed(t *testing.T) {
-	places := make([]POI.Place, 2)
+func TestGetPlaces(t *testing.T) {
+	// set up data
+	places := make([]POI.Place, 3)
 	places[0] = POI.Place{
 		ID:               "1001",
 		Name:             "Empire state building",
@@ -32,33 +33,65 @@ func TestNearbySearchNotUsed(t *testing.T) {
 		Hours:            [7]string{},
 	}
 
-	geocodeQuery := iowrappers.GeocodeQuery{
-		City:    "New York City",
-		Country: "US",
+	places[2] = POI.Place{
+		ID:               "3003",
+		Name:             "Keens Steakhouse",
+		LocationType:     POI.LocationTypeRestaurant,
+		Address:          POI.Address{},
+		FormattedAddress: "72 W 36th St, New York, NY 10018",
+		Location:         POI.Location{Type: "point", Coordinates: [2]float64{-73.98597, 40.750706}},
+		PriceLevel:       5,
+		Rating:           4.6,
+		Hours:            [7]string{},
 	}
-	RedisClient.SetGeocode(geocodeQuery, 40.712800, -74.006000, geocodeQuery)
 
-	err := RedisClient.StorePlacesForLocation("40.712800,-74.006000", places)
+	_ = iowrappers.CreateLogger()
 
-	if err != nil {
-		t.Error(err)
+	// cache places
+	RedisClient.SetPlacesOnCategory(places)
+
+	// if place are not cached, it is possibly because of GeoAdd failure
+	for _, place := range places {
+		if !RedisMockSvr.Exists("place_details:place_ID:" + place.ID) {
+			t.Errorf("place with ID %s does not exist in Redis", place.ID)
+		}
 	}
 
+	// test normal cases
+	nycLatLng := "40.712800,-74.006000"
 	placeSearchRequest := iowrappers.PlaceSearchRequest{
-		Location: "New York City,US",
-		PlaceCat: "Visit",
-		Radius:   uint(2511),
+		Location:      nycLatLng,
+		PlaceCat:      "Visit",
+		Radius:        uint(5000),
+		MinNumResults: 1,
 	}
 
-	var cachedPlaces []POI.Place
-	cachedPlaces, err = RedisClient.NearbySearchNotUsed(&placeSearchRequest)
+	cachedVisitPlaces, _ := RedisClient.NearbySearch(&placeSearchRequest)
 
-	if err != nil {
-		t.Error(err)
+	if len(cachedVisitPlaces) != 1 || cachedVisitPlaces[0].ID != places[0].ID {
+		t.Logf("number of nearby visit places obtained from Redis is %d", len(cachedVisitPlaces))
+		t.Error("failed to get cached Visit place")
 	}
 
-	expectedNumPlaces := 1
-	if len(cachedPlaces) != expectedNumPlaces || cachedPlaces[0].ID != places[0].ID {
-		t.Errorf("nearby search should return %d places, got %d", expectedNumPlaces, len(cachedPlaces))
+	// the setup of this test case guarantees that the Peter Luger's Steakhouse is located
+	// OUTSIDE the search radius coverage
+	placeSearchRequest = iowrappers.PlaceSearchRequest{
+		Location:      nycLatLng,
+		PlaceCat:      "Eatery",
+		Radius:        uint(5000),
+		MinNumResults: 2,
+	}
+
+	cachedEateryPlaces, _ := RedisClient.NearbySearch(&placeSearchRequest)
+
+	if len(cachedEateryPlaces) != 1 || cachedEateryPlaces[0].ID != places[2].ID {
+		t.Logf("number of nearby eatery places obtained from Redis is %d", len(cachedEateryPlaces))
+		t.Error("failed to get cached Eatery place")
+	}
+
+	// expect to return empty slice if total number of cached places in a category is less than requested minimum
+	cachedVisitPlaces, _ = RedisClient.NearbySearch(&iowrappers.PlaceSearchRequest{MinNumResults: 2, PlaceCat: "Visit"})
+	if len(cachedVisitPlaces) != 0 {
+		t.Error("should return empty slice if total number of cached places in a category is less than requested minimum")
 	}
 }

@@ -16,11 +16,11 @@ const UserKeyPrefix = "user"
 func (redisClient *RedisClient) FindUser(username string) (user.User, error) {
 	usr := user.User{Username: "guest"}
 	redisKey := strings.Join([]string{UserKeyPrefix, username}, ":")
-	if redisClient.client.Exists(redisKey).Val() == 0 {
+	if redisClient.client.Exists(RedisClientContext, redisKey).Val() == 0 {
 		return usr, errors.New("user does not exist")
 	}
 
-	u := redisClient.client.HGetAll(redisKey).Val()
+	u := redisClient.client.HGetAll(RedisClientContext, redisKey).Val()
 	usr.Username = u["username"]
 	usr.Email = u["email"]
 	usr.UserLevel = u["user_level"]
@@ -31,7 +31,7 @@ func (redisClient *RedisClient) FindUser(username string) (user.User, error) {
 // create a new user
 func (redisClient *RedisClient) CreateUser(usr user.User) error {
 	redisKey := strings.Join([]string{UserKeyPrefix, usr.Username}, ":")
-	if redisClient.client.Exists(redisKey).Val() == 1 {
+	if redisClient.client.Exists(RedisClientContext, redisKey).Val() == 1 {
 		return errors.New("user already exists")
 	}
 
@@ -46,7 +46,7 @@ func (redisClient *RedisClient) CreateUser(usr user.User) error {
 		"password":   string(psw),
 		"email":      usr.Email,
 	}
-	_, err := redisClient.client.HMSet(redisKey, userData).Result()
+	_, err := redisClient.client.HMSet(RedisClientContext, redisKey, userData).Result()
 	return err
 }
 
