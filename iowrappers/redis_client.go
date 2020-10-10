@@ -203,7 +203,7 @@ func (redisClient *RedisClient) NearbySearchNotUsed(request *PlaceSearchRequest)
 	return res, nil
 }
 
-func (redisClient *RedisClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
+func (redisClient *RedisClient) NearbySearch(context context.Context, request *PlaceSearchRequest) (places []POI.Place, err error) {
 	requestCategory := strings.ToLower(string(request.PlaceCat))
 	redisKey := "placeIDs:" + requestCategory
 

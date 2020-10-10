@@ -1,6 +1,7 @@
 package iowrappers
 
 import (
+	"context"
 	"fmt"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -64,7 +65,7 @@ func (poiSearcher PoiSearcher) GetGeocode(query *GeocodeQuery) (lat float64, lng
 	return
 }
 
-func (poiSearcher PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, err error) {
+func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *PlaceSearchRequest) (places []POI.Place, err error) {
 	location := request.Location
 	cityCountry := strings.Split(location, ",")
 	lat, lng, err := poiSearcher.GetGeocode(&GeocodeQuery{
@@ -80,7 +81,7 @@ func (poiSearcher PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places
 	request.Location = fmt.Sprint(lat) + "," + fmt.Sprint(lng)
 
 	var cachedPlaces []POI.Place
-	cachedPlaces, err = poiSearcher.redisClient.NearbySearch(request)
+	cachedPlaces, err = poiSearcher.redisClient.NearbySearch(context, request)
 	if err != nil {
 		Logger.Error(err)
 	}
@@ -107,7 +108,7 @@ func (poiSearcher PoiSearcher) NearbySearch(request *PlaceSearchRequest) (places
 	request.Radius = MaxSearchRadius // use a large search radius whenever we call external maps services
 
 	// initiate a new external search
-	newPlaces, mapsNearbySearchErr := poiSearcher.mapsClient.NearbySearch(request)
+	newPlaces, mapsNearbySearchErr := poiSearcher.mapsClient.NearbySearch(context, request)
 	utils.CheckErrImmediate(mapsNearbySearchErr, utils.LogError)
 
 	request.Radius = originalSearchRadius // restore search radius

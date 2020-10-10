@@ -2,6 +2,7 @@ package solution
 
 import (
 	"container/heap"
+	"context"
 	"errors"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -76,18 +77,18 @@ func GenerateSlotSolutionRedisRequest(location string, evTag string, stayTimes [
 	return req
 }
 
-func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient) (resp PlanningResponse, err error) {
-	if !travelTimeValidation(req) {
-		err = errors.New("travel time limit exceeded for current selection")
-		resp.Errcode = InvalidSolverReqTimeInterval
+func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisClient, req *PlanningRequest, resp *PlanningResponse) {
+	if !travelTimeValidation(*req) {
+		resp.Err = errors.New("travel time limit exceeded for current selection")
+		resp.ErrorCode = InvalidSolverReqTimeInterval
 		return
 	}
 
 	// validate location with poiSearcher of the time matcher
 	for idx := range req.SlotRequests {
 		if !solver.ValidateLocation(&req.SlotRequests[idx].Location) {
-			err = errors.New("invalid travel destination")
-			resp.Errcode = InvalidRequestLocation
+			resp.Err = errors.New("invalid travel destination")
+			resp.ErrorCode = InvalidRequestLocation
 			return
 		}
 	}
@@ -133,17 +134,17 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 			continue
 		}
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
+		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(context, solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
 		if err != nil {
 			if err.Error() == ReqTimeSlotsTagMismatchErrMsg {
-				resp.Errcode = ReqTimeSlotsTagMismatch
+				resp.ErrorCode = ReqTimeSlotsTagMismatch
 			} else if err.Error() == CategorizedPlaceIterInitFailureErrMsg {
-				resp.Errcode = CatPlaceIterInitFailure
+				resp.ErrorCode = CatPlaceIterInitFailure
 			} else {
-				resp.Errcode = ReqTagInvalid
+				resp.ErrorCode = ReqTagInvalid
 			}
-			return resp, err
+			return
 		}
 		candidates[idx] = append(candidates[idx], slotSolution.SlotSolutionCandidates...)
 		slotSolutionRedisKeys[idx] = slotSolutionRedisKey
@@ -300,7 +301,7 @@ type SlotRequest struct {
 type PlanningResponse struct {
 	Solutions []MultiSlotSolution
 	Err       error
-	Errcode   uint
+	ErrorCode uint
 }
 
 // Find top multi-slot solutions

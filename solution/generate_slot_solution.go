@@ -2,6 +2,7 @@ package solution
 
 import (
 	"container/heap"
+	"context"
 	"errors"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -61,8 +62,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 
 // Generate slot solution candidates
 // Parameter list matches slot request
-func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot,
-	radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
+func GenerateSlotSolution(context context.Context, timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
 	if len(stayTimes) != len(evTag) {
 		err = errors.New(ReqTimeSlotsTagMismatchErrMsg)
 		return
@@ -88,7 +88,7 @@ func GenerateSlotSolution(timeMatcher *matching.TimeMatcher, location string, ev
 
 	req.Weekday = weekday
 
-	placeClusters := timeMatcher.Matching(&req)
+	placeClusters := timeMatcher.Matching(context, &req)
 
 	categorizedPlaces := make([]CategorizedPlaces, len(placeClusters))
 

@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -25,10 +26,6 @@ const (
 	ServerTimeout      = time.Second * 15
 	jobQueueBufferSize = 1000
 )
-
-type Planner interface {
-	Planning(req *solution.PlanningRequest, user string) (resp PlanningResponse)
-}
 
 type MyPlanner struct {
 	RedisClient        iowrappers.RedisClient
@@ -55,7 +52,7 @@ type TimeSectionPlaces struct {
 type PlanningResponse struct {
 	TravelDestination string                `json:"travel_destination"`
 	Places            [][]TimeSectionPlaces `json:"time_section_places"`
-	Err               string                `json:"error"`
+	Err               error                 `json:"error"`
 	StatusCode        uint                  `json:"status_code"`
 }
 
@@ -101,18 +98,20 @@ func (planner *MyPlanner) Destroy() {
 }
 
 // single-day, single-city planning method
-func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (resp PlanningResponse) {
-	planningResp, err := planner.Solver.Solve(*req, planner.RedisClient)
-	utils.CheckErrImmediate(err, utils.LogError)
-	if err != nil {
-		resp.Err = err.Error()
-		resp.StatusCode = planningResp.Errcode
+func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solution.PlanningRequest, user string) (resp PlanningResponse) {
+	var planningResponse solution.PlanningResponse
+
+	planner.Solver.Solve(ctx, planner.RedisClient, planningRequest, &planningResponse)
+
+	if planningResponse.Err != nil {
+		resp.Err = planningResponse.Err
+		resp.StatusCode = planningResponse.ErrorCode
 		return
 	}
 
 	// logging planning API usage for valid requests
-	if len(req.SlotRequests) > 0 {
-		countryCity := req.SlotRequests[0].Location
+	if len(planningRequest.SlotRequests) > 0 {
+		countryCity := planningRequest.SlotRequests[0].Location
 		countryAndCity := strings.Split(countryCity, ",")
 		event := iowrappers.PlanningEvent{
 			User:      user,
@@ -124,13 +123,13 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (
 		planner.PlanningEventLogging(event)
 	}
 
-	if len(planningResp.Solutions) == 0 {
-		resp.Err = errors.New("cannot find a valid solution").Error()
+	if len(planningResponse.Solutions) == 0 {
+		resp.Err = errors.New("cannot find a valid solution")
 		resp.StatusCode = solution.NoValidSolution
 		return
 	}
 
-	topSolutions := planningResp.Solutions
+	topSolutions := planningResponse.Solutions
 	resp.Places = make([][]TimeSectionPlaces, len(topSolutions))
 	for sIdx, topSolution := range topSolutions {
 		for idx, slotSol := range topSolution.SlotSolutions {
@@ -140,8 +139,8 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (
 			for pIdx, placeName := range slotSol.PlaceNames {
 				timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
 					PlaceName: placeName,
-					StartTime: req.SlotRequests[idx].StayTimes[pIdx].Slot.Start,
-					EndTime:   req.SlotRequests[idx].StayTimes[pIdx].Slot.End,
+					StartTime: planningRequest.SlotRequests[idx].StayTimes[pIdx].Slot.Start,
+					EndTime:   planningRequest.SlotRequests[idx].StayTimes[pIdx].Slot.End,
 					Address:   slotSol.PlaceAddresses[pIdx],
 					URL:       slotSol.PlaceURLs[pIdx],
 				})
@@ -151,8 +150,8 @@ func (planner *MyPlanner) Planning(req *solution.PlanningRequest, user string) (
 	}
 
 	resp.StatusCode = solution.ValidSolutionFound
-	if len(req.SlotRequests) > 0 {
-		resp.TravelDestination = strings.Title(strings.Split(req.SlotRequests[0].Location, ",")[0])
+	if len(planningRequest.SlotRequests) > 0 {
+		resp.TravelDestination = strings.Title(strings.Split(planningRequest.SlotRequests[0].Location, ",")[0])
 	} else {
 		resp.TravelDestination = "Dream Vacation Destination"
 	}
@@ -191,8 +190,8 @@ func (planner *MyPlanner) postPlanningApi(c *gin.Context) {
 		return
 	}
 
-	planningResp := planner.Planning(&planningReq, username)
-	if planningResp.Err != "" && planningResp.StatusCode == http.StatusNotFound {
+	planningResp := planner.Planning(c.Request.Context(), &planningReq, username)
+	if planningResp.Err != nil && planningResp.StatusCode == http.StatusNotFound {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No solution is found"})
 		return
 	}
@@ -247,12 +246,12 @@ func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
 		planningReq.SlotRequests[slotReqIdx].Location = cityCountry // set to the same location from URL
 	}
 
-	planningResp := planner.Planning(&planningReq, username)
+	planningResp := planner.Planning(c.Request.Context(), &planningReq, username)
 
 	err := planningResp.Err
-	if err != "" {
+	if err != nil {
 		if planningResp.StatusCode == solution.InvalidRequestLocation {
-			c.String(http.StatusBadRequest, err)
+			c.String(http.StatusBadRequest, err.Error())
 		} else if planningResp.StatusCode == solution.NoValidSolution {
 			errString := "No valid solution is found.\n Please try to search with larger radius."
 			c.String(http.StatusBadRequest, errString)

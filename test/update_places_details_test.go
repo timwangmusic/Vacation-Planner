@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -17,7 +18,7 @@ func (mocker SearchClientMock) GetGeocode(*iowrappers.GeocodeQuery) (float64, fl
 	return 0.0, 0.0, nil
 }
 
-func (mocker SearchClientMock) NearbySearch(*iowrappers.PlaceSearchRequest) ([]POI.Place, error) {
+func (mocker SearchClientMock) NearbySearch(context.Context, *iowrappers.PlaceSearchRequest) ([]POI.Place, error) {
 	return nil, nil
 }
 
