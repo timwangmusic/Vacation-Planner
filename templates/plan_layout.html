@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width">
     <title>Vacation Plans</title>
     <style>
-        .container {
-            display: flex;
-            flex-flow: row wrap;
-            justify-content: space-around;
-        }
-
         .item {
             display: block;
             background: lightcyan;
@@ -58,31 +52,36 @@
     <div class="container">
         {{range $i, $p := .Places}}
             {{/*        create one table for each multi-slot solution*/}}
-            <div class="item">
-                <h3> One-day Plan </h3>
-                <table class="table table-bordered table-striped table-hover">
-                    <thead>
-                    <tr>
-                        <th> Place Name</th>
-                        <th> From (Hour)</th>
-                        <th> To (Hour)</th>
-                        <th> Address</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {{range $p}}
-                        {{range .Places}}
-                            <tr>
-                                <td><a href={{.URL}}> {{.PlaceName}} </a></td>
-                                <td> {{.StartTime}} </td>
-                                <td> {{.EndTime}} </td>
-                                <td> {{.Address}} </td>
-                            </tr>
+        <div class="row">
+            <div class="col">
+                <div class="item">
+                    <h3> One-day Plan </h3>
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                        <tr>
+                            <th> Place Name</th>
+                            <th> From (Hour)</th>
+                            <th> To (Hour)</th>
+                            <th> Address</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{range $p}}
+                            {{range .Places}}
+                                <tr>
+                                    <td><a href={{.URL}}> {{.PlaceName}} </a></td>
+                                    <td> {{.StartTime}} </td>
+                                    <td> {{.EndTime}} </td>
+                                    <td> {{.Address}} </td>
+                                </tr>
+                            {{end}}
                         {{end}}
-                    {{end}}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+        </div>
+
         {{end}}
     </div>
 {{end}}
