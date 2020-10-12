@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width">
     <title>Vacation Plans</title>
     <style>
-        .container{
+        .container {
             display: flex;
             flex-flow: row wrap;
             justify-content: space-around;
         }
-        .item{
+
+        .item {
+            display: block;
             background: lightcyan;
             padding: 10px;
             margin: 30px;
@@ -18,6 +20,7 @@
             height: auto;
             justify-content: center;
         }
+
         h1 {
             text-align: center;
             color: coral;
@@ -25,37 +28,23 @@
             margin: 0;
             background-color: whitesmoke;
         }
-        body {
-            background-color: azure;
-            font-size: 18px;
-        }
-        table {
-            border-style: solid;
-            border-width: thin;
-            border-collapse: collapse;
-            width: 980px;
-        }
-        th {
-            border: 1px solid #cecfd5;
-            padding: 10px 15px;
-        }
-        td {
-            border: 1px solid #cecfd5;
-            padding: 10px 15px;
-        }
+
         h3 {
             color: mediumvioletred;
         }
-        tbody tr:nth-child(even) {
-            background: #f0f0f2;
+
+        tr:nth-child(even) {
+            background: beige;
         }
+
         thead {
             background: #395870;
             color: antiquewhite;
         }
     </style>
     <!--Bootstrap CSS-->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
 <body>
 <h1>
@@ -71,21 +60,20 @@
             {{/*        create one table for each multi-slot solution*/}}
             <div class="item">
                 <h3> One-day Plan </h3>
-                <table>
+                <table class="table table-bordered table-striped table-hover">
                     <thead>
                     <tr>
-                        <th> Place Name </th>
-                        <th> From (Hour) </th>
-                        <th> To (Hour) </th>
-                        <th> Address </th>
+                        <th> Place Name</th>
+                        <th> From (Hour)</th>
+                        <th> To (Hour)</th>
+                        <th> Address</th>
                     </tr>
                     </thead>
                     <tbody>
-
                     {{range $p}}
                         {{range .Places}}
                             <tr>
-                                <td> <a href={{.URL}}> {{.PlaceName}} </a></td>
+                                <td><a href={{.URL}}> {{.PlaceName}} </a></td>
                                 <td> {{.StartTime}} </td>
                                 <td> {{.EndTime}} </td>
                                 <td> {{.Address}} </td>
@@ -93,7 +81,6 @@
                         {{end}}
                     {{end}}
                     </tbody>
-
                 </table>
             </div>
         {{end}}
