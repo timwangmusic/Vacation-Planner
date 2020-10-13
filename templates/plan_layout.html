@@ -41,9 +41,16 @@
           integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
 <body>
-<h1>
-    Vacation Plans for {{.TravelDestination}}
-</h1>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>
+                Vacation Plans for {{.TravelDestination}}
+            </h1>
+        </div>
+    </div>
+</div>
+
 {{if .Err}}
     Error: {{.Err}}<br>
     Error code: {{.StatusCode}}<br>
@@ -52,35 +59,35 @@
     <div class="container">
         {{range $i, $p := .Places}}
             {{/*        create one table for each multi-slot solution*/}}
-        <div class="row">
-            <div class="col">
-                <div class="item">
-                    <h3> One-day Plan </h3>
-                    <table class="table table-bordered table-striped table-hover">
-                        <thead>
-                        <tr>
-                            <th> Place Name</th>
-                            <th> From (Hour)</th>
-                            <th> To (Hour)</th>
-                            <th> Address</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {{range $p}}
-                            {{range .Places}}
-                                <tr>
-                                    <td><a href={{.URL}}> {{.PlaceName}} </a></td>
-                                    <td> {{.StartTime}} </td>
-                                    <td> {{.EndTime}} </td>
-                                    <td> {{.Address}} </td>
-                                </tr>
+            <div class="row">
+                <div class="col">
+                    <div class="item">
+                        <h3> One-day Plan </h3>
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead>
+                            <tr>
+                                <th> Place Name</th>
+                                <th> From (Hour)</th>
+                                <th> To (Hour)</th>
+                                <th> Address</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {{range $p}}
+                                {{range .Places}}
+                                    <tr>
+                                        <td><a href={{.URL}}> {{.PlaceName}} </a></td>
+                                        <td> {{.StartTime}} </td>
+                                        <td> {{.EndTime}} </td>
+                                        <td> {{.Address}} </td>
+                                    </tr>
+                                {{end}}
                             {{end}}
-                        {{end}}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
 
         {{end}}
     </div>
