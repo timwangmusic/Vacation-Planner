@@ -41,7 +41,7 @@ func TestUserFind(t *testing.T) {
 func TestUserCreation(t *testing.T) {
 	username := "tom_cruise"
 	userEmail := "tom_cruise@gmail.com"
-	userLevel := user.LevelRegular
+	userLevel := user.LevelRegularString
 
 	expectedUser := user.User{
 		Username:  username,

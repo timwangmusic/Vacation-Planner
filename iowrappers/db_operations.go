@@ -98,7 +98,7 @@ func (dbHandler *DbHandler) RemoveUser(currentUsername string, currentUserPasswo
 		return
 	}
 
-	isAdmin := currentUser.UserLevel == user.LevelAdmin
+	isAdmin := currentUser.UserLevel == user.LevelAdminString
 	if !isAdmin {
 		err = errors.New("operation forbidden, not an admin user")
 		return
