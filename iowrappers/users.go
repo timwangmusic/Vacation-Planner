@@ -37,7 +37,7 @@ func (redisClient *RedisClient) CreateUser(usr user.User) error {
 
 	psw, _ := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
 	if usr.UserLevel == "" {
-		usr.UserLevel = user.LevelRegular
+		usr.UserLevel = user.LevelRegularString
 	}
 
 	userData := map[string]interface{}{

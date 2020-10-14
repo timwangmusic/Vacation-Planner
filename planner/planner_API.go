@@ -6,6 +6,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/solution"
+	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"html/template"
 	"io/ioutil"
@@ -168,7 +169,7 @@ func (planner *MyPlanner) postPlanningApi(c *gin.Context) {
 	var username = "guest" // default username
 	if planner.Environment == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(c.Request)
+		username, authenticationErr = planner.UserAuthentication(c.Request, user.LevelRegular)
 		if authenticationErr != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 			return
@@ -205,7 +206,7 @@ func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
 	var username = "guest" // default username
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(c.Request)
+		username, authenticationErr = planner.UserAuthentication(c.Request, user.LevelRegular)
 		if authenticationErr != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 			return

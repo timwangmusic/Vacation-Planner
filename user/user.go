@@ -1,13 +1,15 @@
 package user
 
-import (
-	"time"
-)
+import "time"
+
+type Level uint8
 
 const (
-	LevelAdmin        = "Admin"
-	LevelRegular      = "Regular"
-	JWTExpirationTime = time.Hour * 240 // 10 days
+	JWTExpirationTime        = time.Hour * 240 // 10 days
+	LevelAdminString         = "admin"
+	LevelRegularString       = "regular"
+	LevelRegular       Level = 0
+	LevelAdmin         Level = 1
 )
 
 type User struct {

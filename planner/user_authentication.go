@@ -30,11 +30,11 @@ func (planner MyPlanner) UserSignup(c *gin.Context) {
 		return
 	}
 
-	userLevel := user.LevelRegular
+	userLevel := user.LevelRegularString
 	adminUsers := strings.Split(os.Getenv("ADMIN_USERS"), ",")
 	for _, username := range adminUsers {
-		if username == u.Username {
-			userLevel = user.LevelAdmin
+		if u.Username == username {
+			userLevel = user.LevelAdminString
 		}
 	}
 
@@ -88,7 +88,8 @@ func (planner MyPlanner) UserLogin(ctx *gin.Context) {
 	})
 }
 
-func (planner MyPlanner) UserAuthentication(r *http.Request) (username string, err error) {
+// internal method for API to authenticate users at different levels
+func (planner MyPlanner) UserAuthentication(r *http.Request, minimumUserLevel user.Level) (username string, err error) {
 	cookie, cookieErr := r.Cookie("JWT")
 	if cookieErr != nil {
 		return "", cookieErr
@@ -110,5 +111,22 @@ func (planner MyPlanner) UserAuthentication(r *http.Request) (username string, e
 	userCookie, _ := r.Cookie("Username")
 	username = userCookie.Value
 	log.Debugf("the current user is %s", username)
+
+	userFound, findUserErr := planner.RedisClient.FindUser(username)
+	if findUserErr != nil {
+		err = findUserErr
+		return
+	}
+	var userLevel user.Level
+	switch userFound.UserLevel {
+	case user.LevelRegularString:
+		userLevel = user.LevelRegular
+	case user.LevelAdminString:
+		userLevel = user.LevelAdmin
+	}
+	if userLevel < minimumUserLevel {
+		log.Debugf("user level is %d, required %d", userLevel, minimumUserLevel)
+		return username, errors.New("does not meet minimum user level requirement")
+	}
 	return username, nil
 }
