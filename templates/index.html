@@ -5,10 +5,10 @@
     <title>vacation planner</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
 
-    <link href = "https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
-          rel = "stylesheet">
-    <script src = "https://code.jquery.com/jquery-1.10.2.js"></script>
-    <script src = "https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+    <link href="https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
+          rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
 </head>
 <body style="background-color: lightcyan">
 <h2 style="color: mediumseagreen; text-align: center">
@@ -18,82 +18,43 @@
     <h4 style="color: cornflowerblue">
         Please enter the city, country and weekday you want to visit
     </h4>
-    <form>
-        <div class="form-group">
-            <label for="city">City:
-            </label>
-            <input type="text" class= "form-control" id="city" placeholder="San Francisco">
-
-        </div>
-        <div class="form-group">
-            <label for="country">Country:</label>
-            <input type="text" class="form-control" id="country" placeholder="USA">
-        </div>
-        <div class="form-group">
-            <label for="weekday">Weekday:</label>
-            <select class="form-control" id="weekday">
-                <option>Monday</option>
-                <option>Tuesday</option>
-                <option>Wednesday</option>
-                <option>Thursday</option>
-                <option>Friday</option>
-                <option>Saturday</option>
-                <option>Sunday</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="distance">Distance to city center:</label>
-            <select class="form-control" id="distance">
-                <option>5000</option>
-                <option>10000</option>
-                <option>20000</option>
-            </select>
-        </div>
-        <button type="submit" id="search_button"> Search </button>
-    </form>
+    <div>
+        <form action="https://best-vacation-planner.herokuapp.com/v1/plans" method="get">
+            <div class="form-group">
+                <label for="city">City</label>
+                <input id="city" type="text" class="form-control" name="city" value="san diego">
+            </div>
+            <div class="form-group">
+                <label for="country">Country</label>
+                <input id="country" type="text" class="form-control" name="country" value="usa">
+            </div>
+            <div class="form-group">
+                <label for="weekday">Weekday:</label>
+                <select class="form-control" id="weekday" name="weekday">
+                    <option value="0">Monday</option>
+                    <option value="1">Tuesday</option>
+                    <option value="2">Wednesday</option>
+                    <option value="3">Thursday</option>
+                    <option value="4">Friday</option>
+                    <option value="5">Saturday</option>
+                    <option value="6">Sunday</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="distance">Distance to city center:</label>
+                <select class="form-control" id="distance" name="radius">
+                    <option value="5000">5000</option>
+                    <option value="10000">10000</option>
+                    <option value="20000">20000</option>
+                </select>
+            </div>
+            <div>
+                <button> search</button>
+            </div>
+        </form>
+    </div>
 </div>
 
-<script>
-    const weekdayMap = {
-        Monday: 0,
-        Tuesday: 1,
-        Wednesday: 2,
-        Thursday: 3,
-        Friday: 4,
-        Saturday: 5,
-        Sunday: 6,
-    }
-
-    function query(event) {
-        const city = document.getElementById("city").value;
-        const country = document.getElementById("country").value;
-        const weekday = document.getElementById("weekday").value;
-        const distance = document.getElementById("distance").value;
-
-        event.preventDefault();
-
-        let searchData = new Map();
-        searchData.set("city", city);
-        searchData.set("country", country);
-        searchData.set("weekday", weekdayMap[weekday]);
-        console.log("weekdayMap[weekday]")
-        searchData.set("radius", distance);
-        searchData.set("numberResults", 5);
-
-        let arr = [];
-
-        for (let [k, v] of searchData.entries()) {
-            const entry = k + "=" + v.toString();
-            arr.push(entry);
-        }
-
-        const query = arr.join("&");
-        window.location.href = "https://best-vacation-planner.herokuapp.com/v1/plans?" + query;
-    }
-
-    const mySearchButton = document.getElementById("search_button");
-    mySearchButton.addEventListener("click", query);
-</script>
 <script>
     const cities = [
         "San Jose",
