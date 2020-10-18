@@ -2,24 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>vacation planner</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link href="https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
           rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-    <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>vacation planner</title>
 </head>
 <body style="background-color: lightcyan">
-<h2 style="color: mediumseagreen; text-align: center">
+<nav class="navbar navbar-light" style="background-color: #e3f2fd;">
+    <a class="nav-link" href="https://github.com/weihesdlegend/Vacation-Planner">About</a>
+</nav>
+<h1 style="color: mediumseagreen; text-align: center; background-color: whitesmoke">
     Vacation Planner
-</h2>
+</h1>
 <div class="container">
-    <h4 style="color: cornflowerblue">
+    <h5 style="color: cornflowerblue">
         Please enter the city, country and weekday you want to visit
-    </h4>
+    </h5>
     <div>
-        <form action="https://best-vacation-planner.herokuapp.com/v1/plans" method="get">
+        <form action="/v1/plans" method="get">
             <div class="form-group">
                 <label for="city">City</label>
                 <input id="city" type="text" class="form-control" name="city" value="san diego">
@@ -49,12 +51,16 @@
                 </select>
             </div>
             <div>
-                <button> search</button>
+                <button class="btn" style="background: #e3f2fd"> search</button>
             </div>
         </form>
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 <script>
     const cities = [
         "San Jose",
