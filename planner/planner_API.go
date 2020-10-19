@@ -36,6 +36,7 @@ type MyPlanner struct {
 	Solver             solution.Solver
 	HomeHTMLTemplate   *template.Template
 	ResultHTMLTemplate *template.Template
+	LoginPage          *template.Template
 	PlanningEvents     chan iowrappers.PlanningEvent
 	Environment        string
 	Configs            map[string]interface{}
@@ -93,6 +94,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 
 	planner.HomeHTMLTemplate = template.Must(template.ParseFiles("templates/index.html"))
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
+	planner.LoginPage = template.Must(template.ParseFiles("templates/login_page.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
@@ -375,6 +377,10 @@ func (planner *MyPlanner) getPlanningApi(context *gin.Context) {
 	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(context.Writer, planningResp), utils.LogError)
 }
 
+func (planner *MyPlanner) login(c *gin.Context) {
+	utils.CheckErrImmediate(planner.LoginPage.Execute(c.Writer, nil), utils.LogError)
+}
+
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if planner.Environment == "debug" {
@@ -396,7 +402,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
-		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
+        v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
+		v1.GET("/log-in", planner.login)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
