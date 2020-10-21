@@ -9,7 +9,7 @@ const (
 	PriceLevel4       = 100.0
 )
 
-func checkPrice(priceLevel int) float64 {
+func Pricing(priceLevel int) float64 {
 	switch priceLevel {
 	case 0:
 		return PriceLevel0

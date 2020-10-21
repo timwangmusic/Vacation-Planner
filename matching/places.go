@@ -58,7 +58,7 @@ func CreatePlace(place POI.Place, category POI.PlaceCategory) Place {
 	Place_ := Place{}
 	Place_.Place = &place
 	Place_.Address = place.GetFormattedAddress()
-	Place_.Price = checkPrice(place.GetPriceLevel())
+	Place_.Price = Pricing(place.GetPriceLevel())
 	Place_.Location = place.GetLocation()
 	Place_.Category = category
 	return Place_

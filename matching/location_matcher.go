@@ -55,8 +55,8 @@ func (m *LocationMatcher) genPlacePairs(clusterPair *clusterCenterPair) (placePa
 
 	for _, visitPlace := range visitCluster.Places {
 		for _, eateryPlace := range eateryCluster.Places {
-			price := checkPrice(visitPlace.GetPriceLevel()) +
-				checkPrice(eateryPlace.GetPriceLevel())
+			price := Pricing(visitPlace.GetPriceLevel()) +
+				Pricing(eateryPlace.GetPriceLevel())
 			placePairs = append(placePairs,
 				PlacePair{visitPlace.GetName(), eateryPlace.GetName(), price})
 		}
