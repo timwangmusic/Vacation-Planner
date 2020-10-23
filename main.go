@@ -5,6 +5,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/planner"
+	"gopkg.in/yaml.v2"
 	"net/url"
 	"os"
 	"os/signal"
@@ -24,6 +25,14 @@ type Config struct {
 	MapsClientApiKey string `required:"true" split_words:"true"`
 }
 
+type Configurations struct {
+	Server struct{
+		GoogleMaps struct{
+			DetailedSearchFields []string `yaml:"detailed_search_fields"`
+		} `yaml:"google_maps"`
+	} `yaml:"server"`
+}
+
 func RunServer() {
 	conf := Config{}
 	err := envconfig.Process("", &conf)
@@ -34,6 +43,17 @@ func RunServer() {
 	redisURL, err := url.Parse(conf.Redis.RedisUrl)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	configFile, configFileReadErr := os.Open("config/config.yml")
+	if configFileReadErr != nil {
+		log.Fatalf("config read failure: %v", configFileReadErr)
+	}
+
+	config := &Configurations{}
+	configFileDecoder := yaml.NewDecoder(configFile)
+	if configFileDecodeErr := configFileDecoder.Decode(config); configFileDecodeErr != nil {
+		log.Fatal(configFileDecodeErr)
 	}
 
 	myPlanner := planner.MyPlanner{}

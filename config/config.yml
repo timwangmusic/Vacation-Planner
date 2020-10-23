@@ -1,0 +1,8 @@
+server:
+  google_maps:
+    detailed_search_fields:
+      - name
+      - opening_hours
+      - formatted_address
+      - url
+      - user_ratings_total
