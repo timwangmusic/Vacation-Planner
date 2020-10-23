@@ -32,7 +32,7 @@ jobs:
 
     - name: Build
       run: go build -v .
-      working-directory: ./main
+      working-directory: .
 
     - name: Test
       run: go test -v ./...
