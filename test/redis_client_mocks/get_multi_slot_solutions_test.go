@@ -15,7 +15,7 @@ func TestGetMultiSlotSolutions(t *testing.T) {
 	cacheResponse1.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, 1)
 	cacheResponse1.SlotSolutionCandidate[0].PlaceIds = []string{"1", "2", "3"}
 
-	RedisClient.CacheSlotSolution(cacheRequest1, cacheResponse1)
+	RedisClient.CacheSlotSolution(RedisContext, cacheRequest1, cacheResponse1)
 
 	cacheRequest2 := iowrappers.SlotSolutionCacheRequest{
 		City:    "San Francisco",
@@ -25,10 +25,10 @@ func TestGetMultiSlotSolutions(t *testing.T) {
 	cacheResponse2.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, 1)
 	cacheResponse2.SlotSolutionCandidate[0].PlaceIds = []string{"11", "22", "33"}
 
-	RedisClient.CacheSlotSolution(cacheRequest2, cacheResponse2)
+	RedisClient.CacheSlotSolution(RedisContext, cacheRequest2, cacheResponse2)
 
 	cacheResponses := []iowrappers.SlotSolutionCacheResponse{cacheResponse1, cacheResponse2}
-	multiSlotSolutions := RedisClient.GetMultiSlotSolutions([]iowrappers.SlotSolutionCacheRequest{cacheRequest1, cacheRequest2})
+	multiSlotSolutions := RedisClient.GetMultiSlotSolutions(RedisContext, []iowrappers.SlotSolutionCacheRequest{cacheRequest1, cacheRequest2})
 
 	if len(multiSlotSolutions) != 2 {
 		t.Errorf("expected to get 2 results from Redis, got %d", len(multiSlotSolutions))

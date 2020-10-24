@@ -164,75 +164,75 @@ func (planner *MyPlanner) indexPageHandler(c *gin.Context) {
 }
 
 // HTTP POST API end-point
-func (planner *MyPlanner) postPlanningApi(c *gin.Context) {
+func (planner *MyPlanner) postPlanningApi(context *gin.Context) {
 	var username = "guest" // default username
 	if planner.Environment == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(c.Request, user.LevelRegular)
+		username, authenticationErr = planner.UserAuthentication(context, context.Request, user.LevelRegular)
 		if authenticationErr != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+			context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 			return
 		}
 	}
 
 	req := PlanningPostRequest{}
-	err := c.ShouldBindJSON(&req)
+	err := context.ShouldBindJSON(&req)
 	utils.CheckErrImmediate(err, utils.LogInfo)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	planningReq, err := processPlanningPostRequest(&req)
 	utils.CheckErrImmediate(err, utils.LogInfo)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	planningResp := planner.Planning(c.Request.Context(), &planningReq, username)
+	planningResp := planner.Planning(context, &planningReq, username)
 	if planningResp.Err != nil && planningResp.StatusCode == http.StatusNotFound {
-		c.JSON(http.StatusNotFound, gin.H{"error": "No solution is found"})
+		context.JSON(http.StatusNotFound, gin.H{"error": "No solution is found"})
 		return
 	}
 	// generate valid solution
-	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(c.Writer, planningResp), utils.LogError)
+	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(context.Writer, planningResp), utils.LogError)
 }
 
 // HTTP GET API end-point
 // Return top planning result to user
-func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
+func (planner *MyPlanner) getPlanningApi(context *gin.Context) {
 	var username = "guest" // default username
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(c.Request, user.LevelRegular)
+		username, authenticationErr = planner.UserAuthentication(context, context.Request, user.LevelRegular)
 		if authenticationErr != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+			context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 			return
 		}
 	}
 
-	country := c.DefaultQuery("country", "USA")
-	city := c.DefaultQuery("city", "San Diego")
-	radius := c.DefaultQuery("radius", "10000")
-	weekday := c.DefaultQuery("weekday", "5") // Saturday
-	numResults := c.DefaultQuery("numberResults", "5")
+	country := context.DefaultQuery("country", "USA")
+	city := context.DefaultQuery("city", "San Diego")
+	radius := context.DefaultQuery("radius", "10000")
+	weekday := context.DefaultQuery("weekday", "5") // Saturday
+	numResults := context.DefaultQuery("numberResults", "5")
 
 	numResultsInt, numResultsParsingErr := strconv.ParseUint(numResults, 10, 64)
 	if numResultsParsingErr != nil {
-		c.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
+		context.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
 		return
 	}
 	iowrappers.Logger.Debugf("number of requested planning results is %s", numResults)
 
 	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
 	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
-		c.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
+		context.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
 		return
 	}
 
 	if !validateSearchRadius(radius) {
-		c.String(http.StatusBadRequest, "invalid search radius of %s", radius)
+		context.String(http.StatusBadRequest, "invalid search radius of %s", radius)
 		return
 	}
 
@@ -246,20 +246,20 @@ func (planner *MyPlanner) getPlanningApi(c *gin.Context) {
 		planningReq.SlotRequests[slotReqIdx].Location = cityCountry // set to the same location from URL
 	}
 
-	planningResp := planner.Planning(c.Request.Context(), &planningReq, username)
+	planningResp := planner.Planning(context, &planningReq, username)
 
 	err := planningResp.Err
 	if err != nil {
 		if planningResp.StatusCode == solution.InvalidRequestLocation {
-			c.String(http.StatusBadRequest, err.Error())
+			context.String(http.StatusBadRequest, err.Error())
 		} else if planningResp.StatusCode == solution.NoValidSolution {
 			errString := "No valid solution is found.\n Please try to search with larger radius."
-			c.String(http.StatusBadRequest, errString)
+			context.String(http.StatusBadRequest, errString)
 		}
 		return
 	}
 
-	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(c.Writer, planningResp), utils.LogError)
+	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(context.Writer, planningResp), utils.LogError)
 }
 
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {

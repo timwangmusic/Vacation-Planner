@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
@@ -21,12 +22,12 @@ type UserLoginResponse struct {
 // user signup POST request handler
 // user submit username/password/email and user is created
 // return bad request if creation fails
-func (planner MyPlanner) UserSignup(c *gin.Context) {
+func (planner MyPlanner) UserSignup(context *gin.Context) {
 	u := user.User{}
 
-	decodeErr := c.ShouldBindJSON(&u)
+	decodeErr := context.ShouldBindJSON(&u)
 	if decodeErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
 		return
 	}
 
@@ -40,29 +41,29 @@ func (planner MyPlanner) UserSignup(c *gin.Context) {
 
 	u.UserLevel = userLevel
 
-	createErr := planner.RedisClient.CreateUser(u)
+	createErr := planner.RedisClient.CreateUser(context, u)
 	if createErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
 		return
 	}
-	_ = json.NewEncoder(c.Writer).Encode("user created")
+	_ = json.NewEncoder(context.Writer).Encode("user created")
 }
 
 // user login POST request handler
 // user submit credentials and return JWT if login is successful
-func (planner MyPlanner) UserLogin(ctx *gin.Context) {
+func (planner MyPlanner) UserLogin(context *gin.Context) {
 	c := user.Credential{}
 
-	decodeErr := ctx.ShouldBindJSON(&c)
+	decodeErr := context.ShouldBindJSON(&c)
 	if decodeErr != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
 		return
 	}
 
-	token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(c)
+	token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(context, c)
 	if loginErr != nil {
 		log.Debug(loginErr)
-		ctx.JSON(http.StatusUnauthorized, UserLoginResponse{
+		context.JSON(http.StatusUnauthorized, UserLoginResponse{
 			Username: c.Username,
 			Jwt:      "",
 			Status:   "unauthorized",
@@ -70,18 +71,18 @@ func (planner MyPlanner) UserLogin(ctx *gin.Context) {
 		return
 	}
 
-	http.SetCookie(ctx.Writer, &http.Cookie{
+	http.SetCookie(context.Writer, &http.Cookie{
 		Name:    "JWT",
 		Value:   token,
 		Expires: tokenExpirationTime,
 	})
 
-	http.SetCookie(ctx.Writer, &http.Cookie{
+	http.SetCookie(context.Writer, &http.Cookie{
 		Name:  "Username",
 		Value: c.Username,
 	})
 
-	ctx.JSON(http.StatusOK, UserLoginResponse{
+	context.JSON(http.StatusOK, UserLoginResponse{
 		Username: c.Username,
 		Jwt:      token,
 		Status:   "you are logged in",
@@ -89,7 +90,7 @@ func (planner MyPlanner) UserLogin(ctx *gin.Context) {
 }
 
 // internal method for API to authenticate users at different levels
-func (planner MyPlanner) UserAuthentication(r *http.Request, minimumUserLevel user.Level) (username string, err error) {
+func (planner MyPlanner) UserAuthentication(context context.Context, r *http.Request, minimumUserLevel user.Level) (username string, err error) {
 	cookie, cookieErr := r.Cookie("JWT")
 	if cookieErr != nil {
 		return "", cookieErr
@@ -112,7 +113,7 @@ func (planner MyPlanner) UserAuthentication(r *http.Request, minimumUserLevel us
 	username = userCookie.Value
 	log.Debugf("the current user is %s", username)
 
-	userFound, findUserErr := planner.RedisClient.FindUser(username)
+	userFound, findUserErr := planner.RedisClient.FindUser(context, username)
 	if findUserErr != nil {
 		err = findUserErr
 		return

@@ -136,7 +136,7 @@ func GenerateSlotSolution(context context.Context, timeMatcher *matching.TimeMat
 		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
 	}
 
-	redisClient.CacheSlotSolution(redisReq, slotSolutionToCache)
+	redisClient.CacheSlotSolution(context, redisReq, slotSolutionToCache)
 
 	return
 }

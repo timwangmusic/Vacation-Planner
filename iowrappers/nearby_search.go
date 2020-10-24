@@ -75,7 +75,7 @@ func (mapsClient *MapsClient) NearbySearch(c context.Context, request *PlaceSear
 	}
 }
 
-func (mapsClient *MapsClient) PlaceDetailsSearch(string) (place POI.Place, err error) {
+func (mapsClient *MapsClient) PlaceDetailsSearch(context.Context, string) (place POI.Place, err error) {
 	return
 }
 

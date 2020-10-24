@@ -92,7 +92,7 @@ func (placeManager *TimeClustersManager) PlaceSearch(context context.Context, lo
 	if err != nil {
 		log.Error(err)
 	}
-	placeManager.poiSearcher.UpdateRedis(UpdatePlacesDetails(*placeManager.poiSearcher, placeManager.places))
+	placeManager.poiSearcher.UpdateRedis(nil, UpdatePlacesDetails(*placeManager.poiSearcher, placeManager.places))
 }
 
 // assign Places to time Clusters using their time interval info

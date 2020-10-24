@@ -40,13 +40,13 @@ func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
 	solver.matcher.Init(poiSearcher)
 }
 
-func (solver *Solver) ValidateLocation(slotRequestLocation *string) bool {
+func (solver *Solver) ValidateLocation(context context.Context, slotRequestLocation *string) bool {
 	countryCity := strings.Split(*slotRequestLocation, ",")
 	geoQuery := iowrappers.GeocodeQuery{
 		City:    countryCity[0],
 		Country: countryCity[1],
 	}
-	_, _, err := solver.matcher.PoiSearcher.GetGeocode(&geoQuery)
+	_, _, err := solver.matcher.PoiSearcher.GetGeocode(context, &geoQuery)
 	if err != nil {
 		return false
 	}
@@ -86,7 +86,7 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 
 	// validate location with poiSearcher of the time matcher
 	for idx := range req.SlotRequests {
-		if !solver.ValidateLocation(&req.SlotRequests[idx].Location) {
+		if !solver.ValidateLocation(context, &req.SlotRequests[idx].Location) {
 			resp.Err = errors.New("invalid travel destination")
 			resp.ErrorCode = InvalidRequestLocation
 			return
@@ -110,7 +110,7 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 		redisRequests[idx] = GenerateSlotSolutionRedisRequest(location, evTag, stayTimes, req.SearchRadius, req.Weekday)
 	}
 
-	slotSolutionCacheResponses := redisCli.GetMultiSlotSolutions(redisRequests)
+	slotSolutionCacheResponses := redisCli.GetMultiSlotSolutions(context, redisRequests)
 
 	slotSolutionRedisKeys := make([]string, len(req.SlotRequests))
 	for idx, slotRequest := range req.SlotRequests {
@@ -152,13 +152,13 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 
 	resp.Solutions = genBestMultiSlotSolutions(candidates, req.NumResults)
 	if len(resp.Solutions) == 0 {
-		invalidateSlotSolutionCache(&redisCli, slotSolutionRedisKeys)
+		invalidateSlotSolutionCache(context, &redisCli, slotSolutionRedisKeys)
 	}
 	return
 }
 
-func invalidateSlotSolutionCache(redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
-	redisCli.RemoveKeys(slotSolutionRedisKeys)
+func invalidateSlotSolutionCache(context context.Context, redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
+	redisCli.RemoveKeys(context, slotSolutionRedisKeys)
 }
 
 // return false if travel time between clusters exceed limit
