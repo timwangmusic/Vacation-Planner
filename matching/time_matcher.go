@@ -3,6 +3,7 @@
 package matching
 
 import (
+	"context"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -12,7 +13,7 @@ import (
 )
 
 type Matcher interface {
-	Matching(req *TimeMatchingRequest) (clusters []PlaceCluster)
+	Matching(context context.Context, req *TimeMatchingRequest) (clusters []PlaceCluster)
 }
 
 type TimeMatcher struct {
@@ -46,10 +47,10 @@ func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
 	matcher.TouringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 }
 
-func (matcher *TimeMatcher) Matching(req *TimeMatchingRequest) (clusters []PlaceCluster) {
+func (matcher *TimeMatcher) Matching(context context.Context, req *TimeMatchingRequest) (clusters []PlaceCluster) {
 	// Place search and time clustering
-	matcher.placeSearch(req, POI.PlaceCategoryEatery) // search catering
-	matcher.placeSearch(req, POI.PlaceCategoryVisit)  // search visit locations
+	matcher.placeSearch(context, req, POI.PlaceCategoryEatery) // search catering
+	matcher.placeSearch(context, req, POI.PlaceCategoryVisit)  // search visit locations
 
 	clusterMap := make(map[string]*PlaceCluster)
 
@@ -97,7 +98,7 @@ func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMa
 
 }
 
-func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.PlaceCategory) {
+func (matcher *TimeMatcher) placeSearch(context context.Context, req *TimeMatchingRequest, placeCat POI.PlaceCategory) {
 	var mgr *graph.TimeClustersManager
 
 	switch placeCat {
@@ -116,7 +117,7 @@ func (matcher *TimeMatcher) placeSearch(req *TimeMatchingRequest, placeCat POI.P
 
 	// this is how to use TimeClustersManager
 	mgr.Init(matcher.PoiSearcher, placeCat, intervals, req.Weekday)
-	mgr.PlaceSearch(req.Location, req.Radius)
+	mgr.PlaceSearch(context, req.Location, req.Radius)
 	mgr.Clustering(req.Weekday)
 
 	return

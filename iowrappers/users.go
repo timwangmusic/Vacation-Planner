@@ -1,6 +1,7 @@
 package iowrappers
 
 import (
+	"context"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/weihesdlegend/Vacation-planner/user"
@@ -13,14 +14,14 @@ import (
 const UserKeyPrefix = "user"
 
 // lookup an user
-func (redisClient *RedisClient) FindUser(username string) (user.User, error) {
+func (redisClient *RedisClient) FindUser(context context.Context, username string) (user.User, error) {
 	usr := user.User{Username: "guest"}
 	redisKey := strings.Join([]string{UserKeyPrefix, username}, ":")
-	if redisClient.client.Exists(RedisClientContext, redisKey).Val() == 0 {
+	if redisClient.client.Exists(context, redisKey).Val() == 0 {
 		return usr, errors.New("user does not exist")
 	}
 
-	u := redisClient.client.HGetAll(RedisClientContext, redisKey).Val()
+	u := redisClient.client.HGetAll(context, redisKey).Val()
 	usr.Username = u["username"]
 	usr.Email = u["email"]
 	usr.UserLevel = u["user_level"]
@@ -29,9 +30,9 @@ func (redisClient *RedisClient) FindUser(username string) (user.User, error) {
 }
 
 // create a new user
-func (redisClient *RedisClient) CreateUser(usr user.User) error {
+func (redisClient *RedisClient) CreateUser(context context.Context, usr user.User) error {
 	redisKey := strings.Join([]string{UserKeyPrefix, usr.Username}, ":")
-	if redisClient.client.Exists(RedisClientContext, redisKey).Val() == 1 {
+	if redisClient.client.Exists(context, redisKey).Val() == 1 {
 		return errors.New("user already exists")
 	}
 
@@ -46,13 +47,13 @@ func (redisClient *RedisClient) CreateUser(usr user.User) error {
 		"password":   string(psw),
 		"email":      usr.Email,
 	}
-	_, err := redisClient.client.HMSet(RedisClientContext, redisKey, userData).Result()
+	_, err := redisClient.client.HMSet(context, redisKey, userData).Result()
 	return err
 }
 
 // authenticate an user when a new user that holds no JWT or an existing user with expired JWT
-func (redisClient *RedisClient) Authenticate(credential user.Credential) (string, time.Time, error) {
-	u, err := redisClient.FindUser(credential.Username)
+func (redisClient *RedisClient) Authenticate(context context.Context, credential user.Credential) (string, time.Time, error) {
+	u, err := redisClient.FindUser(context, credential.Username)
 	if err != nil {
 		return "", time.Now(), err
 	}

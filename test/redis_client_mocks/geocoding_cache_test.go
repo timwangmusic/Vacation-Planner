@@ -16,9 +16,9 @@ func TestGeoCodingCache(t *testing.T) {
 
 	_ = iowrappers.CreateLogger()
 
-	RedisClient.SetGeocode(geoCodeQuery, expectedLat, expectedLng, geoCodeQuery)
+	RedisClient.SetGeocode(RedisContext, geoCodeQuery, expectedLat, expectedLng, geoCodeQuery)
 
-	lat, lng, geocodeMissingErr := RedisClient.GetGeocode(&geoCodeQuery)
+	lat, lng, geocodeMissingErr := RedisClient.GetGeocode(RedisContext, &geoCodeQuery)
 
 	if geocodeMissingErr != nil || lat != expectedLat || lng != expectedLng {
 		t.Errorf("geo-coding for %s fails",

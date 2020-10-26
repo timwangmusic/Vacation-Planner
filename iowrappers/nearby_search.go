@@ -16,6 +16,7 @@ import (
 
 const (
 	GoogleNearbySearchDelay = time.Second
+	GoogleMapsSearchTimeout = time.Second * 10
 )
 
 var detailedSearchFields = flag.String("fields", "name,opening_hours,formatted_address,adr_address,url", "a list of comma-separated fields")
@@ -57,19 +58,30 @@ func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType stri
 	return
 }
 
-func (mapsClient *MapsClient) NearbySearch(request *PlaceSearchRequest) (places []POI.Place, e error) {
+func (mapsClient *MapsClient) NearbySearch(c context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
 	var maxReqTimes uint = 5
-	places, e = mapsClient.ExtensiveNearbySearch(maxReqTimes, request)
-	return
+	var places = make([]POI.Place, 0)
+	var searchDone = make(chan bool)
+	ctx, cancelFunc := context.WithTimeout(c, GoogleMapsSearchTimeout)
+	defer cancelFunc()
+
+	go mapsClient.ExtensiveNearbySearch(ctx, maxReqTimes, request, &places, searchDone)
+
+	select {
+	case <-searchDone:
+		return places, nil
+	case <-ctx.Done():
+		return places, errors.New("maps search time out")
+	}
 }
 
-func (mapsClient *MapsClient) PlaceDetailsSearch(string) (place POI.Place, err error) {
+func (mapsClient *MapsClient) PlaceDetailsSearch(context.Context, string) (place POI.Place, err error) {
 	return
 }
 
 // ExtensiveNearbySearch attempts to find a specified number of places satisfy the request
 // within the maxRequestTime times of calling external APIs
-func (mapsClient *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, request *PlaceSearchRequest) (places []POI.Place, err error) {
+func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, maxRequestTimes uint, request *PlaceSearchRequest, places *[]POI.Place, done chan bool) {
 	if request.RankBy == "" {
 		request.RankBy = "prominence" // default rankBy value
 	}
@@ -90,9 +102,11 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, reques
 
 	searchStartTime := time.Now()
 
+	var err error
 	for totalResult < request.MinNumResults {
 		// if error, return regardless of number of results obtained
 		if err != nil {
+			done <- true
 			return
 		}
 		for _, placeType := range placeTypes {
@@ -104,6 +118,7 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, reques
 			searchResp, error_ := GoogleMapsNearbySearchWrapper(*mapsClient, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
 			if error_ != nil {
 				err = error_
+				Logger.Error(err)
 				continue
 			}
 
@@ -132,7 +147,7 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, reques
 				urlMap[placeId] = placeDetails.Res.URL
 			}
 
-			places = append(places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap)...)
+			*places = append(*places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap)...)
 			totalResult += uint(len(searchResp.Results))
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
 		}
@@ -152,7 +167,7 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(maxRequestTimes uint, reques
 		"place category", request.PlaceCat,
 		"total results", totalResult,
 	)
-
+	done <- true
 	return
 }
 
@@ -179,11 +194,9 @@ func PlaceDetailedSearch(mapsClient *MapsClient, placeId string) (maps.PlaceDeta
 		return maps.PlaceDetailsResult{}, err
 	}
 	flag.Parse() // parse detailed search fields
-	Logger.Debug("Flag parsed for PlaceDetailedSearch")
 	req := &maps.PlaceDetailsRequest{
 		PlaceID: placeId,
 	}
-	Logger.Debug("Request place generated, ready to parse request fields")
 	if *detailedSearchFields != "" {
 		fieldMask, err := parseFields(*detailedSearchFields)
 		utils.CheckErrImmediate(err, utils.LogError)
@@ -191,7 +204,6 @@ func PlaceDetailedSearch(mapsClient *MapsClient, placeId string) (maps.PlaceDeta
 	}
 
 	startSearchTime := time.Now()
-	Logger.Debug("Ready to parse place details")
 	resp, err := mapsClient.client.PlaceDetails(context.Background(), req)
 	utils.CheckErrImmediate(err, utils.LogError)
 

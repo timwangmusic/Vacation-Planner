@@ -7,6 +7,8 @@
 package graph
 
 import (
+	"context"
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
@@ -16,7 +18,7 @@ const (
 )
 
 type ClusterManager interface {
-	PlaceSearch(string, uint) // location and search radius
+	PlaceSearch(context.Context, string, uint) // location and search radius
 }
 
 // TimeCluster consists of a set of Places and a time interval
@@ -76,7 +78,7 @@ func (placeManager *TimeClustersManager) Init(poiSearcher *iowrappers.PoiSearche
 }
 
 // searchType is a selector for MinNumResults in PlaceSearchRequest
-func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadius uint) {
+func (placeManager *TimeClustersManager) PlaceSearch(context context.Context, location string, searchRadius uint) {
 	request := iowrappers.PlaceSearchRequest{
 		Location:      location,
 		PlaceCat:      placeManager.PlaceCat,
@@ -85,8 +87,12 @@ func (placeManager *TimeClustersManager) PlaceSearch(location string, searchRadi
 		MinNumResults: TimeClusterMinResults,
 	}
 	request.MaxNumResults = 2 * request.MinNumResults
-	placeManager.places, _ = placeManager.poiSearcher.NearbySearch(&request)
-	placeManager.poiSearcher.UpdateRedis(UpdatePlacesDetails(*placeManager.poiSearcher, placeManager.places))
+	var err error
+	placeManager.places, err = placeManager.poiSearcher.NearbySearch(context, &request)
+	if err != nil {
+		log.Error(err)
+	}
+	//placeManager.poiSearcher.UpdateRedis(nil, UpdatePlacesDetails(*placeManager.poiSearcher, placeManager.places))
 }
 
 // assign Places to time Clusters using their time interval info

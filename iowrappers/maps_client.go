@@ -1,6 +1,7 @@
 package iowrappers
 
 import (
+	"context"
 	"errors"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -12,9 +13,9 @@ import (
 
 // abstraction of a client that performs location-based operations such as nearby search
 type SearchClient interface {
-	GetGeocode(*GeocodeQuery) (float64, float64, error)    // translate a textual location to latitude and longitude
-	NearbySearch(*PlaceSearchRequest) ([]POI.Place, error) // search nearby places in a category around a central location
-	PlaceDetailsSearch(placeId string) (place POI.Place, err error)
+	GetGeocode(context.Context, *GeocodeQuery) (float64, float64, error)     // translate a textual location to latitude and longitude
+	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error)  // search nearby places in a category around a central location
+	PlaceDetailsSearch(context.Context, string) (place POI.Place, err error) // search place details with place ID
 }
 
 type MapsClient struct {

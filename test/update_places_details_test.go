@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -13,15 +14,15 @@ const MockURL = "www.maps.google.com/my-favorite"
 type SearchClientMock struct {
 }
 
-func (mocker SearchClientMock) GetGeocode(*iowrappers.GeocodeQuery) (float64, float64, error) {
+func (mocker SearchClientMock) GetGeocode(context.Context, *iowrappers.GeocodeQuery) (float64, float64, error) {
 	return 0.0, 0.0, nil
 }
 
-func (mocker SearchClientMock) NearbySearch(*iowrappers.PlaceSearchRequest) ([]POI.Place, error) {
+func (mocker SearchClientMock) NearbySearch(context.Context, *iowrappers.PlaceSearchRequest) ([]POI.Place, error) {
 	return nil, nil
 }
 
-func (mocker SearchClientMock) PlaceDetailsSearch(string) (place POI.Place, err error) {
+func (mocker SearchClientMock) PlaceDetailsSearch(context.Context, string) (place POI.Place, err error) {
 	place.URL = MockURL
 	return
 }

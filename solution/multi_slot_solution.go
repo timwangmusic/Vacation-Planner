@@ -2,6 +2,7 @@ package solution
 
 import (
 	"container/heap"
+	"context"
 	"errors"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -39,13 +40,13 @@ func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
 	solver.matcher.Init(poiSearcher)
 }
 
-func (solver *Solver) ValidateLocation(slotRequestLocation *string) bool {
+func (solver *Solver) ValidateLocation(context context.Context, slotRequestLocation *string) bool {
 	countryCity := strings.Split(*slotRequestLocation, ",")
 	geoQuery := iowrappers.GeocodeQuery{
 		City:    countryCity[0],
 		Country: countryCity[1],
 	}
-	_, _, err := solver.matcher.PoiSearcher.GetGeocode(&geoQuery)
+	_, _, err := solver.matcher.PoiSearcher.GetGeocode(context, &geoQuery)
 	if err != nil {
 		return false
 	}
@@ -76,18 +77,18 @@ func GenerateSlotSolutionRedisRequest(location string, evTag string, stayTimes [
 	return req
 }
 
-func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient) (resp PlanningResponse, err error) {
-	if !travelTimeValidation(req) {
-		err = errors.New("travel time limit exceeded for current selection")
-		resp.Errcode = InvalidSolverReqTimeInterval
+func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisClient, req *PlanningRequest, resp *PlanningResponse) {
+	if !travelTimeValidation(*req) {
+		resp.Err = errors.New("travel time limit exceeded for current selection")
+		resp.ErrorCode = InvalidSolverReqTimeInterval
 		return
 	}
 
 	// validate location with poiSearcher of the time matcher
 	for idx := range req.SlotRequests {
-		if !solver.ValidateLocation(&req.SlotRequests[idx].Location) {
-			err = errors.New("invalid travel destination")
-			resp.Errcode = InvalidRequestLocation
+		if !solver.ValidateLocation(context, &req.SlotRequests[idx].Location) {
+			resp.Err = errors.New("invalid travel destination")
+			resp.ErrorCode = InvalidRequestLocation
 			return
 		}
 	}
@@ -109,7 +110,7 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 		redisRequests[idx] = GenerateSlotSolutionRedisRequest(location, evTag, stayTimes, req.SearchRadius, req.Weekday)
 	}
 
-	slotSolutionCacheResponses := redisCli.GetMultiSlotSolutions(redisRequests)
+	slotSolutionCacheResponses := redisCli.GetMultiSlotSolutions(context, redisRequests)
 
 	slotSolutionRedisKeys := make([]string, len(req.SlotRequests))
 	for idx, slotRequest := range req.SlotRequests {
@@ -133,17 +134,17 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 			continue
 		}
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
+		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(context, solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
 		if err != nil {
 			if err.Error() == ReqTimeSlotsTagMismatchErrMsg {
-				resp.Errcode = ReqTimeSlotsTagMismatch
+				resp.ErrorCode = ReqTimeSlotsTagMismatch
 			} else if err.Error() == CategorizedPlaceIterInitFailureErrMsg {
-				resp.Errcode = CatPlaceIterInitFailure
+				resp.ErrorCode = CatPlaceIterInitFailure
 			} else {
-				resp.Errcode = ReqTagInvalid
+				resp.ErrorCode = ReqTagInvalid
 			}
-			return resp, err
+			return
 		}
 		candidates[idx] = append(candidates[idx], slotSolution.SlotSolutionCandidates...)
 		slotSolutionRedisKeys[idx] = slotSolutionRedisKey
@@ -151,13 +152,13 @@ func (solver *Solver) Solve(req PlanningRequest, redisCli iowrappers.RedisClient
 
 	resp.Solutions = genBestMultiSlotSolutions(candidates, req.NumResults)
 	if len(resp.Solutions) == 0 {
-		invalidateSlotSolutionCache(&redisCli, slotSolutionRedisKeys)
+		invalidateSlotSolutionCache(context, &redisCli, slotSolutionRedisKeys)
 	}
 	return
 }
 
-func invalidateSlotSolutionCache(redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
-	redisCli.RemoveKeys(slotSolutionRedisKeys)
+func invalidateSlotSolutionCache(context context.Context, redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
+	redisCli.RemoveKeys(context, slotSolutionRedisKeys)
 }
 
 // return false if travel time between clusters exceed limit
@@ -300,7 +301,7 @@ type SlotRequest struct {
 type PlanningResponse struct {
 	Solutions []MultiSlotSolution
 	Err       error
-	Errcode   uint
+	ErrorCode uint
 }
 
 // Find top multi-slot solutions

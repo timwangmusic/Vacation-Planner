@@ -13,9 +13,9 @@ func TestMapsLastSearchTime(t *testing.T) {
 	}
 
 	currentTime := time.Now().Format(time.RFC3339)
-	_ = RedisClient.SetMapsLastSearchTime(request.Location, request.PlaceCat, currentTime)
+	_ = RedisClient.SetMapsLastSearchTime(RedisContext, request.Location, request.PlaceCat, currentTime)
 
-	cachedTime, err := RedisClient.GetMapsLastSearchTime(request.Location, request.PlaceCat)
+	cachedTime, err := RedisClient.GetMapsLastSearchTime(RedisContext, request.Location, request.PlaceCat)
 
 	if err != nil || currentTime != cachedTime.Format(time.RFC3339) {
 		t.Error("maps cached time retrieval failure")
