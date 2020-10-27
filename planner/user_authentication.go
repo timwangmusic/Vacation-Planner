@@ -2,7 +2,6 @@ package planner
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -46,7 +45,7 @@ func (planner MyPlanner) UserSignup(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
 		return
 	}
-	_ = json.NewEncoder(context.Writer).Encode("user created")
+	context.JSON(http.StatusCreated, gin.H{"user creation success": u.Username})
 }
 
 // user login POST request handler
