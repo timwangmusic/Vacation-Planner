@@ -97,6 +97,55 @@ func (planner *MyPlanner) Destroy() {
 	planner.RedisClient.Destroy()
 }
 
+func (planner *MyPlanner) PlaceStatsHandler(context *gin.Context) {
+	var placeCount int
+	var err error
+	if placeCount, err = planner.RedisClient.GetPlaceCountInRedis(context); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var eateryCount int64
+	if eateryCount, err = planner.RedisClient.GetPlaceCountByCategory(context, POI.PlaceCategoryEatery); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var visitCount int64
+	if visitCount, err = planner.RedisClient.GetPlaceCountByCategory(context, POI.PlaceCategoryVisit); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"place count": placeCount,
+		"eatery count": eateryCount,
+		"visit count":  visitCount,
+	})
+}
+
+type GeocodeCityView struct {
+	Count  int
+	Cities map[string]string
+}
+
+func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
+	var cityCount int
+	var err error
+	var geocodes map[string]string
+
+	if geocodes, err = planner.RedisClient.GetCityCountInRedis(context); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	cityCount = len(geocodes)
+	view := GeocodeCityView{
+		Count:  cityCount,
+		Cities: geocodes,
+	}
+	context.JSON(http.StatusOK, view)
+}
+
 // single-day, single-city planning method
 func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solution.PlanningRequest, user string) (resp PlanningResponse) {
 	var planningResponse solution.PlanningResponse
@@ -279,6 +328,13 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
+	}
+
+	// API endpoints for collecting database statistics
+	stats := myRouter.Group("/stats")
+	{
+		stats.GET("places", planner.PlaceStatsHandler)
+		stats.GET("cities", planner.CityStatsHandler)
 	}
 
 	svr := &http.Server{

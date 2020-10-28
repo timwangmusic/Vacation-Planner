@@ -81,7 +81,7 @@ func (redisClient *RedisClient) RemoveKeys(context context.Context, keys []strin
 }
 
 // serialize place using JSON and store in Redis with key place_details:place_ID:placeID
-func (redisClient *RedisClient) updatePlace(context context.Context, place POI.Place, wg *sync.WaitGroup) {
+func (redisClient *RedisClient) setPlace(context context.Context, place POI.Place, wg *sync.WaitGroup) {
 	defer wg.Done()
 	json_, err := json.Marshal(place)
 	utils.CheckErrImmediate(err, utils.LogError)
@@ -138,7 +138,7 @@ func (redisClient *RedisClient) StorePlacesForLocation(context context.Context, 
 		if err != nil {
 			return err
 		}
-		redisClient.updatePlace(context, place, wg)
+		redisClient.setPlace(context, place, wg)
 	}
 	wg.Wait()
 	return nil
@@ -159,7 +159,7 @@ func (redisClient *RedisClient) SetPlacesOnCategory(context context.Context, pla
 
 		utils.CheckErrImmediate(cmdErr, utils.LogError)
 
-		redisClient.updatePlace(context, place, wg)
+		redisClient.setPlace(context, place, wg)
 	}
 	wg.Wait()
 }
