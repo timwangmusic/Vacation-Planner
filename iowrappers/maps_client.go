@@ -19,8 +19,14 @@ type SearchClient interface {
 }
 
 type MapsClient struct {
-	client *maps.Client
-	apiKey string
+	client               *maps.Client
+	apiKey               string
+	DetailedSearchFields []string
+}
+
+func (mapsClient *MapsClient) SetDetailedSearchFields(fields []string) {
+	mapsClient.DetailedSearchFields = fields
+	Logger.Debugf("Set DetailedSearchFields: %v", mapsClient.DetailedSearchFields)
 }
 
 // factory method for MapsClient

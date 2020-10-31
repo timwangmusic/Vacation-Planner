@@ -21,7 +21,7 @@ const (
 
 // Solvers are used by planners to solve the planning problem
 type Solver struct {
-	matcher *matching.TimeMatcher
+	Matcher *matching.TimeMatcher
 }
 
 // mapping from status to standard http status codes
@@ -36,8 +36,8 @@ const (
 )
 
 func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
-	solver.matcher = &matching.TimeMatcher{}
-	solver.matcher.Init(poiSearcher)
+	solver.Matcher = &matching.TimeMatcher{}
+	solver.Matcher.Init(poiSearcher)
 }
 
 func (solver *Solver) ValidateLocation(context context.Context, slotRequestLocation *string) bool {
@@ -46,7 +46,7 @@ func (solver *Solver) ValidateLocation(context context.Context, slotRequestLocat
 		City:    countryCity[0],
 		Country: countryCity[1],
 	}
-	_, _, err := solver.matcher.PoiSearcher.GetGeocode(context, &geoQuery)
+	_, _, err := solver.Matcher.PoiSearcher.GetGeocode(context, &geoQuery)
 	if err != nil {
 		return false
 	}
@@ -84,7 +84,7 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 		return
 	}
 
-	// validate location with poiSearcher of the time matcher
+	// validate location with PoiSearcher of the TimeMatcher
 	for idx := range req.SlotRequests {
 		if !solver.ValidateLocation(context, &req.SlotRequests[idx].Location) {
 			resp.Err = errors.New("invalid travel destination")
@@ -134,7 +134,7 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 			continue
 		}
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(context, solver.matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
+		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(context, solver.Matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
 		if err != nil {
 			if err.Error() == ReqTimeSlotsTagMismatchErrMsg {

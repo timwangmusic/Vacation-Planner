@@ -26,11 +26,18 @@ type Config struct {
 }
 
 type Configurations struct {
-	Server struct{
-		GoogleMaps struct{
+	Server struct {
+		GoogleMaps struct {
 			DetailedSearchFields []string `yaml:"detailed_search_fields"`
 		} `yaml:"google_maps"`
 	} `yaml:"server"`
+}
+
+// flatten configs as a key-value map
+func flattenConfig(configs *Configurations) map[string]interface{} {
+	flattenedConfigs := make(map[string]interface{})
+	flattenedConfigs["server:google_maps:detailed_search_fields"] = configs.Server.GoogleMaps.DetailedSearchFields
+	return flattenedConfigs
 }
 
 func RunServer() {
@@ -47,17 +54,18 @@ func RunServer() {
 
 	configFile, configFileReadErr := os.Open("config/config.yml")
 	if configFileReadErr != nil {
-		log.Fatalf("config read failure: %v", configFileReadErr)
+		log.Fatalf("configs read failure: %v", configFileReadErr)
 	}
 
-	config := &Configurations{}
+	configs := &Configurations{}
 	configFileDecoder := yaml.NewDecoder(configFile)
-	if configFileDecodeErr := configFileDecoder.Decode(config); configFileDecodeErr != nil {
+	if configFileDecodeErr := configFileDecoder.Decode(configs); configFileDecodeErr != nil {
 		log.Fatal(configFileDecodeErr)
 	}
 
 	myPlanner := planner.MyPlanner{}
-	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName)
+
+	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs))
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
 	c := make(chan os.Signal, 1)

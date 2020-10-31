@@ -35,6 +35,7 @@ type MyPlanner struct {
 	ResultHTMLTemplate *template.Template
 	PlanningEvents     chan iowrappers.PlanningEvent
 	Environment        string
+	Configs            map[string]interface{}
 }
 
 type TimeSectionPlace struct {
@@ -75,7 +76,7 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
-func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string) {
+func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}) {
 	planner.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	planner.RedisClient = iowrappers.CreateRedisClient(redisURL)
 	planner.RedisStreamName = redisStreamName
@@ -90,6 +91,10 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	planner.HomeHTMLTemplate = template.Must(template.ParseFiles("templates/index.html"))
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
+	planner.Configs = configs
+	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
+		planner.Solver.Matcher.PoiSearcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
+	}
 }
 
 func (planner *MyPlanner) Destroy() {
