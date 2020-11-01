@@ -5,6 +5,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/planner"
+	"gopkg.in/yaml.v2"
 	"net/url"
 	"os"
 	"os/signal"
@@ -24,6 +25,21 @@ type Config struct {
 	MapsClientApiKey string `required:"true" split_words:"true"`
 }
 
+type Configurations struct {
+	Server struct {
+		GoogleMaps struct {
+			DetailedSearchFields []string `yaml:"detailed_search_fields"`
+		} `yaml:"google_maps"`
+	} `yaml:"server"`
+}
+
+// flatten configs as a key-value map
+func flattenConfig(configs *Configurations) map[string]interface{} {
+	flattenedConfigs := make(map[string]interface{})
+	flattenedConfigs["server:google_maps:detailed_search_fields"] = configs.Server.GoogleMaps.DetailedSearchFields
+	return flattenedConfigs
+}
+
 func RunServer() {
 	conf := Config{}
 	err := envconfig.Process("", &conf)
@@ -36,8 +52,20 @@ func RunServer() {
 		log.Fatal(err)
 	}
 
+	configFile, configFileReadErr := os.Open("config/config.yml")
+	if configFileReadErr != nil {
+		log.Fatalf("configs read failure: %v", configFileReadErr)
+	}
+
+	configs := &Configurations{}
+	configFileDecoder := yaml.NewDecoder(configFile)
+	if configFileDecodeErr := configFileDecoder.Decode(configs); configFileDecodeErr != nil {
+		log.Fatal(configFileDecodeErr)
+	}
+
 	myPlanner := planner.MyPlanner{}
-	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName)
+
+	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs))
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
 	c := make(chan os.Signal, 1)

@@ -25,4 +25,5 @@ require (
 	gonum.org/v1/gonum v0.0.0-20190808205415-ced62fe5104b
 	google.golang.org/protobuf v1.25.0 // indirect
 	googlemaps.github.io/maps v1.2.3
+	gopkg.in/yaml.v2 v2.3.0
 )
