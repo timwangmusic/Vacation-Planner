@@ -4,7 +4,7 @@ set -eoux pipefail
 
 # Pass the Build Hash as a Env
 KEY_PATH="/home/pi/keys/gittoken.json"
-BUILD_URL="https://dafae76faf4f.ngrok.io/job/UnW_Can1/$BUILD_NUMBER/console"
+BUILD_URL="https://6aade2b09d3b.ngrok.io/job/UnW_Can1/$BUILD_NUMBER/console"
 
 function check_dir() {
 	echo $PWD
