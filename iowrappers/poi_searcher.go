@@ -137,9 +137,9 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	return places, nil
 }
 
-func (poiSearcher PoiSearcher) PlaceDetailsSearch(_ context.Context, placeId string) (place POI.Place, err error) {
+func (poiSearcher PoiSearcher) PlaceDetailsSearch(context context.Context, placeId string) (place POI.Place, err error) {
 	var res maps.PlaceDetailsResult
-	res, err = PlaceDetailedSearch(&poiSearcher.mapsClient, placeId)
+	res, err = PlaceDetailedSearch(context, &poiSearcher.mapsClient, placeId)
 	if err != nil {
 		Logger.Errorf("PlaceDetailedSearch(PoiSearcher) error %s", err.Error())
 		return

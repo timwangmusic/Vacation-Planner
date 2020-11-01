@@ -133,7 +133,7 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, max
 			var wg sync.WaitGroup
 			wg.Add(len(placeIdMap))
 			for idx, placeId := range placeIdMap {
-				go PlaceDetailsSearchWrapper(mapsClient, idx, placeId, &detailSearchResults[idx], &wg)
+				go PlaceDetailsSearchWrapper(context, mapsClient, idx, placeId, &detailSearchResults[idx], &wg)
 			}
 			wg.Wait()
 
@@ -176,9 +176,9 @@ type PlaceDetailSearchRes struct {
 	RespIdx int
 }
 
-func PlaceDetailsSearchWrapper(mapsClient *MapsClient, idx int, placeId string, detailSearchRes *PlaceDetailSearchRes, wg *sync.WaitGroup) {
+func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, detailSearchRes *PlaceDetailSearchRes, wg *sync.WaitGroup) {
 	defer wg.Done()
-	searchRes, err := PlaceDetailedSearch(mapsClient, placeId)
+	searchRes, err := PlaceDetailedSearch(context, mapsClient, placeId)
 	if err != nil {
 		Logger.Error(err)
 		return
@@ -187,7 +187,7 @@ func PlaceDetailsSearchWrapper(mapsClient *MapsClient, idx int, placeId string, 
 	return
 }
 
-func PlaceDetailedSearch(mapsClient *MapsClient, placeId string) (maps.PlaceDetailsResult, error) {
+func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeId string) (maps.PlaceDetailsResult, error) {
 	if reflect.ValueOf(mapsClient).IsNil() {
 		err := errors.New("client does not exist")
 		Logger.Error(err)
@@ -204,7 +204,7 @@ func PlaceDetailedSearch(mapsClient *MapsClient, placeId string) (maps.PlaceDeta
 	}
 
 	startSearchTime := time.Now()
-	resp, err := mapsClient.client.PlaceDetails(context.Background(), req)
+	resp, err := mapsClient.client.PlaceDetails(context, req)
 	utils.CheckErrImmediate(err, utils.LogError)
 
 	searchDuration := time.Since(startSearchTime)
