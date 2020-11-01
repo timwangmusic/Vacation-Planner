@@ -6,7 +6,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"go.uber.org/zap"
-	"googlemaps.github.io/maps"
 	"net/url"
 	"strings"
 	"time"
@@ -138,16 +137,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 }
 
 func (poiSearcher PoiSearcher) PlaceDetailsSearch(context context.Context, placeId string) (place POI.Place, err error) {
-	var res maps.PlaceDetailsResult
-	res, err = PlaceDetailedSearch(context, &poiSearcher.mapsClient, placeId)
-	if err != nil {
-		Logger.Errorf("PlaceDetailedSearch(PoiSearcher) error %s", err.Error())
-		return
-	}
-	// for now only updates the URL field
-	place.SetURL(res.URL)
-	Logger.Debugf("Place %s url set to %s", place.Name, res.URL)
-	return
+	return place, nil
 }
 
 func (poiSearcher PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
