@@ -12,7 +12,7 @@ function check_dir() {
 }
 
 function build_docker() {
-	docker build -t unwindenv:$BUILD_NUMBER .
+	docker build -t unwindtest:$BUILD_NUMBER .
 	docker images
 }
 
