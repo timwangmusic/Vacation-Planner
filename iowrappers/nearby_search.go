@@ -126,7 +126,7 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, max
 				}
 			}
 
-			detailSearchResults := make([]PlaceDetailSearchRes, len(placeIdMap))
+			detailSearchResults := make([]PlaceDetailSearchResult, len(placeIdMap))
 			var wg sync.WaitGroup
 			wg.Add(len(placeIdMap))
 			for idx, placeId := range placeIdMap {
@@ -168,19 +168,19 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, max
 	return
 }
 
-type PlaceDetailSearchRes struct {
+type PlaceDetailSearchResult struct {
 	Res     *maps.PlaceDetailsResult
 	RespIdx int
 }
 
-func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailSearchRes, wg *sync.WaitGroup) {
+func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailSearchResult, wg *sync.WaitGroup) {
 	defer wg.Done()
 	searchRes, err := PlaceDetailedSearch(context, mapsClient, placeId, fields)
 	if err != nil {
 		Logger.Error(err)
 		return
 	}
-	*detailSearchRes = PlaceDetailSearchRes{Res: &searchRes, RespIdx: idx}
+	*detailSearchRes = PlaceDetailSearchResult{Res: &searchRes, RespIdx: idx}
 	return
 }
 
@@ -210,6 +210,7 @@ func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeI
 	Logger.Debugw("Logging detailed place search",
 		"Maps API call time", searchDuration,
 		"place name", resp.Name,
+		"place user rating total", resp.UserRatingsTotal,
 		"place formatted address", resp.FormattedAddress,
 	)
 
@@ -243,7 +244,8 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.
 		if len(res.Photos) > 0 {
 			photo = &res.Photos[0]
 		}
-		places = append(places, POI.CreatePlace(name, location, addr, res.FormattedAddress, locationType, h, id, priceLevel, rating, url, photo))
+		userRatingsTotal := res.UserRatingsTotal
+		places = append(places, POI.CreatePlace(name, location, addr, res.FormattedAddress, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal))
 	}
 	return
 }
