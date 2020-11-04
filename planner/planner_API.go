@@ -109,6 +109,12 @@ func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context)
 	}
 }
 
+func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
+	if err := planner.Solver.Matcher.PoiSearcher.AddUrl(context.Request.Context()); err != nil {
+		log.Error(err)
+	}
+}
+
 func (planner *MyPlanner) PlaceStatsHandler(context *gin.Context) {
 	var placeCount int
 	var err error
@@ -352,6 +358,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	migrations := myRouter.Group("/migrate")
 	{
 		migrations.GET("user-ratings-total", planner.UserRatingsTotalMigrationHandler)
+		migrations.GET("url", planner.UrlMigrationHandler)
 	}
 
 	svr := &http.Server{

@@ -75,3 +75,24 @@ func (poiSearcher *PoiSearcher) AddUserRatingsTotal(context context.Context) err
 	wg.Wait()
 	return nil
 }
+
+func (poiSearcher *PoiSearcher) AddUrl(context context.Context) error {
+	placeIdToDetailedSearchResults, err := poiSearcher.addDataFieldsToPlaces(context, "url")
+	if err != nil {
+		return err
+	}
+
+	redisClient := poiSearcher.GetRedisClient()
+	wg := sync.WaitGroup{}
+	wg.Add(len(placeIdToDetailedSearchResults))
+	for placeId, detailedResult := range placeIdToDetailedSearchResults {
+		place, err := redisClient.getPlace(context, placeId)
+		if err != nil {
+			continue
+		}
+		place.SetURL(detailedResult.Res.URL)
+		go redisClient.setPlace(context, place, &wg)
+	}
+	wg.Wait()
+	return nil
+}
