@@ -40,6 +40,7 @@ type Place struct {
 	Hours            [7]string    `bson:"hours"`
 	URL              string       `bson:"url"`
 	Photo            PlacePhoto   `bson:"photo"`
+	UserRatingsTotal int          `bson:"user_ratings_total"`
 }
 
 type Location struct {
@@ -57,20 +58,20 @@ type Address struct {
 	Country      string
 }
 
-func (v *Place) GetName() string {
-	return v.Name
+func (place *Place) GetName() string {
+	return place.Name
 }
 
-func (v *Place) GetType() LocationType {
-	return v.LocationType
+func (place *Place) GetType() LocationType {
+	return place.LocationType
 }
 
-func (v *Place) GetHour(day Weekday) string {
-	return v.Hours[day]
+func (place *Place) GetHour(day Weekday) string {
+	return place.Hours[day]
 }
 
-func (v *Place) GetID() string {
-	return v.ID
+func (place *Place) GetID() string {
+	return place.ID
 }
 
 //Sample Address in adr micro-format
@@ -78,72 +79,76 @@ func (v *Place) GetID() string {
 //Suite 207
 //San Francisco, CA 94107
 //U.S.A.
-func (v *Place) GetAddress() Address {
-	return v.Address
+func (place *Place) GetAddress() Address {
+	return place.Address
 }
 
-func (v *Place) GetFormattedAddress() string {
-	return v.FormattedAddress
+func (place *Place) GetFormattedAddress() string {
+	return place.FormattedAddress
 }
 
-func (v *Place) GetLocation() [2]float64 {
-	return v.Location.Coordinates
+func (place *Place) GetLocation() [2]float64 {
+	return place.Location.Coordinates
 }
 
-func (v *Place) GetPriceLevel() int {
-	return v.PriceLevel
+func (place *Place) GetPriceLevel() int {
+	return place.PriceLevel
 }
 
-func (v *Place) GetRating() float32 {
-	return v.Rating
+func (place *Place) GetRating() float32 {
+	return place.Rating
 }
 
-func (v *Place) GetURL() string {
-	return v.URL
+func (place *Place) GetURL() string {
+	return place.URL
+}
+
+func (place *Place) GetUserRatingsTotal() int {
+	return place.UserRatingsTotal
 }
 
 // Set name if POI name changed
-func (v *Place) SetName(name string) {
-	v.Name = name
+func (place *Place) SetName(name string) {
+	place.Name = name
 }
 
 // Set human-readable Address of this place
-func (v *Place) SetFormattedAddress(formattedAddress string) {
-	v.FormattedAddress = formattedAddress
+func (place *Place) SetFormattedAddress(formattedAddress string) {
+	place.FormattedAddress = formattedAddress
 }
 
 // Set type if POI type changed
-func (v *Place) SetType(t LocationType) {
-	v.LocationType = t
+func (place *Place) SetType(t LocationType) {
+	place.LocationType = t
 }
 
 // Set time if POI opening hour changed for some day in a week
-func (v *Place) SetHour(day Weekday, hour string) {
+func (place *Place) SetHour(day Weekday, hour string) {
 	switch day {
 	case DateSunday:
-		v.Hours[day] = hour
+		place.Hours[day] = hour
 	case DateMonday:
-		v.Hours[day] = hour
+		place.Hours[day] = hour
 	case DateTuesday:
-		v.Hours[day] = hour
+		place.Hours[day] = hour
 	case DateWednesday:
-		v.Hours[day] = hour
+		place.Hours[day] = hour
 	case DateThursday:
-		v.Hours[day] = hour
+		place.Hours[day] = hour
 	case DateFriday:
-		v.Hours[day] = hour
+		place.Hours[day] = hour
 	case DateSaturday:
-		v.Hours[day] = hour
+		place.Hours[day] = hour
 	default:
 		log.Fatalf("day specified (%d) is not in range of 0-6", day)
 	}
 }
 
-func (v *Place) SetID(id string) {
-	v.ID = id
+func (place *Place) SetID(id string) {
+	place.ID = id
 }
 
-func (v *Place) SetAddress(addr string) {
+func (place *Place) SetAddress(addr string) {
 	if addr == "" {
 		return
 	}
@@ -157,44 +162,48 @@ func (v *Place) SetAddress(addr string) {
 		val := value[1 : len(value)-1]
 		switch fieldName {
 		case `"post-office-box"`:
-			v.Address.POBox = val
+			place.Address.POBox = val
 		case `"extended-address"`:
-			v.Address.ExtendedAddr = val
+			place.Address.ExtendedAddr = val
 		case `"street-address"`:
-			v.Address.StreetAddr = val
+			place.Address.StreetAddr = val
 		case `"locality"`:
-			v.Address.Locality = val
+			place.Address.Locality = val
 		case `"region"`:
-			v.Address.Region = val
+			place.Address.Region = val
 		case `"postal-code"`:
-			v.Address.PostalCode = val
+			place.Address.PostalCode = val
 		case `"country-name"`:
-			v.Address.Country = val
+			place.Address.Country = val
 		}
 	}
 }
 
-func (v *Place) SetLocation(location [2]float64) {
-	v.Location.Coordinates = location
-	v.Location.Type = "Point"
+func (place *Place) SetLocation(location [2]float64) {
+	place.Location.Coordinates = location
+	place.Location.Type = "Point"
 }
 
-func (v *Place) SetPriceLevel(priceRange int) {
-	v.PriceLevel = priceRange
+func (place *Place) SetPriceLevel(priceRange int) {
+	place.PriceLevel = priceRange
 }
 
-func (v *Place) SetRating(rating float32) {
-	v.Rating = rating
+func (place *Place) SetRating(rating float32) {
+	place.Rating = rating
 }
 
-func (v *Place) SetURL(url string) {
-	v.URL = url
+func (place *Place) SetURL(url string) {
+	place.URL = url
 }
 
-func (v *Place) SetPhoto(photo *maps.Photo) {
+func (place *Place) SetPhoto(photo *maps.Photo) {
 	if val := reflect.ValueOf(photo); !val.IsNil() {
-		v.Photo.Reference = photo.PhotoReference
-		v.Photo.Height = photo.Height
-		v.Photo.Width = photo.Width
+		place.Photo.Reference = photo.PhotoReference
+		place.Photo.Height = photo.Height
+		place.Photo.Width = photo.Width
 	}
+}
+
+func (place *Place) SetUserRatingsTotal(userRatingsTotal int) {
+	place.UserRatingsTotal = userRatingsTotal
 }

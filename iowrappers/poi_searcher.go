@@ -6,7 +6,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"go.uber.org/zap"
-	"googlemaps.github.io/maps"
 	"net/url"
 	"strings"
 	"time"
@@ -40,6 +39,10 @@ func CreatePoiSearcher(mapsApiKey string, redisUrl *url.URL) *PoiSearcher {
 
 func (poiSearcher PoiSearcher) GetMapsClient() *MapsClient {
 	return &poiSearcher.mapsClient
+}
+
+func (poiSearcher PoiSearcher) GetRedisClient() *RedisClient {
+	return &poiSearcher.redisClient
 }
 
 func DestroyLogger() {
@@ -137,17 +140,8 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	return places, nil
 }
 
-func (poiSearcher PoiSearcher) PlaceDetailsSearch(_ context.Context, placeId string) (place POI.Place, err error) {
-	var res maps.PlaceDetailsResult
-	res, err = PlaceDetailedSearch(&poiSearcher.mapsClient, placeId)
-	if err != nil {
-		Logger.Errorf("PlaceDetailedSearch(PoiSearcher) error %s", err.Error())
-		return
-	}
-	// for now only updates the URL field
-	place.SetURL(res.URL)
-	Logger.Debugf("Place %s url set to %s", place.Name, res.URL)
-	return
+func (poiSearcher PoiSearcher) PlaceDetailsSearch(context context.Context, placeId string) (place POI.Place, err error) {
+	return place, nil
 }
 
 func (poiSearcher PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {

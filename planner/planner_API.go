@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/solution"
@@ -102,10 +103,32 @@ func (planner *MyPlanner) Destroy() {
 	planner.RedisClient.Destroy()
 }
 
+func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context) {
+	_, authenticationErr := planner.UserAuthentication(context, context.Request, user.LevelAdmin)
+	if authenticationErr != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
+	if err := planner.Solver.Matcher.PoiSearcher.AddUserRatingsTotal(context.Request.Context()); err != nil {
+		log.Error(err)
+	}
+}
+
+func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
+	_, authenticationErr := planner.UserAuthentication(context, context.Request, user.LevelAdmin)
+	if authenticationErr != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
+	if err := planner.Solver.Matcher.PoiSearcher.AddUrl(context.Request.Context()); err != nil {
+		log.Error(err)
+	}
+}
+
 func (planner *MyPlanner) PlaceStatsHandler(context *gin.Context) {
 	var placeCount int
 	var err error
-	if placeCount, err = planner.RedisClient.GetPlaceCountInRedis(context); err != nil {
+	if _, placeCount, err = planner.RedisClient.GetPlaceCountInRedis(context); err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -122,7 +145,7 @@ func (planner *MyPlanner) PlaceStatsHandler(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{
-		"place count": placeCount,
+		"place count":  placeCount,
 		"eatery count": eateryCount,
 		"visit count":  visitCount,
 	})
@@ -333,7 +356,11 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
-	}
+		migrations := v1.Group("/migrate")
+		{
+			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
+			migrations.GET("/url", planner.UrlMigrationHandler)
+		}	}
 
 	// API endpoints for collecting database statistics
 	stats := myRouter.Group("/stats")

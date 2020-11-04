@@ -4,5 +4,6 @@ server:
       - name
       - opening_hours
       - formatted_address
+      - adr_address
       - url
       - user_ratings_total

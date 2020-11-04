@@ -11,22 +11,25 @@ const (
 	PlaceIDsKeyPrefix     = "placeIDs"
 )
 
-func (redisClient *RedisClient) GetPlaceCountInRedis(context context.Context) (count int, err error) {
+// returns place details keys in Redis as well
+func (redisClient *RedisClient) GetPlaceCountInRedis(context context.Context) (placeKeys []string, count int, err error) {
 	var cursor uint64
+	placeKeys = make([]string, 0)
 
 	for {
 		var keys []string
 		var err error
 		keys, cursor, err = redisClient.client.Scan(context, cursor, PlaceDetailsKeyPrefix+"*", 100).Result()
 		if err != nil {
-			return 0, err
+			return placeKeys, count, err
 		}
 		count += len(keys)
+		placeKeys = append(placeKeys, keys...)
 		if cursor == 0 {
 			break
 		}
 	}
-	return count, nil
+	return placeKeys, count, nil
 }
 
 func (redisClient *RedisClient) GetCityCountInRedis(context context.Context) (map[string]string, error) {
