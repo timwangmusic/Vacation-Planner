@@ -104,12 +104,22 @@ func (planner *MyPlanner) Destroy() {
 }
 
 func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context) {
+	_, authenticationErr := planner.UserAuthentication(context, context.Request, user.LevelAdmin)
+	if authenticationErr != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
 	if err := planner.Solver.Matcher.PoiSearcher.AddUserRatingsTotal(context.Request.Context()); err != nil {
 		log.Error(err)
 	}
 }
 
 func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
+	_, authenticationErr := planner.UserAuthentication(context, context.Request, user.LevelAdmin)
+	if authenticationErr != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
 	if err := planner.Solver.Matcher.PoiSearcher.AddUrl(context.Request.Context()); err != nil {
 		log.Error(err)
 	}
@@ -346,19 +356,17 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
-	}
+		migrations := v1.Group("/migrate")
+		{
+			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
+			migrations.GET("/url", planner.UrlMigrationHandler)
+		}	}
 
 	// API endpoints for collecting database statistics
 	stats := myRouter.Group("/stats")
 	{
 		stats.GET("places", planner.PlaceStatsHandler)
 		stats.GET("cities", planner.CityStatsHandler)
-	}
-
-	migrations := myRouter.Group("/migrate")
-	{
-		migrations.GET("user-ratings-total", planner.UserRatingsTotalMigrationHandler)
-		migrations.GET("url", planner.UrlMigrationHandler)
 	}
 
 	svr := &http.Server{
