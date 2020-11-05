@@ -39,14 +39,14 @@ func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, f
 
 	placesToUpdateCount := utils.MinInt(len(placesNeedUpdate), batchSize)
 	newPlaceDetailsResults := make([]PlaceDetailSearchResult, placesToUpdateCount)
-	Logger.Infof("[data migration] Batch size is: %d", batchSize)
+	Logger.Infof("[data migration] Place to update count: %d, batch size is: %d", placesToUpdateCount, batchSize)
 	Logger.Infof("[data migration] Getting %d place details with target field: %s", placesToUpdateCount, field)
 
 	fields := []string{field}
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(placesNeedUpdate))
-	for idx, placeId := range placesNeedUpdate {
+	wg.Add(placesToUpdateCount)
+	for idx, placeId := range placesNeedUpdate[:placesToUpdateCount] {
 		redisClient.client.SAdd(context, updatedPlacesRedisKey, placeId)
 
 		go PlaceDetailsSearchWrapper(context, mapsClient, idx, placeId, fields, &newPlaceDetailsResults[idx], &wg)
@@ -55,13 +55,13 @@ func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, f
 	wg.Wait()
 	results := make(map[string]PlaceDetailSearchResult)
 
-	for idx, placeId := range placesNeedUpdate {
-		placeDetails := newPlaceDetailsResults[idx]
-		results[placeId] = placeDetails
+	for idx, placeId := range placesNeedUpdate[:placesToUpdateCount] {
+		results[placeId] = newPlaceDetailsResults[idx]
 	}
-	Logger.Infof("[data migration] The number of places left to update out of total of %d is %d",
-		totalPlacesCount,
-		len(placesNeedUpdate)-placesToUpdateCount)
+	Logger.Infof("[data migration] %d places left to update out of total of %d",
+		len(placesNeedUpdate)-placesToUpdateCount,
+		totalPlacesCount)
+
 	return results, nil
 }
 
