@@ -2,16 +2,20 @@ package iowrappers
 
 import (
 	"context"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"strings"
 	"sync"
 )
 
+const (
+	BatchSize = 300
+)
 // a generic migration method
 // returns place details results for the calling function to extract and use specific fields
-func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, field string) (map[string]PlaceDetailSearchResult, error) {
+func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, field string, batchSize int) (map[string]PlaceDetailSearchResult, error) {
 	mapsClient := poiSearcher.GetMapsClient()
 	redisClient := poiSearcher.GetRedisClient()
-	placeDetailsKeys, _, err := redisClient.GetPlaceCountInRedis(context)
+	placeDetailsKeys, totalPlacesCount, err := redisClient.GetPlaceCountInRedis(context)
 	if err != nil {
 		return nil, err
 	}
@@ -31,32 +35,39 @@ func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, f
 			placesNeedUpdate = append(placesNeedUpdate, placeId)
 		}
 	}
+	Logger.Infof("[data migration] The number of places need update is %d with target field: %s", len(placesNeedUpdate), field)
+
+	placesToUpdateCount := utils.MinInt(len(placesNeedUpdate), batchSize)
+	newPlaceDetailsResults := make([]PlaceDetailSearchResult, placesToUpdateCount)
+	Logger.Infof("[data migration] Batch size is: %d", batchSize)
+	Logger.Infof("[data migration] Getting %d place details with target field: %s", placesToUpdateCount, field)
 
 	fields := []string{field}
-
-	placeDetails := make([]PlaceDetailSearchResult, len(placesNeedUpdate))
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(placesNeedUpdate))
 	for idx, placeId := range placesNeedUpdate {
 		redisClient.client.SAdd(context, updatedPlacesRedisKey, placeId)
 
-		go PlaceDetailsSearchWrapper(context, mapsClient, idx, placeId, fields, &placeDetails[idx], &wg)
+		go PlaceDetailsSearchWrapper(context, mapsClient, idx, placeId, fields, &newPlaceDetailsResults[idx], &wg)
 	}
 
 	wg.Wait()
 	results := make(map[string]PlaceDetailSearchResult)
 
 	for idx, placeId := range placesNeedUpdate {
-		placeDetails := placeDetails[idx]
+		placeDetails := newPlaceDetailsResults[idx]
 		results[placeId] = placeDetails
 	}
+	Logger.Infof("[data migration] The number of places left to update out of total of %d is %d",
+		totalPlacesCount,
+		len(placesNeedUpdate)-placesToUpdateCount)
 	return results, nil
 }
 
 // add user_ratings_total field to Places
 func (poiSearcher *PoiSearcher) AddUserRatingsTotal(context context.Context) error {
-	placeIdToDetailedSearchResults, err := poiSearcher.addDataFieldsToPlaces(context, "user_ratings_total")
+	placeIdToDetailedSearchResults, err := poiSearcher.addDataFieldsToPlaces(context, "user_ratings_total", BatchSize)
 	if err != nil {
 		return err
 	}
@@ -77,7 +88,7 @@ func (poiSearcher *PoiSearcher) AddUserRatingsTotal(context context.Context) err
 }
 
 func (poiSearcher *PoiSearcher) AddUrl(context context.Context) error {
-	placeIdToDetailedSearchResults, err := poiSearcher.addDataFieldsToPlaces(context, "url")
+	placeIdToDetailedSearchResults, err := poiSearcher.addDataFieldsToPlaces(context, "url", BatchSize)
 	if err != nil {
 		return err
 	}
