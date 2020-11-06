@@ -3,6 +3,7 @@ package iowrappers
 import (
 	"context"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	"reflect"
 	"strings"
 	"sync"
 )
@@ -80,7 +81,12 @@ func (poiSearcher *PoiSearcher) AddUserRatingsTotal(context context.Context) err
 		if err != nil {
 			continue
 		}
-		place.SetUserRatingsTotal(detailedResult.Res.UserRatingsTotal)
+		// FIXME: figure out the reason for maps client return null pointer as result
+		if reflect.ValueOf(detailedResult.Res).IsNil() {
+			place.SetUserRatingsTotal(0)
+		} else {
+			place.SetUserRatingsTotal(detailedResult.Res.UserRatingsTotal)
+		}
 		go redisClient.setPlace(context, place, &wg)
 	}
 	wg.Wait()
