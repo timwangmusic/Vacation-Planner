@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -eoux pipefail
 
 # Pass the Build Hash as a Env
@@ -50,6 +49,4 @@ function push_docker() {
 	echo "Push Step"
 }
 
-
 $1
-
