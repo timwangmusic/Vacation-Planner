@@ -15,6 +15,7 @@ const (
 	MaxSearchRadius              = 16000          // 10 miles
 	MinMapsResultRefreshDuration = time.Hour * 24 // 1 day
 	GoogleSearchHomePageURL      = "https://www.google.com/"
+	RequestIdKey				 = "request_id"
 )
 
 type PoiSearcher struct {
@@ -91,13 +92,13 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 		Logger.Error(err)
 	}
 
-	Logger.Debugf("number of results from redis is %d", len(cachedPlaces))
+	Logger.Debugf("[%s] number of results from redis is %d", context.Value(RequestIdKey), len(cachedPlaces))
 
 	lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
 
 	currentTime := time.Now()
 	if uint(len(cachedPlaces)) >= request.MinNumResults || currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration {
-		Logger.Infof("Using Redis to fulfill request. Place Type: %s", request.PlaceCat)
+		Logger.Infof("[%s] Using Redis to fulfill request. Place Type: %s", context.Value(RequestIdKey), request.PlaceCat)
 		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
 		places = append(places, cachedPlaces[:maxResultNum]...)
 		return places, nil
@@ -146,5 +147,6 @@ func (poiSearcher PoiSearcher) PlaceDetailsSearch(context context.Context, place
 
 func (poiSearcher PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
 	poiSearcher.redisClient.SetPlacesOnCategory(context, places)
-	Logger.Debugf("Redis update complete")
+	requestId := context.Value(RequestIdKey)
+	Logger.Debugf("request:", requestId, "Redis update complete")
 }
