@@ -29,9 +29,10 @@ function extract_token() {
 }
 
 function post_gitStatus_success() {
+	# Add the git status
 	echo "Post status after build succeeds"
 	git_token=$(extract_token)
-	URL="https://api.GitHub.com/repos/sananand007/JBot/statuses/$GIT_COMMIT?access_token=$git_token"
+	URL="https://api.GitHub.com/repos/<>/<>/statuses/$GIT_COMMIT?access_token=$git_token"
 	curl "$URL" \
   		-H "Content-Type: application/json" \
   		-X POST \
