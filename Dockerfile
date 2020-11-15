@@ -1,4 +1,8 @@
-FROM golang:latest as unwindtest
+#FROM golang:latest as unwindtest
+FROM golang:alpine as unwindtest
+
+ENV GO111MODULE=on \
+    CGO_ENABLED=0
 
 RUN ls -al
 COPY . /app/
