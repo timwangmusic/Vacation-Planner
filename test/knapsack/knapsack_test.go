@@ -48,4 +48,6 @@ func TestKnapsack(t *testing.T) {
 		}
 	}
 	assert.Equal(t, "ChIJ36yUcg3xNIgRtvNioeVfK7E", result2[0].GetPlaceId())
+	assert.Equal(t, "ChIJoX0ya9bxNIgRxlnrIWLSF-4", result2[1].GetPlaceId())
+	assert.Equal(t, "ChIJWXN6uVnxNIgRERyK92uq_HU", result2[2].GetPlaceId())
 }

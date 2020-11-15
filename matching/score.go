@@ -15,25 +15,18 @@ const (
 
 func Score(places []Place) float64 {
 	if len(places) == 1 {
-		return singlePlaceScore(places[0])
+		if places[0].GetPrice() == 0 {
+			return AvgRating / AvgPricing // set to average single Place rating-price ratio
+		}
+		return float64(places[0].GetRating()) / places[0].GetPrice()
 	}
 	distances := calDistances(places)                     // Haversine distances
 	maxDist := math.Max(0.001, calMaxDistance(distances)) // protect against maximum distance being zero
 	avgDistance := stat.Mean(distances, nil) / maxDist    // normalized average distance
 
-	avgScore := avgPlacesScore(places)
+	avgRatingPriceRatio := calAvgRatingPriceRatio(places) // normalized average rating to price ratio
 
-	return avgScore - avgDistance
-}
-
-func singlePlaceScore(place Place) float64 {
-	var ratingPricingRatio float64
-	if place.GetPrice() == 0 {
-		ratingPricingRatio = AvgRating / AvgPricing // set to average single Place rating-price ratio
-	} else {
-		ratingPricingRatio = float64(place.GetRating()) / place.GetPrice()
-	}
-	return math.Log10(float64(1+place.GetUserRatingsCount())) * ratingPricingRatio
+	return avgRatingPriceRatio - avgDistance
 }
 
 // calculate Haversine distances between places
@@ -53,11 +46,16 @@ func calMaxDistance(distances []float64) float64 {
 }
 
 // calculate normalized average rating to price ratio
-func avgPlacesScore(places []Place) float64 {
+func calAvgRatingPriceRatio(places []Place) float64 {
 	numPlaces := len(places)
-	placeScores := make([]float64, numPlaces)
+	ratingPriceRatios := make([]float64, numPlaces)
 	for k, place := range places {
-		placeScores[k] = singlePlaceScore(place)
+		if place.GetPrice() == 0 {
+			ratingPriceRatios[k] = AvgRating / AvgPricing
+		} else {
+			ratio := float64(place.GetRating()) / place.GetPrice()
+			ratingPriceRatios[k] = ratio
+		}
 	}
-	return stat.Mean(placeScores, nil)
+	return stat.Mean(ratingPriceRatios, nil) / floats.Max(ratingPriceRatios)
 }
