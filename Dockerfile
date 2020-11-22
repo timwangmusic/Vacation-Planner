@@ -10,10 +10,10 @@ RUN go build -v .
 
 
 # Copy binary from build to main folder
-RUN cp /main .
+RUN cp /app/main .
 
 # Export necessary port
 EXPOSE 3000
 
 # Command to run when starting the container
-CMD ["/main"]
+CMD ["/app/main"]
