@@ -8,10 +8,6 @@ WORKDIR /app
 
 RUN go build -v .
 
-
-# Copy binary from build to main folder
-RUN cp /app/main .
-
 # Export necessary port
 EXPOSE 3000
 
