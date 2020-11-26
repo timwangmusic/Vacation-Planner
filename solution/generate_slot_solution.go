@@ -60,6 +60,24 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 	return res
 }
 
+func generateCategorizedPlaces(context context.Context, timeMatcher *matching.TimeMatcher, location string, radius uint, weekday POI.Weekday, timeSlots []matching.TimeSlot) ([]CategorizedPlaces, int) {
+	matchingRequest := &matching.TimeMatchingRequest{
+		Location:  location,
+		Radius:    radius,
+		TimeSlots: timeSlots,
+		Weekday:   weekday,
+	}
+	timePlaceClusters := timeMatcher.Matching(context, matchingRequest)
+	categorizedPlaces := make([]CategorizedPlaces, len(timePlaceClusters))
+
+	// place clusters are clustered by time slot
+	// now cluster by place category
+	for idx, timePlaceCluster := range timePlaceClusters {
+		categorizedPlaces[idx] = Categorize(timePlaceCluster)
+	}
+	return categorizedPlaces, GetTimeSlotLengthInMin(timePlaceClusters)
+}
+
 // Generate slot solution candidates
 // Parameter list matches slot request
 func GenerateSlotSolution(context context.Context, timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
@@ -76,29 +94,11 @@ func GenerateSlotSolution(context context.Context, timeMatcher *matching.TimeMat
 	slotSolution.SlotSolutionCandidates = make([]SlotSolutionCandidate, 0)
 	slotCandidates := make([]SlotSolutionCandidate, 0)
 
-	req := matching.TimeMatchingRequest{}
-
-	req.Location = location
 	if radius <= 0 {
 		radius = 2000
 	}
-	req.Radius = radius
 
-	req.TimeSlots = stayTimes
-
-	req.Weekday = weekday
-
-	placeClusters := timeMatcher.Matching(context, &req)
-
-	categorizedPlaces := make([]CategorizedPlaces, len(placeClusters))
-
-	// place clusters are clustered by time slot
-	// now cluster by place category
-	for idx, placeCluster := range placeClusters {
-		categorizedPlaces[idx] = Categorize(placeCluster)
-	}
-
-	minuteLimit := GetTimeSlotLengthInMin(placeClusters)
+	categorizedPlaces, minuteLimit := generateCategorizedPlaces(context, timeMatcher, location, radius, weekday, stayTimes)
 
 	mdIter := MDtagIter{}
 	if !mdIter.Init(evTag, categorizedPlaces) {

@@ -10,7 +10,7 @@ type CategorizedPlaces struct {
 	VisitPlaces  []matching.Place
 }
 
-func Categorize(cluster matching.PlaceCluster) CategorizedPlaces {
+func Categorize(cluster matching.TimePlacesCluster) CategorizedPlaces {
 	res := CategorizedPlaces{
 		EateryPlaces: make([]matching.Place, 0),
 		VisitPlaces:  make([]matching.Place, 0),
