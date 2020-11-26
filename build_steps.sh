@@ -20,6 +20,10 @@ function run_docker() {
 		go test -v ./..."
 }
 
+function run_server() {
+	docker run --rm -p 3000:3000 unwindtest:$BUILD_NUMBER 
+}
+
 function extract_token() {
 	token=$(jq '.token' $KEY_PATH)
     token="${token%\"}"
