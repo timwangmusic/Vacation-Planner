@@ -3,6 +3,7 @@ package planner
 import (
 	"context"
 	"errors"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -382,6 +383,10 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.DefaultWriter = ioutil.Discard
 
 	myRouter := gin.Default()
+
+	// cors settings
+	// TODO: change to front-end domain once front-end server is deployed
+	myRouter.Use(cors.Default())
 
 	myRouter.GET("", planner.indexPageHandler)
 
