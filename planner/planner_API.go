@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -96,6 +97,40 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
 		planner.Solver.Matcher.PoiSearcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
 	}
+}
+
+func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
+	country := context.DefaultQuery("country", "USA")
+	city := context.DefaultQuery("city", "San Diego")
+	radius := context.DefaultQuery("radius", "10000")
+	weekday := context.DefaultQuery("weekday", "5") // Saturday
+	category := strings.ToLower(context.DefaultQuery("category", "visit"))
+
+	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
+	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
+		context.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
+		return
+	}
+	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
+
+	var placeCategory POI.PlaceCategory
+	switch category {
+	case "visit":
+		placeCategory = POI.PlaceCategoryVisit
+	case "eatery":
+		placeCategory = POI.PlaceCategoryEatery
+	}
+
+	location := strings.Join([]string{city, country}, ",")
+	places, err := solution.NearbySearchWithPlaceView(context, planner.Solver.Matcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
+		Start: 8,
+		End:   21,
+	}}, placeCategory)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, "sorry please try later")
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"places": places})
 }
 
 func (planner *MyPlanner) Destroy() {
@@ -356,11 +391,13 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
+		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
 			migrations.GET("/url", planner.UrlMigrationHandler)
-		}	}
+		}
+	}
 
 	// API endpoints for collecting database statistics
 	stats := myRouter.Group("/stats")
