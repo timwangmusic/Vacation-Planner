@@ -9,7 +9,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"strconv"
-	"time"
 )
 
 const (
@@ -17,14 +16,6 @@ const (
 	ReqTimeSlotsTagMismatchErrMsg         = "user designated stay times list length does not match tag length"
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
 )
-
-type TripEvent struct {
-	tag        uint8
-	startTime  time.Time
-	endTime    time.Time
-	startPlace matching.Place
-	endPlace   matching.Place
-}
 
 // Find top solution candidates
 func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandidate {
@@ -68,6 +59,7 @@ func generateCategorizedPlaces(context context.Context, timeMatcher *matching.Ti
 		Weekday:   weekday,
 	}
 	timePlaceClusters := timeMatcher.Matching(context, matchingRequest)
+	// one set of categorized places for each TimePlaceCluster
 	categorizedPlaces := make([]CategorizedPlaces, len(timePlaceClusters))
 
 	// place clusters are clustered by time slot
@@ -139,4 +131,28 @@ func GenerateSlotSolution(context context.Context, timeMatcher *matching.TimeMat
 	redisClient.CacheSlotSolution(context, redisReq, slotSolutionToCache)
 
 	return
+}
+
+// NearbySearchWithPlaceView returns PlaceView results for single day nearby search with a fixed time slot range
+func NearbySearchWithPlaceView(context context.Context, timeMatcher *matching.TimeMatcher, location string,
+	weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]PlaceView, error) {
+	timeSlots := []matching.TimeSlot{timeSlot}
+	categorizedPlaces, _ := generateCategorizedPlaces(context, timeMatcher, location, radius, weekday, timeSlots)
+	if len(categorizedPlaces) != 1 {
+		return nil, errors.New("we should only get one set of categorized places")
+	}
+
+	var places []matching.Place
+	switch category {
+	case POI.PlaceCategoryEatery:
+		places = categorizedPlaces[0].EateryPlaces
+	case POI.PlaceCategoryVisit:
+		places = categorizedPlaces[0].VisitPlaces
+	}
+
+	var placesView = make([]PlaceView, len(places))
+	for idx, place := range places {
+		placesView[idx] = PlaceToPlaceView(place)
+	}
+	return placesView, nil
 }
