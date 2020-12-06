@@ -3,7 +3,7 @@ set -eoux pipefail
 
 # Pass the Build Hash as a Env
 KEY_PATH="/home/pi/keys/gittoken.json"
-BUILD_URL="https://6aade2b09d3b.ngrok.io/job/UnW_Can1/$BUILD_NUMBER/console"
+BUILD_URL="https://f8e9056a4af3.ngrok.io/job/UnW_Can1/$BUILD_NUMBER/console"
 
 function check_dir() {
 	echo $PWD
@@ -16,11 +16,12 @@ function build_docker() {
 }
 
 function run_docker() {
-	docker run --rm unwindtest:$BUILD_NUMBER /bin/sh -c "echo $PWD && \
+	docker run --rm unwindtest:$BUILD_NUMBER /bin/sh -c "ls -al && echo $PWD && \
 		go test -v ./..."
 }
 
 function run_server() {
+	#TODO : this is not active, will look into this in the next PR to run this on the server
 	docker run --rm -p 3000:3000 unwindtest:$BUILD_NUMBER 
 }
 
