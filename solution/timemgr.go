@@ -7,7 +7,7 @@ import (
 
 const Dis2minTest = 0.05
 
-func GetTimeSlotLengthInMin(placeClusters []matching.PlaceCluster) int {
+func GetTimeSlotLengthInMin(placeClusters []matching.TimePlacesCluster) int {
 	if len(placeClusters) == 0 {
 		return 0
 	}

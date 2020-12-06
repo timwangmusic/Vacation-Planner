@@ -83,7 +83,6 @@ Particularly we have configured the code base and been deploying the service to 
 
 ## Programming Languages and Frameworks
 * Backend: Golang
-* Frontend: React
 
 ## To Run the React App
 - Have `npm` and `node` installed
