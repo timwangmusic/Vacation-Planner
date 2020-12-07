@@ -107,7 +107,12 @@ func (poiSearcher *PoiSearcher) AddUrl(context context.Context) error {
 		if err != nil {
 			continue
 		}
-		place.SetURL(detailedResult.Res.URL)
+		// FIXME: figure out the reason for maps client return null pointer as result
+		if reflect.ValueOf(detailedResult.Res).IsNil() {
+			place.SetURL("")
+		} else {
+			place.SetURL(detailedResult.Res.URL)
+		}
 		go redisClient.setPlace(context, place, &wg)
 	}
 	wg.Wait()

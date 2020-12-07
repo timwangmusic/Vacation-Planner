@@ -50,6 +50,10 @@ func (place Place) GetURL() string {
 	return place.Place.GetURL()
 }
 
+func (place Place) GetUserRatingsCount() int {
+	return place.Place.GetUserRatingsTotal()
+}
+
 func (place Place) SetURL(url string) {
 	place.Place.SetURL(url)
 }
