@@ -3,7 +3,8 @@ set -eoux pipefail
 
 # Pass the Build Hash as a Env
 KEY_PATH="/home/pi/keys/gittoken.json"
-BUILD_URL="https://f8e9056a4af3.ngrok.io/job/UnW_Can1/$BUILD_NUMBER/console"
+PR_BUILDER="Unwind_Build_PullRequest"
+PR_BUILD_URL="https://f8e9056a4af3.ngrok.io/job/$PR_BUILDER/$BUILD_NUMBER/console"
 
 function check_dir() {
 	echo $PWD
@@ -44,7 +45,7 @@ function post_gitStatus_success() {
             \"state\": \"success\",
             \"context\": \"continuous-integration/jenkins\",
             \"description\": \"Jenkins\",
-            \"target_url\": $BUILD_URL
+            \"target_url\": $PR_BUILD_URL
         }" >> output.txt
 
 }
