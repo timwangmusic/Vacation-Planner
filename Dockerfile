@@ -1,10 +1,11 @@
-FROM golang:latest as unwindtest
-RUN ls -altr
+FROM golang:alpine as unwindtest
+
+ENV GO111MODULE=on \
+    CGO_ENABLED=0
+
+COPY . /app/
+WORKDIR /app/
 
 RUN ls -al
-COPY . /app/
-WORKDIR /app
 
-RUN go get -v -t -d ./...
-RUN ls -altr && cd main/ && go build -v .
-WORKDIR /app/
+RUN go build -v .
