@@ -22,7 +22,7 @@ function run_docker() {
 }
 
 function run_server() {
-	#TODO : this is not active, will look into this in the next PR to run this on the server
+	#TODO: Future PR work
 	docker run --rm -p 3000:3000 unwindtest:$BUILD_NUMBER 
 }
 
@@ -34,7 +34,7 @@ function extract_token() {
 }
 
 function post_gitStatus_success() {
-	# Add the git status
+	#TODO: Future PR work
 	echo "Post status after build succeeds"
 	git_token=$(extract_token)
 	URL="https://api.GitHub.com/repos/<>/<>/statuses/$GIT_COMMIT?access_token=$git_token"
