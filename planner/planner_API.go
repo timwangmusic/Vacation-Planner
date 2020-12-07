@@ -275,7 +275,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 
 // API definitions
 func (planner *MyPlanner) indexPageHandler(c *gin.Context) {
-	utils.CheckErrImmediate(planner.HomeHTMLTemplate.Execute(c.Writer, nil), utils.LogError)
+	c.HTML(http.StatusOK, "index.html", gin.H{})
 }
 
 // HTTP POST API end-point
@@ -378,7 +378,7 @@ func (planner *MyPlanner) getPlanningApi(context *gin.Context) {
 }
 
 func (planner *MyPlanner) login(c *gin.Context) {
-	utils.CheckErrImmediate(planner.LoginPage.Execute(c.Writer, nil), utils.LogError)
+	c.HTML(http.StatusOK, "login_page.html", gin.H{})
 }
 
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
@@ -389,6 +389,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.DefaultWriter = ioutil.Discard
 
 	myRouter := gin.Default()
+	myRouter.LoadHTMLGlob("templates/*")
 
 	// cors settings
 	// TODO: change to front-end domain once front-end server is deployed
