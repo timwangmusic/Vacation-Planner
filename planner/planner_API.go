@@ -34,9 +34,7 @@ type MyPlanner struct {
 	RedisClient        iowrappers.RedisClient
 	RedisStreamName    string
 	Solver             solution.Solver
-	HomeHTMLTemplate   *template.Template
 	ResultHTMLTemplate *template.Template
-	LoginPage          *template.Template
 	PlanningEvents     chan iowrappers.PlanningEvent
 	Environment        string
 	Configs            map[string]interface{}
@@ -92,9 +90,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 
 	planner.Solver.Init(PoiSearcher)
 
-	planner.HomeHTMLTemplate = template.Must(template.ParseFiles("templates/index.html"))
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
-	planner.LoginPage = template.Must(template.ParseFiles("templates/login_page.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
