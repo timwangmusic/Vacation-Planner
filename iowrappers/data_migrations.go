@@ -11,6 +11,7 @@ import (
 const (
 	BatchSize = 300
 )
+
 // a generic migration method
 // returns place details results for the calling function to extract and use specific fields
 func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, field string, batchSize int) (map[string]PlaceDetailSearchResult, error) {
@@ -107,7 +108,12 @@ func (poiSearcher *PoiSearcher) AddUrl(context context.Context) error {
 		if err != nil {
 			continue
 		}
-		place.SetURL(detailedResult.Res.URL)
+		// FIXME: figure out the reason for maps client return null pointer as result
+		if reflect.ValueOf(detailedResult.Res).IsNil() {
+			place.SetURL("")
+		} else {
+			place.SetURL(detailedResult.Res.URL)
+		}
 		go redisClient.setPlace(context, place, &wg)
 	}
 	wg.Wait()

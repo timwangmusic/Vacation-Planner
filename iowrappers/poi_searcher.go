@@ -15,7 +15,7 @@ const (
 	MaxSearchRadius              = 16000          // 10 miles
 	MinMapsResultRefreshDuration = time.Hour * 24 // 1 day
 	GoogleSearchHomePageURL      = "https://www.google.com/"
-	RequestIdKey				 = "request_id"
+	RequestIdKey                 = "request_id"
 )
 
 type PoiSearcher struct {

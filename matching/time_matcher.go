@@ -13,7 +13,7 @@ import (
 )
 
 type Matcher interface {
-	Matching(context context.Context, req *TimeMatchingRequest) (clusters []PlaceCluster)
+	Matching(context context.Context, req *TimeMatchingRequest) (clusters []TimePlacesCluster)
 }
 
 type TimeMatcher struct {
@@ -33,7 +33,7 @@ type TimeMatchingRequest struct {
 	Weekday   POI.Weekday // Weekday
 }
 
-type PlaceCluster struct {
+type TimePlacesCluster struct {
 	Places []Place  `json:"places"`
 	Slot   TimeSlot `json:"time slot"`
 }
@@ -47,17 +47,17 @@ func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
 	matcher.TouringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 }
 
-func (matcher *TimeMatcher) Matching(context context.Context, req *TimeMatchingRequest) (clusters []PlaceCluster) {
+func (matcher *TimeMatcher) Matching(context context.Context, req *TimeMatchingRequest) (clusters []TimePlacesCluster) {
 	// Place search and time clustering
 	matcher.placeSearch(context, req, POI.PlaceCategoryEatery) // search catering
 	matcher.placeSearch(context, req, POI.PlaceCategoryVisit)  // search visit locations
 
-	clusterMap := make(map[string]*PlaceCluster)
+	clusterMap := make(map[string]*TimePlacesCluster)
 
 	matcher.timeClustering(POI.PlaceCategoryEatery, clusterMap)
 	matcher.timeClustering(POI.PlaceCategoryVisit, clusterMap)
 
-	clusters = make([]PlaceCluster, len(clusterMap))
+	clusters = make([]TimePlacesCluster, len(clusterMap))
 	timeIntervals := make([]POI.TimeInterval, 0)
 	for _, cluster := range clusterMap { // clusters and timeIntervals are of same length
 		timeIntervals = append(timeIntervals, cluster.Slot.Slot)
@@ -73,7 +73,7 @@ func (matcher *TimeMatcher) Matching(context context.Context, req *TimeMatchingR
 	return
 }
 
-func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMap map[string]*PlaceCluster) {
+func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMap map[string]*TimePlacesCluster) {
 	var mgr *graph.TimeClustersManager
 
 	switch placeCat {
@@ -88,7 +88,7 @@ func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMa
 	for _, timeInterval := range *mgr.TimeClusters.TimeIntervals.GetAllIntervals() {
 		clusterKey := timeInterval.Serialize()
 		if _, exist := clusterMap[clusterKey]; !exist {
-			clusterMap[clusterKey] = &PlaceCluster{Places: make([]Place, 0), Slot: TimeSlot{timeInterval}}
+			clusterMap[clusterKey] = &TimePlacesCluster{Places: make([]Place, 0), Slot: TimeSlot{timeInterval}}
 		}
 		cluster := mgr.TimeClusters.Clusters[clusterKey]
 		for _, place := range cluster.Places {
