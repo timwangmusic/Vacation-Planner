@@ -216,7 +216,7 @@ func (redisClient *RedisClient) NearbySearch(context context.Context, request *P
 		searchRadius = MaxSearchRadius
 	}
 
-	Logger.Debugf("Redis geo radius is using search radius of %d meters", searchRadius)
+	Logger.Debugf("[%s] Redis geo radius is using search radius of %d meters", context.Value(RequestIdKey), searchRadius)
 	geoQuery := redis.GeoRadiusQuery{
 		Radius: float64(searchRadius),
 		Unit:   "m",
@@ -404,7 +404,7 @@ func (redisClient *RedisClient) GetSlotSolution(context context.Context, redisKe
 
 	json_, err := redisClient.client.Get(context, redisKey).Result()
 	if err != nil {
-		Logger.Debugf("redis server find no result for key: %s", redisKey)
+		Logger.Debugf("[%s] redis server find no result for key: %s", context.Value(RequestIdKey), redisKey)
 		cacheResponses[idx].Err = err
 		return
 	}
