@@ -381,6 +381,10 @@ func (planner *MyPlanner) login(c *gin.Context) {
 	c.HTML(http.StatusOK, "login_page.html", gin.H{})
 }
 
+func (planner *MyPlanner) signup(c *gin.Context) {
+	c.HTML(http.StatusOK, "signup_page.html", gin.H{})
+}
+
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if planner.Environment == "debug" {
@@ -405,6 +409,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/login", planner.UserLogin)
         v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
 		v1.GET("/log-in", planner.login)
+		v1.GET("/sign-up", planner.signup)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
