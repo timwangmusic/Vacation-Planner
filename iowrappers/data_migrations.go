@@ -11,6 +11,7 @@ import (
 const (
 	BatchSize = 300
 )
+
 // a generic migration method
 // returns place details results for the calling function to extract and use specific fields
 func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, field string, batchSize int) (map[string]PlaceDetailSearchResult, error) {

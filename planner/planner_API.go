@@ -12,6 +12,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	"github.com/gin-contrib/requestid"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -312,38 +313,39 @@ func (planner *MyPlanner) postPlanningApi(context *gin.Context) {
 
 // HTTP GET API end-point
 // Return top planning result to user
-func (planner *MyPlanner) getPlanningApi(context *gin.Context) {
+func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	var username = "guest" // default username
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(context, context.Request, user.LevelRegular)
+		username, authenticationErr = planner.UserAuthentication(ctx, ctx.Request, user.LevelRegular)
 		if authenticationErr != nil {
-			context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 			return
 		}
 	}
 
-	country := context.DefaultQuery("country", "USA")
-	city := context.DefaultQuery("city", "San Diego")
-	radius := context.DefaultQuery("radius", "10000")
-	weekday := context.DefaultQuery("weekday", "5") // Saturday
-	numResults := context.DefaultQuery("numberResults", "5")
+	requestId := requestid.Get(ctx)
+	country := ctx.DefaultQuery("country", "USA")
+	city := ctx.DefaultQuery("city", "San Diego")
+	radius := ctx.DefaultQuery("radius", "10000")
+	weekday := ctx.DefaultQuery("weekday", "5") // Saturday
+	numResults := ctx.DefaultQuery("numberResults", "5")
 
 	numResultsInt, numResultsParsingErr := strconv.ParseUint(numResults, 10, 64)
 	if numResultsParsingErr != nil {
-		context.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
+		ctx.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
 		return
 	}
-	iowrappers.Logger.Debugf("number of requested planning results is %s", numResults)
+	iowrappers.Logger.Debugf("[%s] number of requested planning results is %s", requestId, numResults)
 
 	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
 	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
-		context.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
+		ctx.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
 		return
 	}
 
 	if !validateSearchRadius(radius) {
-		context.String(http.StatusBadRequest, "invalid search radius of %s", radius)
+		ctx.String(http.StatusBadRequest, "invalid search radius of %s", radius)
 		return
 	}
 
@@ -357,20 +359,21 @@ func (planner *MyPlanner) getPlanningApi(context *gin.Context) {
 		planningReq.SlotRequests[slotReqIdx].Location = cityCountry // set to the same location from URL
 	}
 
-	planningResp := planner.Planning(context, &planningReq, username)
+	c := context.WithValue(ctx, "request_id", requestId)
+	planningResp := planner.Planning(c, &planningReq, username)
 
 	err := planningResp.Err
 	if err != nil {
 		if planningResp.StatusCode == solution.InvalidRequestLocation {
-			context.String(http.StatusBadRequest, err.Error())
+			ctx.String(http.StatusBadRequest, err.Error())
 		} else if planningResp.StatusCode == solution.NoValidSolution {
 			errString := "No valid solution is found.\n Please try to search with larger radius."
-			context.String(http.StatusBadRequest, errString)
+			ctx.String(http.StatusBadRequest, errString)
 		}
 		return
 	}
 
-	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(context.Writer, planningResp), utils.LogError)
+	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
 }
 
 func (planner *MyPlanner) login(c *gin.Context) {
@@ -390,6 +393,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 
 	myRouter := gin.Default()
 	myRouter.LoadHTMLGlob("templates/*")
+  // trace ID
+	myRouter.Use(requestid.New())
 
 	// cors settings
 	// TODO: change to front-end domain once front-end server is deployed
