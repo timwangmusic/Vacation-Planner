@@ -35,7 +35,6 @@ type MyPlanner struct {
 	RedisClient        iowrappers.RedisClient
 	RedisStreamName    string
 	Solver             solution.Solver
-	HomeHTMLTemplate   *template.Template
 	ResultHTMLTemplate *template.Template
 	PlanningEvents     chan iowrappers.PlanningEvent
 	Environment        string
@@ -92,7 +91,6 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 
 	planner.Solver.Init(PoiSearcher)
 
-	planner.HomeHTMLTemplate = template.Must(template.ParseFiles("templates/index.html"))
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
@@ -274,7 +272,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 
 // API definitions
 func (planner *MyPlanner) indexPageHandler(c *gin.Context) {
-	utils.CheckErrImmediate(planner.HomeHTMLTemplate.Execute(c.Writer, nil), utils.LogError)
+	c.HTML(http.StatusOK, "index.html", gin.H{})
 }
 
 // HTTP POST API end-point
@@ -378,6 +376,14 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	utils.CheckErrImmediate(planner.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
 }
 
+func (planner *MyPlanner) login(c *gin.Context) {
+	c.HTML(http.StatusOK, "login_page.html", gin.H{})
+}
+
+func (planner *MyPlanner) signup(c *gin.Context) {
+	c.HTML(http.StatusOK, "signup_page.html", gin.H{})
+}
+
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if planner.Environment == "debug" {
@@ -386,6 +392,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.DefaultWriter = ioutil.Discard
 
 	myRouter := gin.Default()
+	myRouter.LoadHTMLGlob("templates/*")
+  // trace ID
 	myRouter.Use(requestid.New())
 
 	// cors settings
@@ -400,7 +408,9 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
-		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
+        v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
+		v1.GET("/log-in", planner.login)
+		v1.GET("/sign-up", planner.signup)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)

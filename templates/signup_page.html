@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Vacation Planner Sign up</title>
+</head>
+<body>
+<div>
+    <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
+        <a class="nav-link" href="https://github.com/weihesdlegend/Vacation-Planner">About</a>
+    </nav>
+    <h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
+        Vacation Planner
+    </h1>
+</div>
+<div class="container">
+    <div>
+        <h3>
+            Sign up
+        </h3>
+        <br>
+    </div>
+    <div>
+        <form id="signupform" style="align-content: center">
+            <div class="form-row">
+                <div class="col-md-4 mb-3">
+                    <label for="username"> Username </label>
+                    <input id="username" name="username" type="text" placeholder="Johny" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="col-md-4 mb-3">
+                    <label for="password"> Password </label>
+                    <input id="password" name="password" type="password" placeholder="Password" class="form-control"
+                           required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="col-md-4 mb-3">
+                    <label for="email"> Email </label>
+                    <input id="email" name="email" type="email" placeholder="Johnny_jay@gmail.com" class="form-control"
+                           required>
+                </div>
+            </div>
+            <button class="btn btn-outline-info"> submit</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    window.addEventListener("load", function () {
+        function sendData() {
+            const XHR = new XMLHttpRequest();
+
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const email = document.getElementById("email").value;
+
+            XHR.onload = function () {
+                if (XHR.readyState === XHR.DONE) {
+                    if (XHR.status === 201) {
+                        window.location = "/v1/log-in";
+                    } else if (XHR.status === 400) {
+                        const errorMessage = jQuery.parseJSON(XHR.responseText).error;
+                        alert(errorMessage);
+                        if (errorMessage === "user already exists") {
+                            window.location = "/v1/log-in";
+                        }
+                    }
+                }
+            }
+
+            XHR.open("POST", "/v1/signup", true);
+
+            XHR.setRequestHeader("Content-Type", "application/json");
+
+            XHR.send(JSON.stringify({
+                username: username,
+                password: password,
+                email: email,
+            }));
+        }
+
+        const form = document.getElementById("signupform");
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            sendData();
+        });
+    });
+</script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</body>
+</html>

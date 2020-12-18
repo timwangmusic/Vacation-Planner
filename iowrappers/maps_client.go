@@ -9,6 +9,7 @@ import (
 	"googlemaps.github.io/maps"
 	"os"
 	"reflect"
+	"strings"
 )
 
 // abstraction of a client that performs location-based operations such as nearby search
@@ -26,7 +27,8 @@ type MapsClient struct {
 
 func (mapsClient *MapsClient) SetDetailedSearchFields(fields []string) {
 	mapsClient.DetailedSearchFields = fields
-	Logger.Debugf("Set DetailedSearchFields: %v", mapsClient.DetailedSearchFields)
+	Logger.Debugf("Set the following fields in detailed place search: %s",
+		strings.Join(mapsClient.DetailedSearchFields, ", "))
 }
 
 // factory method for MapsClient
