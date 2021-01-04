@@ -30,10 +30,15 @@
     Vacation Planner
 </h1>
 <div class="container">
-    <h5 style="color: #24c1e0">
-        Please enter the city, country and weekday you want to visit
-    </h5>
-    <div>
+    <div class="column">
+        <h5 style="color: #24c1e0">
+            Please enter the city, country and weekday you want to visit
+        </h5>
+    </div>
+    <div class="column">
+        <button class="btn btn-outline-info btn-sm" id="find-my-location"> Find my location</button>
+    </div>
+    <div class="column">
         <form action="/v1/plans" method="get">
             <div class="form-group">
                 <label for="city">City</label>
@@ -64,7 +69,7 @@
                 </select>
             </div>
             <div>
-                <button class="btn btn-outline-info" style="background: #e3f2fd"> search</button>
+                <button class="btn btn-outline-info"> search</button>
             </div>
         </form>
     </div>
@@ -76,6 +81,43 @@
         integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
         crossorigin="anonymous"></script>
 <script>
+    function locateMe() {
+        async function success(location) {
+            const latitude = location.coords.latitude;
+            const longitude = location.coords.longitude;
+            const date = new Date(location.timestamp);
+
+            console.log(latitude, longitude);
+
+            await fetch("/v1/reverse-geocoding" + "?lat=" + latitude.toString() + "&lng=" + longitude.toString())
+                .catch(error => console.log(error))
+                .then(response => {
+                    if (response.ok) {
+                        response.json().then
+                        (
+                            data => {
+                                document.getElementById("city").value = data.results.city;
+                                document.getElementById("country").value = data.results.country;
+                                // convert the Sunday-Saturday from JS to Monday-Sunday from backend
+                                document.querySelector('#weekday').value = (date.getDay() + 6) % 7;
+                            }
+                        );
+                    } else {
+                        console.log(response.statusText);
+                    }
+                });
+        }
+
+        function error() {
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(success, error);
+        }
+    }
+
+    document.querySelector('#find-my-location').addEventListener('click', locateMe);
+
     const cities = [
         "San Jose",
         "San Diego",

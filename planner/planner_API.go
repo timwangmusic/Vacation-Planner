@@ -148,7 +148,7 @@ func (planner *MyPlanner) ReverseGeocodingHandler(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{
-		"reverse geocoding results": result,
+		"results": result,
 	})
 }
 
