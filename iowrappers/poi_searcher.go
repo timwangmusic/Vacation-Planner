@@ -23,9 +23,10 @@ type PoiSearcher struct {
 	redisClient RedisClient
 }
 
+// can also be used as the result of reverse geocoding
 type GeocodeQuery struct {
-	City    string
-	Country string
+	City    string `json:"city"`
+	Country string `json:"country"`
 }
 
 var Logger *zap.SugaredLogger

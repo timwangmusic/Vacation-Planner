@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -12,7 +13,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"github.com/gin-contrib/requestid"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -136,6 +136,20 @@ func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
 func (planner *MyPlanner) Destroy() {
 	iowrappers.DestroyLogger()
 	planner.RedisClient.Destroy()
+}
+
+func (planner *MyPlanner) ReverseGeocodingHandler(context *gin.Context) {
+	latitude, _ := strconv.ParseFloat(context.Query("lat"), 64)
+	longitude, _ := strconv.ParseFloat(context.Query("lng"), 64)
+	result, err := planner.Solver.Matcher.PoiSearcher.GetMapsClient().ReverseGeocoding(context, latitude, longitude)
+	if err != nil {
+		log.Error(err)
+		context.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"reverse geocoding results": result,
+	})
 }
 
 func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context) {
@@ -393,7 +407,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 
 	myRouter := gin.Default()
 	myRouter.LoadHTMLGlob("templates/*")
-  // trace ID
+	// trace ID
 	myRouter.Use(requestid.New())
 
 	// cors settings
@@ -408,7 +422,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
-        v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
+		v1.GET("/reverse-geocoding", planner.ReverseGeocodingHandler)
+		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
 		v1.GET("/log-in", planner.login)
 		v1.GET("/sign-up", planner.signup)
 		migrations := v1.Group("/migrate")
