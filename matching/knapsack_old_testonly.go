@@ -29,8 +29,8 @@ func KnapsackMatrixCopy(dst [][]knapsackNode, src [][]knapsackNode) {
 	}
 }
 
-func KnapsackV1(places []Place, startTime QueryTimeInterval, budget uint) (results []Place) {
-	timeLimit := startTime.EndHour - startTime.StartHour
+func KnapsackV1(places []Place, interval QueryTimeInterval, budget uint) (results []Place) {
+	timeLimit := interval.EndHour - interval.StartHour
 	//INIT KNAPSACK MATRIX
 	current := make([][]knapsackNode, timeLimit+1)
 	for i := 0; i < int(timeLimit)+1; i++ {
@@ -58,7 +58,7 @@ func KnapsackV1(places []Place, startTime QueryTimeInterval, budget uint) (resul
 		KnapsackMatrixCopy(current, next)
 		staytime = POI.GetStayingTimeForLocationType(places[k].GetPlaceType())
 		//INITIALIZE 0,0
-		if uint8(staytime) <= timeLimit && int(math.Ceil(places[k].Price)) <= int(budget) && places[k].IsOpenBetween(startTime, uint8(staytime)){
+		if uint8(staytime) <= timeLimit && int(math.Ceil(places[k].Price)) <= int(budget) && places[k].IsOpenBetween(interval, uint8(staytime)) {
 			tempPlaces = append(current[0][0].solution, places[k])
 			tempScore = Score(tempPlaces)
 			if tempScore > next[staytime][int(math.Ceil(places[k].GetPrice()))].score {
@@ -74,8 +74,8 @@ func KnapsackV1(places []Place, startTime QueryTimeInterval, budget uint) (resul
 		for i := 0; i < int(timeLimit); i++ {
 			for j := 0; j < int(budget); j++ {
 				if current[i][j].score > SelectionThreshold {
-					currentQueryStart,_ := startTime.AddOffsetHours(uint8(i))
-					if i+int(staytime) <= int(timeLimit) && j+int(math.Ceil(places[k].Price)) <= int(budget) && places[k].IsOpenBetween(currentQueryStart, uint8(staytime)){
+					currentQueryStart, _ := interval.AddOffsetHours(uint8(i))
+					if i+int(staytime) <= int(timeLimit) && j+int(math.Ceil(places[k].Price)) <= int(budget) && places[k].IsOpenBetween(currentQueryStart, uint8(staytime)) {
 						tempi = i + int(staytime)
 						tempj = j + int(math.Ceil(places[k].GetPrice()))
 						tempPlaces = append(current[i][j].solution, places[k])
