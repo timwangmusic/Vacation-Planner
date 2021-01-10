@@ -26,7 +26,7 @@ type TimeSlot struct {
 	Slot POI.TimeInterval
 }
 
-type QueryTimeStart struct {
+type QueryTimeInterval struct {
 	 Day POI.Weekday
 	 StartHour uint8
 	 EndHour uint8
@@ -44,7 +44,7 @@ type TimePlacesCluster struct {
 	Slot   TimeSlot `json:"time slot"`
 }
 
-func (thisquerytime *QueryTimeStart) AddOffsetHours(offsethour uint8) (newquerytime QueryTimeStart, valid bool){
+func (thisquerytime *QueryTimeInterval) AddOffsetHours(offsethour uint8) (newquerytime QueryTimeInterval, valid bool){
 	//If a stay time after the start time exceeds the end of day, return false
 	if newquerytime.StartHour + offsethour > thisquerytime.EndHour {
 		valid = false
@@ -57,7 +57,7 @@ func (thisquerytime *QueryTimeStart) AddOffsetHours(offsethour uint8) (newqueryt
 	return
 }
 
-func (thisplace *Place) IsOpenBetween(startTime QueryTimeStart, stayhours uint8)(bool){
+func (thisplace *Place) IsOpenBetween(startTime QueryTimeInterval, stayhours uint8)(bool){
 	//TODO: Query whither this place is open at this period in the future after POI.PLACE contains open hour.
 	//Dummy implementation, only checks if the time period is valid
 	if startTime.StartHour + stayhours > startTime.EndHour {

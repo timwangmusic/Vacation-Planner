@@ -22,7 +22,7 @@ func TestKnapsack(t *testing.T) {
 		places[idx] = matching.CreatePlace(p, POI.PlaceCategoryVisit)
 	}
 	budget := uint(80)
-	querystart := matching.QueryTimeStart{StartHour:8, Day:POI.DateMonday, EndHour:16}
+	querystart := matching.QueryTimeInterval{StartHour:8, Day:POI.DateMonday, EndHour:16}
 	timeLimit := querystart.EndHour - querystart.StartHour
 	result := matching.KnapsackV1(places, querystart, budget)
 	if len(result) == 0 {

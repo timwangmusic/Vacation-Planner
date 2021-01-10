@@ -29,7 +29,7 @@ func KnapsackMatrixCopy(dst [][]knapsackNode, src [][]knapsackNode) {
 	}
 }
 
-func KnapsackV1(places []Place, startTime QueryTimeStart, budget uint) (results []Place) {
+func KnapsackV1(places []Place, startTime QueryTimeInterval, budget uint) (results []Place) {
 	timeLimit := startTime.EndHour - startTime.StartHour
 	//INIT KNAPSACK MATRIX
 	current := make([][]knapsackNode, timeLimit+1)
