@@ -35,9 +35,9 @@ func (recordTable *knapsackRecordTable) getKey(timeLimit uint8, budget uint) (ke
 	return
 }
 
-func (recordTable *knapsackRecordTable) getTimeLimitAndCost(key uint) (timeLimt uint8, budget uint) {
+func (recordTable *knapsackRecordTable) getTimeLimitAndCost(key uint) (timeLimit uint8, budget uint) {
 	budget = key % recordTable.budget
-	timeLimt = uint8((key - budget) / recordTable.budget)
+	timeLimit = uint8((key - budget) / recordTable.budget)
 	return
 }
 
@@ -55,31 +55,33 @@ func (recordTable *knapsackRecordTable) update() {
 }
 
 /*
-	Knapsack v2 uses sparse matrix like storage for step values and saves memory
-	Knapsack v1 is migrated to knapsack_old_testonly.go
+	KnapsackV1 v2 uses sparse matrix like storage for step values and saves memory
+	KnapsackV1 v1 is migrated to knapsack_old_test_only.go
 */
-func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place) {
+func Knapsack(places []Place, interval QueryTimeInterval, budget uint) (results []Place, totalCost uint, totalTimeSpent uint8) {
 	//Initialize knapsack data structures
-	var recordtable knapsackRecordTable
-	rt := &recordtable
+	var recordTable knapsackRecordTable
+	timeLimit := interval.EndHour - interval.StartHour
+	rt := &recordTable
 	rt.Init(timeLimit, budget)
 	optimalNode := knapsackNodeRecord{0, 0, SelectionThreshold, make([]Place, 0)}
 	//DP process
-	var staytime POI.StayingTime
-	for k := 0; k < len(places); k++ {
+	var stayTime POI.StayingTime
+	for _, place := range places {
 		rt.update()
-		staytime = POI.GetStayingTimeForLocationType(places[k].GetPlaceType())
+		stayTime = POI.GetStayingTimeForLocationType(place.GetPlaceType())
 		for key, record := range rt.SavedRecord {
-			currentTravelTime, cost := rt.getTimeLimitAndCost(key)
-			newTravelTime := currentTravelTime + uint8(staytime)
-			newCost := cost + uint(math.Ceil(places[k].GetPrice()))
-			if newTravelTime <= rt.timeLimit && newCost <= budget {
-				newKey := rt.getKey(newTravelTime, newCost)
+			currentTimeSpent, curCost := rt.getTimeLimitAndCost(key)
+			currentQueryStartTime, _ := interval.AddOffsetHours(currentTimeSpent)
+			newTimeSpent := currentTimeSpent + uint8(stayTime)
+			newCost := curCost + uint(math.Ceil(place.Price))
+			if newTimeSpent <= rt.timeLimit && newCost <= budget && place.IsOpenBetween(currentQueryStartTime, uint8(stayTime)) {
+				newKey := rt.getKey(newTimeSpent, newCost)
 				newSolution := make([]Place, len(record.Solution))
 				copy(newSolution, record.Solution)
-				newSolution = append(newSolution, places[k])
+				newSolution = append(newSolution, place)
 				newScore := Score(newSolution)
-				newRecord := knapsackNodeRecord{newTravelTime, newCost, newScore, newSolution}
+				newRecord := knapsackNodeRecord{newTimeSpent, newCost, newScore, newSolution}
 				if alreadyRecord, ok := rt.NewRecord[newKey]; ok {
 					if alreadyRecord.score < newRecord.score {
 						rt.NewRecord[newKey] = newRecord
@@ -89,10 +91,12 @@ func Knapsackv2(places []Place, timeLimit uint8, budget uint) (results []Place) 
 				}
 				if newScore > optimalNode.score {
 					optimalNode.score = newScore
+					optimalNode.cost = newCost
+					optimalNode.timeUsed = newTimeSpent
 					optimalNode.Solution = append([]Place(nil), newSolution...)
 				}
 			}
 		}
 	}
-	return optimalNode.Solution
+	return optimalNode.Solution, optimalNode.cost, optimalNode.timeUsed
 }

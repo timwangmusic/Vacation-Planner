@@ -1,7 +1,7 @@
 package knapsack
 
 import (
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -13,21 +13,28 @@ func TestKnapsack(t *testing.T) {
 	placesFromData := make([]POI.Place, 20, 20)
 	err := utils.ReadFromFile("data/random_gen_visiting_places_for_test.json", &placesFromData)
 	if err != nil || len(places) == 0 {
-		t.Error("Json file read error")
+		t.Fatal("Json file read error")
 	}
-
 	for idx, p := range placesFromData {
 		if idx >= len(places) {
 			break
 		}
 		places[idx] = matching.CreatePlace(p, POI.PlaceCategoryVisit)
 	}
-
-	result := matching.Knapsack(places, 35, 1500)
+	budget := uint(80)
+	querystart := matching.QueryTimeInterval{StartHour:8, Day:POI.DateMonday, EndHour:16}
+	timeLimit := querystart.EndHour - querystart.StartHour
+	result := matching.KnapsackV1(places, querystart, budget)
 	if len(result) == 0 {
 		t.Error("No result is returned.")
 	}
-	result2 := matching.Knapsackv2(places, 35, 1500)
+	result2, totalCost, totalTimeSpent := matching.Knapsack(places, querystart, budget)
+	t.Logf("total cost of the trip is %d", totalCost)
+	t.Logf("total time of the trip is %d", totalTimeSpent)
+
+	assert.LessOrEqual(t, totalTimeSpent, timeLimit, "")
+	assert.LessOrEqual(t, totalCost, budget, "")
+
 	if len(result) == 0 {
 		t.Error("No result is returned by v2")
 	}
