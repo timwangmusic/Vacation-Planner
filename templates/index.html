@@ -29,14 +29,15 @@
 <h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
     Vacation Planner
 </h1>
-<div class="container">
+<div class="container" style="align-items: center">
+    <div class="column">
+        <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill </button>
+    </div>
+    <br>
     <div class="column">
         <h5 style="color: #24c1e0">
             Please enter the city, country and weekday you want to visit
         </h5>
-    </div>
-    <div class="column">
-        <button class="btn btn-outline-info btn-sm" id="find-my-location"> Find my location</button>
     </div>
     <div class="column">
         <form action="/v1/plans" method="get">
@@ -116,7 +117,7 @@
         }
     }
 
-    document.querySelector('#find-my-location').addEventListener('click', locateMe);
+    document.querySelector('#autofill').addEventListener('click', locateMe);
 
     const cities = [
         "San Jose",
