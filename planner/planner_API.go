@@ -406,7 +406,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.DefaultWriter = ioutil.Discard
 
 	myRouter := gin.Default()
-	myRouter.LoadHTMLGlob("templates/*")
+	myRouter.LoadHTMLGlob("templates/**/*")
 	// trace ID
 	myRouter.Use(requestid.New())
 
