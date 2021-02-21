@@ -62,3 +62,23 @@ func CreateLogger() error {
 
 	return nil
 }
+
+func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude, longitude float64) (GeocodeQuery, error) {
+	request := &maps.GeocodingRequest{
+		LatLng: &maps.LatLng{
+			Lat: latitude,
+			Lng: longitude,
+		},
+		// currently we only need country and city info
+		ResultType: []string{"country", "locality"},
+	}
+	Logger.Debugf("reverse geocoding for latitude/longitude: %.2f/%.2f", latitude, longitude)
+	geocodingResults, err := mapsClient.client.ReverseGeocode(context, request)
+	if err != nil {
+		return GeocodeQuery{}, err
+	}
+	if geocodingResults == nil || len(geocodingResults) == 0 {
+		return GeocodeQuery{}, errors.New("no geocoding results found")
+	}
+	return geocodingResultsToGeocodeQuery(geocodingResults), nil
+}

@@ -51,16 +51,12 @@ The time slot schedule follows a template defined in the code base. Having a tem
 ## Installation (Mac)
 * git clone the repository
 * update Homebrew with `brew update`
-* Install MongoDB using Homebrew
-    + Follow the installation instructions in https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/
-    + Give permission to write the database directory and enter your password if prompted
-* Install Redis using Homebrew with `brew install redis`. If redis is already installed, consider execute `brew upgrade redis`
+* Install Redis using Homebrew with `brew install redis`. If redis is already installed, execute `brew upgrade redis`
 
-## Run REST server locally for development
-* Obtain Google Maps API key and set the `MAPS_CLIENT_API_KEY`, `MONGODB_URI=:27017`,
+## Local Service Development
+* Obtain Google Maps API key and set the `MAPS_CLIENT_API_KEY=YOUR_GCP_API_KEY`,
 `REDISCLOUD_URL=redis://localhost:6379` environment variables
 * Start (in background) Redis service with `brew services start redis`
-* Start (in background) MongoDB service with `mongod --fork --syslog`
 * Execute `go run main/main.go` to start the server
 
 
@@ -77,18 +73,9 @@ Particularly we have configured the code base and been deploying the service to 
 
 ## System Integration and External Services
 * Redis
-* MongoDB
 * Google Maps API
 
 
-## Programming Languages and Frameworks
+## Techstack
 * Backend: Golang
-
-## To Run the React App
-- Have `npm` and `node` installed
-- npx create-react-app my-app `In this case it is planner-app`
-- cd my-app
-- npm start
-- With Linux OS (Ubuntu 18.04), if you encounter issues, do `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
-- For build and deploy (on a webpage of choice) please read - https://create-react-app.dev/docs/deployment/
-- After changing the `app.js`, the cache will not update but just build, please do `sudo npm run start` to refresh the cache and React to load the new `app.js`
+* Frontend: Javascript
