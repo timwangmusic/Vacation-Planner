@@ -4,11 +4,14 @@ import (
 	"container/heap"
 	"context"
 	"errors"
+	"log"
+	"strconv"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"strconv"
+	"go.uber.org/zap"
 )
 
 const (
@@ -16,6 +19,17 @@ const (
 	ReqTimeSlotsTagMismatchErrMsg         = "user designated stay times list length does not match tag length"
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
 )
+
+// Logger for solution package
+var Logger *zap.SugaredLogger
+
+func init() {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		log.Fatal("solution package logger initialization failed")
+	}
+	Logger = logger.Sugar()
+}
 
 // Find top solution candidates
 func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandidate {
@@ -70,8 +84,8 @@ func generateCategorizedPlaces(context context.Context, timeMatcher *matching.Ti
 	return categorizedPlaces, GetTimeSlotLengthInMin(timePlaceClusters)
 }
 
-// Generate slot solution candidates
-// Parameter list matches slot request
+// GenerateSlotSolution generates slot solution candidates
+// The parameter list matches slot request
 func GenerateSlotSolution(context context.Context, timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
 	if len(stayTimes) != len(evTag) {
 		err = errors.New(ReqTimeSlotsTagMismatchErrMsg)

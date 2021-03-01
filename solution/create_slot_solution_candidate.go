@@ -1,12 +1,10 @@
 package solution
 
 import (
-	"errors"
 	"fmt"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"strings"
-	"time"
 )
 
 const (
@@ -18,14 +16,8 @@ const (
 	LimitPerSlot = 4
 )
 
-type TripEvents struct {
-	tag        uint8
-	starttime  time.Time
-	endtime    time.Time
-	startplace matching.Place
-	endplace   matching.Place
-	//For T events, start place and end place are different
-	//For E events, start place and end place are same
+type Properties struct {
+	tag uint8
 }
 
 type SlotSolution struct {
@@ -34,22 +26,21 @@ type SlotSolution struct {
 }
 
 type SlotSolutionCandidate struct {
-	PlaceNames      []string       `json:"place_names"`
-	PlaceIDS        []string       `json:"place_ids"`
-	PlaceLocations  [][2]float64   `json:"place_locations"`
-	PlaceAddresses  []string       `json:"place_addresses"`
-	PlaceURLs       []string       `json:"place_urls"`
-	Candidate       []TripEvents   `json:"candidate"`
-	EndPlaceDefault matching.Place `json:"end_place_default"`
-	Score           float64        `json:"score"`
-	IsSet           bool           `json:"is_set"`
+	PlaceNames     []string     `json:"place_names"`
+	PlaceIDS       []string     `json:"place_ids"`
+	PlaceLocations [][2]float64 `json:"place_locations"`
+	PlaceAddresses []string     `json:"place_addresses"`
+	PlaceURLs      []string     `json:"place_urls"`
+	Properties     []Properties `json:"properties"`
+	Score          float64      `json:"score"`
+	IsSet          bool         `json:"is_set"`
 }
 
 func (slotSolution *SlotSolution) SetTag(tag string) (err error) {
 	if isSlotTagValid(tag) {
 		slotSolution.SlotTag = tag
 	} else {
-		err = errors.New(fmt.Sprintf("Slot tag %s is invalid.", tag))
+		err = fmt.Errorf("slot tag %s is invalid", tag)
 	}
 	return
 }
@@ -87,21 +78,21 @@ func (slotSolution *SlotSolution) IsCandidateTagValid(slotCandidate SlotSolution
 	if len(slotSolution.SlotTag) == 0 || len(slotSolution.SlotSolutionCandidates) == 0 {
 		return false
 	}
-	solutag := ""
+	slotTag := ""
 	var count = 0
-	for _, cand := range slotCandidate.Candidate {
-		if cand.tag == EventEatery {
-			solutag += "E"
+	for _, c := range slotCandidate.Properties {
+		if c.tag == EventEatery {
+			slotTag += "E"
 			count++
-		} else if cand.tag == EventVisit {
-			solutag += "V"
+		} else if c.tag == EventVisit {
+			slotTag += "V"
 			count++
 		}
 	}
 	if count != len(slotSolution.SlotTag) {
 		return false
 	}
-	if strings.EqualFold(solutag, slotSolution.SlotTag) {
+	if strings.EqualFold(slotTag, slotSolution.SlotTag) {
 		return false
 	}
 	return true

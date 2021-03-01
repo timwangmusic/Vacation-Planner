@@ -30,6 +30,7 @@ type Configurations struct {
 		GoogleMaps struct {
 			DetailedSearchFields []string `yaml:"detailed_search_fields"`
 		} `yaml:"google_maps"`
+		SolverConfig map[string]int `yaml:"solver_config"`
 	} `yaml:"server"`
 }
 
@@ -37,6 +38,9 @@ type Configurations struct {
 func flattenConfig(configs *Configurations) map[string]interface{} {
 	flattenedConfigs := make(map[string]interface{})
 	flattenedConfigs["server:google_maps:detailed_search_fields"] = configs.Server.GoogleMaps.DetailedSearchFields
+	flattenedConfigs["server:planner:solver:max_same_place_repeat"] = configs.Server.SolverConfig["max_same_place_repeat"]
+	log.Debugf("Config read: max_same_place_repeat = %d", flattenedConfigs["server:planner:solver:max_same_place_repeat"])
+	log.Debugf("Config read: detailed search fields = %v", flattenedConfigs["server:google_maps:detailed_search_fields"])
 	return flattenedConfigs
 }
 

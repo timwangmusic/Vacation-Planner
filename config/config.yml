@@ -6,3 +6,6 @@ server:
       - formatted_address
       - adr_address
       - url
+  solver_config:
+    max_same_place_repeat:
+      5

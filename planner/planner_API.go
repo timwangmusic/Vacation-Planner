@@ -107,7 +107,7 @@ func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
 	category := strings.ToLower(context.DefaultQuery("category", "visit"))
 
 	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
-	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
+	if weekdayParsingErr != nil || weekdayUint > 6 {
 		context.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
 		return
 	}
@@ -316,6 +316,9 @@ func (planner *MyPlanner) postPlanningApi(context *gin.Context) {
 		return
 	}
 
+	if v, exist := planner.Configs["server:planner:solver:max_same_place_repeat"].(int); exist {
+		planningReq.MaxSamePlaceRepeat = v
+	}
 	planningResp := planner.Planning(context, &planningReq, username)
 	if planningResp.Err != nil && planningResp.StatusCode == http.StatusNotFound {
 		context.JSON(http.StatusNotFound, gin.H{"error": "No solution is found"})
@@ -353,7 +356,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	iowrappers.Logger.Debugf("[%s] number of requested planning results is %s", requestId, numResults)
 
 	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
-	if weekdayParsingErr != nil || weekdayUint < 0 || weekdayUint > 6 {
+	if weekdayParsingErr != nil || weekdayUint > 6 {
 		ctx.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
 		return
 	}
@@ -368,6 +371,9 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	planningReq := solution.GetStandardRequest(POI.Weekday(weekdayUint), numResultsInt)
 	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
 	planningReq.SearchRadius = uint(searchRadius_)
+	if v, exist := planner.Configs["server:planner:solver:max_same_place_repeat"].(int); exist {
+		planningReq.MaxSamePlaceRepeat = v
+	}
 
 	for slotReqIdx := range planningReq.SlotRequests {
 		planningReq.SlotRequests[slotReqIdx].Location = cityCountry // set to the same location from URL

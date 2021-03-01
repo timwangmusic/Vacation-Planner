@@ -7,10 +7,10 @@ import (
 
 func TestInsertInterval(t *testing.T) {
 	gt := POI.GoogleMapsTimeIntervals{}
-	gt.InsertTimeInterval(POI.TimeInterval{10, 20})
-	gt.InsertTimeInterval(POI.TimeInterval{20, 23})
-	gt.InsertTimeInterval(POI.TimeInterval{0, 7})
-	gt.InsertTimeInterval(POI.TimeInterval{7, 10})
+	gt.InsertTimeInterval(POI.TimeInterval{Start: 10, End: 20})
+	gt.InsertTimeInterval(POI.TimeInterval{Start: 20, End: 23})
+	gt.InsertTimeInterval(POI.TimeInterval{Start: 0, End: 7})
+	gt.InsertTimeInterval(POI.TimeInterval{Start: 7, End: 10})
 	expected := [][2]uint{{0, 7}, {7, 10}, {10, 20}, {20, 23}}
 	if len(expected) != gt.NumIntervals() {
 		t.Errorf("Incorrect number of intervals. Expected: %d, got: %d", len(expected), gt.NumIntervals())

@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	NumSolutions             = 5
+	NumSolutions             = 5  // number of multi-slot solutions rendered to user
 	TravelSpeed              = 50 // km/h
 	TimeLimitBetweenClusters = 60 // minutes
 )
 
-// Solvers are used by planners to solve the planning problem
+// Solver is used by planners to solve the planning problem
 type Solver struct {
 	Matcher *matching.TimeMatcher
 }
@@ -119,14 +119,13 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 		if solution.Err == nil {
 			for _, candidate := range solution.SlotSolutionCandidate {
 				slotSolutionCandidate := SlotSolutionCandidate{
-					PlaceNames:      candidate.PlaceNames,
-					PlaceIDS:        candidate.PlaceIds,
-					PlaceLocations:  candidate.PlaceLocations,
-					PlaceAddresses:  candidate.PlaceAddresses,
-					PlaceURLs:       candidate.PlaceURLs,
-					EndPlaceDefault: matching.Place{},
-					Score:           candidate.Score,
-					IsSet:           true,
+					PlaceNames:     candidate.PlaceNames,
+					PlaceIDS:       candidate.PlaceIds,
+					PlaceLocations: candidate.PlaceLocations,
+					PlaceAddresses: candidate.PlaceAddresses,
+					PlaceURLs:      candidate.PlaceURLs,
+					Score:          candidate.Score,
+					IsSet:          true,
 				}
 				slotSolution.SlotSolutionCandidates = append(slotSolution.SlotSolutionCandidates, slotSolutionCandidate)
 			}
@@ -134,7 +133,8 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 			continue
 		}
 		location, evTag, stayTimes := slotRequest.Location, slotRequest.EvOption, slotRequest.StayTimes
-		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(context, solver.Matcher, location, evTag, stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
+		slotSolution, slotSolutionRedisKey, err := GenerateSlotSolution(context, solver.Matcher, location, evTag,
+			stayTimes, req.SearchRadius, req.Weekday, redisCli, redisRequests[idx])
 		// The candidates in each slot should satisfy the travel time constraints and inter-slot constraint
 		if err != nil {
 			if err.Error() == ReqTimeSlotsTagMismatchErrMsg {
@@ -150,11 +150,10 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 		slotSolutionRedisKeys[idx] = slotSolutionRedisKey
 	}
 
-	resp.Solutions = genBestMultiSlotSolutions(candidates, req.NumResults)
+	resp.Solutions = genBestMultiSlotSolutions(candidates, req.NumResults, req.MaxSamePlaceRepeat)
 	if len(resp.Solutions) == 0 {
 		invalidateSlotSolutionCache(context, &redisCli, slotSolutionRedisKeys)
 	}
-	return
 }
 
 func invalidateSlotSolutionCache(context context.Context, redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
@@ -185,7 +184,7 @@ func travelTime(fromLoc string, toLoc string, fromLocRadius uint, toLocRadius ui
 	return uint(distance / (TravelSpeed * 16.67)) // 16.67 is the ratio of m/minute and km/hour
 }
 
-func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate, numResults uint64) []MultiSlotSolution {
+func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate, numResults uint64, maxSamePlaceRepeat int) []MultiSlotSolution {
 	res := make([]MultiSlotSolution, 0)
 	slotSolutionResults := make([][]SlotSolutionCandidate, 0)
 	path := make([]SlotSolutionCandidate, 0)
@@ -203,7 +202,7 @@ func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate, numResults 
 		}
 		res = append(res, multiSlotSolution)
 	}
-	bestSolutions := FindBestSolutions(res, numResults)
+	bestSolutions := SortMultiSlotSolutions(res, numResults, maxSamePlaceRepeat)
 	for solutionIdx := range bestSolutions {
 		calTravelTime(&bestSolutions[solutionIdx])
 	}
@@ -225,7 +224,6 @@ func calTravelTime(solution *MultiSlotSolution) {
 		intervalTime := uint(distance / (TravelSpeed * 16.67))
 
 		solution.TravelTimes = append(solution.TravelTimes, intervalTime)
-		solution.TotalTime += intervalTime
 	}
 }
 
@@ -247,7 +245,6 @@ func dfs(candidates [][]SlotSolutionCandidate, depth int, path []SlotSolutionCan
 		path = path[:len(path)-1]
 		removePlaceIds(placeMap, candidates[depth][idx])
 	}
-	return
 }
 
 func removePlaceIds(placesMap map[string]bool, slotSolutionCandidate SlotSolutionCandidate) {
@@ -281,15 +278,15 @@ func totalScore(candidates []SlotSolutionCandidate) float64 {
 type MultiSlotSolution struct {
 	SlotSolutions []SlotSolutionCandidate
 	TravelTimes   []uint
-	TotalTime     uint
 	Score         float64
 }
 
 type PlanningRequest struct {
-	SlotRequests []SlotRequest
-	SearchRadius uint
-	Weekday      POI.Weekday
-	NumResults   uint64
+	SlotRequests       []SlotRequest
+	SearchRadius       uint
+	Weekday            POI.Weekday
+	NumResults         uint64
+	MaxSamePlaceRepeat int
 }
 
 type SlotRequest struct {
@@ -304,8 +301,8 @@ type PlanningResponse struct {
 	ErrorCode uint
 }
 
-// Find top multi-slot solutions
-func FindBestSolutions(candidates []MultiSlotSolution, numResults uint64) []MultiSlotSolution {
+// SortMultiSlotSolutions sorts multi-slot solutions by score from high to low
+func SortMultiSlotSolutions(candidates []MultiSlotSolution, numResults uint64, maxSamePlaceRepeat int) []MultiSlotSolution {
 	res := make([]MultiSlotSolution, 0)
 
 	if numResults == 0 {
@@ -316,33 +313,58 @@ func FindBestSolutions(candidates []MultiSlotSolution, numResults uint64) []Mult
 	vertexes := make([]graph.Vertex, len(candidates))
 	for idx, candidate := range candidates {
 		candidateKey := strconv.FormatInt(int64(idx), 10)
-		vertex := graph.Vertex{Name: candidateKey, Key: candidate.Score}
+		vertex := graph.Vertex{Name: candidateKey, Key: -candidate.Score}
 		vertexes[idx] = vertex
 		m[candidateKey] = candidate
 	}
 	// use limited-size minimum priority queue
 	priorityQueue := &graph.MinPriorityQueueVertex{}
 	for _, vertex := range vertexes {
-		if priorityQueue.Len() == int(numResults) {
-			top := (*priorityQueue)[0]
-			if vertex.Key > top.Key {
-				heap.Pop(priorityQueue)
-			} else {
-				continue
-			}
-		}
 		heap.Push(priorityQueue, vertex)
 	}
 
-	for priorityQueue.Len() > 0 {
+	// only stores place ID count for selected plans
+	samePlaceRepeatCounter := make(map[string]int)
+
+	Logger.Debugf("Total number of solutions found %d", priorityQueue.Len())
+	for priorityQueue.Len() > 0 && numResults > 0 {
 		top := heap.Pop(priorityQueue).(graph.Vertex)
-		res = append(res, m[top.Name])
+		if solutionDiversityFilter(m[top.Name], maxSamePlaceRepeat, samePlaceRepeatCounter) {
+			numResults--
+			res = append(res, m[top.Name])
+		}
 	}
 
+	Logger.Debugf("The number of results left in queue is %d", priorityQueue.Len())
+	Logger.Debugf("The same place repeat counter status after diversity filtering is: %v", samePlaceRepeatCounter)
 	return res
 }
 
-// Generate a standard request while we seek a better way to represent complex REST requests
+//solutionDiversityFilter returns true if the multiSlotSolution satisfies the diversity requirement
+func solutionDiversityFilter(candidate MultiSlotSolution, maxSamePlaceRepeat int, usageCounter map[string]int) bool {
+	tmpCounter := make(map[string]int)
+	for _, slotSolution := range candidate.SlotSolutions {
+		for _, placeID := range slotSolution.PlaceIDS {
+			if usageCounter[placeID] >= maxSamePlaceRepeat {
+				restoreSamePlaceRepeatCounter(tmpCounter, usageCounter)
+				return false
+			}
+			tmpCounter[placeID]++
+			usageCounter[placeID]++
+		}
+	}
+	return true
+}
+
+func restoreSamePlaceRepeatCounter(tmpCounter map[string]int, samePlaceRepeatCounter map[string]int) {
+	for placeID, count := range tmpCounter {
+		if _, exist := samePlaceRepeatCounter[placeID]; exist {
+			samePlaceRepeatCounter[placeID] -= count
+		}
+	}
+}
+
+// GetStandardRequest generates a standard request while we seek a better way to represent complex request structure
 func GetStandardRequest(weekday POI.Weekday, numResults uint64) (req PlanningRequest) {
 	slot12 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 9, End: 10}}
 	slot13 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
