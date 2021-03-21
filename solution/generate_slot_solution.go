@@ -152,7 +152,7 @@ func NearbySearchWithPlaceView(context context.Context, timeMatcher *matching.Ti
 
 	var placesView = make([]PlaceView, len(places))
 	for idx, place := range places {
-		placesView[idx] = PlaceToPlaceView(place)
+		placesView[idx] = ToPlaceView(place)
 	}
 	return placesView, nil
 }
