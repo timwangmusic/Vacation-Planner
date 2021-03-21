@@ -2,8 +2,8 @@ package solution
 
 import "github.com/weihesdlegend/Vacation-planner/matching"
 
-// Transforms matching.Place to solution.PlaceView
-func PlaceToPlaceView(place matching.Place) PlaceView {
+// ToPlaceView transforms matching.Place to solution.PlaceView
+func ToPlaceView(place matching.Place) PlaceView {
 	placeView := PlaceView{
 		ID:           place.GetPlaceId(),
 		Name:         place.GetPlaceName(),

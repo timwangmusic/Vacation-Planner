@@ -1,6 +1,6 @@
 package solution
 
-// Fields in Place that front-end uses
+// PlaceView defines view of Place that front-end uses
 type PlaceView struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
