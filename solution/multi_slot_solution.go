@@ -4,19 +4,23 @@ import (
 	"container/heap"
 	"context"
 	"errors"
+	"strconv"
+	"strings"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"strconv"
-	"strings"
 )
 
-const (
-	NumSolutions             = 5  // number of multi-slot solutions rendered to user
-	TravelSpeed              = 50 // km/h
-	TimeLimitBetweenClusters = 60 // minutes
+const (  
+	// NumSolutions is the number of multi-slot solutions rendered to user
+	NumSolutions             = 5
+	 // TravelSpeed is in the unit of km/h
+	TravelSpeed              = 50
+	// TimeLimitBetweenClusters is in the unit of minutes
+	TimeLimitBetweenClusters = 60
 )
 
 // Solver is used by planners to solve the planning problem
@@ -248,20 +252,20 @@ func dfs(candidates [][]SlotSolutionCandidate, depth int, path []SlotSolutionCan
 }
 
 func removePlaceIds(placesMap map[string]bool, slotSolutionCandidate SlotSolutionCandidate) {
-	for _, placeId := range slotSolutionCandidate.PlaceIDS {
-		placesMap[placeId] = false
+	for _, placeID := range slotSolutionCandidate.PlaceIDS {
+		placesMap[placeID] = false
 	}
 }
 
 func checkDuplication(placesMap map[string]bool, slotSolutionCandidate SlotSolutionCandidate) bool {
-	for _, placeId := range slotSolutionCandidate.PlaceIDS {
-		if placesMap[placeId] {
+	for _, placeID := range slotSolutionCandidate.PlaceIDS {
+		if placesMap[placeID] {
 			return false
 		}
 	}
 
-	for _, placeId := range slotSolutionCandidate.PlaceIDS {
-		placesMap[placeId] = true
+	for _, placeID := range slotSolutionCandidate.PlaceIDS {
+		placesMap[placeID] = true
 	}
 
 	return true

@@ -52,23 +52,23 @@ func (slotSolution *SlotSolution) SetTag(tag string) (err error) {
 func isSlotTagValid(tag string) bool {
 	if tag == "" {
 		return false
-	} else {
-		var eateryCount uint8 = 0
-		var visitCount uint8 = 0
-		for _, c := range tag {
-			if c == 'e' || c == 'E' {
-				eateryCount++
-			} else if c == 'v' || c == 'V' {
-				visitCount++
-			} else {
-				return false
-			}
-			if eateryCount+visitCount > LimitPerSlot {
-				return false
-			}
-		}
-		return true
 	}
+
+	var eateryCount uint8 = 0
+	var visitCount uint8 = 0
+	for _, c := range tag {
+		if c == 'e' || c == 'E' {
+			eateryCount++
+		} else if c == 'v' || c == 'V' {
+			visitCount++
+		} else {
+			return false
+		}
+		if eateryCount+visitCount > LimitPerSlot {
+			return false
+		}
+	}
+	return true
 }
 
 /*

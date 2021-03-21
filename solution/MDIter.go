@@ -66,10 +66,9 @@ func (mdTagIter *MDtagIter) plusOne(l int) bool {
 	if mdTagIter.Status[l]+1 == mdTagIter.Size[l] {
 		mdTagIter.Status[l] = 0
 		return mdTagIter.plusOne(l - 1)
-	} else {
-		mdTagIter.Status[l] += 1
-		return true
 	}
+	mdTagIter.Status[l]++
+	return true
 }
 
 func (mdTagIter *MDtagIter) ClearStatus() {
