@@ -7,5 +7,5 @@ server:
       - adr_address
       - url
   solver_config:
-    max_same_place_repeat:
-      5
+    max_same_place_repeat: 4
+    min_place_diversity: 5

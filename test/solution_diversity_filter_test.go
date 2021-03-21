@@ -34,7 +34,7 @@ func TestSolutionDiversityFilter(t *testing.T) {
 	}
 
 	multiSlotSolutions := []solution.MultiSlotSolution{m1, m2, m3}
-	sortedMultiSlotSolutions := solution.SortMultiSlotSolutions(multiSlotSolutions, 2, 1)
+	sortedMultiSlotSolutions := solution.SortMultiSlotSolutions(multiSlotSolutions, 2, 1, 1)
 	if len(sortedMultiSlotSolutions) != 1 {
 		t.Errorf("expected number of multi-slot solutions to be 1, got %d", len(sortedMultiSlotSolutions))
 		return

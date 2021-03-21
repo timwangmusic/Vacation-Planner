@@ -290,7 +290,7 @@ func (planner *MyPlanner) indexPageHandler(c *gin.Context) {
 }
 
 // HTTP POST API end-point
-func (planner *MyPlanner) postPlanningApi(context *gin.Context) {
+func (planner *MyPlanner) postPlanningAPI(context *gin.Context) {
 	var username = "guest" // default username
 	if planner.Environment == "production" {
 		var authenticationErr error
@@ -319,6 +319,11 @@ func (planner *MyPlanner) postPlanningApi(context *gin.Context) {
 	if v, exist := planner.Configs["server:planner:solver:max_same_place_repeat"].(int); exist {
 		planningReq.MaxSamePlaceRepeat = v
 	}
+
+	if v, exist := planner.Configs["server:planner:solver:min_place_diversity"].(int); exist {
+		planningReq.MinPlaceDiversity = v
+	}
+
 	planningResp := planner.Planning(context, &planningReq, username)
 	if planningResp.Err != nil && planningResp.StatusCode == http.StatusNotFound {
 		context.JSON(http.StatusNotFound, gin.H{"error": "No solution is found"})
@@ -330,7 +335,7 @@ func (planner *MyPlanner) postPlanningApi(context *gin.Context) {
 
 // HTTP GET API end-point
 // Return top planning result to user
-func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
+func (planner *MyPlanner) getPlanningAPI(ctx *gin.Context) {
 	var username = "guest" // default username
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
@@ -369,10 +374,15 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	cityCountry := city + "," + country
 
 	planningReq := solution.GetStandardRequest(POI.Weekday(weekdayUint), numResultsInt)
-	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
-	planningReq.SearchRadius = uint(searchRadius_)
+	searchRadius, _ := strconv.ParseUint(radius, 10, 32)
+	planningReq.SearchRadius = uint(searchRadius)
 	if v, exist := planner.Configs["server:planner:solver:max_same_place_repeat"].(int); exist {
 		planningReq.MaxSamePlaceRepeat = v
+	}
+
+	if v, exist := planner.Configs["server:planner:solver:min_place_diversity"].(int); exist {
+		iowrappers.Logger.Debugf("Min diversity is %d", v)
+		planningReq.MinPlaceDiversity = v
 	}
 
 	for slotReqIdx := range planningReq.SlotRequests {
@@ -424,8 +434,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 
 	v1 := myRouter.Group("/v1")
 	{
-		v1.GET("/plans", planner.getPlanningApi)
-		v1.POST("/plans", planner.postPlanningApi)
+		v1.GET("/plans", planner.getPlanningAPI)
+		v1.POST("/plans", planner.postPlanningAPI)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
 		v1.GET("/reverse-geocoding", planner.ReverseGeocodingHandler)

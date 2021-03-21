@@ -13,7 +13,7 @@ func TestFindBestSolutions(t *testing.T) {
 
 	// test default
 	numResults := uint64(solution.NumSolutions)
-	bestSolutions := solution.SortMultiSlotSolutions(solutionCandidates, numResults, 1000)
+	bestSolutions := solution.SortMultiSlotSolutions(solutionCandidates, numResults, 1000, 1)
 
 	if len(bestSolutions) != solution.NumSolutions {
 		t.Errorf("Expected number of solutions %d, got %d", solution.NumSolutions, len(bestSolutions))
@@ -26,7 +26,7 @@ func TestFindBestSolutions(t *testing.T) {
 	}
 
 	numResults = uint64(10)
-	bestSolutions = solution.SortMultiSlotSolutions(solutionCandidates, numResults, 1000)
+	bestSolutions = solution.SortMultiSlotSolutions(solutionCandidates, numResults, 1000, 1)
 
 	if len(bestSolutions) != 10 {
 		t.Errorf("Expected number of solutions %d, got %d", 10, len(bestSolutions))
@@ -40,7 +40,7 @@ func TestFindBestSolutions(t *testing.T) {
 
 	// test extreme
 	numResults = uint64(10000)
-	bestSolutions = solution.SortMultiSlotSolutions(solutionCandidates, numResults, 1000)
+	bestSolutions = solution.SortMultiSlotSolutions(solutionCandidates, numResults, 1000, 1)
 
 	if len(bestSolutions) != 200 {
 		t.Errorf("Expected number of solutions %d, got %d", 200, len(bestSolutions))

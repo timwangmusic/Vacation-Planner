@@ -39,6 +39,7 @@ func flattenConfig(configs *Configurations) map[string]interface{} {
 	flattenedConfigs := make(map[string]interface{})
 	flattenedConfigs["server:google_maps:detailed_search_fields"] = configs.Server.GoogleMaps.DetailedSearchFields
 	flattenedConfigs["server:planner:solver:max_same_place_repeat"] = configs.Server.SolverConfig["max_same_place_repeat"]
+	flattenedConfigs["server:planner:solver:min_place_diversity"] = configs.Server.SolverConfig["min_place_diversity"]
 	log.Debugf("Config read: max_same_place_repeat = %d", flattenedConfigs["server:planner:solver:max_same_place_repeat"])
 	log.Debugf("Config read: detailed search fields = %v", flattenedConfigs["server:google_maps:detailed_search_fields"])
 	return flattenedConfigs

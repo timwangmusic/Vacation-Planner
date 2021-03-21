@@ -14,11 +14,11 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
-const (  
+const (
 	// NumSolutions is the number of multi-slot solutions rendered to user
-	NumSolutions             = 5
-	 // TravelSpeed is in the unit of km/h
-	TravelSpeed              = 50
+	NumSolutions = 5
+	// TravelSpeed is in the unit of km/h
+	TravelSpeed = 50
 	// TimeLimitBetweenClusters is in the unit of minutes
 	TimeLimitBetweenClusters = 60
 )
@@ -81,6 +81,7 @@ func GenerateSlotSolutionRedisRequest(location string, evTag string, stayTimes [
 	return req
 }
 
+// Solve is the main function for solving a solution.PlanningRequest
 func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisClient, req *PlanningRequest, resp *PlanningResponse) {
 	if !travelTimeValidation(*req) {
 		resp.Err = errors.New("travel time limit exceeded for current selection")
@@ -154,7 +155,7 @@ func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisCl
 		slotSolutionRedisKeys[idx] = slotSolutionRedisKey
 	}
 
-	resp.Solutions = genBestMultiSlotSolutions(candidates, req.NumResults, req.MaxSamePlaceRepeat)
+	resp.Solutions = genBestMultiSlotSolutions(candidates, req.NumResults, req.MaxSamePlaceRepeat, req.MinPlaceDiversity)
 	if len(resp.Solutions) == 0 {
 		invalidateSlotSolutionCache(context, &redisCli, slotSolutionRedisKeys)
 	}
@@ -188,7 +189,7 @@ func travelTime(fromLoc string, toLoc string, fromLocRadius uint, toLocRadius ui
 	return uint(distance / (TravelSpeed * 16.67)) // 16.67 is the ratio of m/minute and km/hour
 }
 
-func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate, numResults uint64, maxSamePlaceRepeat int) []MultiSlotSolution {
+func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate, numResults uint64, maxSamePlaceRepeat int, minPlaceDiversity int) []MultiSlotSolution {
 	res := make([]MultiSlotSolution, 0)
 	slotSolutionResults := make([][]SlotSolutionCandidate, 0)
 	path := make([]SlotSolutionCandidate, 0)
@@ -206,7 +207,7 @@ func genBestMultiSlotSolutions(candidates [][]SlotSolutionCandidate, numResults 
 		}
 		res = append(res, multiSlotSolution)
 	}
-	bestSolutions := SortMultiSlotSolutions(res, numResults, maxSamePlaceRepeat)
+	bestSolutions := SortMultiSlotSolutions(res, numResults, maxSamePlaceRepeat, minPlaceDiversity)
 	for solutionIdx := range bestSolutions {
 		calTravelTime(&bestSolutions[solutionIdx])
 	}
@@ -290,6 +291,7 @@ type PlanningRequest struct {
 	SearchRadius       uint
 	Weekday            POI.Weekday
 	NumResults         uint64
+	MinPlaceDiversity  int
 	MaxSamePlaceRepeat int
 }
 
@@ -306,7 +308,7 @@ type PlanningResponse struct {
 }
 
 // SortMultiSlotSolutions sorts multi-slot solutions by score from high to low
-func SortMultiSlotSolutions(candidates []MultiSlotSolution, numResults uint64, maxSamePlaceRepeat int) []MultiSlotSolution {
+func SortMultiSlotSolutions(candidates []MultiSlotSolution, numResults uint64, maxSamePlaceRepeat int, minPlaceDiversity int) []MultiSlotSolution {
 	res := make([]MultiSlotSolution, 0)
 
 	if numResults == 0 {
@@ -331,9 +333,11 @@ func SortMultiSlotSolutions(candidates []MultiSlotSolution, numResults uint64, m
 	samePlaceRepeatCounter := make(map[string]int)
 
 	Logger.Debugf("Total number of solutions found %d", priorityQueue.Len())
+	Logger.Debugf("Min diversity factor is %d", minPlaceDiversity);
+	Logger.Debugf("Max place repeat is %d", maxSamePlaceRepeat);
 	for priorityQueue.Len() > 0 && numResults > 0 {
 		top := heap.Pop(priorityQueue).(graph.Vertex)
-		if solutionDiversityFilter(m[top.Name], maxSamePlaceRepeat, samePlaceRepeatCounter) {
+		if solutionDiversityFilter(m[top.Name], maxSamePlaceRepeat, minPlaceDiversity, samePlaceRepeatCounter) {
 			numResults--
 			res = append(res, m[top.Name])
 		}
@@ -344,11 +348,19 @@ func SortMultiSlotSolutions(candidates []MultiSlotSolution, numResults uint64, m
 	return res
 }
 
-//solutionDiversityFilter returns true if the multiSlotSolution satisfies the diversity requirement
-func solutionDiversityFilter(candidate MultiSlotSolution, maxSamePlaceRepeat int, usageCounter map[string]int) bool {
+// solutionDiversityFilter returns true if the multiSlotSolution satisfies the diversity requirement
+// it first considers if the number of unique places satisfy the diversity factor, then it filters out places appearing too many times across plans
+func solutionDiversityFilter(candidate MultiSlotSolution, maxSamePlaceRepeat int, minPlaceDiversity int, usageCounter map[string]int) bool {
 	tmpCounter := make(map[string]int)
+
+	diversitySatisfied := len(usageCounter) >= minPlaceDiversity
+
 	for _, slotSolution := range candidate.SlotSolutions {
 		for _, placeID := range slotSolution.PlaceIDS {
+			if _, exist := usageCounter[placeID]; exist && !diversitySatisfied {
+				restoreSamePlaceRepeatCounter(tmpCounter, usageCounter)
+				return false
+			}
 			if usageCounter[placeID] >= maxSamePlaceRepeat {
 				restoreSamePlaceRepeatCounter(tmpCounter, usageCounter)
 				return false
