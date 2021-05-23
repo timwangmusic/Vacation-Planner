@@ -21,16 +21,6 @@
             grid-area: content;
         }
 
-        .item {
-            display: block;
-            background: lightcyan;
-            padding: 10px;
-            margin: 30px;
-            width: 1000px;
-            height: auto;
-            justify-content: center;
-        }
-
         h1 {
             text-align: center;
             color: #24c1e0;
@@ -68,48 +58,75 @@
     </div>
 
     {{if .Err}}
-        Error: {{.Err}}<br>
-        Error code: {{.StatusCode}}<br>
+    Error: {{.Err}}<br>
+    Error code: {{.StatusCode}}<br>
     {{else}}
-        {{/*    iterate over multi-slot solutions*/}}
-        <div class="content">
-            <div class="container">
-                {{range $i, $p := .Places}}
-                    {{/*        create one table for each multi-slot solution*/}}
-                    <div class="row">
-                        <div class="col">
-                            <div class="item">
-                                <h3> One-day Plan </h3>
-                                <table class="table table-bordered table-striped table-hover">
-                                    <thead>
-                                    <tr>
-                                        <th> Place Name</th>
-                                        <th> From (Hour)</th>
-                                        <th> To (Hour)</th>
-                                        <th> Address</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {{range $p}}
-                                        {{range .Places}}
-                                            <tr>
-                                                <td><a href={{.URL}}> {{.PlaceName}} </a></td>
-                                                <td> {{.StartTime}} </td>
-                                                <td> {{.EndTime}} </td>
-                                                <td> {{.Address}} </td>
-                                            </tr>
-                                        {{end}}
-                                    {{end}}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+    {{/* iterate over multi-slot solutions*/}}
+    <div class="content">
+        {{range $i, $p := .Places}}
+        {{/* create one table for each multi-slot solution */}}
+        <div class="card">
+            <div class="card-header">
+                <button class="btn btn-info" type="button" data-toggle="collapse"
+                        data-target="#plan-{{$i}}" aria-expanded="false" aria-controls="plan-{{$i}}">Show Plan
+                </button>
+            </div>
 
-                {{end}}
+            <div class="collapse" id="plan-{{$i}}">
+                <div class="card-body">
+                    <h3> One-day Plan </h3>
+                    <table class="table table-bordered table-striped table-hover" style="background: lightcyan;">
+                        <thead>
+                        <tr>
+                            <th> Place Name</th>
+                            <th> From (Hour)</th>
+                            <th> To (Hour)</th>
+                            <th> Address</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{range $p}}
+                        {{range .Places}}
+                        <tr>
+                            <td><a href={{.URL}}> {{.PlaceName}} </a></td>
+                            <td> {{.StartTime}}</td>
+                            <td> {{.EndTime}}</td>
+                            <td> {{.Address}}</td>
+                        </tr>
+                        {{end}}
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+        {{end}}
+    </div>
     {{end}}
 </div>
+<script>
+    const buttons = document.querySelectorAll(".btn");
+    for (const button of buttons) {
+        button.addEventListener(
+            'click',
+            () => {
+                if (button.textContent === 'Hide Plan') {
+                    button.textContent = 'Show Plan';
+                } else {
+                    button.textContent = 'Hide Plan';
+                }
+            }
+        )
+    }
+</script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
 </body>
 </html>
