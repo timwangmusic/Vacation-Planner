@@ -73,14 +73,14 @@ func (m *LocationMatcher) createClusterManager(mapsClient *iowrappers.MapsClient
 
 func (m *LocationMatcher) clustering(location string, searchRadius uint, numClusters uint) {
 	// get geolocation data for visit places
-	visitData := m.VisitClusterMgr.PlaceSearch(location, searchRadius, "")
+	visitData := m.VisitClusterMgr.PlaceSearch(location, searchRadius)
 	// clustering for visit places
 	visitClusterResult, visitClusterSizes := m.VisitClusterMgr.Clustering(&visitData, int(numClusters))
 	// calculate cluster centers
 	m.VisitClusterMgr.FindClusterCenter(&visitData, &visitClusterResult, &visitClusterSizes)
 
 	// get geolocation data for visit places
-	eateryData := m.EateryClusterMgr.PlaceSearch(location, searchRadius, "")
+	eateryData := m.EateryClusterMgr.PlaceSearch(location, searchRadius)
 	// clustering for eatery places
 	eateryClusterResult, eateryClusterSizes := m.EateryClusterMgr.Clustering(&eateryData, int(numClusters))
 	// calculate cluster centers

@@ -26,8 +26,6 @@ type PlaceSearchRequest struct {
 	PlaceCat POI.PlaceCategory
 	// search radius
 	Radius uint
-	// maximum number of results, set this upper limit for reducing upper-layer computational load and limiting external API call
-	MaxNumResults uint
 	// minimum number of results, set this lower limit for reducing risk of zero result in upper-layer computations
 	MinNumResults uint
 }

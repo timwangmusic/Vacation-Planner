@@ -43,17 +43,14 @@ func (placeManager *ClustersManager) Init(mapsClient *iowrappers.MapsClient, pla
 }
 
 // call Google API to obtain nearby Places and extract location data
-func (placeManager *ClustersManager) PlaceSearch(location string, searchRadius uint, searchType string) [][]float64 {
+func (placeManager *ClustersManager) PlaceSearch(location string, searchRadius uint) [][]float64 {
 	request := iowrappers.PlaceSearchRequest{
 		Location: location,
 		PlaceCat: placeManager.PlaceCat,
 		Radius:   searchRadius,
 	}
-	if searchType == "" {
-		request.MinNumResults = 20
-	} else {
-		request.MinNumResults = 100
-	}
+	request.MinNumResults = 20
+
 	placeManager.places, _ = placeManager.Client.NearbySearch(nil, &request)
 
 	locationData := make([][]float64, len(placeManager.places))

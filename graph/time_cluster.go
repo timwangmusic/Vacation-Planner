@@ -85,7 +85,6 @@ func (placeManager *TimeClustersManager) PlaceSearch(context context.Context, lo
 		Radius:        searchRadius,
 		MinNumResults: TimeClusterMinResults,
 	}
-	request.MaxNumResults = 2 * request.MinNumResults
 	var err error
 	placeManager.places, err = placeManager.poiSearcher.NearbySearch(context, &request)
 	if err != nil {

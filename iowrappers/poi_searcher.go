@@ -100,15 +100,12 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	currentTime := time.Now()
 	if uint(len(cachedPlaces)) >= request.MinNumResults || currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration {
 		Logger.Infof("[%s] Using Redis to fulfill request. Place Type: %s", context.Value(RequestIdKey), request.PlaceCat)
-		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
-		places = append(places, cachedPlaces[:maxResultNum]...)
+		places = append(places, cachedPlaces...)
 		return places, nil
 	}
 
 	cacheErr = poiSearcher.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339))
 	utils.LogErrorWithLevel(cacheErr, utils.LogError)
-
-	maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
 
 	originalSearchRadius := request.Radius
 
@@ -120,14 +117,12 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 
 	request.Radius = originalSearchRadius // restore search radius
 
-	maxResultNum = utils.MinInt(len(newPlaces), int(request.MaxNumResults))
-
 	// update Redis with all the new places obtained
 	poiSearcher.UpdateRedis(context, newPlaces)
 
 	// safe-guard on accessing elements in a nil slice
 	if len(newPlaces) > 0 {
-		places = append(places, newPlaces[:maxResultNum]...)
+		places = append(places, newPlaces...)
 	}
 
 	if uint(len(places)) < request.MinNumResults {
