@@ -83,7 +83,6 @@ func (placeManager *TimeClustersManager) PlaceSearch(context context.Context, lo
 		Location:      location,
 		PlaceCat:      placeManager.PlaceCat,
 		Radius:        searchRadius,
-		RankBy:        "prominence",
 		MinNumResults: TimeClusterMinResults,
 	}
 	request.MaxNumResults = 2 * request.MinNumResults

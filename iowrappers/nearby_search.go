@@ -26,8 +26,6 @@ type PlaceSearchRequest struct {
 	PlaceCat POI.PlaceCategory
 	// search radius
 	Radius uint
-	// rank by
-	RankBy string
 	// maximum number of results, set this upper limit for reducing upper-layer computational load and limiting external API call
 	MaxNumResults uint
 	// minimum number of results, set this lower limit for reducing risk of zero result in upper-layer computations
@@ -35,7 +33,7 @@ type PlaceSearchRequest struct {
 }
 
 func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType string, radius uint,
-	pageToken string, rankBy string) (resp maps.PlacesSearchResponse, err error) {
+	pageToken string) (resp maps.PlacesSearchResponse, err error) {
 	latLng, err := maps.ParseLatLng(location)
 	// since we try to use Redis and database before calling nearby search,
 	// if location cannot be parsed, then the request cannot be fulfilled.
@@ -48,7 +46,7 @@ func GoogleMapsNearbySearchWrapper(c MapsClient, location string, placeType stri
 		Location:  &latLng,
 		Radius:    radius,
 		PageToken: pageToken,
-		RankBy:    maps.RankBy(rankBy),
+		RankBy:    maps.RankBy("prominence"),
 	}
 	resp, err = c.client.NearbySearch(context.Background(), &mapsReq)
 	logErr(err, utils.LogError)
@@ -79,10 +77,6 @@ func (mapsClient *MapsClient) PlaceDetailsSearch(context.Context, string) (place
 // ExtensiveNearbySearch attempts to find a specified number of places satisfy the request
 // within the maxRequestTime times of calling external APIs
 func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, maxRequestTimes uint, request *PlaceSearchRequest, places *[]POI.Place, done chan bool) {
-	if request.RankBy == "" {
-		request.RankBy = "prominence" // default rankBy value
-	}
-
 	placeTypes := POI.GetPlaceTypes(request.PlaceCat) // get place types in a category
 
 	nextPageTokenMap := make(map[POI.LocationType]string) // map for place type to search token
@@ -112,7 +106,7 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, max
 			}
 
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp, error_ := GoogleMapsNearbySearchWrapper(*mapsClient, request.Location, string(placeType), request.Radius, nextPageToken, request.RankBy)
+			searchResp, error_ := GoogleMapsNearbySearchWrapper(*mapsClient, request.Location, string(placeType), request.Radius, nextPageToken)
 			if error_ != nil {
 				err = error_
 				Logger.Error(err)

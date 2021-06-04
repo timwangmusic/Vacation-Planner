@@ -48,7 +48,6 @@ func (placeManager *ClustersManager) PlaceSearch(location string, searchRadius u
 		Location: location,
 		PlaceCat: placeManager.PlaceCat,
 		Radius:   searchRadius,
-		RankBy:   "prominence",
 	}
 	if searchType == "" {
 		request.MinNumResults = 20
