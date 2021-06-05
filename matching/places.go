@@ -58,6 +58,13 @@ func (place Place) SetURL(url string) {
 	place.Place.SetURL(url)
 }
 
+func (place Place) IsOpenBetween(interval QueryTimeInterval, stayingDurationInHour uint8) bool {
+	//TODO: Query whither this place is open at this period in the future after POI.PLACE contains open hour.
+	//Dummy implementation, only checks if the time period is valid
+
+	return interval.StartHour+stayingDurationInHour <= interval.EndHour
+}
+
 func CreatePlace(place POI.Place, category POI.PlaceCategory) Place {
 	Place_ := Place{}
 	Place_.Place = &place

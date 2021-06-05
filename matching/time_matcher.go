@@ -1,5 +1,4 @@
-//Time-based matching
-//Matches request from planner for a particular day
+// Package matching matches request from planner for a particular day
 package matching
 
 import (
@@ -55,15 +54,6 @@ func (interval *QueryTimeInterval) AddOffsetHours(offsethour uint8) (intervalOut
 	intervalOut.EndHour = interval.EndHour
 	valid = true
 	return
-}
-
-func (thisplace *Place) IsOpenBetween(interval QueryTimeInterval, stayhours uint8) bool {
-	//TODO: Query whither this place is open at this period in the future after POI.PLACE contains open hour.
-	//Dummy implementation, only checks if the time period is valid
-	if interval.StartHour+stayhours > interval.EndHour {
-		return false
-	}
-	return true
 }
 
 func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
@@ -123,12 +113,9 @@ func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMa
 			(*clusterMap[clusterKey]).Places = append((*clusterMap[clusterKey]).Places, CreatePlace(place, placeCat))
 		}
 	}
-
 }
-
 func (matcher *TimeMatcher) placeSearch(context context.Context, req *TimeMatchingRequest, placeCat POI.PlaceCategory) {
 	var mgr *graph.TimeClustersManager
-
 	switch placeCat {
 	case POI.PlaceCategoryVisit:
 		mgr = matcher.TouringMgr
@@ -147,6 +134,4 @@ func (matcher *TimeMatcher) placeSearch(context context.Context, req *TimeMatchi
 	mgr.Init(matcher.PoiSearcher, placeCat, intervals, req.Weekday)
 	mgr.PlaceSearch(context, req.Location, req.Radius)
 	mgr.Clustering(req.Weekday)
-
-	return
 }
