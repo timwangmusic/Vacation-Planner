@@ -103,10 +103,9 @@ func (redisClient *RedisClient) GetMapsLastSearchTime(context context.Context, l
 		return
 	}
 
-	ParsedLastSearchTime, parseErr := time.Parse(time.RFC3339, lst)
-	if parseErr != nil {
-		err = parseErr
-		return
+	ParsedLastSearchTime, timeParsingErr := time.Parse(time.RFC3339, lst)
+	if timeParsingErr != nil {
+		utils.LogErrorWithLevel(timeParsingErr, utils.LogError)
 	}
 	lastSearchTime = ParsedLastSearchTime
 	return

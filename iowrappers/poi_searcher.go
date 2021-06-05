@@ -3,17 +3,18 @@ package iowrappers
 import (
 	"context"
 	"fmt"
-	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/utils"
-	"go.uber.org/zap"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
+	"go.uber.org/zap"
 )
 
 const (
-	MaxSearchRadius              = 16000          // 10 miles
-	MinMapsResultRefreshDuration = time.Hour * 24 // 1 day
+	MaxSearchRadius              = 16000               // 10 miles
+	MinMapsResultRefreshDuration = time.Hour * 24 * 14 // 14 days
 	GoogleSearchHomePageURL      = "https://www.google.com/"
 	RequestIdKey                 = "request_id"
 )
@@ -73,18 +74,18 @@ func (poiSearcher PoiSearcher) GetGeocode(context context.Context, query *Geocod
 
 func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
 	location := request.Location
-	cityCountry := strings.Split(location, ",")
+	cityAndCountry := strings.Split(location, ",")
 
 	places := make([]POI.Place, 0)
 	lat, lng, err := poiSearcher.GetGeocode(context, &GeocodeQuery{
-		City:    cityCountry[0],
-		Country: cityCountry[1],
+		City:    cityAndCountry[0],
+		Country: cityAndCountry[1],
 	})
 	if logErr(err, utils.LogError) {
 		return places, err
 	}
 
-	// request.Location is overwritten to lat,lng
+	// request.Location is overwritten to lat,lng after the city,country conversion
 	request.Location = fmt.Sprintf("%f,%f", lat, lng)
 
 	var cachedPlaces []POI.Place
@@ -95,20 +96,19 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 
 	Logger.Debugf("[%s] number of results from redis is %d", context.Value(RequestIdKey), len(cachedPlaces))
 
-	lastSearchTime, cacheErr := poiSearcher.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
+	// update last search time for the city
+	lastSearchTime, cacheMiss := poiSearcher.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
 
 	currentTime := time.Now()
-	if uint(len(cachedPlaces)) >= request.MinNumResults || currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration {
+	// use place data from database if the location is known and the data is fresh and we have sufficient data
+	if cacheMiss == nil && (currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && uint(len(cachedPlaces)) >= request.MinNumResults) {
 		Logger.Infof("[%s] Using Redis to fulfill request. Place Type: %s", context.Value(RequestIdKey), request.PlaceCat)
-		maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
-		places = append(places, cachedPlaces[:maxResultNum]...)
+		places = append(places, cachedPlaces...)
 		return places, nil
 	}
 
-	cacheErr = poiSearcher.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339))
-	utils.LogErrorWithLevel(cacheErr, utils.LogError)
-
-	maxResultNum := utils.MinInt(len(cachedPlaces), int(request.MaxNumResults))
+	cacheMiss = poiSearcher.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339))
+	utils.LogErrorWithLevel(cacheMiss, utils.LogError)
 
 	originalSearchRadius := request.Radius
 
@@ -120,14 +120,12 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 
 	request.Radius = originalSearchRadius // restore search radius
 
-	maxResultNum = utils.MinInt(len(newPlaces), int(request.MaxNumResults))
-
 	// update Redis with all the new places obtained
 	poiSearcher.UpdateRedis(context, newPlaces)
 
 	// safe-guard on accessing elements in a nil slice
 	if len(newPlaces) > 0 {
-		places = append(places, newPlaces[:maxResultNum]...)
+		places = append(places, newPlaces...)
 	}
 
 	if uint(len(places)) < request.MinNumResults {
