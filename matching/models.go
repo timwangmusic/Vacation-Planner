@@ -1,4 +1,4 @@
-package solution
+package matching
 
 // PlaceView defines view of Place that front-end uses
 type PlaceView struct {

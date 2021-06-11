@@ -118,7 +118,7 @@ func GenerateSolutions(context context.Context, timeMatcher *matching.TimeMatche
 
 // NearbySearchWithPlaceView returns PlaceView results for single day nearby search with a fixed time slot range
 func NearbySearchWithPlaceView(context context.Context, timeMatcher *matching.TimeMatcher, location string,
-	weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]PlaceView, error) {
+	weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {
 	timeSlots := []matching.TimeSlot{timeSlot}
 	categorizedPlaces, _ := generateCategorizedPlaces(context, timeMatcher, location, radius, weekday, timeSlots)
 	if len(categorizedPlaces) != 1 {
@@ -133,9 +133,9 @@ func NearbySearchWithPlaceView(context context.Context, timeMatcher *matching.Ti
 		places = categorizedPlaces[0].VisitPlaces
 	}
 
-	var placesView = make([]PlaceView, len(places))
+	var placesView = make([]matching.PlaceView, len(places))
 	for idx, place := range places {
-		placesView[idx] = ToPlaceView(place)
+		placesView[idx] = matching.ToPlaceView(place)
 	}
 	return placesView, nil
 }
