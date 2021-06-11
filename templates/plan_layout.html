@@ -85,7 +85,6 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {{range $p}}
                         {{range .Places}}
                         <tr>
                             <td><a href={{.URL}}> {{.PlaceName}} </a></td>
@@ -93,7 +92,6 @@
                             <td> {{.EndTime}}</td>
                             <td> {{.Address}}</td>
                         </tr>
-                        {{end}}
                         {{end}}
                         </tbody>
                     </table>

@@ -12,14 +12,15 @@ import (
 )
 
 const (
-	CandidateQueueLength                  = 15
-	ReqTimeSlotsTagMismatchErrMsg         = "user designated stay times list length does not match tag length"
+	TopSolutionsCountDefault              = 5
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
 )
 
-// Find top solution candidates
-func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandidate {
-	m := make(map[string]SlotSolutionCandidate) // map for result extraction
+func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount int64) []PlanningSolution {
+	if topSolutionsCount <= 0 {
+		topSolutionsCount = TopSolutionsCountDefault
+	}
+	m := make(map[string]PlanningSolution) // map for result extraction
 	vertexes := make([]graph.Vertex, len(candidates))
 	for idx, candidate := range candidates {
 		candidateKey := strconv.FormatInt(int64(idx), 10)
@@ -30,7 +31,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 	// use limited-size minimum priority queue
 	priorityQueue := &graph.MinPriorityQueueVertex{}
 	for _, vertex := range vertexes {
-		if priorityQueue.Len() == CandidateQueueLength {
+		if priorityQueue.Len() == int(topSolutionsCount) {
 			top := (*priorityQueue)[0]
 			if vertex.Key > top.Key {
 				heap.Pop(priorityQueue)
@@ -41,7 +42,7 @@ func FindBestCandidates(candidates []SlotSolutionCandidate) []SlotSolutionCandid
 		heap.Push(priorityQueue, vertex)
 	}
 
-	res := make([]SlotSolutionCandidate, 0)
+	res := make([]PlanningSolution, 0)
 
 	for priorityQueue.Len() > 0 {
 		top := heap.Pop(priorityQueue).(graph.Vertex)
@@ -70,53 +71,35 @@ func generateCategorizedPlaces(context context.Context, timeMatcher *matching.Ti
 	return categorizedPlaces, GetTimeSlotLengthInMin(timePlaceClusters)
 }
 
-// Generate slot solution candidates
-// Parameter list matches slot request
-func GenerateSlotSolution(context context.Context, timeMatcher *matching.TimeMatcher, location string, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest) (slotSolution SlotSolution, slotSolutionRedisKey string, err error) {
-	if len(stayTimes) != len(evTag) {
-		err = errors.New(ReqTimeSlotsTagMismatchErrMsg)
-		return
-	}
+// GenerateSolutions generates multi-slot solutions and cache them
+func GenerateSolutions(context context.Context, timeMatcher *matching.TimeMatcher, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
+	solutions = make([]PlanningSolution, 0)
 
-	err = slotSolution.SetTag(evTag)
-	if err != nil {
-		return
-	}
+	categorizedPlaces, _ := generateCategorizedPlaces(context, timeMatcher, request.Location, request.SearchRadius, request.Weekday, ToTimeSlots(request.Slots))
 
-	slotSolution.SlotSolutionCandidates = make([]SlotSolutionCandidate, 0)
-	slotCandidates := make([]SlotSolutionCandidate, 0)
-
-	if radius <= 0 {
-		radius = 2000
-	}
-
-	categorizedPlaces, minuteLimit := generateCategorizedPlaces(context, timeMatcher, location, radius, weekday, stayTimes)
-
-	mdIter := MDtagIter{}
-	if !mdIter.Init(evTag, categorizedPlaces) {
-		err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
+	placeCategories := ToSlotCategories(request.Slots)
+	mdIter := MultiDimIterator{}
+	if err = mdIter.Init(placeCategories, categorizedPlaces); err != nil {
 		return
 	}
 
 	for mdIter.HasNext() {
-		curCandidate := slotSolution.CreateCandidate(mdIter, categorizedPlaces)
+		curCandidate := CreateCandidate(placeCategories, mdIter, categorizedPlaces)
 
 		if curCandidate.IsSet {
-			_, travelTimeInMin := GetTravelTimeByDistance(categorizedPlaces, mdIter)
-			if travelTimeInMin <= float64(minuteLimit) {
-				slotCandidates = append(slotCandidates, curCandidate)
-			}
+			solutions = append(solutions, curCandidate)
 		}
 		mdIter.Next()
 	}
-	bestCandidates := FindBestCandidates(slotCandidates)
-	slotSolution.SlotSolutionCandidates = append(slotSolution.SlotSolutionCandidates, bestCandidates...)
+
+	bestCandidates := FindBestPlanningSolutions(solutions, request.NumPlans)
+	solutions = bestCandidates
 
 	// cache slot solution calculation results
 	slotSolutionToCache := iowrappers.SlotSolutionCacheResponse{}
-	slotSolutionToCache.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, len(slotSolution.SlotSolutionCandidates))
+	slotSolutionToCache.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, len(bestCandidates))
 
-	for idx, slotSolutionCandidate := range slotSolution.SlotSolutionCandidates {
+	for idx, slotSolutionCandidate := range bestCandidates {
 		candidateCache := iowrappers.SlotSolutionCandidateCache{
 			PlaceIds:       slotSolutionCandidate.PlaceIDS,
 			Score:          slotSolutionCandidate.Score,
