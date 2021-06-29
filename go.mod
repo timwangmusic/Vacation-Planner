@@ -21,6 +21,7 @@ require (
 	github.com/mpraski/clusters v0.0.0-20170921103932-51821d83008d
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.6.1
+	github.com/yourbasic/radix v0.0.0-20180308122924-cbe1cc82e907
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20191219195013-becbf705a915
 	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1 // indirect

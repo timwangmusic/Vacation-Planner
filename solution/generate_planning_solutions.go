@@ -8,7 +8,9 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
+	"github.com/yourbasic/radix"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -92,6 +94,8 @@ func GenerateSolutions(context context.Context, timeMatcher *matching.TimeMatche
 		mdIter.Next()
 	}
 
+	solutions = TravelPlansDeduplication(solutions)
+
 	bestCandidates := FindBestPlanningSolutions(solutions, request.NumPlans)
 	solutions = bestCandidates
 
@@ -114,6 +118,23 @@ func GenerateSolutions(context context.Context, timeMatcher *matching.TimeMatche
 	redisClient.CacheSlotSolution(context, redisReq, slotSolutionToCache)
 
 	return
+}
+
+//TravelPlansDeduplication removes travel plans contain places that are permutations of each other
+func TravelPlansDeduplication(travelPlans []PlanningSolution) []PlanningSolution {
+	duplicatedPlans := make(map[string]bool)
+	results := make([]PlanningSolution, 0)
+
+	for _, travelPlan := range travelPlans {
+		placeIds := travelPlan.PlaceIDS
+		radix.Sort(placeIds)
+		jointPlanIds := strings.Join(placeIds, "_")
+		if _, exists := duplicatedPlans[jointPlanIds]; !exists {
+			results = append(results, travelPlan)
+			duplicatedPlans[jointPlanIds] = true
+		}
+	}
+	return results
 }
 
 // NearbySearchWithPlaceView returns PlaceView results for single day nearby search with a fixed time slot range
