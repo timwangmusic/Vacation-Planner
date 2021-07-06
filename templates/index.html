@@ -1,171 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href="https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
-          rel="stylesheet">
+    <link href="https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css" rel="stylesheet">
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <title>vacation planner</title>
 </head>
+
 <body>
-<nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
-    <a class="nav-link" href="https://github.com/weihesdlegend/Vacation-Planner">About</a>
+    <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
+        <a class="nav-link" href="https://github.com/weihesdlegend/Vacation-Planner">About</a>
 
-    <div class="navbar-collapse w-100 order-3 dual-collapse2">
-        <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="/v1/log-in">login </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/v1/sign-up">signup </a>
-            </li>
-        </ul>
+        <div class="navbar-collapse w-100 order-3 dual-collapse2">
+            <ul class="navbar-nav ml-auto" id="navbar-items">
+                <li class="nav-item" id="login">
+                    <a class="nav-link" href="/v1/log-in">login </a>
+                </li>
+                <li class="nav-item" id="signup">
+                    <a class="nav-link" href="/v1/sign-up">signup </a>
+                </li>
+            </ul>
+            <span id="username" class="navbar-text">guest</span>
+        </div>
+
+    </nav>
+    <h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
+        Vacation Planner
+    </h1>
+    <div class="container" style="align-items: center">
+        <div class="column">
+            <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill </button>
+        </div>
+        <br>
+        <div class="column">
+            <h5 style="color: #24c1e0">
+                Please enter the city, country and weekday you want to visit
+            </h5>
+        </div>
+        <div class="column">
+            <form action="/v1/plans" method="get">
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input id="city" type="text" class="form-control" name="city" value="san diego">
+                </div>
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <input id="country" type="text" class="form-control" name="country" value="usa">
+                </div>
+                <div class="form-group">
+                    <label for="weekday">Weekday</label>
+                    <select class="form-control" id="weekday" name="weekday">
+                        <option value="0">Monday</option>
+                        <option value="1">Tuesday</option>
+                        <option value="2">Wednesday</option>
+                        <option value="3">Thursday</option>
+                        <option value="4">Friday</option>
+                        <option value="5">Saturday</option>
+                        <option value="6">Sunday</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="distance">Distance from city center</label>
+                    <select class="form-control" id="distance" name="radius">
+                        <option value="5000">5000</option>
+                        <option value="10000">10000</option>
+                        <option value="20000">20000</option>
+                    </select>
+                </div>
+                <div>
+                    <button class="btn btn-outline-info"> search</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-</nav>
-<h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
-    Vacation Planner
-</h1>
-<div class="container" style="align-items: center">
-    <div class="column">
-        <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill </button>
-    </div>
-    <br>
-    <div class="column">
-        <h5 style="color: #24c1e0">
-            Please enter the city, country and weekday you want to visit
-        </h5>
-    </div>
-    <div class="column">
-        <form action="/v1/plans" method="get">
-            <div class="form-group">
-                <label for="city">City</label>
-                <input id="city" type="text" class="form-control" name="city" value="san diego">
-            </div>
-            <div class="form-group">
-                <label for="country">Country</label>
-                <input id="country" type="text" class="form-control" name="country" value="usa">
-            </div>
-            <div class="form-group">
-                <label for="weekday">Weekday</label>
-                <select class="form-control" id="weekday" name="weekday">
-                    <option value="0">Monday</option>
-                    <option value="1">Tuesday</option>
-                    <option value="2">Wednesday</option>
-                    <option value="3">Thursday</option>
-                    <option value="4">Friday</option>
-                    <option value="5">Saturday</option>
-                    <option value="6">Sunday</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="distance">Distance from city center</label>
-                <select class="form-control" id="distance" name="radius">
-                    <option value="5000">5000</option>
-                    <option value="10000">10000</option>
-                    <option value="20000">20000</option>
-                </select>
-            </div>
-            <div>
-                <button class="btn btn-outline-info"> search</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-<script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
         integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
         crossorigin="anonymous"></script>
-<script>
-    function locateMe() {
-        async function success(location) {
-            const latitude = location.coords.latitude;
-            const longitude = location.coords.longitude;
-            const date = new Date(location.timestamp);
+    <script>
+        function updateUsername() {
+            const query = window.location.search;
 
-            console.log(latitude, longitude);
+            const urlParams = new URLSearchParams(query);
 
-            await fetch("/v1/reverse-geocoding" + "?lat=" + latitude.toString() + "&lng=" + longitude.toString())
-                .catch(error => console.log(error))
-                .then(response => {
-                    if (response.ok) {
-                        response.json().then
-                        (
-                            data => {
-                                document.getElementById("city").value = data.results.city;
-                                document.getElementById("country").value = data.results.country;
-                                // convert the Sunday-Saturday from JS to Monday-Sunday from backend
-                                document.querySelector('#weekday').value = (date.getDay() + 6) % 7;
-                            }
-                        );
-                    } else {
-                        console.log(response.statusText);
-                    }
-                });
+            const userName = urlParams.get("username");
+            if (userName != null) {
+                document.getElementById("login").style.display = "none";
+                document.getElementById("signup").style.display = "none";
+
+                const userNameElement = document.getElementById("username");
+                userNameElement.innerText = userName;
+            }
         }
 
-        function error() {
+        updateUsername();
+
+        function locateMe() {
+            async function success(location) {
+                const latitude = location.coords.latitude;
+                const longitude = location.coords.longitude;
+                const date = new Date(location.timestamp);
+
+                console.log(latitude, longitude);
+
+                await fetch("/v1/reverse-geocoding" + "?lat=" + latitude.toString() + "&lng=" + longitude.toString())
+                    .catch(error => console.log(error))
+                    .then(response => {
+                        if (response.ok) {
+                            response.json().then
+                                (
+                                    data => {
+                                        document.getElementById("city").value = data.results.city;
+                                        document.getElementById("country").value = data.results.country;
+                                        // convert the Sunday-Saturday from JS to Monday-Sunday from backend
+                                        document.querySelector('#weekday').value = (date.getDay() + 6) % 7;
+                                    }
+                                );
+                        } else {
+                            console.log(response.statusText);
+                        }
+                    });
+            }
+
+            function error() {
+            }
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(success, error);
+            }
         }
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(success, error);
-        }
-    }
+        document.querySelector('#autofill').addEventListener('click', locateMe);
 
-    document.querySelector('#autofill').addEventListener('click', locateMe);
+        const cities = [
+            "San Jose",
+            "San Diego",
+            "San Francisco",
+            "Los Angeles",
+            "New York",
+            "Chicago",
+            "Houston",
+            "Philadelphia",
+            "Phoenix",
+            "San Antonio",
+            "Dallas",
+            "Indianapolis",
+            "Austin",
+            "Columbus",
+            "Baltimore",
+            "Boston",
+            "Seattle",
+            "Washington",
+            "Portland",
+            "Las Vegas",
+            "Paris",
+            "Rome",
+            "Vancouver",
+            "New Delhi",
+            "Beijing",
+            "Shanghai",
+        ];
 
-    const cities = [
-        "San Jose",
-        "San Diego",
-        "San Francisco",
-        "Los Angeles",
-        "New York",
-        "Chicago",
-        "Houston",
-        "Philadelphia",
-        "Phoenix",
-        "San Antonio",
-        "Dallas",
-        "Indianapolis",
-        "Austin",
-        "Columbus",
-        "Baltimore",
-        "Boston",
-        "Seattle",
-        "Washington",
-        "Portland",
-        "Las Vegas",
-        "Paris",
-        "Rome",
-        "Vancouver",
-        "New Delhi",
-        "Beijing",
-        "Shanghai",
-    ];
+        const countries = [
+            "USA",
+            "Italy",
+            "France",
+            "Canada",
+            "China",
+            "India",
+        ]
 
-    const countries = [
-        "USA",
-        "Italy",
-        "France",
-        "Canada",
-        "China",
-        "India",
-    ]
+        $(function () {
+            $("#city").autocomplete({
+                source: cities
+            })
 
-    $(function () {
-        $("#city").autocomplete({
-            source: cities
-        })
-
-        $("#country").autocomplete({
-            source: countries
-        })
-    });
-</script>
+            $("#country").autocomplete({
+                source: countries
+            })
+        });
+    </script>
 </body>
+
 </html>
