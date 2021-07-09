@@ -240,7 +240,7 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.
 			photo = &res.Photos[0]
 		}
 		userRatingsTotal := res.UserRatingsTotal
-		places = append(places, POI.CreatePlace(name, location, addr, res.FormattedAddress, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal))
+		places = append(places, POI.CreatePlace(name, location, addr, res.FormattedAddress, res.BusinessStatus, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal))
 	}
 	return
 }

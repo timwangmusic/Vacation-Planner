@@ -1,10 +1,11 @@
 package POI
 
 import (
-	"googlemaps.github.io/maps"
 	"log"
 	"reflect"
 	"regexp"
+
+	"googlemaps.github.io/maps"
 )
 
 type Weekday uint8
@@ -28,19 +29,29 @@ type PlacePhoto struct {
 	Width int `bson:"width"`
 }
 
+type BusinessStatus string
+
+const (
+	Operational        BusinessStatus = "OPERATIONAL"
+	ClosedTemporarily  BusinessStatus = "CLOSED_TEMPORARILY"
+	ClosedPermanently  BusinessStatus = "CLOSED_PERMANENTLY"
+	StatusNotAvailable BusinessStatus = "STATUS_NOT_AVAILABLE"
+)
+
 type Place struct {
-	ID               string       `bson:"_id"`
-	Name             string       `bson:"name"`
-	LocationType     LocationType `bson:"location_type"`
-	Address          Address      `bson:"address"`
-	FormattedAddress string       `bson:"formatted_address"`
-	Location         Location     `bson:"location"`
-	PriceLevel       int          `bson:"price_level"`
-	Rating           float32      `bson:"rating"`
-	Hours            [7]string    `bson:"hours"`
-	URL              string       `bson:"url"`
-	Photo            PlacePhoto   `bson:"photo"`
-	UserRatingsTotal int          `bson:"user_ratings_total"`
+	ID               string         `bson:"_id"`
+	Name             string         `bson:"name"`
+	Status           BusinessStatus `bson:"business_status"`
+	LocationType     LocationType   `bson:"location_type"`
+	Address          Address        `bson:"address"`
+	FormattedAddress string         `bson:"formatted_address"`
+	Location         Location       `bson:"location"`
+	PriceLevel       int            `bson:"price_level"`
+	Rating           float32        `bson:"rating"`
+	Hours            [7]string      `bson:"hours"`
+	URL              string         `bson:"url"`
+	Photo            PlacePhoto     `bson:"photo"`
+	UserRatingsTotal int            `bson:"user_ratings_total"`
 }
 
 type Location struct {
@@ -64,6 +75,10 @@ func (place *Place) GetName() string {
 
 func (place *Place) GetType() LocationType {
 	return place.LocationType
+}
+
+func (place *Place) GetStatus() BusinessStatus {
+	return place.Status
 }
 
 func (place *Place) GetHour(day Weekday) string {
@@ -110,6 +125,19 @@ func (place *Place) GetUserRatingsTotal() int {
 // Set name if POI name changed
 func (place *Place) SetName(name string) {
 	place.Name = name
+}
+
+func (place *Place) SetStatus(status string) {
+	switch status {
+	case "OPERATIONAL":
+		place.Status = Operational
+	case "CLOSED_TEMPORARILY":
+		place.Status = ClosedTemporarily
+	case "CLOSED_PERMANENTLY":
+		place.Status = ClosedPermanently
+	default:
+		place.Status = StatusNotAvailable
+	}
 }
 
 // Set human-readable Address of this place
