@@ -8,6 +8,8 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+
     <title>vacation planner</title>
 </head>
 
@@ -85,17 +87,27 @@
         crossorigin="anonymous"></script>
     <script>
         function updateUsername() {
-            const query = window.location.search;
+            const username = Cookies.get('Username');
+            if (username) {
+                console.log(`username is ${username}`);
+            } else {
+                console.log("user is not logged in.");
+            }
 
-            const urlParams = new URLSearchParams(query);
+            const jwtToken = Cookies.get("JWT");
+            // if JWT is present then the session is still valid, otherwise JWT token will be removed
+            if (jwtToken) {
+                console.log(`JWT token ${jwtToken}`);
+            } else {
+                console.log("log in expired.");
+            }
 
-            const userName = urlParams.get("username");
-            if (userName != null) {
+            if (username && jwtToken) {
                 document.getElementById("login").style.display = "none";
                 document.getElementById("signup").style.display = "none";
 
                 const userNameElement = document.getElementById("username");
-                userNameElement.innerText = userName;
+                userNameElement.innerText = username;
             }
         }
 
