@@ -77,7 +77,7 @@
                 XHR.onload = function () {
                     if (XHR.readyState === XHR.DONE) {
                         if (XHR.status === 200) {
-                            window.location = "/?username=" + username;
+                            window.location = "/";
                         } else if (XHR.status === 401) {
                             alert("login failed, please check your credentials");
                         }

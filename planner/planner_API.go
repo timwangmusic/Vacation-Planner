@@ -281,8 +281,12 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 }
 
 // API definitions
-func (planner *MyPlanner) indexPageHandler(c *gin.Context) {
-	c.HTML(http.StatusOK, "index.html", gin.H{})
+func (planner *MyPlanner) searchPageHandler(c *gin.Context) {
+	c.HTML(http.StatusOK, "search_page.html", gin.H{})
+}
+
+func (planner *MyPlanner) homePageHandler(c *gin.Context){
+	c.Redirect(http.StatusMovedPermanently, "/v1/")
 }
 
 // HTTP POST API end-point
@@ -409,10 +413,11 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	// TODO: change to front-end domain once front-end server is deployed
 	myRouter.Use(cors.Default())
 
-	myRouter.GET("", planner.indexPageHandler)
+	myRouter.GET("/", planner.homePageHandler)
 
 	v1 := myRouter.Group("/v1")
 	{
+		v1.GET("/", planner.searchPageHandler)
 		v1.GET("/plans", planner.getPlanningApi)
 		//v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
