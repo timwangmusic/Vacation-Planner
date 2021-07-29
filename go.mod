@@ -5,13 +5,13 @@ go 1.15
 require (
 	github.com/alicebob/miniredis/v2 v2.13.3
 	github.com/braintree/manners v0.0.0-20160418043613-82a8879fc5fd
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/requestid v0.0.1
 	github.com/gin-gonic/gin v1.7.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-redis/redis/v8 v8.2.3
+	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect

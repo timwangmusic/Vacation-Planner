@@ -3,7 +3,7 @@ package planner
 import (
 	"context"
 	"errors"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/user"

@@ -3,7 +3,7 @@ package iowrappers
 import (
 	"context"
 	"errors"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"golang.org/x/crypto/bcrypt"
 	"os"
