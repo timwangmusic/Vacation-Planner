@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"context"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
@@ -25,7 +26,7 @@ type LocationMatchingRequest struct {
 	NumClusters uint
 }
 
-func (m *LocationMatcher) Matching(req *LocationMatchingRequest, mapsClient *iowrappers.MapsClient) (placePairs []PlacePair) {
+func (m *LocationMatcher) Matching(context context.Context, req *LocationMatchingRequest, mapsClient *iowrappers.MapsClient) (placePairs []PlacePair) {
 	//m.createClusterManager()
 
 	/*
@@ -36,7 +37,7 @@ func (m *LocationMatcher) Matching(req *LocationMatchingRequest, mapsClient *iow
 	*/
 	m.createClusterManager(mapsClient, req.NumClusters)
 
-	m.clustering(req.Location, req.Radius, req.NumClusters)
+	m.clustering(context, req.Location, req.Radius, req.NumClusters)
 
 	// pair cluster centers from two categories
 	clusterPairs, err := MatchClusterCenters(*m.VisitClusterMgr.ClusterCenters, *m.EateryClusterMgr.ClusterCenters)
@@ -71,16 +72,16 @@ func (m *LocationMatcher) createClusterManager(mapsClient *iowrappers.MapsClient
 	m.VisitClusterMgr.Init(mapsClient, POI.PlaceCategoryVisit, numClusters)
 }
 
-func (m *LocationMatcher) clustering(location string, searchRadius uint, numClusters uint) {
+func (m *LocationMatcher) clustering(context context.Context, location string, searchRadius uint, numClusters uint) {
 	// get geolocation data for visit places
-	visitData := m.VisitClusterMgr.PlaceSearch(location, searchRadius)
+	visitData := m.VisitClusterMgr.PlaceSearch(context, location, searchRadius)
 	// clustering for visit places
 	visitClusterResult, visitClusterSizes := m.VisitClusterMgr.Clustering(&visitData, int(numClusters))
 	// calculate cluster centers
 	m.VisitClusterMgr.FindClusterCenter(&visitData, &visitClusterResult, &visitClusterSizes)
 
 	// get geolocation data for visit places
-	eateryData := m.EateryClusterMgr.PlaceSearch(location, searchRadius)
+	eateryData := m.EateryClusterMgr.PlaceSearch(context, location, searchRadius)
 	// clustering for eatery places
 	eateryClusterResult, eateryClusterSizes := m.EateryClusterMgr.Clustering(&eateryData, int(numClusters))
 	// calculate cluster centers

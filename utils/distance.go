@@ -26,17 +26,17 @@ func hav(theta float64) float64 {
 	return (1 - math.Cos(theta)) / 2
 }
 
-// locations are in the format of "lat,lng"
+// ParseLocation split latitude and longitude in the format of "lat,lng"
 func ParseLocation(location string) ([]float64, error) {
-	latlng := strings.Split(location, ",")
+	latLng := strings.Split(location, ",")
 
 	res := make([]float64, 2)
 
-	lat, err := strconv.ParseFloat(latlng[0], 64)
+	lat, err := strconv.ParseFloat(latLng[0], 64)
 	if err != nil {
 		return res, err
 	}
-	lng, err := strconv.ParseFloat(latlng[1], 64)
+	lng, err := strconv.ParseFloat(latLng[1], 64)
 	if err != nil {
 		return res, err
 	}
