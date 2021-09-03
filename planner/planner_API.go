@@ -406,6 +406,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 
 	myRouter := gin.Default()
 	myRouter.LoadHTMLGlob("templates/*")
+	myRouter.Static("/v1/assets", "assets")
 	// trace ID
 	myRouter.Use(requestid.New())
 
