@@ -5,8 +5,8 @@ import (
 	"math"
 )
 
-// Golang standard library does not support comparing two integers, only float64 comparisons
 // MinInt find the smaller integer of the two input integers
+// The Golang standard library does not support comparing two integers, only float64 comparisons
 func MinInt(a int, b int) int {
 	if a >= b {
 		return b
@@ -14,8 +14,8 @@ func MinInt(a int, b int) int {
 	return a
 }
 
-// Golang standard library does not support comparing two integers, only float64 comparisons
 // MaxInt find the larger integer of the two input integers
+// The Golang standard library does not support comparing two integers, only float64 comparisons
 func MaxInt(a int, b int) int {
 	if a >= b {
 		return a
@@ -23,7 +23,6 @@ func MaxInt(a int, b int) int {
 	return b
 }
 
-// refs: https://bit.ly/2GWSlAC
 // FindCenter calculates centroid given a set of points with geo coordinates
 func FindCenter(points [][]float64) ([]float64, error) {
 	if len(points) == 0 {
@@ -53,7 +52,7 @@ func FindCenter(points [][]float64) ([]float64, error) {
 	return []float64{centralLat, centralLng}, nil
 }
 
-// do not consider duplication in input number list
+// Permutations does not consider duplication in input number list
 func Permutations(nums []int, res *[][]int, start int) {
 	if start == len(nums) {
 		tmp := make([]int, len(nums))
