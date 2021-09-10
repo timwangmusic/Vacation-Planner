@@ -19,10 +19,10 @@ type Config struct {
 		ServerPort string `envconfig:"PORT" default:"10000"`
 	}
 	Redis struct {
-		RedisUrl        string `envconfig:"REDISCLOUD_URL" required:"true"`
+		RedisUrl        string `envconfig:"REDISCLOUD_URL" default:"redis://localhost:6379"`
 		RedisStreamName string `default:"stream:planning_api_usage"`
 	}
-	MapsClientApiKey string `required:"true" split_words:"true"`
+	MapsClientApiKey string `default:"YOUR_GOOGLE_API_KEY" split_words:"true"`
 }
 
 type Configurations struct {
