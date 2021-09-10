@@ -54,34 +54,3 @@ func LogErrorWithLevel(err error, level uint) bool {
 	}
 	return false
 }
-
-func CheckErr(err Error) {
-	if err.Err != nil {
-		switch err.Level {
-		case LogPanic:
-			log.Panic(err.Err)
-		case LogFatal:
-			log.Fatal(err.Err)
-		case LogError:
-			log.Error(err.Err)
-		case LogWarning:
-			log.Warn(err.Err)
-		case LogInfo:
-			log.Info(err.Err)
-		case LogDebug:
-			log.Debug(err.Err)
-		case LogTrace:
-			log.Trace(err.Err)
-		default:
-			log.Error("No Level is provided for this error")
-		}
-	}
-}
-
-func GenerateErr(e error, level uint) (err Error) {
-	err = Error{e, level}
-	if level < LogError {
-		debug.PrintStack()
-	}
-	return
-}

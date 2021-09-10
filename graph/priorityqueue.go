@@ -96,13 +96,10 @@ func (h *MinPriorityQueue) percolateDown(idx int) {
 
 	// swap with children Node
 	swap(h, idx, childIdx)
-
 	// recursion
 	h.percolateDown(childIdx)
-
 }
-
-// percolate up the inserted Node
+// percolateUp adjusts the inserted Node
 func (h *MinPriorityQueue) percolateUp(idx int) {
 	parent := findParent(idx)
 	if parent == -1 { // root

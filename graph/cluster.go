@@ -1,19 +1,17 @@
 package graph
 
 import (
+	"context"
 	"github.com/mpraski/clusters"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
+const LocationClusterMinResult = 20
+
 type BasicCluster struct {
 	Places []POI.Place
-}
-
-// Size of BasicCluster returns number of Places in a cluster
-func (cluster *BasicCluster) Size() int {
-	return len(cluster.Places)
 }
 
 type PlaceClusters struct {
@@ -42,16 +40,16 @@ func (placeManager *ClustersManager) Init(mapsClient *iowrappers.MapsClient, pla
 	placeManager.ClusterCenters = &clusterCenters
 }
 
-// call Google API to obtain nearby Places and extract location data
-func (placeManager *ClustersManager) PlaceSearch(location string, searchRadius uint) [][]float64 {
+// PlaceSearch calls Google APIs to obtain nearby Places and extract location data
+func (placeManager *ClustersManager) PlaceSearch(context context.Context, location string, searchRadius uint) [][]float64 {
 	request := iowrappers.PlaceSearchRequest{
-		Location: location,
-		PlaceCat: placeManager.PlaceCat,
-		Radius:   searchRadius,
+		Location:      location,
+		PlaceCat:      placeManager.PlaceCat,
+		Radius:        searchRadius,
+		MinNumResults: LocationClusterMinResult,
 	}
-	request.MinNumResults = 20
 
-	placeManager.places, _ = placeManager.Client.NearbySearch(nil, &request)
+	placeManager.places, _ = placeManager.Client.NearbySearch(context, &request)
 
 	locationData := make([][]float64, len(placeManager.places))
 	for idx, place := range placeManager.places {
@@ -61,10 +59,9 @@ func (placeManager *ClustersManager) PlaceSearch(location string, searchRadius u
 	return locationData
 }
 
-// train clustering model and assign Places to Clusters
-// numClusters specifies number of Clusters
+// Clustering trains a clustering model and assign Places to Clusters
 func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, numClusters int) (clusterResult []int, clusterSizes []int) {
-	// obtain clusterer with number of Clusters and distance function
+	// train a clustering model
 	hardCluster, err := clusters.KMeans(1000, numClusters, utils.HaversineDist)
 	utils.LogErrorWithLevel(err, utils.LogError)
 
@@ -84,7 +81,7 @@ func (placeManager *ClustersManager) Clustering(geoLocationData *[][]float64, nu
 }
 
 func (placeManager *ClustersManager) FindClusterCenter(geoLocationData *[][]float64, clusterResult *[]int,
-	clusterSizes *[]int) [][]float64 {
+	_ *[]int) [][]float64 {
 	clusterCenters := make([][]float64, placeManager.PlaceClusters.Size())
 
 	groups := make([][][]float64, placeManager.PlaceClusters.Size())
