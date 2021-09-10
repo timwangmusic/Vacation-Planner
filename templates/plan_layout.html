@@ -28,7 +28,7 @@
     <div class="content">
         <button id="expand-all-plans-button" class="btn btn-outline-info" type="button" data-toggle="collapse"
                 data-target=".multi-collapse"
-                aria-expanded="false">Expand All Plans
+                aria-expanded="false">Toggle Plans Display
         </button>
 
         {{range $i, $p := .Places}}
@@ -72,49 +72,7 @@
     </div>
     {{end}}
 </div>
-<script>
-    const buttons = document.querySelectorAll(".card-button");
-    const expandAllPlansButton = document.getElementById("expand-all-plans-button");
-
-    for (const button of buttons) {
-        button.addEventListener(
-            'click',
-            () => {
-                if (button.getAttribute('aria-expanded') === 'true') {
-                    button.textContent = 'Show Plan';
-                } else {
-                    button.textContent = 'Hide Plan';
-                }
-            }
-        )
-    }
-
-    expandAllPlansButton.addEventListener(
-        'click',
-        () => {
-            if (expandAllPlansButton.getAttribute('aria-expanded') === 'true') {
-                // expanded state, moving to collapsed state
-                expandAllPlansButton.textContent = 'Expand All Plans';
-                buttons.forEach(button => {
-                    if (button.getAttribute('aria-expanded') === 'true') {
-                        button.textContent = 'Show Plan';
-                    } else {
-                        button.textContent = 'Hide Plan';
-                    }
-                })
-            } else {
-                // collapsed state, moving to expanded state
-                expandAllPlansButton.textContent = 'Hide All Plans';
-                buttons.forEach(button => {
-                    if (button.getAttribute('aria-expanded') === 'true') {
-                        button.textContent = 'Show Plan';
-                    } else {
-                        button.textContent = 'Hide Plan';
-                    }
-                })
-            }
-        }
-    )
+<script src="assets/js/plan_layout.js">
 </script>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
