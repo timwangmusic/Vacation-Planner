@@ -1,0 +1,36 @@
+.grid {
+    display: grid;
+    grid-template-rows: auto;
+    grid-template-areas:
+                    'header'
+                    'content';
+}
+
+.header {
+    grid-area: header;
+}
+
+.content {
+    grid-area: content;
+}
+
+h1 {
+    text-align: center;
+    color: #24c1e0;
+    line-height: 100px;
+    margin: 0;
+    background-color: whitesmoke;
+}
+
+h3 {
+    color: mediumvioletred;
+}
+
+tr:nth-child(even) {
+    background: beige;
+}
+
+thead {
+    background: #395870;
+    color: antiquewhite;
+}

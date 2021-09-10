@@ -2,46 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vacation Plans</title>
-    <style>
-        .grid {
-            display: grid;
-            grid-template-rows: auto;
-            grid-template-areas:
-                    'header'
-                    'content';
-        }
-
-        .header {
-            grid-area: header;
-        }
-
-        .content {
-            grid-area: content;
-        }
-
-        h1 {
-            text-align: center;
-            color: #24c1e0;
-            line-height: 100px;
-            margin: 0;
-            background-color: whitesmoke;
-        }
-
-        h3 {
-            color: mediumvioletred;
-        }
-
-        tr:nth-child(even) {
-            background: beige;
-        }
-
-        thead {
-            background: #395870;
-            color: antiquewhite;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/styles.css">
     <!--Bootstrap CSS-->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
           integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
@@ -63,16 +26,22 @@
     {{else}}
     {{/* iterate over multi-slot solutions*/}}
     <div class="content">
+        <button id="expand-all-plans-button" class="btn btn-outline-info" type="button" data-toggle="collapse"
+                data-target=".multi-collapse"
+                aria-expanded="false">Expand All Plans
+        </button>
+
         {{range $i, $p := .Places}}
         {{/* create one table for each multi-slot solution */}}
         <div class="card">
             <div class="card-header">
-                <button class="btn btn-info" type="button" data-toggle="collapse"
+                <button class="btn btn-info card-button" id="collapse-button-{{$i}}" type="button"
+                        data-toggle="collapse"
                         data-target="#plan-{{$i}}" aria-expanded="false" aria-controls="plan-{{$i}}">Show Plan
                 </button>
             </div>
 
-            <div class="collapse" id="plan-{{$i}}">
+            <div class="collapse multi-collapse" id="plan-{{$i}}">
                 <div class="card-body">
                     <h3> One-day Plan </h3>
                     <table class="table table-bordered table-striped table-hover" style="background: lightcyan;">
@@ -99,16 +68,19 @@
             </div>
         </div>
         {{end}}
+
     </div>
     {{end}}
 </div>
 <script>
-    const buttons = document.querySelectorAll(".btn");
+    const buttons = document.querySelectorAll(".card-button");
+    const expandAllPlansButton = document.getElementById("expand-all-plans-button");
+
     for (const button of buttons) {
         button.addEventListener(
             'click',
             () => {
-                if (button.textContent === 'Hide Plan') {
+                if (button.getAttribute('aria-expanded') === 'true') {
                     button.textContent = 'Show Plan';
                 } else {
                     button.textContent = 'Hide Plan';
@@ -116,6 +88,33 @@
             }
         )
     }
+
+    expandAllPlansButton.addEventListener(
+        'click',
+        () => {
+            if (expandAllPlansButton.getAttribute('aria-expanded') === 'true') {
+                // expanded state, moving to collapsed state
+                expandAllPlansButton.textContent = 'Expand All Plans';
+                buttons.forEach(button => {
+                    if (button.getAttribute('aria-expanded') === 'true') {
+                        button.textContent = 'Show Plan';
+                    } else {
+                        button.textContent = 'Hide Plan';
+                    }
+                })
+            } else {
+                // collapsed state, moving to expanded state
+                expandAllPlansButton.textContent = 'Hide All Plans';
+                buttons.forEach(button => {
+                    if (button.getAttribute('aria-expanded') === 'true') {
+                        button.textContent = 'Show Plan';
+                    } else {
+                        button.textContent = 'Hide Plan';
+                    }
+                })
+            }
+        }
+    )
 </script>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
