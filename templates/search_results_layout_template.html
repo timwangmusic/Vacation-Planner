@@ -47,24 +47,19 @@
             <div id="plan-{{$i}}" class="accordion-collapse collapse show" data-bs-parent="#accordionSetParent">
                 <div class="accordion-body">
                     <table class="table table-bordered table-striped table-hover" style="background: lightcyan; table-layout: fixed">
-                        <colgroup>
-                            <col style="width:25%">
-                            <col style="width:35%">
-                            <col style="width:40%">
-                        </colgroup>
                         <thead>
                         <tr>
-                            <th> Time </th>
-                            <th> Place Name</th>
-                            <th> Address</th>
+                            <th class="col-3"> Time </th>
+                            <th class="col-4 col-md-3"> Place Name</th>
+                            <th class="d-none d-md-block"> Address</th>
                         </tr>
                         </thead>
                         <tbody>
                         {{range .Places}}
                         <tr>
-                            <td style="color: darkcyan"> {{.StartTime}} - {{.EndTime}} </td>
-                            <td><a href={{.URL}}> {{.PlaceName}} </a></td>
-                            <td> {{.Address}}</td>
+                            <td class="col-3" style="color: darkcyan"> {{.StartTime}} - {{.EndTime}} </td>
+                            <td class="col-4 col-md-3"><a href={{.URL}}> {{.PlaceName}} </a></td>
+                            <td class="d-none d-md-block"> {{.Address}}</td>
                         </tr>
                         {{end}}
                         </tbody>
