@@ -90,7 +90,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 
 	planner.Solver.Init(PoiSearcher)
 
-	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/plan_layout.html"))
+	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
@@ -285,7 +285,7 @@ func (planner *MyPlanner) searchPageHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "search_page.html", gin.H{})
 }
 
-func (planner *MyPlanner) homePageHandler(c *gin.Context){
+func (planner *MyPlanner) homePageHandler(c *gin.Context) {
 	c.Redirect(http.StatusMovedPermanently, "/v1/")
 }
 

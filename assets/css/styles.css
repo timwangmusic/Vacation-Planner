@@ -26,11 +26,11 @@ h3 {
     color: mediumvioletred;
 }
 
-tr:nth-child(even) {
-    background: beige;
-}
-
 thead {
     background: #395870;
     color: antiquewhite;
+}
+
+tr:nth-child(even) {
+    background: beige;
 }
