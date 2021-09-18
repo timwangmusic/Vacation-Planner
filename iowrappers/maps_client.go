@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// abstraction of a client that performs location-based operations such as nearby search
+// SearchClient defines an interface of a client that performs location-based operations such as nearby search
 type SearchClient interface {
 	GetGeocode(context.Context, *GeocodeQuery) (float64, float64, error)     // translate a textual location to latitude and longitude
 	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error)  // search nearby places in a category around a central location
@@ -31,7 +31,7 @@ func (mapsClient *MapsClient) SetDetailedSearchFields(fields []string) {
 		strings.Join(mapsClient.DetailedSearchFields, ", "))
 }
 
-// factory method for MapsClient
+// CreateMapsClient is a factory method for MapsClient
 func CreateMapsClient(apiKey string) MapsClient {
 	logErr(CreateLogger(), utils.LogError)
 	mapsClient, err := maps.NewClient(maps.WithAPIKey(apiKey))
@@ -45,11 +45,11 @@ func CreateMapsClient(apiKey string) MapsClient {
 }
 
 func CreateLogger() error {
-	currentEnv := os.Getenv("ENVIRONMENT")
+	currentEnv := strings.ToUpper(os.Getenv("ENVIRONMENT"))
 	var err error
 	var logger *zap.Logger
 
-	if currentEnv == "" || currentEnv == "development" {
+	if currentEnv == "" || currentEnv == "DEVELOPMENT" {
 		logger, err = zap.NewDevelopment() // logging at debug level and above
 	} else {
 		logger, err = zap.NewProduction() // logging at info level and above
@@ -69,7 +69,7 @@ func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude
 			Lat: latitude,
 			Lng: longitude,
 		},
-		// currently we only need country and city info
+		// currently, we only need country and city info
 		ResultType: []string{"country", "locality"},
 	}
 	Logger.Debugf("reverse geocoding for latitude/longitude: %.2f/%.2f", latitude, longitude)
@@ -77,7 +77,7 @@ func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude
 	if err != nil {
 		return GeocodeQuery{}, err
 	}
-	if geocodingResults == nil || len(geocodingResults) == 0 {
+	if len(geocodingResults) == 0 {
 		return GeocodeQuery{}, errors.New("no geocoding results found")
 	}
 	return geocodingResultsToGeocodeQuery(geocodingResults), nil
