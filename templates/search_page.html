@@ -13,12 +13,13 @@
 </head>
 
 <body>
+<!--navigation bar-->
 <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
     <div class="container-fluid">
 
         <ul class="nav" id="navbar-items">
             <li class="nav-item">
-                <a class="nav-link" href="https://github.com/weihesdlegend/Vacation-Planner">about</a>
+                <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner">about</a>
             </li>
             <li class="nav-item" id="login">
                 <a class="nav-link" href="/v1/log-in">login </a>
@@ -36,22 +37,37 @@
     Vacation Planner
 </h1>
 
+<!--forms and inputs-->
 <div class="container" style="align-items: center">
-    <div class="column">
-        <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill</button>
+    <div class="row">
+        <div class="column">
+            <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill</button>
+        </div>
     </div>
     <br>
 
-    <form class="d-flex" action="/v1/plans" method="get">
-        <div class="input-group">
-            <input class="form-control" type="date" id="datepicker" name="date" value="2020-02-29">
+    <div class="row">
+        <form class="d-flex" action="/v1/plans" method="get">
+            <div class="input-group">
+                <input class="form-control-sm border border-info" type="date" id="datepicker" name="date"
+                       value="2020-02-29">
 
-            <input class="form-control" type="search" id="location" placeholder="Search" aria-label="Search"
-                   name="location" value="Los Angeles, USA"
-                   aria-describedby="search-button">
-            <button class="btn btn-outline-success" type="submit">Search</button>
-        </div>
-    </form>
+                <input class="form-control" type="search" id="location" placeholder="Search" aria-label="Search"
+                       name="location" value="Los Angeles, USA" list="datalistOptions">
+
+                <button class="btn btn-outline-info" type="submit">Search</button>
+                <datalist id="datalistOptions">
+                    <option value="San Francisco, USA">
+                    <option value="Seattle, USA">
+                    <option value="Los Angeles, USA">
+                    <option value="Chicago, USA">
+                    <option value="New York City, USA">
+                    <option value="Beijing, China">
+                </datalist>
+            </div>
+        </form>
+    </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
