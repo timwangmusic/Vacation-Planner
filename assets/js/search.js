@@ -29,7 +29,7 @@ function locateMe() {
     async function success(location) {
         const latitude = location.coords.latitude;
         const longitude = location.coords.longitude;
-        const date = new Date(location.timestamp);
+        const date = new Date();
 
         console.log(latitude, longitude);
 
@@ -40,10 +40,8 @@ function locateMe() {
                     response.json().then
                         (
                             data => {
-                                document.getElementById("city").value = data.results.city;
-                                document.getElementById("country").value = data.results.country;
-                                // convert the Sunday-Saturday from JS to Monday-Sunday from backend
-                                document.querySelector('#weekday').value = (date.getDay() + 6) % 7;
+                                document.getElementById("location").value = data.results.city + ", " + data.results.country;
+                                document.getElementById("datepicker").value = date.toISOString().substring(0, 10);
                             }
                         );
                 } else {
