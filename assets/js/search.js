@@ -29,27 +29,25 @@ function locateMe() {
     async function success(location) {
         const latitude = location.coords.latitude;
         const longitude = location.coords.longitude;
-        const date = new Date(location.timestamp);
+        const date = new Date();
 
         console.log(latitude, longitude);
 
-        await fetch("/v1/reverse-geocoding" + "?lat=" + latitude.toString() + "&lng=" + longitude.toString())
-            .catch(error => console.log(error))
-            .then(response => {
-                if (response.ok) {
-                    response.json().then
-                        (
-                            data => {
-                                document.getElementById("city").value = data.results.city;
-                                document.getElementById("country").value = data.results.country;
-                                // convert the Sunday-Saturday from JS to Monday-Sunday from backend
-                                document.querySelector('#weekday').value = (date.getDay() + 6) % 7;
-                            }
-                        );
-                } else {
-                    console.log(response.statusText);
+        const url = "/v1/reverse-geocoding"
+        await axios.get(url, {
+            params: {
+                lat: latitude,
+                lng: longitude
+            }
+        })
+            .then(
+                response => {
+                    document.getElementById("location").value = response.data.results.city + ", " + response.data.results.country;
+                    document.getElementById("datepicker").value = date.toISOString().substring(0, 10);
                 }
-            });
+            ).catch(
+                err => console.error(err)
+            )
     }
 
     function error() {

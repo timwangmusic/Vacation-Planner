@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	MaxPlacesPerDay    = 12
 	ServerTimeout      = time.Second * 15
 	jobQueueBufferSize = 1000
 )
@@ -59,15 +58,6 @@ type PlanningResponse struct {
 	StatusCode        uint                `json:"status_code"`
 }
 
-// validate REST API input
-func validateSearchRadius(searchRadius string) bool {
-	searchRadiusPattern := "^[1-9][0-9]{2,5}$" // limit range to 100 -- 99999
-	if matched, _ := regexp.Match(searchRadiusPattern, []byte(searchRadius)); !matched {
-		return false
-	}
-	return true
-}
-
 type PlanningPostRequest struct {
 	Country   string      `json:"country"`
 	City      string      `json:"city"`
@@ -77,6 +67,8 @@ type PlanningPostRequest struct {
 	NumVisit  uint        `json:"num_visit"`
 	NumEatery uint        `json:"num_eatery"`
 }
+
+type RequestIdKey string
 
 func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}) {
 	planner.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
@@ -289,42 +281,41 @@ func (planner *MyPlanner) homePageHandler(c *gin.Context) {
 	c.Redirect(http.StatusMovedPermanently, "/v1/")
 }
 
-// HTTP POST API end-point
-//func (planner *MyPlanner) postPlanningApi(context *gin.Context) {
-//	var username = "guest" // default username
-//	if planner.Environment == "production" {
-//		var authenticationErr error
-//		username, authenticationErr = planner.UserAuthentication(context, context.Request, user.LevelRegular)
-//		if authenticationErr != nil {
-//			utils.LogErrorWithLevel(authenticationErr, utils.LogDebug)
-//			planner.login(context)
-//			return
-//		}
-//	}
-//
-//	req := PlanningPostRequest{}
-//	err := context.ShouldBindJSON(&req)
-//	utils.LogErrorWithLevel(err, utils.LogInfo)
-//	if err != nil {
-//		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-//		return
-//	}
-//
-//	planningReq, err := processPlanningPostRequest(&req)
-//	utils.LogErrorWithLevel(err, utils.LogInfo)
-//	if err != nil {
-//		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-//		return
-//	}
-//
-//	planningResp := planner.Planning(context, &planningReq, username)
-//	if planningResp.Err != nil && planningResp.StatusCode == http.StatusNotFound {
-//		context.JSON(http.StatusNotFound, gin.H{"error": "No solution is found"})
-//		return
-//	}
-//	// generate valid solution
-//	utils.LogErrorWithLevel(planner.ResultHTMLTemplate.Execute(context.Writer, planningResp), utils.LogError)
-//}
+// validate date is in the format of yyyy-mm-dd
+func validateDate(date string) error {
+	if len(date) == 0 {
+		return errors.New("date cannot be empty")
+	}
+
+	datePattern := `(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})`
+	if matched, _ := regexp.Match(datePattern, []byte(date)); !matched {
+		return errors.New("date format must be yyyy-mm-dd")
+	}
+	return nil
+}
+
+func dateToWeekday(date string) time.Weekday {
+	datePattern := regexp.MustCompile(`(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})`)
+	dateFields := datePattern.FindStringSubmatch(date)
+	year, _ := strconv.Atoi(dateFields[1])
+	month, _ := strconv.Atoi(dateFields[2])
+	day, _ := strconv.Atoi(dateFields[3])
+	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	return t.Weekday()
+}
+
+// validate location is in the format of city,country
+func validateLocation(location string) error {
+	if len(location) == 0 {
+		return errors.New("location cannot be empty")
+	}
+
+	locationPattern := `[a-zA-Z]+,\s[a-zA-Z]+`
+	if matched, _ := regexp.Match(locationPattern, []byte(location)); !matched {
+		return errors.New("location format must be city, country")
+	}
+	return nil
+}
 
 // HTTP GET API end-point
 // Return top planning result to user
@@ -341,10 +332,22 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	requestId := requestid.Get(ctx)
-	country := ctx.DefaultQuery("country", "USA")
-	city := ctx.DefaultQuery("city", "San Diego")
-	radius := ctx.DefaultQuery("radius", "10000")
-	weekday := ctx.DefaultQuery("weekday", "5") // Saturday
+	location := ctx.DefaultQuery("location", "San Jose, USA")
+	if err := validateLocation(location); err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// date is in the format of yyyy-mm-dd
+	date := ctx.DefaultQuery("date", "")
+	if err := validateDate(date); err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	weekday := dateToWeekday(date)
+	iowrappers.Logger.Debugf("Decoded weekday is %q", weekday)
+
 	numResults := ctx.DefaultQuery("numberResults", "5")
 
 	numResultsInt, numResultsParsingErr := strconv.ParseInt(numResults, 10, 64)
@@ -354,23 +357,9 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 	iowrappers.Logger.Debugf("[%s] number of requested planning results is %s", requestId, numResults)
 
-	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
-	if weekdayParsingErr != nil || weekdayUint > 6 {
-		ctx.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
-		return
-	}
-
-	if !validateSearchRadius(radius) {
-		ctx.String(http.StatusBadRequest, "invalid search radius of %s", radius)
-		return
-	}
-
-	cityCountry := city + "," + country
-
-	planningReq := solution.GetStandardRequest(POI.Weekday(weekdayUint), numResultsInt)
-	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
-	planningReq.SearchRadius = uint(searchRadius_)
-	planningReq.Location = cityCountry
+	planningReq := solution.GetStandardRequest(POI.Weekday(weekday), numResultsInt)
+	planningReq.SearchRadius = 10000 // default to 10km
+	planningReq.Location = location
 
 	c := context.WithValue(ctx, "request_id", requestId)
 	planningResp := planner.Planning(c, &planningReq, username)
@@ -420,7 +409,6 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	{
 		v1.GET("/", planner.searchPageHandler)
 		v1.GET("/plans", planner.getPlanningApi)
-		//v1.POST("/plans", planner.postPlanningApi)
 		v1.POST("/signup", planner.UserSignup)
 		v1.POST("/login", planner.UserLogin)
 		v1.GET("/reverse-geocoding", planner.ReverseGeocodingHandler)
