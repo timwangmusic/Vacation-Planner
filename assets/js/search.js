@@ -29,7 +29,7 @@ function locateMe() {
     async function success(location) {
         const latitude = location.coords.latitude;
         const longitude = location.coords.longitude;
-        const date = new Date();
+        const today = new Date();
 
         console.log(latitude, longitude);
 
@@ -43,7 +43,11 @@ function locateMe() {
             .then(
                 response => {
                     document.getElementById("location").value = response.data.results.city + ", " + response.data.results.country;
-                    document.getElementById("datepicker").value = date.toISOString().substring(0, 10);
+                    let month = today.getMonth() + 1;
+                    if (month < 10) {
+                        month = "0" + month.toString();
+                    }
+                    document.getElementById("datepicker").value = [today.getFullYear(), month, today.getDate()].join("-");
                 }
             ).catch(
                 err => console.error(err)
