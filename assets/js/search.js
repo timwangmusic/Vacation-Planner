@@ -33,21 +33,21 @@ function locateMe() {
 
         console.log(latitude, longitude);
 
-        await fetch("/v1/reverse-geocoding" + "?lat=" + latitude.toString() + "&lng=" + longitude.toString())
-            .catch(error => console.log(error))
-            .then(response => {
-                if (response.ok) {
-                    response.json().then
-                        (
-                            data => {
-                                document.getElementById("location").value = data.results.city + ", " + data.results.country;
-                                document.getElementById("datepicker").value = date.toISOString().substring(0, 10);
-                            }
-                        );
-                } else {
-                    console.log(response.statusText);
+        const url = "/v1/reverse-geocoding"
+        await axios.get(url, {
+            params: {
+                lat: latitude,
+                lng: longitude
+            }
+        })
+            .then(
+                response => {
+                    document.getElementById("location").value = response.data.results.city + ", " + response.data.results.country;
+                    document.getElementById("datepicker").value = date.toISOString().substring(0, 10);
                 }
-            });
+            ).catch(
+                err => console.error(err)
+            )
     }
 
     function error() {
