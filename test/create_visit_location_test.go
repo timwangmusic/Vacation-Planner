@@ -6,7 +6,6 @@ import (
 )
 
 func TestCreatePlace(t *testing.T) {
-	location := "32.715736,-117.161087"
 	name := "The Beat Museum"
 	addr := "540 Broadway, San Francisco, USA, 94113"
 	microAddr := `<span class="street-address">540 Broadway</span>,
@@ -14,7 +13,9 @@ func TestCreatePlace(t *testing.T) {
 				<span class="region">CA</span> <span class="postal-code">94133-4507</span>,
 				<span class="country-name">USA</span>`
 
-	place := POI.CreatePlace(name, location, microAddr, addr, "OPERATIONAL", "stay", nil, "landmark_mtv", 3, 4.5, "", nil, 0)
+	expectedLatitude := 32.715736
+	expectedLongitude := -117.161087
+	place := POI.CreatePlace(name, microAddr, addr, "OPERATIONAL", "stay", nil, "landmark_mtv", 3, 4.5, "", nil, 0, expectedLatitude, expectedLongitude)
 	if place.GetName() != name {
 		t.Errorf("Name setting is not correct. \n Expected: %s, got: %s",
 			name, place.GetName())
@@ -22,9 +23,14 @@ func TestCreatePlace(t *testing.T) {
 	if place.GetStatus() != POI.Operational {
 		t.Errorf("Expected business status: %s, got %s", POI.Operational, place.GetStatus())
 	}
-	if place.GetLocation() != [2]float64{-117.161087, 32.715736} {
-		t.Errorf("Location setting is not correct.")
+	if place.GetLocation().Longitude != expectedLongitude {
+		t.Errorf("Location longitude setting is not correct. Expected %f, got %f", expectedLongitude, place.GetLocation().Longitude)
 	}
+
+	if place.GetLocation().Latitude != expectedLatitude {
+		t.Errorf("Location longitude setting is not correct. Expected %f, got %f", expectedLatitude, place.GetLocation().Latitude)
+	}
+
 	if place.GetType() != "stay" {
 		t.Errorf("Type setting is not correct.")
 	}

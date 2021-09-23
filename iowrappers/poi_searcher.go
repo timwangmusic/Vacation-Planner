@@ -2,9 +2,7 @@ package iowrappers
 
 import (
 	"context"
-	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -74,19 +72,19 @@ func (poiSearcher PoiSearcher) GetGeocode(context context.Context, query *Geocod
 
 func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
 	location := request.Location
-	cityAndCountry := strings.Split(location, ",")
 
 	places := make([]POI.Place, 0)
 	lat, lng, err := poiSearcher.GetGeocode(context, &GeocodeQuery{
-		City:    cityAndCountry[0],
-		Country: cityAndCountry[1],
+		City:    location.City,
+		Country: location.Country,
 	})
 	if logErr(err, utils.LogError) {
 		return places, err
 	}
 
-	// request.Location is overwritten to lat,lng after the city,country conversion
-	request.Location = fmt.Sprintf("%f,%f", lat, lng)
+	// update request.Location after the city,country conversion
+	request.Location.Latitude = lat
+	request.Location.Longitude = lng
 
 	var cachedPlaces []POI.Place
 	cachedPlaces, err = poiSearcher.redisClient.NearbySearch(context, request)

@@ -28,7 +28,7 @@ const (
 )
 
 type PlanningRequest struct {
-	Location     string // city,country
+	Location     POI.Location // city,country
 	Slots        []SlotRequest
 	Weekday      POI.Weekday
 	NumPlans     int64
@@ -52,35 +52,34 @@ func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
 	solver.Matcher.Init(poiSearcher)
 }
 
-func (solver *Solver) ValidateLocation(context context.Context, slotRequestLocation *string) bool {
-	countryCity := strings.Split(*slotRequestLocation, ",")
+func (solver *Solver) ValidateLocation(context context.Context, location *POI.Location) bool {
 	geoQuery := iowrappers.GeocodeQuery{
-		City:    countryCity[0],
-		Country: countryCity[1],
+		City:    location.City,
+		Country: location.Country,
 	}
 	_, _, err := solver.Matcher.PoiSearcher.GetGeocode(context, &geoQuery)
 	if err != nil {
 		return false
 	}
-	*slotRequestLocation = strings.Join([]string{geoQuery.City, geoQuery.Country}, ",")
+	location.City = geoQuery.City
+	location.Country = geoQuery.Country
 	return true
 }
 
-func GenerateSlotSolutionRedisRequest(location string, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) iowrappers.SlotSolutionCacheRequest {
+func GenerateSlotSolutionRedisRequest(location POI.Location, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) iowrappers.SlotSolutionCacheRequest {
 	intervals := make([]POI.TimeInterval, len(stayTimes))
 	for idx, stayTime := range stayTimes {
 		intervals[idx] = stayTime.Slot
 	}
 
-	cityCountry := strings.Split(location, ",")
 	evTags := make([]string, len(evTag))
 	for idx, c := range evTag {
 		evTags[idx] = string(c)
 	}
 
 	req := iowrappers.SlotSolutionCacheRequest{
-		Country:   cityCountry[1],
-		City:      cityCountry[0],
+		Country:   location.Country,
+		City:      location.City,
 		Radius:    uint64(radius),
 		EVTags:    evTags,
 		Intervals: intervals,
@@ -90,7 +89,6 @@ func GenerateSlotSolutionRedisRequest(location string, evTag string, stayTimes [
 }
 
 func (solver *Solver) Solve(context context.Context, redisCli iowrappers.RedisClient, req *PlanningRequest, resp *PlanningResponse) {
-	// validate location with PoiSearcher of the TimeMatcher
 	if !solver.ValidateLocation(context, &req.Location) {
 		resp.Err = errors.New("invalid travel destination")
 		resp.ErrorCode = InvalidRequestLocation

@@ -5,7 +5,6 @@ import (
 	"context"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"reflect"
 	"sort"
@@ -13,8 +12,8 @@ import (
 
 type TimeMatcher struct {
 	PoiSearcher *iowrappers.PoiSearcher
-	CateringMgr *graph.TimeClustersManager
-	TouringMgr  *graph.TimeClustersManager
+	CateringMgr *TimeClustersManager
+	TouringMgr  *TimeClustersManager
 }
 
 type TimeSlot struct {
@@ -28,7 +27,7 @@ type QueryTimeInterval struct {
 }
 
 type TimeMatchingRequest struct {
-	Location  string      // city,country
+	Location  POI.Location      // city,country
 	Radius    uint        // search Radius
 	TimeSlots []TimeSlot  // division of day
 	Weekday   POI.Weekday // Weekday
@@ -57,8 +56,8 @@ func (matcher *TimeMatcher) Init(poiSearcher *iowrappers.PoiSearcher) {
 		log.Fatal("PoiSearcher does not exist")
 	}
 	matcher.PoiSearcher = poiSearcher
-	matcher.CateringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryEatery}
-	matcher.TouringMgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
+	matcher.CateringMgr = &TimeClustersManager{PlaceCat: POI.PlaceCategoryEatery}
+	matcher.TouringMgr = &TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 }
 
 func (matcher *TimeMatcher) Matching(context context.Context, req *TimeMatchingRequest) (clusters []PlacesClusterForTime) {
@@ -88,7 +87,7 @@ func (matcher *TimeMatcher) Matching(context context.Context, req *TimeMatchingR
 }
 
 func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMap map[string]*PlacesClusterForTime) {
-	var mgr *graph.TimeClustersManager
+	var mgr *TimeClustersManager
 
 	switch placeCat {
 	case POI.PlaceCategoryVisit:
@@ -96,7 +95,7 @@ func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMa
 	case POI.PlaceCategoryEatery:
 		mgr = matcher.CateringMgr
 	default:
-		mgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
+		mgr = &TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 	}
 
 	for _, timeInterval := range *mgr.TimeClusters.TimeIntervals.GetAllIntervals() {
@@ -111,14 +110,14 @@ func (matcher *TimeMatcher) timeClustering(placeCat POI.PlaceCategory, clusterMa
 	}
 }
 func (matcher *TimeMatcher) placeSearch(context context.Context, req *TimeMatchingRequest, placeCat POI.PlaceCategory) {
-	var mgr *graph.TimeClustersManager
+	var mgr *TimeClustersManager
 	switch placeCat {
 	case POI.PlaceCategoryVisit:
 		mgr = matcher.TouringMgr
 	case POI.PlaceCategoryEatery:
 		mgr = matcher.CateringMgr
 	default:
-		mgr = &graph.TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
+		mgr = &TimeClustersManager{PlaceCat: POI.PlaceCategoryVisit}
 	}
 
 	intervals := make([]POI.TimeInterval, 0)

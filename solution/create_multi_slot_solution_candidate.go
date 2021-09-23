@@ -47,7 +47,7 @@ func CreateCandidate(slotCategories []POI.PlaceCategory, iter MultiDimIterator, 
 		places[idx] = place
 		res.PlaceIDS = append(res.PlaceIDS, place.GetPlaceId())
 		res.PlaceNames = append(res.PlaceNames, place.GetPlaceName())
-		res.PlaceLocations = append(res.PlaceLocations, place.GetLocation())
+		res.PlaceLocations = append(res.PlaceLocations, [2]float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
 		res.PlaceAddresses = append(res.PlaceAddresses, place.GetPlaceFormattedAddress())
 		if len(strings.TrimSpace(place.GetURL())) == 0 {
 			place.SetURL(iowrappers.GoogleSearchHomePageURL)

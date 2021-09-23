@@ -54,7 +54,7 @@ func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount 
 	return res
 }
 
-func generateCategorizedPlaceClusters(context context.Context, timeMatcher *matching.TimeMatcher, location string, radius uint, weekday POI.Weekday, timeSlots []matching.TimeSlot) ([]CategorizedPlaces, int) {
+func generateCategorizedPlaceClusters(context context.Context, timeMatcher *matching.TimeMatcher, location POI.Location, radius uint, weekday POI.Weekday, timeSlots []matching.TimeSlot) ([]CategorizedPlaces, int) {
 	matchingRequest := &matching.TimeMatchingRequest{
 		Location:  location,
 		Radius:    radius,
@@ -137,9 +137,7 @@ func TravelPlansDeduplication(travelPlans []PlanningSolution) []PlanningSolution
 	return results
 }
 
-// NearbySearchWithPlaceView returns PlaceView results for single day nearby search with a fixed time slot range
-func NearbySearchWithPlaceView(context context.Context, timeMatcher *matching.TimeMatcher, location string,
-	weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {
+func NearbySearchWithPlaceView(context context.Context, timeMatcher *matching.TimeMatcher, location POI.Location, weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {
 	timeSlots := []matching.TimeSlot{timeSlot}
 	placeClusters, _ := generateCategorizedPlaceClusters(context, timeMatcher, location, radius, weekday, timeSlots)
 	if len(placeClusters) != 1 {

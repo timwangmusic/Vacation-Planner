@@ -92,11 +92,10 @@ func (redisClient *RedisClient) setPlace(context context.Context, place POI.Plac
 	}
 }
 
-func (redisClient *RedisClient) GetMapsLastSearchTime(context context.Context, location string, category POI.PlaceCategory) (lastSearchTime time.Time, err error) {
+func (redisClient *RedisClient) GetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory) (lastSearchTime time.Time, err error) {
 	redisKey := "MapsLastSearchTime"
-	cityCountry := strings.Split(location, ",")
-	city, country := cityCountry[0], cityCountry[1]
-	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
+
+	redisField := strings.ToLower(strings.Join([]string{location.Country, location.City, string(category)}, ":"))
 	lst, cacheErr := redisClient.client.HGet(context, redisKey, redisField).Result()
 	if cacheErr != nil {
 		err = cacheErr
@@ -111,11 +110,9 @@ func (redisClient *RedisClient) GetMapsLastSearchTime(context context.Context, l
 	return
 }
 
-func (redisClient *RedisClient) SetMapsLastSearchTime(context context.Context, location string, category POI.PlaceCategory, requestTime string) (err error) {
+func (redisClient *RedisClient) SetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, requestTime string) (err error) {
 	redisKey := "MapsLastSearchTime"
-	cityCountry := strings.Split(location, ",")
-	city, country := cityCountry[0], cityCountry[1]
-	redisField := strings.ToLower(strings.Join([]string{country, city, string(category)}, ":"))
+	redisField := strings.ToLower(strings.Join([]string{location.Country, location.City, string(category)}, ":"))
 	_, err = redisClient.client.HSet(context, redisKey, redisField, requestTime).Result()
 	return
 }
@@ -132,7 +129,7 @@ func (redisClient *RedisClient) StorePlacesForLocation(context context.Context, 
 	wg.Add(len(places))
 	for _, place := range places {
 		sortedSetKey := strings.Join([]string{geocodeInString, string(POI.GetPlaceCategory(place.LocationType))}, "_")
-		dist := utils.HaversineDist([]float64{lng, lat}, place.Location.Coordinates[:])
+		dist := utils.HaversineDist([]float64{lat, lng}, []float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
 		_, err := client.ZAdd(context, sortedSetKey, &redis.Z{Score: dist, Member: place.ID}).Result()
 		if err != nil {
 			return err
@@ -150,8 +147,8 @@ func (redisClient *RedisClient) SetPlacesOnCategory(context context.Context, pla
 		placeCategory := POI.GetPlaceCategory(place.LocationType)
 		geolocation := &redis.GeoLocation{
 			Name:      place.ID,
-			Longitude: place.Location.Coordinates[0],
-			Latitude:  place.Location.Coordinates[1],
+			Latitude:  place.GetLocation().Latitude,
+			Longitude: place.GetLocation().Longitude,
 		}
 		redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
 		_, cmdErr := redisClient.client.GeoAdd(context, redisKey, geolocation).Result()
@@ -178,10 +175,9 @@ func (redisClient *RedisClient) getPlace(context context.Context, placeId string
 // to be used with the StorePlacesForLocation method
 // if no geocode in Redis, then we assume no nearby place exists either
 func (redisClient *RedisClient) NearbySearchNotUsed(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
-	cityCountry := strings.Split(request.Location, ",")
 	lat, lng, err := redisClient.GetGeocode(context, &GeocodeQuery{
-		City:    cityCountry[0],
-		Country: cityCountry[1],
+		City:    request.Location.City,
+		Country: request.Location.Country,
 	})
 	if err != nil {
 		return nil, err
@@ -206,8 +202,7 @@ func (redisClient *RedisClient) NearbySearch(context context.Context, request *P
 	requestCategory := strings.ToLower(string(request.PlaceCat))
 	redisKey := "placeIDs:" + requestCategory
 
-	latLng, _ := utils.ParseLocation(request.Location)
-	requestLat, requestLng := latLng[0], latLng[1]
+	requestLat, requestLng := request.Location.Latitude, request.Location.Longitude
 
 	searchRadius := request.Radius
 

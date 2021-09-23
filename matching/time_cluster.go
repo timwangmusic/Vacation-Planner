@@ -4,7 +4,7 @@
 // All TimeClusters are controlled by TimeClustersManager.
 // One TimeClustersManager manages one TimeClusters.
 // TimeClustersManager representation contains a set of Places for ease of data containment.
-package graph
+package matching
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	TimeClusterMinResults = 20
+	MinResultsForTimePeriodMatching = 20
 )
 
 type ClusterManager interface {
@@ -51,8 +51,6 @@ func (cls *TimeClusters) Size() int {
 	return len(cls.Clusters)
 }
 
-//TimeClustersManager
-//To use a TimeClustersManager, fetch Places data using PlaceSearch and then time clustering with Clustering method.
 type TimeClustersManager struct {
 	poiSearcher  *iowrappers.PoiSearcher
 	TimeClusters *TimeClusters
@@ -78,12 +76,12 @@ func (placeManager *TimeClustersManager) Init(poiSearcher *iowrappers.PoiSearche
 }
 
 // searchType is a selector for MinNumResults in PlaceSearchRequest
-func (placeManager *TimeClustersManager) PlaceSearch(context context.Context, location string, searchRadius uint) {
+func (placeManager *TimeClustersManager) PlaceSearch(context context.Context, location POI.Location, searchRadius uint) {
 	request := iowrappers.PlaceSearchRequest{
 		Location:      location,
 		PlaceCat:      placeManager.PlaceCat,
 		Radius:        searchRadius,
-		MinNumResults: TimeClusterMinResults,
+		MinNumResults: MinResultsForTimePeriodMatching,
 	}
 	var err error
 	placeManager.places, err = placeManager.poiSearcher.NearbySearch(context, &request)

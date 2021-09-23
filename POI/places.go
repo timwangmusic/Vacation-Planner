@@ -55,8 +55,11 @@ type Place struct {
 }
 
 type Location struct {
-	Type        string     `json:"type"`
-	Coordinates [2]float64 `json:"coordinates"`
+	Latitude          float64
+	Longitude         float64
+	City              string // name of the city where the location belongs to
+	AdminAreaLevelOne string // e.g. state names in the United States
+	Country           string // name of the country where the location belongs to
 }
 
 type Address struct {
@@ -102,8 +105,8 @@ func (place *Place) GetFormattedAddress() string {
 	return place.FormattedAddress
 }
 
-func (place *Place) GetLocation() [2]float64 {
-	return place.Location.Coordinates
+func (place *Place) GetLocation() Location {
+	return place.Location
 }
 
 func (place *Place) GetPriceLevel() int {
@@ -207,9 +210,9 @@ func (place *Place) SetAddress(addr string) {
 	}
 }
 
-func (place *Place) SetLocation(location [2]float64) {
-	place.Location.Coordinates = location
-	place.Location.Type = "Point"
+func (place *Place) SetLocationCoordinates(coordinates [2]float64) {
+	place.Location.Latitude = coordinates[0]
+	place.Location.Longitude = coordinates[1]
 }
 
 func (place *Place) SetPriceLevel(priceRange int) {

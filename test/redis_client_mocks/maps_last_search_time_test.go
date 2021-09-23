@@ -1,6 +1,7 @@
 package redis_client_mocks
 
 import (
+	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"testing"
 	"time"
@@ -8,7 +9,7 @@ import (
 
 func TestMapsLastSearchTime(t *testing.T) {
 	request := iowrappers.PlaceSearchRequest{
-		Location: "Beijing,China",
+		Location: POI.Location{City: "Beijing", Country: "China"},
 		PlaceCat: "Visit",
 	}
 
