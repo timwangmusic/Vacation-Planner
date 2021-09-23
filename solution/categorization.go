@@ -6,22 +6,20 @@ import (
 )
 
 type CategorizedPlaces struct {
-	EateryPlaces []matching.Place
-	VisitPlaces  []matching.Place
+	Places       map[POI.PlaceCategory][]matching.Place
 }
 
-func Categorize(cluster matching.TimePlacesCluster) CategorizedPlaces {
+func Categorize(placesCluster matching.PlacesClusterForTime) CategorizedPlaces {
 	res := CategorizedPlaces{
-		EateryPlaces: make([]matching.Place, 0),
-		VisitPlaces:  make([]matching.Place, 0),
+		Places:       make(map[POI.PlaceCategory][]matching.Place),
 	}
 
-	for _, place := range cluster.Places {
-		if place.GetPlaceCategory() == POI.PlaceCategoryVisit {
-			res.VisitPlaces = append(res.VisitPlaces, place)
-		} else if place.GetPlaceCategory() == POI.PlaceCategoryEatery {
-			res.EateryPlaces = append(res.EateryPlaces, place)
-		}
+	// this slice initialization section needs update when more categories are added
+	res.Places[POI.PlaceCategoryVisit] = make([]matching.Place, 0)
+	res.Places[POI.PlaceCategoryEatery] = make([]matching.Place, 0)
+
+	for _, place := range placesCluster.Places {
+		res.Places[place.GetPlaceCategory()] = append(res.Places[place.GetPlaceCategory()], place)
 	}
 
 	return res

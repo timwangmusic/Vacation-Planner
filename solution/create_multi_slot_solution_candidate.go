@@ -8,15 +8,14 @@ import (
 )
 
 type PlanningSolution struct {
-	PlaceNames      []string       `json:"place_names"`
-	PlaceIDS        []string       `json:"place_ids"`
-	PlaceLocations  [][2]float64   `json:"place_locations"` // lat,lng
-	PlaceAddresses  []string       `json:"place_addresses"`
-	PlaceURLs       []string       `json:"place_urls"`
-	Score           float64        `json:"score"`
-	IsSet           bool           `json:"is_set"`
+	PlaceNames     []string     `json:"place_names"`
+	PlaceIDS       []string     `json:"place_ids"`
+	PlaceLocations [][2]float64 `json:"place_locations"` // lat,lng
+	PlaceAddresses []string     `json:"place_addresses"`
+	PlaceURLs      []string     `json:"place_urls"`
+	Score          float64      `json:"score"`
+	IsSet          bool         `json:"is_set"`
 }
-
 
 func CreateCandidate(slotCategories []POI.PlaceCategory, iter MultiDimIterator, categorizedPlaces []CategorizedPlaces) (res PlanningSolution) {
 	if len(iter.Status) != len(slotCategories) {
@@ -27,13 +26,15 @@ func CreateCandidate(slotCategories []POI.PlaceCategory, iter MultiDimIterator, 
 	places := make([]matching.Place, len(iter.Status))
 	for idx, placeIdx := range iter.Status {
 		placesByCategory := categorizedPlaces[idx]
-		visitPlaces := placesByCategory.VisitPlaces
-		eateryPlaces := placesByCategory.EateryPlaces
+		visitPlaces := placesByCategory.Places[POI.PlaceCategoryVisit]
+		eateryPlaces := placesByCategory.Places[POI.PlaceCategoryEatery]
 
 		var place matching.Place
-		if slotCategories[idx] == POI.PlaceCategoryEatery {
+
+		switch slotCategories[idx] {
+		case POI.PlaceCategoryEatery:
 			place = eateryPlaces[placeIdx]
-		} else if slotCategories[idx] == POI.PlaceCategoryVisit {
+		case POI.PlaceCategoryVisit:
 			place = visitPlaces[placeIdx]
 		}
 

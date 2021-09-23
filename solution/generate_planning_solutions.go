@@ -54,7 +54,7 @@ func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount 
 	return res
 }
 
-func generateCategorizedPlaces(context context.Context, timeMatcher *matching.TimeMatcher, location string, radius uint, weekday POI.Weekday, timeSlots []matching.TimeSlot) ([]CategorizedPlaces, int) {
+func generateCategorizedPlaceClusters(context context.Context, timeMatcher *matching.TimeMatcher, location string, radius uint, weekday POI.Weekday, timeSlots []matching.TimeSlot) ([]CategorizedPlaces, int) {
 	matchingRequest := &matching.TimeMatchingRequest{
 		Location:  location,
 		Radius:    radius,
@@ -77,7 +77,7 @@ func generateCategorizedPlaces(context context.Context, timeMatcher *matching.Ti
 func GenerateSolutions(context context.Context, timeMatcher *matching.TimeMatcher, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
 	solutions = make([]PlanningSolution, 0)
 
-	categorizedPlaces, _ := generateCategorizedPlaces(context, timeMatcher, request.Location, request.SearchRadius, request.Weekday, ToTimeSlots(request.Slots))
+	categorizedPlaces, _ := generateCategorizedPlaceClusters(context, timeMatcher, request.Location, request.SearchRadius, request.Weekday, ToTimeSlots(request.Slots))
 
 	placeCategories := ToSlotCategories(request.Slots)
 	mdIter := MultiDimIterator{}
@@ -141,18 +141,13 @@ func TravelPlansDeduplication(travelPlans []PlanningSolution) []PlanningSolution
 func NearbySearchWithPlaceView(context context.Context, timeMatcher *matching.TimeMatcher, location string,
 	weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {
 	timeSlots := []matching.TimeSlot{timeSlot}
-	categorizedPlaces, _ := generateCategorizedPlaces(context, timeMatcher, location, radius, weekday, timeSlots)
-	if len(categorizedPlaces) != 1 {
-		return nil, errors.New("we should only get one set of categorized places")
+	placeClusters, _ := generateCategorizedPlaceClusters(context, timeMatcher, location, radius, weekday, timeSlots)
+	if len(placeClusters) != 1 {
+		return nil, errors.New("we should only get one categorized place cluster")
 	}
 
 	var places []matching.Place
-	switch category {
-	case POI.PlaceCategoryEatery:
-		places = categorizedPlaces[0].EateryPlaces
-	case POI.PlaceCategoryVisit:
-		places = categorizedPlaces[0].VisitPlaces
-	}
+	places = placeClusters[0].Places[category]
 
 	var placesView = make([]matching.PlaceView, len(places))
 	for idx, place := range places {
