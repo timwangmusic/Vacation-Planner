@@ -9,6 +9,7 @@
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/css/styles.css">
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
     <title>vacation planner</title>
 </head>
 
@@ -49,13 +50,13 @@
     <div class="row">
         <form class="d-flex" action="/v1/plans" method="get">
             <div class="input-group">
-                <input class="form-control-sm border border-info" type="date" id="datepicker" name="date"
+                <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
                        value="2020-02-29">
 
-                <input class="form-control" type="search" id="location" placeholder="Search" aria-label="Search"
+                <input class="form-control border border-secondary" type="search" id="location" placeholder="Search" aria-label="Search"
                        name="location" value="Los Angeles, USA" list="datalistOptions">
 
-                <button class="btn btn-outline-info" type="submit">Search</button>
+                <button class="btn" type="submit"><i class="bi bi-search"></i></button>
                 <datalist id="datalistOptions">
                     <option value="San Francisco, USA">
                     <option value="Seattle, USA">
