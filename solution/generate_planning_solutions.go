@@ -3,13 +3,14 @@ package solution
 import (
 	"container/heap"
 	"context"
+	"strconv"
+	"strings"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/yourbasic/radix"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -112,6 +113,7 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 			PlaceLocations: slotSolutionCandidate.PlaceLocations,
 			PlaceAddresses: slotSolutionCandidate.PlaceAddresses,
 			PlaceURLs:      slotSolutionCandidate.PlaceURLs,
+			PlaceTypes:     slotSolutionCandidate.PlaceTypes,
 		}
 		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
 	}

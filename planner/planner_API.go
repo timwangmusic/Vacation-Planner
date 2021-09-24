@@ -3,6 +3,17 @@ package planner
 import (
 	"context"
 	"errors"
+	"html/template"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
@@ -13,21 +24,17 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"html/template"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
 	ServerTimeout      = time.Second * 15
 	jobQueueBufferSize = 1000
 )
+
+var placeTypeToIconCss = map[POI.PlaceCategory](string){
+	POI.PlaceCategoryEatery: "fas fa-hamburger",
+	POI.PlaceCategoryVisit:  "fas fa-torii-gate",
+}
 
 type MyPlanner struct {
 	RedisClient        iowrappers.RedisClient
@@ -45,6 +52,7 @@ type TimeSectionPlace struct {
 	EndTime   POI.Hour `json:"end_time"`
 	Address   string   `json:"address"`
 	URL       string   `json:"url"`
+	PlaceIcon string   `json:"place_icon_css_class"`
 }
 
 type TimeSectionPlaces struct {
@@ -244,6 +252,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 
 	topSolutions := planningResponse.Solutions
 	resp.Places = make([]TimeSectionPlaces, len(topSolutions))
+
 	for sIdx, topSolution := range topSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
 			Places: make([]TimeSectionPlace, 0),
@@ -255,9 +264,13 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 				EndTime:   planningRequest.Slots[pIdx].TimeSlot.Slot.End,
 				Address:   topSolution.PlaceAddresses[pIdx],
 				URL:       topSolution.PlaceURLs[pIdx],
+				PlaceIcon: placeTypeToIconCss[topSolution.PlaceTypes[pIdx]],
 			})
 		}
 		resp.Places[sIdx] = timeSectionPlaces
+		// Rui debug
+		iowrappers.Logger.Debugf("[Rui] solution #%d", sIdx)
+		printSolution(&topSolution)
 	}
 
 	resp.StatusCode = solution.ValidSolutionFound
@@ -435,4 +448,15 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	}
 
 	return svr
+}
+
+func printSolution(solution *solution.PlanningSolution) {
+	e := reflect.ValueOf(solution).Elem()
+
+	for i := 0; i < e.NumField(); i++ {
+		varName := e.Type().Field(i).Name
+		varType := e.Type().Field(i).Type
+		varValue := e.Field(i).Interface()
+		iowrappers.Logger.Debugf("%v %v %v\n", varName, varType, varValue)
+	}
 }

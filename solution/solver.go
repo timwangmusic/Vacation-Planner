@@ -130,6 +130,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 				PlaceLocations: candidate.PlaceLocations,
 				PlaceAddresses: candidate.PlaceAddresses,
 				PlaceURLs:      candidate.PlaceURLs,
+				PlaceTypes:     candidate.PlaceTypes,
 				Score:          candidate.Score,
 				IsSet:          true,
 			}
