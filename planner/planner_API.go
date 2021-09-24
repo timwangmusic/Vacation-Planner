@@ -86,7 +86,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
-		planner.Solver.Matcher.PoiSearcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
+		planner.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
 	}
 }
 
@@ -113,7 +113,7 @@ func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
 	}
 
 	location := POI.Location{City: city, Country: country}
-	places, err := solution.NearbySearchWithPlaceView(context, planner.Solver.Matcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
+	places, err := solution.NearbySearchWithPlaceView(context, planner.Solver.TimeMatcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
 		Start: 8,
 		End:   21,
 	}}, placeCategory)
@@ -132,7 +132,7 @@ func (planner *MyPlanner) Destroy() {
 func (planner *MyPlanner) ReverseGeocodingHandler(context *gin.Context) {
 	latitude, _ := strconv.ParseFloat(context.Query("lat"), 64)
 	longitude, _ := strconv.ParseFloat(context.Query("lng"), 64)
-	result, err := planner.Solver.Matcher.PoiSearcher.GetMapsClient().ReverseGeocoding(context, latitude, longitude)
+	result, err := planner.Solver.Searcher.GetMapsClient().ReverseGeocoding(context, latitude, longitude)
 	if err != nil {
 		log.Error(err)
 		context.JSON(http.StatusInternalServerError, err.Error())
@@ -149,7 +149,7 @@ func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context)
 		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
 	}
-	if err := planner.Solver.Matcher.PoiSearcher.AddUserRatingsTotal(context.Request.Context()); err != nil {
+	if err := planner.Solver.Searcher.AddUserRatingsTotal(context.Request.Context()); err != nil {
 		log.Error(err)
 	}
 }
@@ -160,7 +160,7 @@ func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
 	}
-	if err := planner.Solver.Matcher.PoiSearcher.AddUrl(context.Request.Context()); err != nil {
+	if err := planner.Solver.Searcher.AddUrl(context.Request.Context()); err != nil {
 		log.Error(err)
 	}
 }
@@ -344,7 +344,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	weekday := dateToWeekday(date)
-	iowrappers.Logger.Debugf("Decoded weekday is %q", weekday)
+	iowrappers.Logger.Debugf("Decoded weekday is %q.", weekday)
 
 	numResults := ctx.DefaultQuery("numberResults", "5")
 
@@ -353,7 +353,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
 		return
 	}
-	iowrappers.Logger.Debugf("[%s] number of requested planning results is %s", requestId, numResults)
+	iowrappers.Logger.Debugf("[%s] The number of requested planning results is %s.", requestId, numResults)
 
 	planningReq := solution.GetStandardRequest(POI.Weekday(weekday), numResultsInt)
 	planningReq.SearchRadius = 10000 // default to 10km

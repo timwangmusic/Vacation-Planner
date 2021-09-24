@@ -4,6 +4,7 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/matching"
 )
 
 type MultiDimIterator struct {
@@ -12,11 +13,11 @@ type MultiDimIterator struct {
 	Size       []int // number of items in each category
 }
 
-func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, categorizedPlacesList []CategorizedPlaces) error {
+func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClustersList [][]matching.Place) error {
 	var err error
-	if len(categories) != len(categorizedPlacesList) {
+	if len(categories) != len(placeClustersList) {
 		err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
-		log.Error("place category list length is different from categorized places")
+		log.Error("place category list length is different from the number of place clusters")
 		return err
 	}
 
@@ -25,7 +26,7 @@ func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, categori
 	mdTagIter.Size = make([]int, len(mdTagIter.Categories))
 	for pos, category := range mdTagIter.Categories {
 		mdTagIter.Status[pos] = 0
-		mdTagIter.Size[pos] = len(categorizedPlacesList[pos].Places[category])
+		mdTagIter.Size[pos] = len(placeClustersList[pos])
 
 		if mdTagIter.Size[pos] == 0 {
 			log.Errorf("number of places for category %s is 0, tag index is %d \n", category, pos)

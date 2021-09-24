@@ -145,5 +145,5 @@ func (poiSearcher PoiSearcher) PlaceDetailsSearch(context context.Context, place
 func (poiSearcher PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
 	poiSearcher.redisClient.SetPlacesOnCategory(context, places)
 	requestId := context.Value(RequestIdKey)
-	Logger.Debugf("request:", requestId, "Redis update complete")
+	Logger.Debugf("request trace ID: %s, %s", requestId, "Redis update complete")
 }

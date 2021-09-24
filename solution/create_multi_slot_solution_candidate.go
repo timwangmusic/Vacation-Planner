@@ -1,7 +1,6 @@
 package solution
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"strings"
@@ -17,26 +16,17 @@ type PlanningSolution struct {
 	IsSet          bool         `json:"is_set"`
 }
 
-func CreateCandidate(slotCategories []POI.PlaceCategory, iter MultiDimIterator, categorizedPlaces []CategorizedPlaces) (res PlanningSolution) {
-	if len(iter.Status) != len(slotCategories) {
+func CreateCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (res PlanningSolution) {
+	if len(iter.Status) != len(placeClusters) {
 		return
 	}
 	// deduplication of repeating places in the result
 	record := make(map[string]bool)
 	places := make([]matching.Place, len(iter.Status))
 	for idx, placeIdx := range iter.Status {
-		placesByCategory := categorizedPlaces[idx]
-		visitPlaces := placesByCategory.Places[POI.PlaceCategoryVisit]
-		eateryPlaces := placesByCategory.Places[POI.PlaceCategoryEatery]
+		placesByCategory := placeClusters[idx]
 
-		var place matching.Place
-
-		switch slotCategories[idx] {
-		case POI.PlaceCategoryEatery:
-			place = eateryPlaces[placeIdx]
-		case POI.PlaceCategoryVisit:
-			place = visitPlaces[placeIdx]
-		}
+		var place = placesByCategory[placeIdx]
 
 		// if the same place appears in two indexes, return incomplete result
 		if _, exist := record[place.GetPlaceId()]; exist {

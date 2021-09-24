@@ -1,1 +1,81 @@
 package matching
+
+import (
+	"context"
+	"errors"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+)
+
+type Matcher interface {
+	Match(context context.Context, request Request) (places []Place, err error)
+}
+
+// FilterCriteria is an enum for various points of interest filtering criteria
+type FilterCriteria string
+
+const (
+	MinResultsForTimePeriodMatching                = 20
+	FilterByTimePeriod              FilterCriteria = "filterByTimePeriod"
+)
+
+type Request struct {
+	Radius   uint
+	Location POI.Location
+	Criteria FilterCriteria
+	Params   map[FilterCriteria]interface{}
+}
+
+type TimeFilterParams struct {
+	Category     POI.PlaceCategory
+	Day          POI.Weekday
+	TimeInterval POI.TimeInterval
+}
+
+type MatcherForTime struct {
+	Searcher *iowrappers.PoiSearcher
+}
+
+func (matcher MatcherForTime) Match(ctx context.Context, request Request) ([]Place, error) {
+	var results []Place
+	filterParams := request.Params[request.Criteria]
+
+	if _, ok := filterParams.(TimeFilterParams); !ok {
+		return results, errors.New("time matcher received wrong filter params")
+	}
+
+	timeFilterParams := filterParams.(TimeFilterParams)
+	placeSearchRequest := &iowrappers.PlaceSearchRequest{
+		PlaceCat:      timeFilterParams.Category,
+		Location:      request.Location,
+		Radius:        request.Radius,
+		MinNumResults: MinResultsForTimePeriodMatching,
+	}
+
+	basicPlaces, err := matcher.Searcher.NearbySearch(ctx, placeSearchRequest)
+	if err != nil {
+		return results, err
+	}
+
+	filteredBasicPlaces := matcher.filterPlaces(timeFilterParams, basicPlaces)
+
+	for _, place := range filteredBasicPlaces {
+		results = append(results, CreatePlace(place, timeFilterParams.Category))
+	}
+	return results, nil
+}
+
+func (matcher MatcherForTime) filterPlaces(timeFilterParams TimeFilterParams, places []POI.Place) []POI.Place {
+	var results []POI.Place
+	for _, place := range places {
+		openingHourForDay := place.GetHour(timeFilterParams.Day)
+		timeInterval, err := POI.ParseTimeInterval(openingHourForDay)
+		if err != nil {
+			continue
+		}
+		if timeInterval.Inclusive(&timeFilterParams.TimeInterval) {
+			results = append(results, place)
+		}
+	}
+	return results
+}
