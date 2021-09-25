@@ -127,3 +127,11 @@ func calculateHour(time string, am_pm string) uint8 {
 	}
 	return 255 // err
 }
+
+// TimeIntervals is an interface for handling interval-like data structures
+type TimeIntervals interface {
+	NumIntervals() int                     // get number of time intervals
+	GetAllIntervals() *[]TimeInterval      // get all time intervals as a list of Start and End time
+	GetInterval(int) (error, TimeInterval) // get an interval by specifying its index
+	InsertTimeInterval(TimeInterval)       // add an interval
+}

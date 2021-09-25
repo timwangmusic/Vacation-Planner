@@ -1,13 +1,14 @@
 package matching
 
-import "github.com/weihesdlegend/Vacation-planner/POI"
+import (
+	"github.com/weihesdlegend/Vacation-planner/POI"
+)
 
 type Place struct {
 	Place    *POI.Place
 	Category POI.PlaceCategory `json:"category"`
 	Address  string            `json:"address"`
 	Price    float64           `json:"price"`
-	Location [2]float64        `json:"geolocation"`
 }
 
 func (place Place) GetHours() [7]string {
@@ -42,8 +43,8 @@ func (place Place) GetRating() float32 {
 	return place.Place.GetRating()
 }
 
-func (place Place) GetLocation() [2]float64 {
-	return place.Location
+func (place Place) GetLocation() POI.Location {
+	return place.Place.Location
 }
 
 func (place Place) GetURL() string {
@@ -70,7 +71,6 @@ func CreatePlace(place POI.Place, category POI.PlaceCategory) Place {
 	Place_.Place = &place
 	Place_.Address = place.GetFormattedAddress()
 	Place_.Price = Pricing(place.GetPriceLevel())
-	Place_.Location = place.GetLocation()
 	Place_.Category = category
 	return Place_
 }

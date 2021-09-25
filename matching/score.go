@@ -43,7 +43,7 @@ func calDistances(places []Place) []float64 {
 	for i := 0; i < len(distances); i++ {
 		locationX := places[i].GetLocation()
 		locationY := places[i+1].GetLocation()
-		distances[i] = utils.HaversineDist([]float64{locationX[0], locationX[1]}, []float64{locationY[0], locationY[1]})
+		distances[i] = utils.HaversineDist([]float64{locationX.Latitude, locationX.Longitude}, []float64{locationY.Latitude, locationY.Longitude})
 	}
 	return distances
 }

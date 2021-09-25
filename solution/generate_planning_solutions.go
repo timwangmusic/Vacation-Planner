@@ -3,7 +3,6 @@ package solution
 import (
 	"container/heap"
 	"context"
-	"errors"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
@@ -15,6 +14,7 @@ import (
 
 const (
 	TopSolutionsCountDefault              = 5
+	DefaultPlaceSearchRadius              = 10000
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
 )
 
@@ -54,39 +54,40 @@ func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount 
 	return res
 }
 
-func generateCategorizedPlaces(context context.Context, timeMatcher *matching.TimeMatcher, location string, radius uint, weekday POI.Weekday, timeSlots []matching.TimeSlot) ([]CategorizedPlaces, int) {
-	matchingRequest := &matching.TimeMatchingRequest{
-		Location:  location,
-		Radius:    radius,
-		TimeSlots: timeSlots,
-		Weekday:   weekday,
-	}
-	timePlaceClusters := timeMatcher.Matching(context, matchingRequest)
-	// one set of categorized places for each TimePlaceCluster
-	categorizedPlaces := make([]CategorizedPlaces, len(timePlaceClusters))
-
-	// place clusters are clustered by time slot
-	// now cluster by place category
-	for idx, timePlaceCluster := range timePlaceClusters {
-		categorizedPlaces[idx] = Categorize(timePlaceCluster)
-	}
-	return categorizedPlaces, GetTimeSlotLengthInMin(timePlaceClusters)
-}
-
-// GenerateSolutions generates multi-slot solutions and cache them
-func GenerateSolutions(context context.Context, timeMatcher *matching.TimeMatcher, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
+func GenerateSolutions(context context.Context, matcher matching.Matcher, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
 	solutions = make([]PlanningSolution, 0)
 
-	categorizedPlaces, _ := generateCategorizedPlaces(context, timeMatcher, request.Location, request.SearchRadius, request.Weekday, ToTimeSlots(request.Slots))
+	var placeClusters [][]matching.Place
+	for _, slot := range request.Slots {
+		var filterParams = make(map[matching.FilterCriteria]interface{})
+		filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
+			Category:     slot.Category,
+			Day:          request.Weekday,
+			TimeInterval: slot.TimeSlot.Slot,
+		}
+		places, err_ := matcher.Match(context, matching.Request{
+			Radius:   DefaultPlaceSearchRadius,
+			Location: request.Location,
+			Criteria: matching.FilterByTimePeriod,
+			Params:   filterParams,
+		})
+		if err_ != nil {
+			iowrappers.Logger.Error(err)
+			err = err_
+			return
+		}
+		placeClusters = append(placeClusters, places)
+	}
 
 	placeCategories := ToSlotCategories(request.Slots)
+
 	mdIter := MultiDimIterator{}
-	if err = mdIter.Init(placeCategories, categorizedPlaces); err != nil {
+	if err = mdIter.Init(placeCategories, placeClusters); err != nil {
 		return
 	}
 
 	for mdIter.HasNext() {
-		curCandidate := CreateCandidate(placeCategories, mdIter, categorizedPlaces)
+		curCandidate := CreateCandidate(mdIter, placeClusters)
 
 		if curCandidate.IsSet {
 			solutions = append(solutions, curCandidate)
@@ -137,26 +138,29 @@ func TravelPlansDeduplication(travelPlans []PlanningSolution) []PlanningSolution
 	return results
 }
 
-// NearbySearchWithPlaceView returns PlaceView results for single day nearby search with a fixed time slot range
-func NearbySearchWithPlaceView(context context.Context, timeMatcher *matching.TimeMatcher, location string,
-	weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {
-	timeSlots := []matching.TimeSlot{timeSlot}
-	categorizedPlaces, _ := generateCategorizedPlaces(context, timeMatcher, location, radius, weekday, timeSlots)
-	if len(categorizedPlaces) != 1 {
-		return nil, errors.New("we should only get one set of categorized places")
+func NearbySearchWithPlaceView(context context.Context, matcher matching.Matcher, location POI.Location, weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {
+	var filterParams = make(map[matching.FilterCriteria]interface{})
+	filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
+		Category:     category,
+		Day:          weekday,
+		TimeInterval: timeSlot.Slot,
 	}
 
-	var places []matching.Place
-	switch category {
-	case POI.PlaceCategoryEatery:
-		places = categorizedPlaces[0].EateryPlaces
-	case POI.PlaceCategoryVisit:
-		places = categorizedPlaces[0].VisitPlaces
+	var placesView []matching.PlaceView
+
+	places, err := matcher.Match(context, matching.Request{
+		Radius:   radius,
+		Location: location,
+		Criteria: matching.FilterByTimePeriod,
+		Params:   filterParams,
+	})
+
+	if err != nil {
+		return placesView, err
 	}
 
-	var placesView = make([]matching.PlaceView, len(places))
-	for idx, place := range places {
-		placesView[idx] = matching.ToPlaceView(place)
+	for _, place := range places {
+		placesView = append(placesView, matching.ToPlaceView(place))
 	}
 	return placesView, nil
 }

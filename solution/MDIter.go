@@ -4,6 +4,7 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/matching"
 )
 
 type MultiDimIterator struct {
@@ -12,11 +13,11 @@ type MultiDimIterator struct {
 	Size       []int // number of items in each category
 }
 
-func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, categorizedPlaces []CategorizedPlaces) error {
+func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClustersList [][]matching.Place) error {
 	var err error
-	if len(categories) != len(categorizedPlaces) {
+	if len(categories) != len(placeClustersList) {
 		err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
-		log.Error("place category list length is different from categorized places")
+		log.Error("place category list length is different from the number of place clusters")
 		return err
 	}
 
@@ -25,19 +26,11 @@ func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, categori
 	mdTagIter.Size = make([]int, len(mdTagIter.Categories))
 	for pos, category := range mdTagIter.Categories {
 		mdTagIter.Status[pos] = 0
-		if category == POI.PlaceCategoryEatery {
-			mdTagIter.Size[pos] = len(categorizedPlaces[pos].EateryPlaces)
-		} else if category == POI.PlaceCategoryVisit {
-			mdTagIter.Size[pos] = len(categorizedPlaces[pos].VisitPlaces)
-		}
+		mdTagIter.Size[pos] = len(placeClustersList[pos])
+
 		if mdTagIter.Size[pos] == 0 {
-			if category == POI.PlaceCategoryEatery {
-				log.Errorf("number of places for category eatery is 0, tag index is %d \n", pos)
-				err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
-			} else if category == POI.PlaceCategoryVisit {
-				log.Errorf("number of places for category visit is 0, tag index is %d \n", pos)
-				err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
-			}
+			log.Errorf("number of places for category %s is 0, tag index is %d \n", category, pos)
+			err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
 		}
 	}
 	return err

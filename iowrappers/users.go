@@ -13,6 +13,13 @@ import (
 
 const UserKeyPrefix = "user"
 
+type PlanningEvent struct {
+	User      string `json:"user"`
+	City      string `json:"city"`
+	Country   string `json:"country"`
+	Timestamp string `json:"timestamp"`
+}
+
 // lookup an user
 func (redisClient *RedisClient) FindUser(context context.Context, username string) (user.User, error) {
 	usr := user.User{Username: "guest"}

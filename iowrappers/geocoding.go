@@ -7,7 +7,7 @@ import (
 	"googlemaps.github.io/maps"
 )
 
-// Translate city, country to its central location
+// GetGeocode converts city, country to its central location
 func (mapsClient MapsClient) GetGeocode(ctx context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
 	req := &maps.GeocodingRequest{
 		Components: map[maps.Component]string{

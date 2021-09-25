@@ -15,7 +15,7 @@ func TestGetPlaces(t *testing.T) {
 		LocationType:     POI.LocationTypeMuseum,
 		Address:          POI.Address{},
 		FormattedAddress: "20 W 34th St, New York, NY 10001",
-		Location:         POI.Location{Type: "point", Coordinates: [2]float64{-73.9857, 40.7484}},
+		Location:         POI.Location{Longitude: -73.9857, Latitude: 40.7484},
 		PriceLevel:       3,
 		Rating:           4.6,
 		Hours:            [7]string{},
@@ -27,7 +27,7 @@ func TestGetPlaces(t *testing.T) {
 		LocationType:     POI.LocationTypeRestaurant,
 		Address:          POI.Address{},
 		FormattedAddress: "255 Northern Blvd, Great Neck, NY 11021",
-		Location:         POI.Location{Type: "point", Coordinates: [2]float64{-73.7271, 40.7773}},
+		Location:         POI.Location{Longitude: -73.7271, Latitude: 40.7773},
 		PriceLevel:       5,
 		Rating:           4.9,
 		Hours:            [7]string{},
@@ -39,7 +39,7 @@ func TestGetPlaces(t *testing.T) {
 		LocationType:     POI.LocationTypeRestaurant,
 		Address:          POI.Address{},
 		FormattedAddress: "72 W 36th St, New York, NY 10018",
-		Location:         POI.Location{Type: "point", Coordinates: [2]float64{-73.98597, 40.750706}},
+		Location:         POI.Location{Longitude: -73.98597, Latitude: 40.750706},
 		PriceLevel:       5,
 		Rating:           4.6,
 		Hours:            [7]string{},
@@ -58,7 +58,7 @@ func TestGetPlaces(t *testing.T) {
 	}
 
 	// test normal cases
-	nycLatLng := "40.712800,-74.006000"
+	nycLatLng := POI.Location{Longitude: -74.006000, Latitude: 40.712800}
 	placeSearchRequest := iowrappers.PlaceSearchRequest{
 		Location:      nycLatLng,
 		PlaceCat:      "Visit",

@@ -27,7 +27,7 @@ type MapsClient struct {
 
 func (mapsClient *MapsClient) SetDetailedSearchFields(fields []string) {
 	mapsClient.DetailedSearchFields = fields
-	Logger.Debugf("Set the following fields in detailed place search: %s",
+	Logger.Debugf("Set the following fields for detailed place searchs: %s",
 		strings.Join(mapsClient.DetailedSearchFields, ", "))
 }
 

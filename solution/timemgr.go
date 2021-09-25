@@ -5,7 +5,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
-func GetTimeSlotLengthInMin(placeClusters []matching.TimePlacesCluster) int {
+func GetTimeSlotLengthInMin(placeClusters []matching.PlacesClusterForTime) int {
 	if len(placeClusters) == 0 {
 		return 0
 	}
