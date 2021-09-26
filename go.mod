@@ -8,7 +8,6 @@ require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/requestid v0.0.1
 	github.com/gin-gonic/gin v1.7.0
-	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-redis/redis/v8 v8.2.3
 	github.com/golang-jwt/jwt v3.2.1+incompatible
@@ -17,7 +16,6 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/mpraski/clusters v0.0.0-20170921103932-51821d83008d
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.6.1
 	github.com/yourbasic/radix v0.0.0-20180308122924-cbe1cc82e907

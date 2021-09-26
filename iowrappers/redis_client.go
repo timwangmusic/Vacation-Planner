@@ -175,7 +175,7 @@ func (redisClient *RedisClient) getPlace(context context.Context, placeId string
 // to be used with the StorePlacesForLocation method
 // if no geocode in Redis, then we assume no nearby place exists either
 func (redisClient *RedisClient) NearbySearchNotUsed(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
-	lat, lng, err := redisClient.GetGeocode(context, &GeocodeQuery{
+	lat, lng, err := redisClient.Geocode(context, &GeocodeQuery{
 		City:    request.Location.City,
 		Country: request.Location.Country,
 	})
@@ -271,7 +271,7 @@ func (redisClient *RedisClient) GetLocationWithAlias(context context.Context, qu
 	return strings.Join([]string{resCity, resCountry}, "_")
 }
 
-func (redisClient *RedisClient) GetGeocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
+func (redisClient *RedisClient) Geocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
 	redisKey := "geocode:cities"
 	redisField := redisClient.GetLocationWithAlias(context, query)
 	errMsg := fmt.Errorf("geocode of location %s, %s does not exist in cache", query.City, query.Country)
@@ -305,7 +305,7 @@ func (redisClient *RedisClient) SetGeocode(context context.Context, query Geocod
 	utils.LogErrorWithLevel(redisClient.CacheLocationAlias(context, originalQuery, query), utils.LogError)
 }
 
-// returns redis streams ID if XADD command execution is successful
+// StreamsLogging returns redis streams ID if XADD command execution is successful
 func (redisClient *RedisClient) StreamsLogging(streamName string, data map[string]string) string {
 	xArgs := redis.XAddArgs{Stream: streamName}
 	keyValues := make([]string, 0)

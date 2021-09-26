@@ -11,7 +11,6 @@ const (
 	PlaceIDsKeyPrefix     = "placeIDs"
 )
 
-// returns place details keys in Redis as well
 func (redisClient *RedisClient) GetPlaceCountInRedis(context context.Context) (placeKeys []string, count int, err error) {
 	var cursor uint64
 	placeKeys = make([]string, 0)

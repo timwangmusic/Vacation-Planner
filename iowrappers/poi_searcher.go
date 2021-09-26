@@ -50,15 +50,16 @@ func DestroyLogger() {
 	_ = Logger.Sync()
 }
 
-// GetGeocode performs geocoding, mapping city and country to latitude and longitude
-func (poiSearcher PoiSearcher) GetGeocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
+// Geocode performs geocoding, mapping city and country to latitude and longitude
+func (poiSearcher PoiSearcher) Geocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
+
 	originalGeocodeQuery := GeocodeQuery{}
 	originalGeocodeQuery.City = query.City
 	originalGeocodeQuery.Country = query.Country
 	var geocodeMissingErr error
-	lat, lng, geocodeMissingErr = poiSearcher.redisClient.GetGeocode(context, query)
+	lat, lng, geocodeMissingErr = poiSearcher.redisClient.Geocode(context, query)
 	if geocodeMissingErr != nil {
-		lat, lng, err = poiSearcher.mapsClient.GetGeocode(context, query)
+		lat, lng, err = poiSearcher.mapsClient.Geocode(context, query)
 		if err != nil {
 			return
 		}
@@ -74,7 +75,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	location := request.Location
 
 	places := make([]POI.Place, 0)
-	lat, lng, err := poiSearcher.GetGeocode(context, &GeocodeQuery{
+	lat, lng, err := poiSearcher.Geocode(context, &GeocodeQuery{
 		City:    location.City,
 		Country: location.Country,
 	})

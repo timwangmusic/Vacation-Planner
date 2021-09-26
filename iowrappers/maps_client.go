@@ -14,8 +14,8 @@ import (
 
 // SearchClient defines an interface of a client that performs location-based operations such as nearby search
 type SearchClient interface {
-	GetGeocode(context.Context, *GeocodeQuery) (float64, float64, error)     // translate a textual location to latitude and longitude
-	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error)  // search nearby places in a category around a central location
+	Geocode(context.Context, *GeocodeQuery) (float64, float64, error)       // translate a textual location to latitude and longitude
+	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error) // search nearby places in a category around a central location
 }
 
 type MapsClient struct {
@@ -80,4 +80,34 @@ func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude
 		return GeocodeQuery{}, errors.New("no geocoding results found")
 	}
 	return geocodingResultsToGeocodeQuery(geocodingResults), nil
+}
+
+// Geocode converts city, country to its central location
+func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
+	req := &maps.GeocodingRequest{
+		Components: map[maps.Component]string{
+			maps.ComponentLocality: query.City,
+			maps.ComponentCountry:  query.Country,
+		}}
+
+	resp, err := mapsClient.client.Geocode(ctx, req)
+	if err != nil {
+		utils.LogErrorWithLevel(err, utils.LogError)
+		return
+	}
+
+	if len(resp) < 1 {
+		err = errors.New("maps geo-coding response invalid")
+		utils.LogErrorWithLevel(err, utils.LogError)
+		return
+	}
+
+	location := resp[0].Geometry.Location
+	lat = location.Lat
+	lng = location.Lng
+
+	cityName := resp[0].AddressComponents[0].LongName
+	query.City = cityName
+
+	return
 }

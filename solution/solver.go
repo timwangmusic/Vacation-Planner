@@ -58,7 +58,7 @@ func (solver *Solver) ValidateLocation(context context.Context, location *POI.Lo
 		City:    location.City,
 		Country: location.Country,
 	}
-	_, _, err := solver.Searcher.GetGeocode(context, &geoQuery)
+	_, _, err := solver.Searcher.Geocode(context, &geoQuery)
 	if err != nil {
 		return false
 	}
