@@ -32,8 +32,8 @@ const (
 )
 
 var placeTypeToIconCss = map[POI.PlaceCategory](string){
-	POI.PlaceCategoryEatery: "fas fa-hamburger",
-	POI.PlaceCategoryVisit:  "fas fa-torii-gate",
+	POI.PlaceCategoryEatery: "restaurant",
+	POI.PlaceCategoryVisit:  "attractions",
 }
 
 type MyPlanner struct {
