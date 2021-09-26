@@ -53,10 +53,10 @@
                 <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
                        value="2020-02-29">
 
-                <input class="form-control border border-secondary" type="search" id="location" placeholder="Search" aria-label="Search"
+                <input class="form-control border border-secondary" type="search" id="location" placeholder="Search"
+                       aria-label="Search"
                        name="location" value="Los Angeles, USA" list="datalistOptions">
 
-                <button class="btn" type="submit"><i class="bi bi-search"></i></button>
                 <datalist id="datalistOptions">
                     <option value="San Francisco, USA">
                     <option value="Seattle, USA">
@@ -65,7 +65,14 @@
                     <option value="New York City, USA">
                     <option value="Beijing, China">
                 </datalist>
+
+                <button id="searchButton" class="btn" type="submit">
+                    <i id="searchIcon" class="bi bi-search visible"></i>
+                    <span id="searchSpinner" class="spinner-border text-info spinner-border-sm visually-hidden"
+                          role="status" aria-hidden="true"></span>
+                </button>
             </div>
+
         </form>
     </div>
 
