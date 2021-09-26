@@ -16,7 +16,6 @@ import (
 type SearchClient interface {
 	GetGeocode(context.Context, *GeocodeQuery) (float64, float64, error)     // translate a textual location to latitude and longitude
 	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error)  // search nearby places in a category around a central location
-	PlaceDetailsSearch(context.Context, string) (place POI.Place, err error) // search place details with place ID
 }
 
 type MapsClient struct {
@@ -27,7 +26,7 @@ type MapsClient struct {
 
 func (mapsClient *MapsClient) SetDetailedSearchFields(fields []string) {
 	mapsClient.DetailedSearchFields = fields
-	Logger.Debugf("Set the following fields for detailed place searchs: %s",
+	Logger.Debugf("Set the following fields for detailed place searches: %s",
 		strings.Join(mapsClient.DetailedSearchFields, ", "))
 }
 

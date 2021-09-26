@@ -37,7 +37,7 @@ type RedisClient struct {
 	client redis.Client
 }
 
-// close Redis connection
+// Destroy closes Redis connection from the client
 func (redisClient *RedisClient) Destroy() {
 	if err := redisClient.client.Close(); err != nil {
 		log.Error(err)
@@ -53,7 +53,7 @@ func CreateRedisClient(url *url.URL) RedisClient {
 	})}
 }
 
-// analytics of total number of unique visitors to the planning APIs in the last 24 hours
+// CollectPlanningAPIStats generates analytics of total number of unique visitors to the planning APIs in the last 24 hours
 // analytics of number of unique users planning for each city
 func (redisClient *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
 	c := redisClient.client
@@ -117,7 +117,7 @@ func (redisClient *RedisClient) SetMapsLastSearchTime(context context.Context, l
 	return
 }
 
-// currently not used, but it is still a primitive implementation that might have faster search time compared
+// StorePlacesForLocation is currently not used, but it is still a primitive implementation that might have faster search time compared
 // with all places stored under one key
 // store places obtained from database or external API in Redis
 // places for a location are stored in separate sorted sets based on category
@@ -171,7 +171,7 @@ func (redisClient *RedisClient) getPlace(context context.Context, placeId string
 	return
 }
 
-// currently NOT used
+// NearbySearchNotUsed is currently NOT used
 // to be used with the StorePlacesForLocation method
 // if no geocode in Redis, then we assume no nearby place exists either
 func (redisClient *RedisClient) NearbySearchNotUsed(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
@@ -239,7 +239,7 @@ func (redisClient *RedisClient) PlaceDetailsSearch(context.Context, string) (pla
 	return
 }
 
-// cache the mapping from user input location name to geo-coding-corrected location name
+// CacheLocationAlias caches the mapping from user input location name to geo-coding-corrected location name
 // correct location name is an alias of itself
 func (redisClient *RedisClient) CacheLocationAlias(context context.Context, query GeocodeQuery, correctedQuery GeocodeQuery) (err error) {
 	_, err = redisClient.client.HSet(context, "location_name_alias_mapping:city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
@@ -253,8 +253,8 @@ func (redisClient *RedisClient) CacheLocationAlias(context context.Context, quer
 	return
 }
 
-// retrieve corrected location name from cache. return empty string if not exist
-// if corrected location name exists, corrects geocode query
+// GetLocationWithAlias retrieves corrected location name from Redis; returns empty string if not exist;
+// corrects geocode query if corrected location name exists
 func (redisClient *RedisClient) GetLocationWithAlias(context context.Context, query *GeocodeQuery) string {
 	resCity, err := redisClient.client.HGet(context, "location_name_alias_mapping:city_names", strings.ToLower(query.City)).Result()
 	if err != nil {
@@ -345,7 +345,7 @@ type SlotSolutionCacheRequest struct {
 
 // convert time intervals and an EV tag to an integer
 // each time interval and E/V pair has 23 * 24 * 2 = 1104 possibilities
-// treat each pair as one digit in 1104-ary number and we have maximum 4 digits
+// treat each pair as one digit in 1104-ary number, and we have maximum 4 digits
 func encodeTimeCatIdx(eVTag []string, intervals []POI.TimeInterval) (res int64, err error) {
 	if len(eVTag) != len(intervals) {
 		err = errors.New("wrong inputs")
@@ -380,7 +380,6 @@ func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 	return redisFieldKey
 }
 
-// cache iowrapper level version of slot solution
 func (redisClient *RedisClient) CacheSlotSolution(context context.Context, req SlotSolutionCacheRequest, solution SlotSolutionCacheResponse) {
 	redisKey := genSlotSolutionCacheKey(req)
 	json_, err := json.Marshal(solution)

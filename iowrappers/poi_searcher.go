@@ -22,7 +22,7 @@ type PoiSearcher struct {
 	redisClient RedisClient
 }
 
-// can also be used as the result of reverse geocoding
+// GeocodeQuery can also be used as the result of reverse geocoding
 type GeocodeQuery struct {
 	City    string `json:"city"`
 	Country string `json:"country"`
@@ -50,7 +50,7 @@ func DestroyLogger() {
 	_ = Logger.Sync()
 }
 
-// currently geocode is equivalent to mapping city and country to latitude and longitude
+// GetGeocode performs geocoding, mapping city and country to latitude and longitude
 func (poiSearcher PoiSearcher) GetGeocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
 	originalGeocodeQuery := GeocodeQuery{}
 	originalGeocodeQuery.City = query.City
@@ -98,7 +98,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	lastSearchTime, cacheMiss := poiSearcher.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
 
 	currentTime := time.Now()
-	// use place data from database if the location is known and the data is fresh and we have sufficient data
+	// use place data from database if the location is known and the data is fresh, and we have sufficient data
 	if cacheMiss == nil && (currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && uint(len(cachedPlaces)) >= request.MinNumResults) {
 		Logger.Infof("[%s] Using Redis to fulfill request. Place Type: %s", context.Value(RequestIdKey), request.PlaceCat)
 		places = append(places, cachedPlaces...)
@@ -131,15 +131,11 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 			len(places), request.PlaceCat, request.MinNumResults)
 	}
 	if len(places) == 0 {
-		Logger.Debugf("No qualified POI result found in the given location %s, radius %d, and place type: %s",
+		Logger.Debugf("No qualified POI result found in the given location %v, radius %d, and place type: %s",
 			request.Location, request.Radius, request.PlaceCat)
 		Logger.Debug("location may be invalid")
 	}
 	return places, nil
-}
-
-func (poiSearcher PoiSearcher) PlaceDetailsSearch(context context.Context, placeId string) (place POI.Place, err error) {
-	return place, nil
 }
 
 func (poiSearcher PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
