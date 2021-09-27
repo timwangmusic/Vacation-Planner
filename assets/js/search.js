@@ -64,6 +64,15 @@ function locateMe() {
 
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
+document.getElementById("searchButton").addEventListener(
+    "click", () => {
+        const spinner = document.getElementById("searchSpinner");
+        const searchIcon = document.getElementById("searchIcon");
+        spinner.classList.remove("visually-hidden");
+        searchIcon.classList.add("visually-hidden");
+    }
+)
+
 const cities = [
     "San Jose",
     "San Diego",
@@ -101,13 +110,3 @@ const countries = [
     "China",
     "India",
 ]
-
-$(function () {
-    $("#city").autocomplete({
-        source: cities
-    })
-
-    $("#country").autocomplete({
-        source: countries
-    })
-});
