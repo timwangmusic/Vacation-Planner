@@ -7,6 +7,14 @@ const (
 	PlaceCategoryEatery = PlaceCategory("Eatery")
 )
 
+type PlaceIcon string
+
+const (
+	PlaceIconVisit  = PlaceIcon("attractions")
+	PlaceIconEatery = PlaceIcon("restaurant")
+	PlaceIconEmpty  = PlaceIcon("")
+)
+
 type LocationType string
 
 const (

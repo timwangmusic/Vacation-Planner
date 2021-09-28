@@ -9,14 +9,14 @@ import (
 )
 
 type PlanningSolution struct {
-	PlaceNames     []string            `json:"place_names"`
-	PlaceIDS       []string            `json:"place_ids"`
-	PlaceLocations [][2]float64        `json:"place_locations"` // lat,lng
-	PlaceAddresses []string            `json:"place_addresses"`
-	PlaceURLs      []string            `json:"place_urls"`
-	PlaceTypes     []POI.PlaceCategory `json:"place_types"`
-	Score          float64             `json:"score"`
-	IsSet          bool                `json:"is_set"`
+	PlaceNames      []string            `json:"place_names"`
+	PlaceIDS        []string            `json:"place_ids"`
+	PlaceLocations  [][2]float64        `json:"place_locations"` // lat,lng
+	PlaceAddresses  []string            `json:"place_addresses"`
+	PlaceURLs       []string            `json:"place_urls"`
+	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
+	Score           float64             `json:"score"`
+	IsSet           bool                `json:"is_set"`
 }
 
 func CreateCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (res PlanningSolution) {
@@ -42,7 +42,7 @@ func CreateCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (r
 		res.PlaceNames = append(res.PlaceNames, place.GetPlaceName())
 		res.PlaceLocations = append(res.PlaceLocations, [2]float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
 		res.PlaceAddresses = append(res.PlaceAddresses, place.GetPlaceFormattedAddress())
-		res.PlaceTypes = append(res.PlaceTypes, place.GetPlaceCategory())
+		res.PlaceCategories = append(res.PlaceCategories, place.GetPlaceCategory())
 		if len(strings.TrimSpace(place.GetURL())) == 0 {
 			place.SetURL(iowrappers.GoogleSearchHomePageURL)
 		}

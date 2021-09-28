@@ -3,12 +3,12 @@ package planner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -31,9 +31,9 @@ const (
 	jobQueueBufferSize = 1000
 )
 
-var placeTypeToIconCss = map[POI.PlaceCategory](string){
-	POI.PlaceCategoryEatery: "restaurant",
-	POI.PlaceCategoryVisit:  "attractions",
+var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
+	POI.PlaceCategoryEatery: POI.PlaceIconEatery,
+	POI.PlaceCategoryVisit:  POI.PlaceIconVisit,
 }
 
 type MyPlanner struct {
@@ -264,13 +264,10 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 				EndTime:   planningRequest.Slots[pIdx].TimeSlot.Slot.End,
 				Address:   topSolution.PlaceAddresses[pIdx],
 				URL:       topSolution.PlaceURLs[pIdx],
-				PlaceIcon: placeTypeToIconCss[topSolution.PlaceTypes[pIdx]],
+				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx), //placeTypeToGoogleFontIcon[topSolution.PlaceCategories[pIdx]],
 			})
 		}
 		resp.Places[sIdx] = timeSectionPlaces
-		// Rui debug
-		iowrappers.Logger.Debugf("[Rui] solution #%d", sIdx)
-		printSolution(&topSolution)
 	}
 
 	resp.StatusCode = solution.ValidSolutionFound
@@ -450,13 +447,9 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	return svr
 }
 
-func printSolution(solution *solution.PlanningSolution) {
-	e := reflect.ValueOf(solution).Elem()
-
-	for i := 0; i < e.NumField(); i++ {
-		varName := e.Type().Field(i).Name
-		varType := e.Type().Field(i).Type
-		varValue := e.Field(i).Interface()
-		iowrappers.Logger.Debugf("%v %v %v\n", varName, varType, varValue)
+func getPlaceIcon(placeTypes []POI.PlaceCategory, pIdx int) string {
+	if pIdx >= len(placeTypes) {
+		return fmt.Sprintf("%s", POI.PlaceIconEmpty)
 	}
+	return fmt.Sprintf("%s", placeTypeToIcon[placeTypes[pIdx]])
 }

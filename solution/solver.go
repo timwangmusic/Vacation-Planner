@@ -125,14 +125,14 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 		iowrappers.Logger.Debugf("Found slot cacheResponse in Redis.")
 		for _, candidate := range cacheResponse.SlotSolutionCandidate {
 			planningSolution := PlanningSolution{
-				PlaceNames:     candidate.PlaceNames,
-				PlaceIDS:       candidate.PlaceIds,
-				PlaceLocations: candidate.PlaceLocations,
-				PlaceAddresses: candidate.PlaceAddresses,
-				PlaceURLs:      candidate.PlaceURLs,
-				PlaceTypes:     candidate.PlaceTypes,
-				Score:          candidate.Score,
-				IsSet:          true,
+				PlaceNames:      candidate.PlaceNames,
+				PlaceIDS:        candidate.PlaceIds,
+				PlaceLocations:  candidate.PlaceLocations,
+				PlaceAddresses:  candidate.PlaceAddresses,
+				PlaceURLs:       candidate.PlaceURLs,
+				PlaceCategories: candidate.PlaceTypes,
+				Score:           candidate.Score,
+				IsSet:           true,
 			}
 			resp.Solutions = append(resp.Solutions, planningSolution)
 		}
