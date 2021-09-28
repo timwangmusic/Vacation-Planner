@@ -20,7 +20,6 @@ type PlanningEvent struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// lookup an user
 func (redisClient *RedisClient) FindUser(context context.Context, username string) (user.User, error) {
 	usr := user.User{Username: "guest"}
 	redisKey := strings.Join([]string{UserKeyPrefix, username}, ":")
@@ -36,7 +35,6 @@ func (redisClient *RedisClient) FindUser(context context.Context, username strin
 	return usr, nil
 }
 
-// create a new user
 func (redisClient *RedisClient) CreateUser(context context.Context, usr user.User) error {
 	redisKey := strings.Join([]string{UserKeyPrefix, usr.Username}, ":")
 	if redisClient.client.Exists(context, redisKey).Val() == 1 {
@@ -58,7 +56,7 @@ func (redisClient *RedisClient) CreateUser(context context.Context, usr user.Use
 	return err
 }
 
-// authenticate an user when a new user that holds no JWT or an existing user with expired JWT
+// Authenticate a user when a new user that holds no JWT or an existing user with expired JWT
 func (redisClient *RedisClient) Authenticate(context context.Context, credential user.Credential) (string, time.Time, error) {
 	u, err := redisClient.FindUser(context, credential.Username)
 	if err != nil {
