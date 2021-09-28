@@ -264,7 +264,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 				EndTime:   planningRequest.Slots[pIdx].TimeSlot.Slot.End,
 				Address:   topSolution.PlaceAddresses[pIdx],
 				URL:       topSolution.PlaceURLs[pIdx],
-				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx), //placeTypeToGoogleFontIcon[topSolution.PlaceCategories[pIdx]],
+				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
 			})
 		}
 		resp.Places[sIdx] = timeSectionPlaces

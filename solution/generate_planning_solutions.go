@@ -89,11 +89,9 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 
 	for mdIter.HasNext() {
 		curCandidate := CreateCandidate(mdIter, placeClusters)
-		// iowrappers.Logger.Debugf("%+v\n", curCandidate)
 
-		if curCandidate.IsSet {
-			solutions = append(solutions, curCandidate)
-		}
+		solutions = append(solutions, curCandidate)
+
 		mdIter.Next()
 	}
 
@@ -108,13 +106,13 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 
 	for idx, slotSolutionCandidate := range bestCandidates {
 		candidateCache := iowrappers.SlotSolutionCandidateCache{
-			PlaceIds:       slotSolutionCandidate.PlaceIDS,
-			Score:          slotSolutionCandidate.Score,
-			PlaceNames:     slotSolutionCandidate.PlaceNames,
-			PlaceLocations: slotSolutionCandidate.PlaceLocations,
-			PlaceAddresses: slotSolutionCandidate.PlaceAddresses,
-			PlaceURLs:      slotSolutionCandidate.PlaceURLs,
-			PlaceTypes:     slotSolutionCandidate.PlaceCategories,
+			PlaceIds:        slotSolutionCandidate.PlaceIDS,
+			Score:           slotSolutionCandidate.Score,
+			PlaceNames:      slotSolutionCandidate.PlaceNames,
+			PlaceLocations:  slotSolutionCandidate.PlaceLocations,
+			PlaceAddresses:  slotSolutionCandidate.PlaceAddresses,
+			PlaceURLs:       slotSolutionCandidate.PlaceURLs,
+			PlaceCategories: slotSolutionCandidate.PlaceCategories,
 		}
 		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
 	}

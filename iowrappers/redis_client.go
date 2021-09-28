@@ -322,13 +322,13 @@ func (redisClient *RedisClient) StreamsLogging(streamName string, data map[strin
 }
 
 type SlotSolutionCandidateCache struct {
-	PlaceIds       []string            `json:"place_ids"`
-	Score          float64             `json:"score"`
-	PlaceNames     []string            `json:"place_names"`
-	PlaceLocations [][2]float64        `json:"place_locations"`
-	PlaceAddresses []string            `json:"place_addresses"`
-	PlaceURLs      []string            `json:"place_urls"`
-	PlaceTypes     []POI.PlaceCategory `json:"place_types"`
+	PlaceIds        []string            `json:"place_ids"`
+	Score           float64             `json:"score"`
+	PlaceNames      []string            `json:"place_names"`
+	PlaceLocations  [][2]float64        `json:"place_locations"`
+	PlaceAddresses  []string            `json:"place_addresses"`
+	PlaceURLs       []string            `json:"place_urls"`
+	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 }
 
 type SlotSolutionCacheResponse struct {

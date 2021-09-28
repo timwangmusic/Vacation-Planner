@@ -130,9 +130,8 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 				PlaceLocations:  candidate.PlaceLocations,
 				PlaceAddresses:  candidate.PlaceAddresses,
 				PlaceURLs:       candidate.PlaceURLs,
-				PlaceCategories: candidate.PlaceTypes,
+				PlaceCategories: candidate.PlaceCategories,
 				Score:           candidate.Score,
-				IsSet:           true,
 			}
 			resp.Solutions = append(resp.Solutions, planningSolution)
 		}

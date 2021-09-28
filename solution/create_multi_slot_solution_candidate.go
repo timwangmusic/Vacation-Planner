@@ -16,7 +16,6 @@ type PlanningSolution struct {
 	PlaceURLs       []string            `json:"place_urls"`
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 	Score           float64             `json:"score"`
-	IsSet           bool                `json:"is_set"`
 }
 
 func CreateCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (res PlanningSolution) {
@@ -49,6 +48,5 @@ func CreateCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (r
 		res.PlaceURLs = append(res.PlaceURLs, place.GetURL())
 	}
 	res.Score = matching.Score(places)
-	res.IsSet = true
 	return
 }
