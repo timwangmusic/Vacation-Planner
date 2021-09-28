@@ -3,6 +3,17 @@ package planner
 import (
 	"context"
 	"errors"
+	"fmt"
+	"html/template"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
@@ -13,21 +24,17 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"html/template"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
 	ServerTimeout      = time.Second * 15
 	jobQueueBufferSize = 1000
 )
+
+var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
+	POI.PlaceCategoryEatery: POI.PlaceIconEatery,
+	POI.PlaceCategoryVisit:  POI.PlaceIconVisit,
+}
 
 type MyPlanner struct {
 	RedisClient        iowrappers.RedisClient
@@ -45,6 +52,7 @@ type TimeSectionPlace struct {
 	EndTime   POI.Hour `json:"end_time"`
 	Address   string   `json:"address"`
 	URL       string   `json:"url"`
+	PlaceIcon string   `json:"place_icon_css_class"`
 }
 
 type TimeSectionPlaces struct {
@@ -244,6 +252,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 
 	topSolutions := planningResponse.Solutions
 	resp.Places = make([]TimeSectionPlaces, len(topSolutions))
+
 	for sIdx, topSolution := range topSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
 			Places: make([]TimeSectionPlace, 0),
@@ -255,6 +264,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 				EndTime:   planningRequest.Slots[pIdx].TimeSlot.Slot.End,
 				Address:   topSolution.PlaceAddresses[pIdx],
 				URL:       topSolution.PlaceURLs[pIdx],
+				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
 			})
 		}
 		resp.Places[sIdx] = timeSectionPlaces
@@ -435,4 +445,11 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	}
 
 	return svr
+}
+
+func getPlaceIcon(placeTypes []POI.PlaceCategory, pIdx int) string {
+	if pIdx >= len(placeTypes) {
+		return fmt.Sprintf("%s", POI.PlaceIconEmpty)
+	}
+	return fmt.Sprintf("%s", placeTypeToIcon[placeTypes[pIdx]])
 }

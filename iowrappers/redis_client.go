@@ -8,15 +8,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v8"
-	log "github.com/sirupsen/logrus"
-	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
 const (
@@ -321,12 +322,13 @@ func (redisClient *RedisClient) StreamsLogging(streamName string, data map[strin
 }
 
 type SlotSolutionCandidateCache struct {
-	PlaceIds       []string     `json:"place_ids"`
-	Score          float64      `json:"score"`
-	PlaceNames     []string     `json:"place_names"`
-	PlaceLocations [][2]float64 `json:"place_locations"`
-	PlaceAddresses []string     `json:"place_addresses"`
-	PlaceURLs      []string     `json:"place_urls"`
+	PlaceIds        []string            `json:"place_ids"`
+	Score           float64             `json:"score"`
+	PlaceNames      []string            `json:"place_names"`
+	PlaceLocations  [][2]float64        `json:"place_locations"`
+	PlaceAddresses  []string            `json:"place_addresses"`
+	PlaceURLs       []string            `json:"place_urls"`
+	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 }
 
 type SlotSolutionCacheResponse struct {

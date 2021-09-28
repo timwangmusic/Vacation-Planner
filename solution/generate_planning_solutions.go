@@ -3,13 +3,14 @@ package solution
 import (
 	"container/heap"
 	"context"
+	"strconv"
+	"strings"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/yourbasic/radix"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -89,9 +90,8 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 	for mdIter.HasNext() {
 		curCandidate := CreateCandidate(mdIter, placeClusters)
 
-		if curCandidate.IsSet {
-			solutions = append(solutions, curCandidate)
-		}
+		solutions = append(solutions, curCandidate)
+
 		mdIter.Next()
 	}
 
@@ -106,12 +106,13 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 
 	for idx, slotSolutionCandidate := range bestCandidates {
 		candidateCache := iowrappers.SlotSolutionCandidateCache{
-			PlaceIds:       slotSolutionCandidate.PlaceIDS,
-			Score:          slotSolutionCandidate.Score,
-			PlaceNames:     slotSolutionCandidate.PlaceNames,
-			PlaceLocations: slotSolutionCandidate.PlaceLocations,
-			PlaceAddresses: slotSolutionCandidate.PlaceAddresses,
-			PlaceURLs:      slotSolutionCandidate.PlaceURLs,
+			PlaceIds:        slotSolutionCandidate.PlaceIDS,
+			Score:           slotSolutionCandidate.Score,
+			PlaceNames:      slotSolutionCandidate.PlaceNames,
+			PlaceLocations:  slotSolutionCandidate.PlaceLocations,
+			PlaceAddresses:  slotSolutionCandidate.PlaceAddresses,
+			PlaceURLs:       slotSolutionCandidate.PlaceURLs,
+			PlaceCategories: slotSolutionCandidate.PlaceCategories,
 		}
 		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
 	}
