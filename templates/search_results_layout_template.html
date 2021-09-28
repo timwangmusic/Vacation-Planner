@@ -60,7 +60,11 @@
                         <tbody>
                         {{range .Places}}
                         <tr>
-                            <td class="col-3" style="color: darkcyan"> <span class="material-icons">{{.PlaceIcon}}</span> {{.StartTime}} - {{.EndTime}} </td>
+                            <td class="col-3" style="color: darkcyan"> 
+                                <div class="d-flex flex-row">
+                                    <span class="material-icons">{{.PlaceIcon}}</span> <span class="mx-2"> {{.StartTime}} - {{.EndTime}} </span>
+                                </div
+                            ></td>
                             <td class="col-4 col-md-3"> <a href={{.URL}}> {{.PlaceName}} </a></td>
                             <td class="d-none d-md-block"> {{.Address}}</td>
                         </tr>
