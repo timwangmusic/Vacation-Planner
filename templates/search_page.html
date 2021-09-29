@@ -49,11 +49,13 @@
 
     <div class="row">
         <form class="d-flex" action="/v1/plans" method="get">
-            <div class="input-group">
+            <div class="input-group w-auto">
                 <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
                        value="2020-02-29">
-
-                <input class="form-control border border-secondary" type="search" id="location" placeholder="Search"
+            </div>
+            <div class="input-group border border-secondary rounded-1">
+                <i id="searchIcon" class="input-group-text border-0 bi bi-search bg-white"></i>
+                <input class="form-control border-0" type="search" id="location" placeholder="Search"
                        aria-label="Search"
                        name="location" value="Los Angeles, USA" list="datalistOptions">
 
@@ -65,12 +67,6 @@
                     <option value="New York City, USA">
                     <option value="Beijing, China">
                 </datalist>
-
-                <button id="searchButton" class="btn" type="submit">
-                    <i id="searchIcon" class="bi bi-search visible"></i>
-                    <span id="searchSpinner" class="spinner-border text-info spinner-border-sm visually-hidden"
-                          role="status" aria-hidden="true"></span>
-                </button>
             </div>
 
         </form>
