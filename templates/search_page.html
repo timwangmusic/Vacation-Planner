@@ -38,6 +38,10 @@
     Vacation Planner
 </h1>
 
+<!-- <div class="spinner-border text-info" role="status">
+    <span class="visually-hidden">Loading...</span>
+</div> -->
+
 <!--forms and inputs-->
 <div class="container mt-3" style="align-items: center">
     <div class="row">
@@ -53,20 +57,28 @@
                 <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
                        value="2020-02-29">
             </div>
-            <div class="input-group border border-secondary rounded-1">
-                <i id="searchIcon" class="input-group-text border-0 bi bi-search bg-white"></i>
-                <input class="form-control border-0" type="search" id="location" placeholder="Search"
+            
+            <div class="container px-1 border border-secondary rounded-1 d-flex flex-row align-items-center">
+                <i id="searchIcon" class="bi bi-search mx-1 visible"></i>
+               
+                <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
+                            role="status" aria-hidden="true"></span>
+                
+                <div class="flex-fill">
+                    <input class="form-control border-0" type="search" id="location" placeholder="Search"
                        aria-label="Search"
                        name="location" value="Los Angeles, USA" list="datalistOptions">
 
-                <datalist id="datalistOptions">
-                    <option value="San Francisco, USA">
-                    <option value="Seattle, USA">
-                    <option value="Los Angeles, USA">
-                    <option value="Chicago, USA">
-                    <option value="New York City, USA">
-                    <option value="Beijing, China">
-                </datalist>
+                    <datalist id="datalistOptions">
+                        <option value="San Francisco, USA">
+                        <option value="Seattle, USA">
+                        <option value="Los Angeles, USA">
+                        <option value="Chicago, USA">
+                        <option value="New York City, USA">
+                        <option value="Beijing, China">
+                    </datalist>
+                </div>
+                
             </div>
 
         </form>
