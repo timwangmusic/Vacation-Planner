@@ -55,7 +55,7 @@ func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount 
 	return res
 }
 
-func GenerateSolutions(context context.Context, matcher matching.Matcher, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
+func GenerateSolutions(context context.Context, matcher matching.Matcher, redisClient iowrappers.RedisClient, redisReq iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
 	solutions = make([]PlanningSolution, 0)
 
 	var placeClusters [][]matching.Place
@@ -101,8 +101,8 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 	solutions = bestCandidates
 
 	// cache slot solution calculation results
-	slotSolutionToCache := iowrappers.SlotSolutionCacheResponse{}
-	slotSolutionToCache.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, len(bestCandidates))
+	slotSolutionToCache := iowrappers.PlanningSolutionsCacheResponse{}
+	slotSolutionToCache.CachedPlanningSolutions = make([]iowrappers.SlotSolutionCandidateCache, len(bestCandidates))
 
 	for idx, slotSolutionCandidate := range bestCandidates {
 		candidateCache := iowrappers.SlotSolutionCandidateCache{
@@ -114,10 +114,10 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 			PlaceURLs:       slotSolutionCandidate.PlaceURLs,
 			PlaceCategories: slotSolutionCandidate.PlaceCategories,
 		}
-		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
+		slotSolutionToCache.CachedPlanningSolutions[idx] = candidateCache
 	}
 
-	redisClient.CacheSlotSolution(context, redisReq, slotSolutionToCache)
+	redisClient.CachePlanningSolutions(context, redisReq, slotSolutionToCache)
 
 	return
 }

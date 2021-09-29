@@ -331,12 +331,11 @@ type SlotSolutionCandidateCache struct {
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 }
 
-type SlotSolutionCacheResponse struct {
-	SlotSolutionCandidate []SlotSolutionCandidateCache `json:"slot_solution_candidate"`
-	Err                   error
+type PlanningSolutionsCacheResponse struct {
+	CachedPlanningSolutions []SlotSolutionCandidateCache `json:"cached_planning_solutions"`
 }
 
-type SlotSolutionCacheRequest struct {
+type PlanningSolutionsCacheRequest struct {
 	Country   string
 	City      string
 	Radius    uint64
@@ -370,7 +369,7 @@ func encodeTimeCatIdx(eVTag []string, intervals []POI.TimeInterval) (res int64, 
 	return
 }
 
-func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
+func genSlotSolutionCacheKey(req PlanningSolutionsCacheRequest) string {
 	country, city := req.Country, req.City
 	timeCatIdx, err := encodeTimeCatIdx(req.EVTags, req.Intervals)
 	utils.LogErrorWithLevel(err, utils.LogError)
@@ -382,7 +381,7 @@ func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 	return redisFieldKey
 }
 
-func (redisClient *RedisClient) CacheSlotSolution(context context.Context, req SlotSolutionCacheRequest, solution SlotSolutionCacheResponse) {
+func (redisClient *RedisClient) CachePlanningSolutions(context context.Context, req PlanningSolutionsCacheRequest, solution PlanningSolutionsCacheResponse) {
 	redisKey := genSlotSolutionCacheKey(req)
 	json_, err := json.Marshal(solution)
 	utils.LogErrorWithLevel(err, utils.LogError)
@@ -394,34 +393,19 @@ func (redisClient *RedisClient) CacheSlotSolution(context context.Context, req S
 	}
 }
 
-func (redisClient *RedisClient) GetSlotSolution(context context.Context, redisKey string, cacheResponses []SlotSolutionCacheResponse, wg *sync.WaitGroup, idx int) {
-	defer wg.Done()
-
+func (redisClient *RedisClient) PlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest) (PlanningSolutionsCacheResponse, error) {
+	var response PlanningSolutionsCacheResponse
+	redisKey := genSlotSolutionCacheKey(request)
 	json_, err := redisClient.client.Get(context, redisKey).Result()
 	if err != nil {
 		Logger.Debugf("[%s] redis server find no result for key: %s", context.Value(RequestIdKey), redisKey)
-		cacheResponses[idx].Err = err
-		return
+		return response, err
 	}
 
-	err = json.Unmarshal([]byte(json_), &cacheResponses[idx])
+	err = json.Unmarshal([]byte(json_), &response)
 	if err != nil {
 		Logger.Error(err)
-		cacheResponses[idx].Err = err
-		return
+		return response, err
 	}
-}
-
-func (redisClient *RedisClient) GetMultiSlotSolutions(context context.Context, requests []SlotSolutionCacheRequest) (responses []SlotSolutionCacheResponse) {
-	var wg sync.WaitGroup
-	wg.Add(len(requests))
-
-	responses = make([]SlotSolutionCacheResponse, len(requests))
-
-	for idx, request := range requests {
-		redisKey := genSlotSolutionCacheKey(request)
-		go redisClient.GetSlotSolution(context, redisKey, responses, &wg, idx)
-	}
-	wg.Wait()
-	return
+	return response, nil
 }
