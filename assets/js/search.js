@@ -65,14 +65,12 @@ function locateMe() {
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
 const locationSearchInput = document.getElementById('location');
+const spinner = document.getElementById("searchSpinner");
 locationSearchInput.addEventListener(
     "keyup", (evt) => {
         if (evt.key == "Enter") {
             console.log("Pressed Enter in location input!")
-            const spinner = document.getElementById("searchSpinner");
-            const searchIcon = document.getElementById("searchIcon");
             spinner.classList.remove("visually-hidden");
-            searchIcon.classList.add("visually-hidden");
         }    
     }
 )

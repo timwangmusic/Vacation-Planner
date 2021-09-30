@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!--Bootstrap CSS-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/css/styles.css">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
@@ -14,82 +14,81 @@
 </head>
 
 <body>
-<!--navigation bar-->
-<nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
-    <div class="container-fluid">
+    <!--navigation bar-->
+    <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
+        <div class="container-fluid">
 
-        <ul class="nav" id="navbar-items">
-            <li class="nav-item">
-                <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner">about</a>
-            </li>
-            <li class="nav-item" id="login">
-                <a class="nav-link" href="/v1/log-in">login </a>
-            </li>
-            <li class="nav-item" id="signup">
-                <a class="nav-link" href="/v1/sign-up">signup </a>
-            </li>
-        </ul>
-        <span id="username" class="navbar-text">guest</span>
+            <ul class="nav" id="navbar-items">
+                <li class="nav-item">
+                    <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner">about</a>
+                </li>
+                <li class="nav-item" id="login">
+                    <a class="nav-link" href="/v1/log-in">login </a>
+                </li>
+                <li class="nav-item" id="signup">
+                    <a class="nav-link" href="/v1/sign-up">signup </a>
+                </li>
+            </ul>
+            <span id="username" class="navbar-text">guest</span>
 
-    </div>
-</nav>
-
-<h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
-    Vacation Planner
-</h1>
-
-<!-- <div class="spinner-border text-info" role="status">
-    <span class="visually-hidden">Loading...</span>
-</div> -->
-
-<!--forms and inputs-->
-<div class="container mt-3" style="align-items: center">
-    <div class="row">
-        <div class="column">
-            <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill</button>
         </div>
-    </div>
-    <br>
+    </nav>
 
-    <div class="row">
-        <form class="d-flex" action="/v1/plans" method="get">
-            <div class="input-group w-auto">
-                <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
-                       value="2020-02-29">
+    <h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
+        Vacation Planner
+    </h1>
+
+    <!--forms and inputs-->
+    <div class="container mt-3" style="align-items: center">
+        <div class="row">
+            <div class="column">
+                <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill</button>
             </div>
-            
-            <div class="container px-1 border border-secondary rounded-1 d-flex flex-row align-items-center">
-                <i id="searchIcon" class="bi bi-search mx-1 visible"></i>
-               
-                <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
-                            role="status" aria-hidden="true"></span>
-                
-                <div class="flex-fill">
-                    <input class="form-control border-0" type="search" id="location" placeholder="Search"
-                       aria-label="Search"
-                       name="location" value="Los Angeles, USA" list="datalistOptions">
+        </div>
+        <br>
 
-                    <datalist id="datalistOptions">
-                        <option value="San Francisco, USA">
-                        <option value="Seattle, USA">
-                        <option value="Los Angeles, USA">
-                        <option value="Chicago, USA">
-                        <option value="New York City, USA">
-                        <option value="Beijing, China">
-                    </datalist>
+        <div class="row">
+            <form class="d-flex" action="/v1/plans" method="get">
+                <div class="input-group w-auto">
+                    <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
+                        value="2020-02-29">
                 </div>
-                
-            </div>
 
-        </form>
+                <div class="container px-1 border border-secondary rounded-1 d-flex flex-row align-items-center">
+                    <div class="fixedwidthicon">
+                        <i id="searchIcon" class="bi bi-search mx-1 visible"></i>
+                    </div>
+
+                    <div class="flex-fill">
+                        <input class="form-control border-0" type="search" id="location" placeholder="Search"
+                            aria-label="Search" name="location" value="Los Angeles, USA" list="datalistOptions">
+
+                        <datalist id="datalistOptions">
+                            <option value="San Francisco, USA">
+                            <option value="Seattle, USA">
+                            <option value="Los Angeles, USA">
+                            <option value="Chicago, USA">
+                            <option value="New York City, USA">
+                            <option value="Beijing, China">
+                        </datalist>
+                    </div>
+
+                    <div class="fixedwidthicon">
+                        <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
+                            role="status" aria-hidden="true"></span>
+                    </div>
+
+                </div>
+
+            </form>
+        </div>
+
     </div>
 
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-<script type="module" src="assets/js/search.js">
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+    <script type="module" src="assets/js/search.js">
+    </script>
 </body>
 
 </html>
