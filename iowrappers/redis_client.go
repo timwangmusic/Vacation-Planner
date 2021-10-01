@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	SlotSolutionExpirationTime = 24 * time.Hour
-	PlanningStatExpirationTime = 24 * time.Hour
+	PlanningSolutionsExpirationTime = 24 * time.Hour
+	PlanningStatExpirationTime      = 24 * time.Hour
 
 	NumVisitorsPlanningAPI = "visitor_count:planning_APIs"
 	NumVisitorsPrefix      = "visitor_count"
@@ -236,10 +236,6 @@ func (redisClient *RedisClient) NearbySearch(context context.Context, request *P
 	return
 }
 
-func (redisClient *RedisClient) PlaceDetailsSearch(context.Context, string) (place POI.Place, err error) {
-	return
-}
-
 // CacheLocationAlias caches the mapping from user input location name to geo-coding-corrected location name
 // correct location name is an alias of itself
 func (redisClient *RedisClient) CacheLocationAlias(context context.Context, query GeocodeQuery, correctedQuery GeocodeQuery) (err error) {
@@ -381,15 +377,15 @@ func genSlotSolutionCacheKey(req PlanningSolutionsCacheRequest) string {
 	return redisFieldKey
 }
 
-func (redisClient *RedisClient) CachePlanningSolutions(context context.Context, req PlanningSolutionsCacheRequest, solution PlanningSolutionsCacheResponse) {
-	redisKey := genSlotSolutionCacheKey(req)
-	json_, err := json.Marshal(solution)
+func (redisClient *RedisClient) CachePlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest, response PlanningSolutionsCacheResponse) {
+	redisKey := genSlotSolutionCacheKey(request)
+	json_, err := json.Marshal(response)
 	utils.LogErrorWithLevel(err, utils.LogError)
 
 	if err != nil {
-		Logger.Errorf("cache slot solution failure for request with key: %s", redisKey)
+		Logger.Errorf("cache planning solutions failure for request %+v", request)
 	} else {
-		redisClient.client.Set(context, redisKey, json_, SlotSolutionExpirationTime)
+		redisClient.client.Set(context, redisKey, json_, PlanningSolutionsExpirationTime)
 	}
 }
 
