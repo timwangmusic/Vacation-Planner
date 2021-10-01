@@ -67,7 +67,7 @@ func (solver *Solver) ValidateLocation(context context.Context, location *POI.Lo
 	return true
 }
 
-func GenerateSlotSolutionRedisRequest(location POI.Location, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) iowrappers.SlotSolutionCacheRequest {
+func PlanningSolutionsRedisRequest(location POI.Location, evTag string, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) iowrappers.PlanningSolutionsCacheRequest {
 	intervals := make([]POI.TimeInterval, len(stayTimes))
 	for idx, stayTime := range stayTimes {
 		intervals[idx] = stayTime.Slot
@@ -78,7 +78,7 @@ func GenerateSlotSolutionRedisRequest(location POI.Location, evTag string, stayT
 		evTags[idx] = string(c)
 	}
 
-	req := iowrappers.SlotSolutionCacheRequest{
+	req := iowrappers.PlanningSolutionsCacheRequest{
 		Country:   location.Country,
 		City:      location.City,
 		Radius:    uint64(radius),
@@ -89,22 +89,20 @@ func GenerateSlotSolutionRedisRequest(location POI.Location, evTag string, stayT
 	return req
 }
 
-func (solver *Solver) Solve(context context.Context, redisClient iowrappers.RedisClient, req *PlanningRequest, resp *PlanningResponse) {
-	if !solver.ValidateLocation(context, &req.Location) {
-		resp.Err = errors.New("invalid travel destination")
-		resp.ErrorCode = InvalidRequestLocation
+func (solver *Solver) Solve(context context.Context, redisClient iowrappers.RedisClient, request *PlanningRequest, response *PlanningResponse) {
+	if !solver.ValidateLocation(context, &request.Location) {
+		response.Err = errors.New("invalid travel destination")
+		response.ErrorCode = InvalidRequestLocation
 		return
 	}
 
 	// set default planning results count
-	if req.NumPlans == 0 {
-		req.NumPlans = NumPlansDefault
+	if request.NumPlans == 0 {
+		request.NumPlans = NumPlansDefault
 	}
 
-	redisRequests := make([]iowrappers.SlotSolutionCacheRequest, 1)
-
 	var sb strings.Builder
-	for _, cat := range ToSlotCategories(req.Slots) {
+	for _, cat := range ToSlotCategories(request.Slots) {
 		switch cat {
 		case POI.PlaceCategoryEatery:
 			sb.WriteString("e")
@@ -112,18 +110,13 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 			sb.WriteString("v")
 		}
 	}
-	redisRequests[0] = GenerateSlotSolutionRedisRequest(req.Location, sb.String(), ToTimeSlots(req.Slots), req.SearchRadius, req.Weekday)
+	redisRequest := PlanningSolutionsRedisRequest(request.Location, sb.String(), ToTimeSlots(request.Slots), request.SearchRadius, request.Weekday)
 
-	// TODO: Refactor Redis client to take single iowrappers.SlotSolutionCacheRequest
-	slotSolutionCacheResponses := redisClient.GetMultiSlotSolutions(context, redisRequests)
+	cacheResponse, cacheErr := redisClient.PlanningSolutions(context, redisRequest)
 
-	slotSolutionRedisKeys := make([]string, len(redisRequests))
-
-	cacheResponse := slotSolutionCacheResponses[0]
-
-	if cacheResponse.Err == nil {
-		iowrappers.Logger.Debugf("Found slot cacheResponse in Redis.")
-		for _, candidate := range cacheResponse.SlotSolutionCandidate {
+	if cacheErr == nil {
+		iowrappers.Logger.Debugf("Found slot cacheResponse in Redis for request %+v.", *request)
+		for _, candidate := range cacheResponse.CachedPlanningSolutions {
 			planningSolution := PlanningSolution{
 				PlaceNames:      candidate.PlaceNames,
 				PlaceIDS:        candidate.PlaceIds,
@@ -133,32 +126,30 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 				PlaceCategories: candidate.PlaceCategories,
 				Score:           candidate.Score,
 			}
-			resp.Solutions = append(resp.Solutions, planningSolution)
+			response.Solutions = append(response.Solutions, planningSolution)
 		}
-		iowrappers.Logger.Debugf("Retrieved %d cached plans from Redis.", len(resp.Solutions))
+		iowrappers.Logger.Debugf("Retrieved %d cached plans from Redis for request %+v.", len(response.Solutions), *request)
 		return
 	}
 
-	iowrappers.Logger.Infof("Solution cache miss!")
-	solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequests[0], *req)
+	iowrappers.Logger.Debugf("Solution cache miss for request %+v", *request)
+	solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request)
 	if err != nil {
 		if err.Error() == CategorizedPlaceIterInitFailureErrMsg {
-			resp.ErrorCode = CatPlaceIterInitFailure
+			response.ErrorCode = CatPlaceIterInitFailure
 		} else {
-			resp.ErrorCode = ReqTagInvalid
+			response.ErrorCode = ReqTagInvalid
 		}
 		return
 	}
-	resp.Solutions = solutions
+	response.Solutions = solutions
 
-	slotSolutionRedisKeys[0] = slotSolutionRedisKey
-
-	if len(resp.Solutions) == 0 {
-		invalidateSlotSolutionCache(context, &redisClient, slotSolutionRedisKeys)
+	if len(response.Solutions) == 0 {
+		invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey})
 	}
 }
 
-func invalidateSlotSolutionCache(context context.Context, redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
+func invalidatePlanningSolutionsCache(context context.Context, redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
 	redisCli.RemoveKeys(context, slotSolutionRedisKeys)
 }
 
