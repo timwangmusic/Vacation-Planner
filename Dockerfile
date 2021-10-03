@@ -1,11 +1,12 @@
 FROM golang:alpine as unwindtest
 
-ENV GO111MODULE=on \
-    CGO_ENABLED=0
+ENV GO111MODULE=on
 
 COPY . /app/
 WORKDIR /app/
 
-RUN ls -al
-
 RUN go build -v .
+
+EXPOSE 10000
+
+CMD ["./Vacation-planner"]
