@@ -1,6 +1,9 @@
 package user
 
-import "time"
+import (
+	"github.com/google/uuid"
+	"time"
+)
 
 type Level uint8
 
@@ -13,6 +16,7 @@ const (
 )
 
 type User struct {
+	ID        uuid.UUID
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	Email     string `json:"email"`
