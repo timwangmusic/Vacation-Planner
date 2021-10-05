@@ -32,6 +32,7 @@ function locateMe() {
         const today = new Date();
 
         console.log(latitude, longitude);
+        console.log(today);
 
         const url = "/v1/reverse-geocoding"
         await axios.get(url, {
@@ -47,7 +48,11 @@ function locateMe() {
                     if (month < 10) {
                         month = "0" + month.toString();
                     }
-                    document.getElementById("datepicker").value = [today.getFullYear(), month, today.getDate()].join("-");
+                    let day = today.getDate(); 
+                    if (day < 10) { 
+                        day = "0" + day.toString();
+                    }
+                    document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
                 }
             ).catch(
                 err => console.error(err)
