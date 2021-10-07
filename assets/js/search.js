@@ -20,8 +20,9 @@ function updateUsername() {
     document.getElementById("login").style.display = "none";
     document.getElementById("signup").style.display = "none";
 
-    const userNameElement = document.getElementById("username");
-    userNameElement.innerText = username;
+    const userProfileElement = document.getElementById("user-profile");
+
+    userProfileElement.innerText = username;
 
 }
 
