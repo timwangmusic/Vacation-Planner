@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    environment:
+      MAPS_CLIENT_API_KEY: ${MAPS_CLIENT_API_KEY}
+      REDIS_URL: ${REDIS_URL}
+    ports:
+      - "10000:10000"
+  redis:
+    container_name: "redis"
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
