@@ -115,7 +115,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(context, redisRequest)
 
 	if cacheErr == nil {
-		iowrappers.Logger.Debugf("Found slot cacheResponse in Redis for request %+v.", *request)
+		iowrappers.Logger.Debugf("Found planning solutions in Redis for request %+v.", *request)
 		for _, candidate := range cacheResponse.CachedPlanningSolutions {
 			planningSolution := PlanningSolution{
 				PlaceNames:      candidate.PlaceNames,

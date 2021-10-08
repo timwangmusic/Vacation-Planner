@@ -3,7 +3,6 @@ package planner
 import (
 	"context"
 	"errors"
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -152,7 +151,7 @@ func (planner *MyPlanner) ReverseGeocodingHandler(context *gin.Context) {
 }
 
 func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context) {
-	_, authenticationErr := planner.UserAuthentication(context, context.Request, user.LevelAdmin)
+	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
 	if authenticationErr != nil {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
@@ -163,7 +162,7 @@ func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context)
 }
 
 func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
-	_, authenticationErr := planner.UserAuthentication(context, context.Request, user.LevelAdmin)
+	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
 	if authenticationErr != nil {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
@@ -222,7 +221,6 @@ func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, view)
 }
 
-// Planning solves the single-day, single-city planning task
 func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solution.PlanningRequest, user string) (resp PlanningResponse) {
 	var planningResponse solution.PlanningResponse
 
@@ -279,7 +277,6 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 	return
 }
 
-// API definitions
 func (planner *MyPlanner) searchPageHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "search_page.html", gin.H{})
 }
@@ -324,13 +321,13 @@ func validateLocation(location string) error {
 	return nil
 }
 
-// HTTP GET API end-point
+// HTTP GET API end-point handler
 // Return top planning result to user
 func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	var username = "guest" // default username
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(ctx, ctx.Request, user.LevelRegular)
+		username, authenticationErr = planner.UserAuthentication(ctx, user.LevelRegular)
 		if authenticationErr != nil {
 			utils.LogErrorWithLevel(authenticationErr, utils.LogDebug)
 			planner.login(ctx)
@@ -449,7 +446,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 
 func getPlaceIcon(placeTypes []POI.PlaceCategory, pIdx int) string {
 	if pIdx >= len(placeTypes) {
-		return fmt.Sprintf("%s", POI.PlaceIconEmpty)
+		return string(POI.PlaceIconEmpty)
 	}
-	return fmt.Sprintf("%s", placeTypeToIcon[placeTypes[pIdx]])
+	return string(placeTypeToIcon[placeTypes[pIdx]])
 }
