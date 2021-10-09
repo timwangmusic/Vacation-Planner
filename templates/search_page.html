@@ -16,6 +16,24 @@
 </head>
 
 <body>
+    <div class="modal fade" id="logout-confirm" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="staticBackdropLabel">Log out</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Finished using the Vacation Planner?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="logout-confirm-btn">Confirm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!--navigation bar-->
     <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
         <div class="container-fluid">
@@ -43,7 +61,7 @@
                     data-bs-toggle="dropdown" aria-expanded="false">guest</button>
                 <ul class="dropdown-menu" aria-labelledby="user-profile">
                     <li>
-                        <button class="dropdown-item">
+                        <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#logout-confirm">
                             <span class="material-icons">
                                 logout
                             </span>

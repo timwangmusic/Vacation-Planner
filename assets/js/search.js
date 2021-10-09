@@ -28,6 +28,22 @@ function updateUsername() {
 
 updateUsername();
 
+function logOut() {
+    const cookieToRemove = "JWT";
+    const jwt = Cookies.get(cookieToRemove);
+    if (jwt === null) {
+        console.error("JWT does not exist");
+        return;
+    }
+    console.log(`JWT ${cookieToRemove} is removed`);
+    Cookies.remove(cookieToRemove, {path: "/v1"});
+    location.reload();
+}
+
+document.getElementById("logout-confirm-btn").addEventListener(
+    "click", logOut
+)
+
 function locateMe() {
     async function success(location) {
         const latitude = location.coords.latitude;
