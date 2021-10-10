@@ -13,19 +13,39 @@ function updateUsername() {
         username = decodedJWT.username;
         console.log(`The current Logged-in username is ${decodedJWT.username}`)
     } else {
-        console.log("The session has expired.");
+        console.log("The session has expired or the user is not logged in.");
+
+        // Hide logout dropdown item when user is not logged in
+        document.getElementById("logout-button-item").classList.add("d-none");
         return;
     }
 
+    // Hide login/signup links when user is already logged in
     document.getElementById("login").style.display = "none";
     document.getElementById("signup").style.display = "none";
 
-    const userNameElement = document.getElementById("username");
-    userNameElement.innerText = username;
+    const userProfileElement = document.getElementById("user-profile");
 
+    userProfileElement.innerText = username;
 }
 
 updateUsername();
+
+function logOut() {
+    const cookieToRemove = "JWT";
+    const jwt = Cookies.get(cookieToRemove);
+    if (jwt === null) {
+        console.error("JWT does not exist");
+        return;
+    }
+    console.log(`JWT ${cookieToRemove} is removed`);
+    Cookies.remove(cookieToRemove, {path: "/v1"});
+    location.reload();
+}
+
+document.getElementById("logout-confirm-btn").addEventListener(
+    "click", logOut
+)
 
 function locateMe() {
     async function success(location) {
