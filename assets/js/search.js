@@ -17,11 +17,13 @@ function updateUsername() {
 
         // Hide logout dropdown item when user is not logged in
         document.getElementById("logout-button-item").classList.add("d-none");
+
+        // Display login dropdown item
+        document.getElementById("login-button-item").classList.remove("d-none");
         return;
     }
 
-    // Hide login/signup links when user is already logged in
-    document.getElementById("login").style.display = "none";
+    // Hide signup link when user is already logged in
     document.getElementById("signup").style.display = "none";
 
     const userProfileElement = document.getElementById("user-profile");
