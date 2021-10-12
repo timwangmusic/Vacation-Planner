@@ -3,6 +3,7 @@ package solution
 import (
 	"container/heap"
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,8 @@ const (
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 10000
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
+	ErrMsgMismatchIterAndPlace            = "Mismatch in iterator status vector length"
+	ErrMsgRepeatedPlaceInSameTrip         = "Repeated places in the same trip"
 )
 
 type PlanningSolution struct {
@@ -29,11 +32,13 @@ type PlanningSolution struct {
 	Score           float64             `json:"score"`
 }
 
-func CreatePlanningSolutionCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (res PlanningSolution) {
+func CreatePlanningSolutionCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (PlanningSolution, error) {
+	var res PlanningSolution
 	if len(iter.Status) != len(placeClusters) {
-		return
+		return res, errors.New(ErrMsgMismatchIterAndPlace)
 	}
 	// deduplication of repeating places in the result
+
 	record := make(map[string]bool)
 	places := make([]matching.Place, len(iter.Status))
 	for idx, placeIdx := range iter.Status {
@@ -43,7 +48,7 @@ func CreatePlanningSolutionCandidate(iter MultiDimIterator, placeClusters [][]ma
 
 		// if the same place appears in two indexes, return incomplete result
 		if _, exist := record[place.GetPlaceId()]; exist {
-			return
+			return res, errors.New(ErrMsgRepeatedPlaceInSameTrip)
 		}
 
 		record[place.GetPlaceId()] = true
@@ -59,7 +64,7 @@ func CreatePlanningSolutionCandidate(iter MultiDimIterator, placeClusters [][]ma
 		res.PlaceURLs = append(res.PlaceURLs, place.GetURL())
 	}
 	res.Score = matching.Score(places)
-	return
+	return res, nil
 }
 
 func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount int64) []PlanningSolution {
@@ -131,10 +136,12 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 	}
 
 	for mdIter.HasNext() {
-		curCandidate := CreatePlanningSolutionCandidate(mdIter, placeClusters)
-
-		solutions = append(solutions, curCandidate)
-
+		curCandidate, err := CreatePlanningSolutionCandidate(mdIter, placeClusters)
+		if err == nil {
+			solutions = append(solutions, curCandidate)
+		} else if err.Error() != ErrMsgRepeatedPlaceInSameTrip {
+			iowrappers.Logger.Debug(err)
+		}
 		mdIter.Next()
 	}
 
