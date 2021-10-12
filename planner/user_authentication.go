@@ -22,30 +22,30 @@ type UserLoginResponse struct {
 // user submit username/password/email and user is created
 // return bad request if creation fails
 func (planner MyPlanner) UserSignup(context *gin.Context) {
-	u := user.User{}
+	userView := user.View{}
 
-	decodeErr := context.ShouldBindJSON(&u)
+	decodeErr := context.ShouldBindJSON(&userView)
 	if decodeErr != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
 		return
 	}
 
-	userLevel := user.LevelRegularString
+	userLevel := user.LevelStringRegular
 	adminUsers := strings.Split(os.Getenv("ADMIN_USERS"), ",")
 	for _, username := range adminUsers {
-		if u.Username == username {
-			userLevel = user.LevelAdminString
+		if userView.Username == username {
+			userLevel = user.LevelStringAdmin
 		}
 	}
 
-	u.UserLevel = userLevel
+	userView.UserLevel = userLevel
 
-	createErr := planner.RedisClient.CreateUser(context, u)
+	_, createErr := planner.RedisClient.CreateUser(context, userView)
 	if createErr != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
 		return
 	}
-	context.JSON(http.StatusCreated, gin.H{"user creation success": u.Username})
+	context.JSON(http.StatusCreated, gin.H{"user creation success": userView.Username})
 }
 
 func (planner MyPlanner) UserLogin(context *gin.Context) {
@@ -116,9 +116,9 @@ func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLev
 	}
 	var userLevel user.Level
 	switch userFound.UserLevel {
-	case user.LevelRegularString:
+	case user.LevelStringRegular:
 		userLevel = user.LevelRegular
-	case user.LevelAdminString:
+	case user.LevelStringAdmin:
 		userLevel = user.LevelAdmin
 	}
 	if userLevel < minimumUserLevel {

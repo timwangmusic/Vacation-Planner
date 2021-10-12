@@ -8,12 +8,13 @@ import (
 )
 
 func TestUserAuthentication(t *testing.T) {
-	// create an user
+	// create a user
 	username := "johnny_depp"
 	password := "33521"
 	userEmail := "johnny_depp@gmail.com"
-	if err := RedisClient.CreateUser(RedisContext, user.User{Username: username, Password: password, Email: userEmail}); err != nil {
+	if _, err := RedisClient.CreateUser(RedisContext, user.View{Username: username, Password: password, Email: userEmail}); err != nil {
 		t.Error(err)
+		return
 	}
 
 	// authenticate the user
@@ -41,19 +42,21 @@ func TestUserFind(t *testing.T) {
 func TestUserCreation(t *testing.T) {
 	username := "tom_cruise"
 	userEmail := "tom_cruise@gmail.com"
-	userLevel := user.LevelRegularString
+	userLevel := user.LevelStringRegular
 
-	expectedUser := user.User{
+	expectedUserView := user.View{
 		Username:  username,
 		Email:     userEmail,
+		Password:  "",
 		UserLevel: userLevel,
 	}
 
 	var err error
-	err = RedisClient.CreateUser(RedisContext, expectedUser)
+	_, err = RedisClient.CreateUser(RedisContext, expectedUserView)
 
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	usr, err := RedisClient.FindUser(RedisContext, username)
@@ -63,5 +66,5 @@ func TestUserCreation(t *testing.T) {
 
 	// ignore comparing password in this test
 	usr.Password = ""
-	assert.Equal(t, expectedUser, usr)
+	assert.Equal(t, expectedUserView, usr)
 }
