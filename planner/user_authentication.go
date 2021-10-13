@@ -18,9 +18,6 @@ type UserLoginResponse struct {
 	Status   string `json:"status"`
 }
 
-// UserSignup handles user signup POST requests
-// user submit username/password/email and user is created
-// return bad request if creation fails
 func (planner MyPlanner) UserSignup(context *gin.Context) {
 	userView := user.View{}
 
@@ -40,12 +37,13 @@ func (planner MyPlanner) UserSignup(context *gin.Context) {
 
 	userView.UserLevel = userLevel
 
-	_, createErr := planner.RedisClient.CreateUser(context, userView)
+	view, createErr := planner.RedisClient.CreateUser(context, userView)
 	if createErr != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
 		return
 	}
-	context.JSON(http.StatusCreated, gin.H{"user creation success": userView.Username})
+	log.Debugf("created user with ID %s", view.ID)
+	context.JSON(http.StatusCreated, gin.H{"user creation success": view.Username})
 }
 
 func (planner MyPlanner) UserLogin(context *gin.Context) {
@@ -109,7 +107,7 @@ func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLev
 
 	iowrappers.Logger.Debugf("the current logged-in user is %s", username)
 
-	userFound, findUserErr := planner.RedisClient.FindUser(context, username)
+	userFound, findUserErr := planner.RedisClient.FindUser(context, iowrappers.FindUserByName, user.View{Username: username})
 	if findUserErr != nil {
 		err = findUserErr
 		return

@@ -3,6 +3,7 @@ package redis_client_mocks
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"testing"
 )
@@ -28,10 +29,10 @@ func TestUserAuthentication(t *testing.T) {
 }
 
 func TestUserFind(t *testing.T) {
-	username := "jenny"
+	userView := user.View{Username: "Jenny"}
 
 	var err error
-	_, err = RedisClient.FindUser(RedisContext, username)
+	_, err = RedisClient.FindUser(RedisContext, iowrappers.FindUserByName, userView)
 	expectedErr := errors.New("user does not exist")
 
 	if assert.Error(t, err, "an error was expected") {
@@ -45,6 +46,7 @@ func TestUserCreation(t *testing.T) {
 	userLevel := user.LevelStringRegular
 
 	expectedUserView := user.View{
+		ID:        "",
 		Username:  username,
 		Email:     userEmail,
 		Password:  "",
@@ -59,12 +61,13 @@ func TestUserCreation(t *testing.T) {
 		return
 	}
 
-	usr, err := RedisClient.FindUser(RedisContext, username)
+	actualUserView, err := RedisClient.FindUser(RedisContext, iowrappers.FindUserByName, expectedUserView)
 	if err != nil {
 		t.Error(err)
 	}
 
-	// ignore comparing password in this test
-	usr.Password = ""
-	assert.Equal(t, expectedUserView, usr)
+	// ignore comparing ID and password in this test
+	actualUserView.Password = ""
+	actualUserView.ID = ""
+	assert.Equal(t, expectedUserView, actualUserView)
 }

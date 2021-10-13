@@ -15,6 +15,7 @@ const (
 )
 
 type User struct {
+	ID        string `json:"id"`
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	Email     string `json:"email"`
@@ -22,6 +23,7 @@ type User struct {
 }
 
 type View struct {
+	ID        string `json:"id"`
 	Username  string `json:"username"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
