@@ -1,29 +1,53 @@
+// methods for the search page
+import jwt_decode from "./jwt-decode.js";
+
 function updateUsername() {
-    const username = Cookies.get('Username');
-    if (username) {
-        console.log(`username is ${username}`);
+    const jwt = Cookies.get("JWT");
+    let username = "guest";
+
+    if (jwt) {
+        console.log("The JWT token is: ", jwt);
+
+        const decodedJWT = jwt_decode(jwt);
+
+        username = decodedJWT.username;
+        console.log(`The current Logged-in username is ${decodedJWT.username}`)
     } else {
-        console.log("user is not logged in.");
+        console.log("The session has expired or the user is not logged in.");
+
+        // Hide logout dropdown item when user is not logged in
+        document.getElementById("logout-button-item").classList.add("d-none");
+
+        // Display login dropdown item
+        document.getElementById("login-button-item").classList.remove("d-none");
+        return;
     }
 
-    const jwtToken = Cookies.get("JWT");
-    // if JWT is present then the session is still valid, otherwise JWT token will be removed
-    if (jwtToken) {
-        console.log(`Decoded JWT token ${jwtToken}`);
-    } else {
-        console.log("log in expired.");
-    }
+    // Hide signup link when user is already logged in
+    document.getElementById("signup").style.display = "none";
 
-    if (username && jwtToken) {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("signup").style.display = "none";
+    const userProfileElement = document.getElementById("user-profile");
 
-        const userNameElement = document.getElementById("username");
-        userNameElement.innerText = username;
-    }
+    userProfileElement.innerText = username;
 }
 
 updateUsername();
+
+function logOut() {
+    const cookieToRemove = "JWT";
+    const jwt = Cookies.get(cookieToRemove);
+    if (jwt === null) {
+        console.error("JWT does not exist");
+        return;
+    }
+    console.log(`JWT ${cookieToRemove} is removed`);
+    Cookies.remove(cookieToRemove, {path: "/v1"});
+    location.reload();
+}
+
+document.getElementById("logout-confirm-btn").addEventListener(
+    "click", logOut
+)
 
 function locateMe() {
     async function success(location) {
@@ -32,6 +56,7 @@ function locateMe() {
         const today = new Date();
 
         console.log(latitude, longitude);
+        console.log(today);
 
         const url = "/v1/reverse-geocoding"
         await axios.get(url, {
@@ -47,7 +72,11 @@ function locateMe() {
                     if (month < 10) {
                         month = "0" + month.toString();
                     }
-                    document.getElementById("datepicker").value = [today.getFullYear(), month, today.getDate()].join("-");
+                    let day = today.getDate();
+                    if (day < 10) {
+                        day = "0" + day.toString();
+                    }
+                    document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
                 }
             ).catch(
                 err => console.error(err)
@@ -64,50 +93,13 @@ function locateMe() {
 
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
-const cities = [
-    "San Jose",
-    "San Diego",
-    "San Francisco",
-    "Los Angeles",
-    "New York",
-    "Chicago",
-    "Houston",
-    "Philadelphia",
-    "Phoenix",
-    "San Antonio",
-    "Dallas",
-    "Indianapolis",
-    "Austin",
-    "Columbus",
-    "Baltimore",
-    "Boston",
-    "Seattle",
-    "Washington",
-    "Portland",
-    "Las Vegas",
-    "Paris",
-    "Rome",
-    "Vancouver",
-    "New Delhi",
-    "Beijing",
-    "Shanghai",
-];
-
-const countries = [
-    "USA",
-    "Italy",
-    "France",
-    "Canada",
-    "China",
-    "India",
-]
-
-$(function () {
-    $("#city").autocomplete({
-        source: cities
-    })
-
-    $("#country").autocomplete({
-        source: countries
-    })
-});
+const locationSearchInput = document.getElementById('location');
+const spinner = document.getElementById("searchSpinner");
+locationSearchInput.addEventListener(
+    "keyup", (evt) => {
+        if (evt.key === "Enter") {
+            console.log("Pressed Enter in location input!")
+            spinner.classList.remove("visually-hidden");
+        }
+    }
+)

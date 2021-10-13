@@ -8,20 +8,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v8"
-	log "github.com/sirupsen/logrus"
-	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
 const (
-	SlotSolutionExpirationTime = 24 * time.Hour
-	PlanningStatExpirationTime = 24 * time.Hour
+	PlanningSolutionsExpirationTime = 24 * time.Hour
+	PlanningStatExpirationTime      = 24 * time.Hour
 
 	NumVisitorsPlanningAPI = "visitor_count:planning_APIs"
 	NumVisitorsPrefix      = "visitor_count"
@@ -235,10 +236,6 @@ func (redisClient *RedisClient) NearbySearch(context context.Context, request *P
 	return
 }
 
-func (redisClient *RedisClient) PlaceDetailsSearch(context.Context, string) (place POI.Place, err error) {
-	return
-}
-
 // CacheLocationAlias caches the mapping from user input location name to geo-coding-corrected location name
 // correct location name is an alias of itself
 func (redisClient *RedisClient) CacheLocationAlias(context context.Context, query GeocodeQuery, correctedQuery GeocodeQuery) (err error) {
@@ -321,20 +318,20 @@ func (redisClient *RedisClient) StreamsLogging(streamName string, data map[strin
 }
 
 type SlotSolutionCandidateCache struct {
-	PlaceIds       []string     `json:"place_ids"`
-	Score          float64      `json:"score"`
-	PlaceNames     []string     `json:"place_names"`
-	PlaceLocations [][2]float64 `json:"place_locations"`
-	PlaceAddresses []string     `json:"place_addresses"`
-	PlaceURLs      []string     `json:"place_urls"`
+	PlaceIds        []string            `json:"place_ids"`
+	Score           float64             `json:"score"`
+	PlaceNames      []string            `json:"place_names"`
+	PlaceLocations  [][2]float64        `json:"place_locations"`
+	PlaceAddresses  []string            `json:"place_addresses"`
+	PlaceURLs       []string            `json:"place_urls"`
+	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 }
 
-type SlotSolutionCacheResponse struct {
-	SlotSolutionCandidate []SlotSolutionCandidateCache `json:"slot_solution_candidate"`
-	Err                   error
+type PlanningSolutionsCacheResponse struct {
+	CachedPlanningSolutions []SlotSolutionCandidateCache `json:"cached_planning_solutions"`
 }
 
-type SlotSolutionCacheRequest struct {
+type PlanningSolutionsCacheRequest struct {
 	Country   string
 	City      string
 	Radius    uint64
@@ -368,7 +365,7 @@ func encodeTimeCatIdx(eVTag []string, intervals []POI.TimeInterval) (res int64, 
 	return
 }
 
-func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
+func genSlotSolutionCacheKey(req PlanningSolutionsCacheRequest) string {
 	country, city := req.Country, req.City
 	timeCatIdx, err := encodeTimeCatIdx(req.EVTags, req.Intervals)
 	utils.LogErrorWithLevel(err, utils.LogError)
@@ -380,46 +377,31 @@ func genSlotSolutionCacheKey(req SlotSolutionCacheRequest) string {
 	return redisFieldKey
 }
 
-func (redisClient *RedisClient) CacheSlotSolution(context context.Context, req SlotSolutionCacheRequest, solution SlotSolutionCacheResponse) {
-	redisKey := genSlotSolutionCacheKey(req)
-	json_, err := json.Marshal(solution)
+func (redisClient *RedisClient) CachePlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest, response PlanningSolutionsCacheResponse) {
+	redisKey := genSlotSolutionCacheKey(request)
+	json_, err := json.Marshal(response)
 	utils.LogErrorWithLevel(err, utils.LogError)
 
 	if err != nil {
-		Logger.Errorf("cache slot solution failure for request with key: %s", redisKey)
+		Logger.Errorf("cache planning solutions failure for request %+v", request)
 	} else {
-		redisClient.client.Set(context, redisKey, json_, SlotSolutionExpirationTime)
+		redisClient.client.Set(context, redisKey, json_, PlanningSolutionsExpirationTime)
 	}
 }
 
-func (redisClient *RedisClient) GetSlotSolution(context context.Context, redisKey string, cacheResponses []SlotSolutionCacheResponse, wg *sync.WaitGroup, idx int) {
-	defer wg.Done()
-
+func (redisClient *RedisClient) PlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest) (PlanningSolutionsCacheResponse, error) {
+	var response PlanningSolutionsCacheResponse
+	redisKey := genSlotSolutionCacheKey(request)
 	json_, err := redisClient.client.Get(context, redisKey).Result()
 	if err != nil {
 		Logger.Debugf("[%s] redis server find no result for key: %s", context.Value(RequestIdKey), redisKey)
-		cacheResponses[idx].Err = err
-		return
+		return response, err
 	}
 
-	err = json.Unmarshal([]byte(json_), &cacheResponses[idx])
+	err = json.Unmarshal([]byte(json_), &response)
 	if err != nil {
 		Logger.Error(err)
-		cacheResponses[idx].Err = err
-		return
+		return response, err
 	}
-}
-
-func (redisClient *RedisClient) GetMultiSlotSolutions(context context.Context, requests []SlotSolutionCacheRequest) (responses []SlotSolutionCacheResponse) {
-	var wg sync.WaitGroup
-	wg.Add(len(requests))
-
-	responses = make([]SlotSolutionCacheResponse, len(requests))
-
-	for idx, request := range requests {
-		redisKey := genSlotSolutionCacheKey(request)
-		go redisClient.GetSlotSolution(context, redisKey, responses, &wg, idx)
-	}
-	wg.Wait()
-	return
+	return response, nil
 }

@@ -3,20 +3,69 @@ package solution
 import (
 	"container/heap"
 	"context"
+	"errors"
+	"strconv"
+	"strings"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/yourbasic/radix"
-	"strconv"
-	"strings"
 )
 
 const (
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 10000
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
+	ErrMsgMismatchIterAndPlace            = "Mismatch in iterator status vector length"
+	ErrMsgRepeatedPlaceInSameTrip         = "Repeated places in the same trip"
 )
+
+type PlanningSolution struct {
+	PlaceNames      []string            `json:"place_names"`
+	PlaceIDS        []string            `json:"place_ids"`
+	PlaceLocations  [][2]float64        `json:"place_locations"` // lat,lng
+	PlaceAddresses  []string            `json:"place_addresses"`
+	PlaceURLs       []string            `json:"place_urls"`
+	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
+	Score           float64             `json:"score"`
+}
+
+func CreatePlanningSolutionCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (PlanningSolution, error) {
+	var res PlanningSolution
+	if len(iter.Status) != len(placeClusters) {
+		return res, errors.New(ErrMsgMismatchIterAndPlace)
+	}
+	// deduplication of repeating places in the result
+
+	record := make(map[string]bool)
+	places := make([]matching.Place, len(iter.Status))
+	for idx, placeIdx := range iter.Status {
+		placesByCategory := placeClusters[idx]
+
+		var place = placesByCategory[placeIdx]
+
+		// if the same place appears in two indexes, return incomplete result
+		if _, exist := record[place.GetPlaceId()]; exist {
+			return res, errors.New(ErrMsgRepeatedPlaceInSameTrip)
+		}
+
+		record[place.GetPlaceId()] = true
+		places[idx] = place
+		res.PlaceIDS = append(res.PlaceIDS, place.GetPlaceId())
+		res.PlaceNames = append(res.PlaceNames, place.GetPlaceName())
+		res.PlaceLocations = append(res.PlaceLocations, [2]float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
+		res.PlaceAddresses = append(res.PlaceAddresses, place.GetPlaceFormattedAddress())
+		res.PlaceCategories = append(res.PlaceCategories, place.GetPlaceCategory())
+		if len(strings.TrimSpace(place.GetURL())) == 0 {
+			place.SetURL(iowrappers.GoogleSearchHomePageURL)
+		}
+		res.PlaceURLs = append(res.PlaceURLs, place.GetURL())
+	}
+	res.Score = matching.Score(places)
+	return res, nil
+}
 
 func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount int64) []PlanningSolution {
 	if topSolutionsCount <= 0 {
@@ -54,7 +103,7 @@ func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount 
 	return res
 }
 
-func GenerateSolutions(context context.Context, matcher matching.Matcher, redisClient iowrappers.RedisClient, redisReq iowrappers.SlotSolutionCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
+func GenerateSolutions(context context.Context, matcher matching.Matcher, redisClient iowrappers.RedisClient, redisReq iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
 	solutions = make([]PlanningSolution, 0)
 
 	var placeClusters [][]matching.Place
@@ -87,10 +136,11 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 	}
 
 	for mdIter.HasNext() {
-		curCandidate := CreateCandidate(mdIter, placeClusters)
-
-		if curCandidate.IsSet {
+		curCandidate, err := CreatePlanningSolutionCandidate(mdIter, placeClusters)
+		if err == nil {
 			solutions = append(solutions, curCandidate)
+		} else if err.Error() != ErrMsgRepeatedPlaceInSameTrip {
+			iowrappers.Logger.Debug(err)
 		}
 		mdIter.Next()
 	}
@@ -101,22 +151,23 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 	solutions = bestCandidates
 
 	// cache slot solution calculation results
-	slotSolutionToCache := iowrappers.SlotSolutionCacheResponse{}
-	slotSolutionToCache.SlotSolutionCandidate = make([]iowrappers.SlotSolutionCandidateCache, len(bestCandidates))
+	slotSolutionToCache := iowrappers.PlanningSolutionsCacheResponse{}
+	slotSolutionToCache.CachedPlanningSolutions = make([]iowrappers.SlotSolutionCandidateCache, len(bestCandidates))
 
 	for idx, slotSolutionCandidate := range bestCandidates {
 		candidateCache := iowrappers.SlotSolutionCandidateCache{
-			PlaceIds:       slotSolutionCandidate.PlaceIDS,
-			Score:          slotSolutionCandidate.Score,
-			PlaceNames:     slotSolutionCandidate.PlaceNames,
-			PlaceLocations: slotSolutionCandidate.PlaceLocations,
-			PlaceAddresses: slotSolutionCandidate.PlaceAddresses,
-			PlaceURLs:      slotSolutionCandidate.PlaceURLs,
+			PlaceIds:        slotSolutionCandidate.PlaceIDS,
+			Score:           slotSolutionCandidate.Score,
+			PlaceNames:      slotSolutionCandidate.PlaceNames,
+			PlaceLocations:  slotSolutionCandidate.PlaceLocations,
+			PlaceAddresses:  slotSolutionCandidate.PlaceAddresses,
+			PlaceURLs:       slotSolutionCandidate.PlaceURLs,
+			PlaceCategories: slotSolutionCandidate.PlaceCategories,
 		}
-		slotSolutionToCache.SlotSolutionCandidate[idx] = candidateCache
+		slotSolutionToCache.CachedPlanningSolutions[idx] = candidateCache
 	}
 
-	redisClient.CacheSlotSolution(context, redisReq, slotSolutionToCache)
+	redisClient.CachePlanningSolutions(context, redisReq, slotSolutionToCache)
 
 	return
 }

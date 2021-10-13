@@ -3,6 +3,16 @@ package planner
 import (
 	"context"
 	"errors"
+	"html/template"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
@@ -13,21 +23,17 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"html/template"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
 	ServerTimeout      = time.Second * 15
 	jobQueueBufferSize = 1000
 )
+
+var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
+	POI.PlaceCategoryEatery: POI.PlaceIconEatery,
+	POI.PlaceCategoryVisit:  POI.PlaceIconVisit,
+}
 
 type MyPlanner struct {
 	RedisClient        iowrappers.RedisClient
@@ -45,6 +51,7 @@ type TimeSectionPlace struct {
 	EndTime   POI.Hour `json:"end_time"`
 	Address   string   `json:"address"`
 	URL       string   `json:"url"`
+	PlaceIcon string   `json:"place_icon_css_class"`
 }
 
 type TimeSectionPlaces struct {
@@ -144,7 +151,7 @@ func (planner *MyPlanner) ReverseGeocodingHandler(context *gin.Context) {
 }
 
 func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context) {
-	_, authenticationErr := planner.UserAuthentication(context, context.Request, user.LevelAdmin)
+	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
 	if authenticationErr != nil {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
@@ -155,7 +162,7 @@ func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context)
 }
 
 func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
-	_, authenticationErr := planner.UserAuthentication(context, context.Request, user.LevelAdmin)
+	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
 	if authenticationErr != nil {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
@@ -214,7 +221,6 @@ func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, view)
 }
 
-// Planning solves the single-day, single-city planning task
 func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solution.PlanningRequest, user string) (resp PlanningResponse) {
 	var planningResponse solution.PlanningResponse
 
@@ -244,6 +250,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 
 	topSolutions := planningResponse.Solutions
 	resp.Places = make([]TimeSectionPlaces, len(topSolutions))
+
 	for sIdx, topSolution := range topSolutions {
 		timeSectionPlaces := TimeSectionPlaces{
 			Places: make([]TimeSectionPlace, 0),
@@ -255,6 +262,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 				EndTime:   planningRequest.Slots[pIdx].TimeSlot.Slot.End,
 				Address:   topSolution.PlaceAddresses[pIdx],
 				URL:       topSolution.PlaceURLs[pIdx],
+				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
 			})
 		}
 		resp.Places[sIdx] = timeSectionPlaces
@@ -269,7 +277,6 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 	return
 }
 
-// API definitions
 func (planner *MyPlanner) searchPageHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "search_page.html", gin.H{})
 }
@@ -314,13 +321,13 @@ func validateLocation(location string) error {
 	return nil
 }
 
-// HTTP GET API end-point
+// HTTP GET API end-point handler
 // Return top planning result to user
 func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	var username = "guest" // default username
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(ctx, ctx.Request, user.LevelRegular)
+		username, authenticationErr = planner.UserAuthentication(ctx, user.LevelRegular)
 		if authenticationErr != nil {
 			utils.LogErrorWithLevel(authenticationErr, utils.LogDebug)
 			planner.login(ctx)
@@ -435,4 +442,11 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	}
 
 	return svr
+}
+
+func getPlaceIcon(placeTypes []POI.PlaceCategory, pIdx int) string {
+	if pIdx >= len(placeTypes) {
+		return string(POI.PlaceIconEmpty)
+	}
+	return string(placeTypeToIcon[placeTypes[pIdx]])
 }

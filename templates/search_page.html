@@ -6,90 +6,138 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!--Bootstrap CSS-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/css/styles.css">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    <!--Google Font Icon CSS-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <title>vacation planner</title>
 </head>
 
 <body>
-<!--navigation bar-->
-<nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
-    <div class="container-fluid">
-
-        <ul class="nav" id="navbar-items">
-            <li class="nav-item">
-                <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner">about</a>
-            </li>
-            <li class="nav-item" id="login">
-                <a class="nav-link" href="/v1/log-in">login </a>
-            </li>
-            <li class="nav-item" id="signup">
-                <a class="nav-link" href="/v1/sign-up">signup </a>
-            </li>
-        </ul>
-        <span id="username" class="navbar-text">guest</span>
-
-    </div>
-</nav>
-
-<h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
-    Vacation Planner
-</h1>
-
-<!--forms and inputs-->
-<div class="container mt-3" style="align-items: center">
-    <div class="row">
-        <div style="width: 20%; float:left" class="column">
-            <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill</button>
-        </div>
-    </div>
-    <br>
-
-    <div class="row">
-        <form class="d-flex" action="/v1/plans" method="get">
-            <div class="mr-auto p-2 input-group">
-                <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
-                       value="2020-02-29">
-
-                <input class="form-control border border-secondary" type="search" id="location" placeholder="Search" aria-label="Search"
-                       name="location" value="Los Angeles, USA" list="datalistOptions">
-
-                <button class="btn" type="submit"><i class="bi bi-search"></i></button>
-                <datalist id="datalistOptions">
-                    <option value="San Francisco, USA">
-                    <option value="Seattle, USA">
-                    <option value="Los Angeles, USA">
-                    <option value="Chicago, USA">
-                    <option value="New York City, USA">
-                    <option value="Beijing, China">
-                </datalist>
-            </div>
-            <div class="p-2">
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
-                        Price Options
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-                        <li><a class="dropdown-item active" href="#">$</a></li>
-                        <li><a class="dropdown-item" href="#">$$</a></li>
-                        <li><a class="dropdown-item" href="#">$$$</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">Surprise Me!!</a></li>
-                    </ul>
+    <div class="modal fade" id="logout-confirm" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="staticBackdropLabel">Log out</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Finished using the Vacation Planner?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="logout-confirm-btn">Confirm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </div>
-        </form>
+        </div>
     </div>
 
-</div>
+    <!--navigation bar-->
+    <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
+        <div class="container-fluid">
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-<script type="module" src="assets/js/search.js">
-</script>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-items"
+                aria-controls="navbar-items" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbar-items">
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner">about</a>
+                    </li>
+                    <li class="nav-item" id="signup">
+                        <a class="nav-link" href="/v1/sign-up">signup </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="dropdown">
+                <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
+                    data-bs-toggle="dropdown" aria-expanded="false">guest</button>
+                <ul class="dropdown-menu" aria-labelledby="user-profile">
+                    <li id="login-button-item" class="d-none">
+                        <button class="dropdown-item">
+                            <a href="/v1/log-in">
+                                <span class="material-icons">
+                                    login
+                                </span>
+                            </a>
+                        </button>
+                    </li>
+                    <li id="logout-button-item">
+                        <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#logout-confirm">
+                            <span class="material-icons">
+                                logout
+                            </span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+
+        </div>
+    </nav>
+
+    <h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
+        Vacation Planner
+    </h1>
+
+    <!--forms and inputs-->
+    <div class="container mt-3" style="align-items: center">
+        <div class="row">
+            <div class="column">
+                <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill</button>
+            </div>
+        </div>
+        <br>
+
+        <div class="row">
+            <form class="d-flex" action="/v1/plans" method="get">
+                <div class="input-group w-auto">
+                    <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
+                        value="2020-02-29">
+                </div>
+
+                <div class="container px-1 border border-secondary rounded-1 d-flex flex-row align-items-center">
+                    <div class="fixedwidthicon">
+                        <i id="searchIcon" class="bi bi-search mx-1 visible"></i>
+                    </div>
+
+                    <div class="flex-fill">
+                        <input class="form-control border-0" type="search" id="location" placeholder="Search"
+                            aria-label="Search" name="location" value="Los Angeles, USA" list="datalistOptions">
+
+                        <datalist id="datalistOptions">
+                            <option value="San Francisco, USA">
+                            <option value="Seattle, USA">
+                            <option value="Los Angeles, USA">
+                            <option value="Chicago, USA">
+                            <option value="New York City, USA">
+                            <option value="Beijing, China">
+                        </datalist>
+                    </div>
+
+                    <div class="fixedwidthicon">
+                        <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
+                            role="status" aria-hidden="true"></span>
+                    </div>
+
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+    <script type="module" src="assets/js/search.js"></script>
+    <script src="assets/js/jwt-decode.js"></script>
 </body>
 
 </html>

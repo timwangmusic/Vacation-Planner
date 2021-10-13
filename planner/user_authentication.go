@@ -1,11 +1,11 @@
 package planner
 
 import (
-	"context"
 	"errors"
-	"github.com/golang-jwt/jwt"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
 	"os"
@@ -48,8 +48,6 @@ func (planner MyPlanner) UserSignup(context *gin.Context) {
 	context.JSON(http.StatusCreated, gin.H{"user creation success": u.Username})
 }
 
-// UserLogin handles login POST requests
-// user submit credentials and return JWT if login is successful
 func (planner MyPlanner) UserLogin(context *gin.Context) {
 	c := user.Credential{}
 
@@ -76,11 +74,6 @@ func (planner MyPlanner) UserLogin(context *gin.Context) {
 		Expires: tokenExpirationTime,
 	})
 
-	http.SetCookie(context.Writer, &http.Cookie{
-		Name:  "Username",
-		Value: c.Username,
-	})
-
 	context.JSON(http.StatusOK, UserLoginResponse{
 		Username: c.Username,
 		Jwt:      token,
@@ -88,9 +81,9 @@ func (planner MyPlanner) UserLogin(context *gin.Context) {
 	})
 }
 
-// UserAuthentication is an internal method for API to authenticate users at different levels
-func (planner MyPlanner) UserAuthentication(context context.Context, r *http.Request, minimumUserLevel user.Level) (username string, err error) {
-	cookie, cookieErr := r.Cookie("JWT")
+func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLevel user.Level) (username string, err error) {
+	request := context.Request
+	cookie, cookieErr := request.Cookie("JWT")
 	if cookieErr != nil {
 		return "", cookieErr
 	}
@@ -108,9 +101,13 @@ func (planner MyPlanner) UserAuthentication(context context.Context, r *http.Req
 		return "", errors.New("invalid token")
 	}
 
-	userCookie, _ := r.Cookie("Username")
-	username = userCookie.Value
-	log.Debugf("the current user is %s", username)
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		username = claims["username"].(string)
+	} else {
+		return "", errors.New("failed to parse JWT claims")
+	}
+
+	iowrappers.Logger.Debugf("the current logged-in user is %s", username)
 
 	userFound, findUserErr := planner.RedisClient.FindUser(context, username)
 	if findUserErr != nil {
