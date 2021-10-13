@@ -87,7 +87,7 @@
     <!--forms and inputs-->
     <div class="container mt-3" style="align-items: center">
         <div class="row">
-            <div class="column">
+            <div style="float:left" class="column">
                 <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill</button>
             </div>
         </div>
@@ -95,7 +95,7 @@
 
         <div class="row">
             <form class="d-flex" action="/v1/plans" method="get">
-                <div class="input-group w-auto">
+                <div class="mr-auto p-2 input-group w-auto">
                     <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
                         value="2020-02-29">
                 </div>
@@ -124,6 +124,22 @@
                             role="status" aria-hidden="true"></span>
                     </div>
 
+                </div>
+
+                <div class="p-2">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
+                            Price Options
+                        </button>
+
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
+                            <li><a class="dropdown-item active" href="#">$</a></li>
+                            <li><a class="dropdown-item" href="#">$$</a></li>
+                            <li><a class="dropdown-item" href="#">$$$</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">Surprise Me!!</a></li>
+                        </ul>
+                    </div>
                 </div>
 
             </form>
