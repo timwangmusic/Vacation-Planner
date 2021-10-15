@@ -1,6 +1,6 @@
 module github.com/weihesdlegend/Vacation-planner
 
-go 1.15
+go 1.16
 
 require (
 	github.com/alicebob/miniredis/v2 v2.13.3
