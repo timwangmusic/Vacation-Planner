@@ -1,31 +1,36 @@
 package user
 
-import "time"
+import (
+	"time"
+)
 
 type Level uint8
 
 const (
-	JWTExpirationTime        = time.Hour * 240 // 10 days
-	LevelAdminString         = "admin"
-	LevelRegularString       = "regular"
-	LevelRegular       Level = 0
-	LevelAdmin         Level = 1
+	JWTExpirationTime         = time.Hour * 24 * 10 // 10 days
+	LevelStringAdmin   string = "admin"
+	LevelStringRegular string = "regular"
+	LevelRegular       Level  = 0
+	LevelAdmin         Level  = 1
 )
 
 type User struct {
+	ID        string `json:"id"`
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	Email     string `json:"email"`
 	UserLevel string `json:"user_level"`
 }
 
+type View struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	UserLevel string `json:"user_level"`
+}
+
 type Credential struct {
 	Username string
 	Password string
-}
-
-type RemoveUserRequest struct {
-	CurrentUser         string `json:"current_user"`
-	CurrentUserPassword string `json:"current_user_password"`
-	UserToRemove        string `json:"user_to_remove"`
 }
