@@ -54,15 +54,15 @@ type TimeSectionPlace struct {
 	PlaceIcon string   `json:"place_icon_css_class"`
 }
 
-type TimeSectionPlaces struct {
+type TravelPlan struct {
 	Places []TimeSectionPlace `json:"places"`
 }
 
 type PlanningResponse struct {
-	TravelDestination string              `json:"travel_destination"`
-	Places            []TimeSectionPlaces `json:"time_section_places"`
-	Err               error               `json:"error"`
-	StatusCode        uint                `json:"status_code"`
+	TravelDestination string       `json:"travel_destination"`
+	TravelPlans       []TravelPlan `json:"travel_plans"`
+	Err               error        `json:"error"`
+	StatusCode        uint         `json:"status_code"`
 }
 
 type PlanningPostRequest struct {
@@ -94,6 +94,23 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
 		planner.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
+	}
+}
+
+func (planner *MyPlanner) UserSavedPlansPostHandler(context *gin.Context) {
+	planView := user.TravelPlanView{}
+	bindErr := context.ShouldBindJSON(&planView)
+	if bindErr != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": bindErr.Error()})
+	}
+
+	username, authErr := planner.UserAuthentication(context, user.LevelRegular)
+	if authErr != nil {
+		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+	}
+
+	if err := planner.RedisClient.SaveUserPlan(context, user.View{Username: username}, planView); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 }
 
@@ -249,10 +266,10 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 	}
 
 	topSolutions := planningResponse.Solutions
-	resp.Places = make([]TimeSectionPlaces, len(topSolutions))
+	resp.TravelPlans = make([]TravelPlan, len(topSolutions))
 
 	for sIdx, topSolution := range topSolutions {
-		timeSectionPlaces := TimeSectionPlaces{
+		timeSectionPlaces := TravelPlan{
 			Places: make([]TimeSectionPlace, 0),
 		}
 		for pIdx, placeName := range topSolution.PlaceNames {
@@ -265,7 +282,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
 			})
 		}
-		resp.Places[sIdx] = timeSectionPlaces
+		resp.TravelPlans[sIdx] = timeSectionPlaces
 	}
 
 	resp.StatusCode = solution.ValidSolutionFound
@@ -420,6 +437,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
 		v1.GET("/log-in", planner.login)
 		v1.GET("/sign-up", planner.signup)
+		v1.POST("/users/:username/plans", planner.UserSavedPlansPostHandler)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)

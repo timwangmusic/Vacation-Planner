@@ -2,14 +2,17 @@ package iowrappers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/weihesdlegend/Vacation-planner/user"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/crypto/bcrypt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,6 +28,8 @@ type PlanningEvent struct {
 type FindUserBy string
 
 const (
+	UserSavedTravelPlanPrefix = "user_saved_travel_plan"
+
 	FindUserByName FindUserBy = "FindUserByName"
 	FindUserByID   FindUserBy = "FindUserByID"
 )
@@ -105,4 +110,60 @@ func (redisClient *RedisClient) Authenticate(context context.Context, credential
 
 	token, jwtSignErr := jwtToken.SignedString([]byte(jwtSigningSecret))
 	return token, tokenExpirationTime, jwtSignErr
+}
+
+func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView user.View, planView user.TravelPlanView) error {
+	userView, findUserErr := redisClient.FindUser(context, FindUserByName, userView)
+	if findUserErr != nil {
+		return findUserErr
+	}
+
+	planView.ID = uuid.NewString()
+	json_, planSerializationErr := json.Marshal(planView)
+	if planSerializationErr != nil {
+		return planSerializationErr
+	}
+
+	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
+	_, err := redisClient.client.Set(context, redisKey, json_, 0).Result()
+	return err
+}
+
+func (redisClient *RedisClient) FindUserPlans(context context.Context, userView user.View) ([]user.TravelPlanView, error) {
+	var cursor uint64 = 0
+	travelPlanKeys := make([]string, 0)
+
+	redisKeysPrefix := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan"}, ":")
+	for {
+		keys, cursor, err := redisClient.client.Scan(context, cursor, redisKeysPrefix+"*", 10).Result()
+		if err != nil {
+			break
+		}
+		travelPlanKeys = append(travelPlanKeys, keys...)
+		if cursor == 0 {
+			break
+		}
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(travelPlanKeys))
+
+	result := make([]user.TravelPlanView, len(travelPlanKeys))
+
+	for idx, key := range travelPlanKeys {
+		go redisClient.findUserPlan(context, key, &result[idx], &wg)
+	}
+	wg.Wait()
+
+	return result, nil
+}
+
+func (redisClient *RedisClient) findUserPlan(context context.Context, redisKey string, view *user.TravelPlanView, wg *sync.WaitGroup) {
+	defer wg.Done()
+	cachedPlan, err := redisClient.client.Get(context, redisKey).Result()
+	if err != nil {
+		Logger.Error(err)
+		return
+	}
+	utils.LogErrorWithLevel(json.Unmarshal([]byte(cachedPlan), view), utils.LogError)
 }

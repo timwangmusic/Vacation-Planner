@@ -99,6 +99,7 @@ func (h *MinPriorityQueue) percolateDown(idx int) {
 	// recursion
 	h.percolateDown(childIdx)
 }
+
 // percolateUp adjusts the inserted Node
 func (h *MinPriorityQueue) percolateUp(idx int) {
 	parent := findParent(idx)

@@ -34,3 +34,22 @@ type Credential struct {
 	Username string
 	Password string
 }
+
+type Profile struct {
+	ID               string   `json:"id"`
+	UserID           string   `json:"user_id"`
+	SavedTravelPlans []string `json:"saved_travel_plans"`
+}
+
+// TravelPlaceView reflect what users see on Front-end result tables
+type TravelPlaceView struct {
+	Category   string `json:"category"`
+	TimePeriod string `json:"time_period"`
+	PlaceName  string `json:"place_name"`
+	Address    string `json:"address"`
+}
+
+type TravelPlanView struct {
+	ID     string            `json:"id"`
+	Places []TravelPlaceView `json:"places"`
+}

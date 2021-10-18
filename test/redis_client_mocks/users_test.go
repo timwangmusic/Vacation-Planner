@@ -3,6 +3,7 @@ package redis_client_mocks
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"testing"
@@ -64,10 +65,48 @@ func TestUserCreation(t *testing.T) {
 	actualUserView, err := RedisClient.FindUser(RedisContext, iowrappers.FindUserByName, expectedUserView)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	// ignore comparing ID and password in this test
 	actualUserView.Password = ""
 	actualUserView.ID = ""
 	assert.Equal(t, expectedUserView, actualUserView)
+}
+
+func TestSaveUserPlan(t *testing.T) {
+	userView := user.View{Username: "tom_cruise"}
+	planView := user.TravelPlanView{
+		ID: "33521",
+		Places: []user.TravelPlaceView{
+			{
+				Category:   string(POI.PlaceCategoryEatery),
+				TimePeriod: "10 - 12",
+				PlaceName:  "Philippe The Original",
+				Address:    "1001 N Alameda St, Los Angeles, CA 90012, USA",
+			},
+		},
+	}
+
+	userView, _ = RedisClient.CreateUser(RedisContext, userView)
+
+	err := RedisClient.SaveUserPlan(RedisContext, userView, planView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	savedUserPlans, err := RedisClient.FindUserPlans(RedisContext, userView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	var expectedNumSavedUserPlans = 1
+	if len(savedUserPlans) != expectedNumSavedUserPlans {
+		t.Errorf("Expected to find %d saved plans, got %d", expectedNumSavedUserPlans, len(savedUserPlans))
+		return
+	}
+	// avoid comparing ID
+	planView.ID = savedUserPlans[0].ID
+	assert.Equal(t, planView, savedUserPlans[0])
 }
