@@ -102,16 +102,20 @@ func (planner *MyPlanner) UserSavedPlansPostHandler(context *gin.Context) {
 	bindErr := context.ShouldBindJSON(&planView)
 	if bindErr != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": bindErr.Error()})
+		return
 	}
 
 	username, authErr := planner.UserAuthentication(context, user.LevelRegular)
 	if authErr != nil {
 		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		return
 	}
 
 	if err := planner.RedisClient.SaveUserPlan(context, user.View{Username: username}, planView); err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
+	context.JSON(http.StatusOK, gin.H{"results": "save user plan succeeded."})
 }
 
 func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
@@ -397,6 +401,11 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
+	jsonOnly := ctx.DefaultQuery("json_only", "false")
+	if jsonOnly != "false" {
+		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
+		return
+	}
 	utils.LogErrorWithLevel(planner.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
 }
 

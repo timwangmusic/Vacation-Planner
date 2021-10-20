@@ -3,7 +3,6 @@ package redis_client_mocks
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"testing"
@@ -80,10 +79,10 @@ func TestSaveUserPlan(t *testing.T) {
 		ID: "33521",
 		Places: []user.TravelPlaceView{
 			{
-				Category:   string(POI.PlaceCategoryEatery),
 				TimePeriod: "10 - 12",
 				PlaceName:  "Philippe The Original",
 				Address:    "1001 N Alameda St, Los Angeles, CA 90012, USA",
+				URL:        "https://maps.google.com/?cid=7772213039771900053",
 			},
 		},
 	}
@@ -95,18 +94,4 @@ func TestSaveUserPlan(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
-	savedUserPlans, err := RedisClient.FindUserPlans(RedisContext, userView)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	var expectedNumSavedUserPlans = 1
-	if len(savedUserPlans) != expectedNumSavedUserPlans {
-		t.Errorf("Expected to find %d saved plans, got %d", expectedNumSavedUserPlans, len(savedUserPlans))
-		return
-	}
-	// avoid comparing ID
-	planView.ID = savedUserPlans[0].ID
-	assert.Equal(t, planView, savedUserPlans[0])
 }

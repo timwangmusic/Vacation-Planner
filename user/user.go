@@ -43,13 +43,14 @@ type Profile struct {
 
 // TravelPlaceView reflect what users see on Front-end result tables
 type TravelPlaceView struct {
-	Category   string `json:"category"`
 	TimePeriod string `json:"time_period"`
 	PlaceName  string `json:"place_name"`
 	Address    string `json:"address"`
+	URL        string `json:"url"`
 }
 
 type TravelPlanView struct {
-	ID     string            `json:"id"`
-	Places []TravelPlaceView `json:"places"`
+	ID        string            `json:"id"`
+	CreatedAt string            `json:"created_at"`
+	Places    []TravelPlaceView `json:"places"`
 }
