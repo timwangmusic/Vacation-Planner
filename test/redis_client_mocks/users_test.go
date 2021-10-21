@@ -2,10 +2,12 @@ package redis_client_mocks
 
 import (
 	"errors"
+	log "github.com/sirupsen/logrus"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
-	"testing"
 )
 
 func TestUserAuthentication(t *testing.T) {
@@ -64,10 +66,76 @@ func TestUserCreation(t *testing.T) {
 	actualUserView, err := RedisClient.FindUser(RedisContext, iowrappers.FindUserByName, expectedUserView)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	// ignore comparing ID and password in this test
 	actualUserView.Password = ""
 	actualUserView.ID = ""
 	assert.Equal(t, expectedUserView, actualUserView)
+}
+
+func TestSaveUserPlan(t *testing.T) {
+	userView := user.View{Username: "mickey_mouse"}
+	planView := user.TravelPlanView{
+		ID:          "33521",
+		Destination: "Los Angeles, USA",
+		TravelDate:  "2022-01-29",
+		Places: []user.TravelPlaceView{
+			{
+				TimePeriod: "10 - 12",
+				PlaceName:  "Philippe The Original",
+				Address:    "1001 N Alameda St, Los Angeles, CA 90012, USA",
+				URL:        "https://maps.google.com/?cid=7772213039771900053",
+			},
+		},
+	}
+
+	planView2 := user.TravelPlanView{
+		ID:          "33522",
+		Destination: "Mountain View, USA",
+		TravelDate:  "2022-01-31",
+		Places: []user.TravelPlaceView{
+			{
+				TimePeriod: "16 - 17",
+				PlaceName:  "GooglePlex",
+				Address:    "1600 Amphitheatre Pkwy, Mountain View, CA 94043",
+				URL:        "https://maps.google.com/?cid=7772213039771900011",
+			},
+		},
+	}
+
+	var err error
+
+	userView, err = RedisClient.CreateUser(RedisContext, userView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = RedisClient.SaveUserPlan(RedisContext, userView, planView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = RedisClient.SaveUserPlan(RedisContext, userView, planView2)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	plans, err := RedisClient.FindUserPlans(RedisContext, userView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	expectedNumberOfPlans := 2
+	if len(plans) != expectedNumberOfPlans {
+		t.Errorf("expected number of plans to be %d, got %d", expectedNumberOfPlans, len(plans))
+		return
+	}
+
+	log.Debugf("plan details: %+v", plans)
 }

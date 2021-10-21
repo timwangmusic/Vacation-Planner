@@ -24,8 +24,8 @@ const (
 	ValidSolutionFound      = 200
 	InvalidRequestLocation  = 400
 	ReqTagInvalid           = 400
-	CatPlaceIterInitFailure = 404
 	NoValidSolution         = 404
+	CatPlaceIterInitFailure = 500
 )
 
 type PlanningRequest struct {

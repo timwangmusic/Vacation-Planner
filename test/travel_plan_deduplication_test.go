@@ -8,8 +8,8 @@ import (
 
 func TestTravelPlanDeduplication(t *testing.T) {
 	travelPlanA := solution.PlanningSolution{
-			PlaceIDS: []string{"a123x", "b456y", "c789z"},
-		}
+		PlaceIDS: []string{"a123x", "b456y", "c789z"},
+	}
 
 	travelPlanB := solution.PlanningSolution{
 		PlaceIDS: []string{"b456y", "c789z", "a123x"},
