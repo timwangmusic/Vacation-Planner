@@ -76,7 +76,7 @@ func TestUserCreation(t *testing.T) {
 }
 
 func TestSaveUserPlan(t *testing.T) {
-	userView := user.View{Username: "tom_cruise"}
+	userView := user.View{Username: "mickey_mouse"}
 	planView := user.TravelPlanView{
 		ID:          "33521",
 		Destination: "Los Angeles, USA",
@@ -105,9 +105,14 @@ func TestSaveUserPlan(t *testing.T) {
 		},
 	}
 
-	userView, _ = RedisClient.CreateUser(RedisContext, userView)
-
 	var err error
+
+	userView, err = RedisClient.CreateUser(RedisContext, userView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	err = RedisClient.SaveUserPlan(RedisContext, userView, planView)
 	if err != nil {
 		t.Error(err)
