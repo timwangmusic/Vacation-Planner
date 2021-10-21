@@ -106,6 +106,11 @@ func (planner *MyPlanner) UserSavedPlansPostHandler(context *gin.Context) {
 	}
 
 	username, authErr := planner.UserAuthentication(context, user.LevelRegular)
+	if username != context.Param("username") {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "username in path does not match token decode result"})
+		return
+	}
+
 	if authErr != nil {
 		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
 		return

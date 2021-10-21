@@ -2,6 +2,29 @@ import jwt_decode from "./jwt-decode.js";
 
 let numberOfPlans = 5;
 
+function updateUsername() {
+    const jwt = Cookies.get("JWT");
+    let username = "guest";
+
+    if (jwt) {
+        console.log("The JWT token is: ", jwt);
+
+        const decodedJWT = jwt_decode(jwt);
+
+        username = decodedJWT.username;
+        console.log(`The current Logged-in username is ${decodedJWT.username}`)
+    } else {
+        console.log("The session has expired or the user is not logged in.");
+    }
+
+    const userProfileElement = document.getElementById("user-profile");
+
+    userProfileElement.innerText = username;
+    return username;
+}
+
+let username = updateUsername();
+
 async function getPlans() {
     const plansUrl = document.URL + "&json_only=true";
 
@@ -22,7 +45,7 @@ async function getPlans() {
 }
 
 async function postPlanForUser() {
-    const url = "/v1/users/username/plans"
+    const url = `/v1/users/${username}/plans`
     const fields = this.id.split("-");
     const planIndex = fields[fields.length - 1];
 
@@ -45,7 +68,11 @@ async function postPlanForUser() {
 }
 
 function planToView(plan) {
+    const url = new URL(document.URL);
+
     const view = {
+        destination: url.searchParams.get("location"),
+        travel_date: url.searchParams.get("date"),
         created_at: new Date().toISOString(),
         places: []
     }
@@ -68,30 +95,11 @@ for (let i = 0; i < numberOfPlans; i++) {
     document.getElementById(`save-${i}`).onclick = postPlanForUser;
 }
 
-
-function updateUsername() {
-    const jwt = Cookies.get("JWT");
-    let username = "guest";
-
-    if (jwt) {
-        console.log("The JWT token is: ", jwt);
-
-        const decodedJWT = jwt_decode(jwt);
-
-        username = decodedJWT.username;
-        console.log(`The current Logged-in username is ${decodedJWT.username}`)
-    } else {
-        console.log("The session has expired or the user is not logged in.");
-    }
-
-    const userProfileElement = document.getElementById("user-profile");
-
-    userProfileElement.innerText = username;
+function refreshToolTips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
 }
 
-updateUsername();
-
-const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
-});
+refreshToolTips();

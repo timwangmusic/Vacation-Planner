@@ -77,6 +77,8 @@ func TestSaveUserPlan(t *testing.T) {
 	userView := user.View{Username: "tom_cruise"}
 	planView := user.TravelPlanView{
 		ID: "33521",
+		Destination: "Los Angeles, USA",
+		TravelDate: "2022-01-29",
 		Places: []user.TravelPlaceView{
 			{
 				TimePeriod: "10 - 12",
