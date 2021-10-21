@@ -135,7 +135,9 @@ func (redisClient *RedisClient) FindUserPlans(context context.Context, userView 
 
 	redisKeysPrefix := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan"}, ":")
 	for {
-		keys, cursor, err := redisClient.client.Scan(context, cursor, redisKeysPrefix+"*", 10).Result()
+		var err error
+		var keys []string
+		keys, cursor, err = redisClient.client.Scan(context, cursor, redisKeysPrefix+"*", 100).Result()
 		if err != nil {
 			break
 		}

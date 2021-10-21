@@ -79,11 +79,13 @@ func (planner MyPlanner) UserLogin(context *gin.Context) {
 	})
 }
 
-func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLevel user.Level) (username string, err error) {
+func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLevel user.Level) (user.View, error) {
 	request := context.Request
+
+	var userView user.View
 	cookie, cookieErr := request.Cookie("JWT")
 	if cookieErr != nil {
-		return "", cookieErr
+		return userView, cookieErr
 	}
 
 	jwtKey := []byte(os.Getenv("JWT_SIGNING_SECRET"))
@@ -92,28 +94,29 @@ func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLev
 	})
 
 	if tokenErr != nil {
-		return "", tokenErr
+		return userView, tokenErr
 	}
 
 	if !token.Valid {
-		return "", errors.New("invalid token")
+		return userView, errors.New("invalid token")
 	}
 
+	var username string
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		username = claims["username"].(string)
 	} else {
-		return "", errors.New("failed to parse JWT claims")
+		return userView, errors.New("failed to parse JWT claims")
 	}
 
 	iowrappers.Logger.Debugf("the current logged-in user is %s", username)
 
-	userFound, findUserErr := planner.RedisClient.FindUser(context, iowrappers.FindUserByName, user.View{Username: username})
+	userView, findUserErr := planner.RedisClient.FindUser(context, iowrappers.FindUserByName, user.View{Username: username})
 	if findUserErr != nil {
-		err = findUserErr
-		return
+		return userView, findUserErr
 	}
+
 	var userLevel user.Level
-	switch userFound.UserLevel {
+	switch userView.UserLevel {
 	case user.LevelStringRegular:
 		userLevel = user.LevelRegular
 	case user.LevelStringAdmin:
@@ -121,7 +124,7 @@ func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLev
 	}
 	if userLevel < minimumUserLevel {
 		log.Debugf("user level is %d, required %d", userLevel, minimumUserLevel)
-		return username, errors.New("does not meet minimum user level requirement")
+		return userView, errors.New("does not meet minimum user level requirement")
 	}
-	return username, nil
+	return userView, nil
 }
