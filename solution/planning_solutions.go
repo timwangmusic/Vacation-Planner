@@ -128,7 +128,7 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 		placeClusters = append(placeClusters, places)
 	}
 
-	placeCategories := ToSlotCategories(request.Slots)
+	placeCategories := ToPlaceCategories(request.Slots)
 
 	mdIter := MultiDimIterator{}
 	if err = mdIter.Init(placeCategories, placeClusters); err != nil {

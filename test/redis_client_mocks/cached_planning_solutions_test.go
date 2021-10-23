@@ -2,14 +2,14 @@ package redis_client_mocks
 
 import (
 	"github.com/go-playground/assert/v2"
+	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"testing"
 )
 
 func TestGetCachedPlanningSolutions(t *testing.T) {
 	cacheRequest1 := iowrappers.PlanningSolutionsCacheRequest{
-		City:    "Beijing",
-		Country: "China",
+		Location: POI.Location{City: "Beijing", Country: "China"},
 	}
 	cacheResponse1 := iowrappers.PlanningSolutionsCacheResponse{}
 	cacheResponse1.CachedPlanningSolutions = make([]iowrappers.SlotSolutionCandidateCache, 1)
@@ -18,8 +18,7 @@ func TestGetCachedPlanningSolutions(t *testing.T) {
 	RedisClient.CachePlanningSolutions(RedisContext, cacheRequest1, cacheResponse1)
 
 	cacheRequest2 := iowrappers.PlanningSolutionsCacheRequest{
-		City:    "San Francisco",
-		Country: "USA",
+		Location: POI.Location{City: "San Francisco", Country: "United States"},
 	}
 	cacheResponse2 := iowrappers.PlanningSolutionsCacheResponse{}
 	cacheResponse2.CachedPlanningSolutions = make([]iowrappers.SlotSolutionCandidateCache, 1)

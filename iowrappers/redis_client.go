@@ -6,7 +6,6 @@ package iowrappers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -24,8 +23,9 @@ const (
 	PlanningSolutionsExpirationTime = 24 * time.Hour
 	PlanningStatExpirationTime      = 24 * time.Hour
 
-	NumVisitorsPlanningAPI = "visitor_count:planning_APIs"
-	NumVisitorsPrefix      = "visitor_count"
+	NumVisitorsPlanningAPI         = "visitor_count:planning_APIs"
+	NumVisitorsPrefix              = "visitor_count"
+	TravelPlansRedisCacheKeyPrefix = "travel_plans"
 )
 
 var RedisClientDefaultBlankContext context.Context
@@ -332,56 +332,60 @@ type PlanningSolutionsCacheResponse struct {
 }
 
 type PlanningSolutionsCacheRequest struct {
-	Country   string
-	City      string
-	Radius    uint64
-	EVTags    []string
-	Intervals []POI.TimeInterval
-	Weekday   POI.Weekday
+	Location        POI.Location
+	Radius          uint64
+	PlaceCategories []POI.PlaceCategory
+	Intervals       []POI.TimeInterval
+	Weekday         POI.Weekday
 }
 
-// convert time intervals and an EV tag to an integer
-// each time interval and E/V pair has 23 * 24 * 2 = 1104 possibilities
-// treat each pair as one digit in 1104-ary number, and we have maximum 4 digits
-func encodeTimeCatIdx(eVTag []string, intervals []POI.TimeInterval) (res int64, err error) {
-	if len(eVTag) != len(intervals) {
-		err = errors.New("wrong inputs")
-		res = -1
-		return
+// convert time intervals and place categories of a travel plan into an unsigned integer
+// a time interval and place category has 23 * 24 * 2 = 1104 possibilities
+// treat each combination as one digit in a 1104-ary number
+// [NOTE] that the maximum number of slots it can hold is roughly 6
+func encodePlanIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeInterval) (uint64, error) {
+	var result uint64
+	if len(placeCategories) != len(intervals) {
+		return 0, fmt.Errorf("the size of place category is %d, which does not match the size of intervals %d", len(placeCategories), len(intervals))
 	}
-	for idx, tagVal := range eVTag {
-		res *= 1104
+	for idx, placeCategory := range placeCategories {
+		result *= 1104
 		interval := intervals[idx]
-		if strings.ToLower(tagVal) == "e" {
-			res += int64(interval.Start) * int64(interval.End)
-		} else if strings.ToLower(tagVal) == "v" {
-			res += int64(interval.Start) * int64(interval.End) * 2
-		} else {
-			err = errors.New("wrong input EV tag")
-			res = -1
-			return
+		switch placeCategory {
+		case POI.PlaceCategoryEatery:
+			result += uint64(interval.Start) * uint64(interval.End)
+		case POI.PlaceCategoryVisit:
+			result += uint64(interval.Start) * uint64(interval.End) * 2
 		}
 	}
-	return
+	return result, nil
 }
 
-func genSlotSolutionCacheKey(req PlanningSolutionsCacheRequest) string {
-	country, city := req.Country, req.City
-	timeCatIdx, err := encodeTimeCatIdx(req.EVTags, req.Intervals)
-	utils.LogErrorWithLevel(err, utils.LogError)
+func generateTravelPlansCacheKey(req PlanningSolutionsCacheRequest) (string, error) {
+	country, city := req.Location.Country, req.Location.City
+	planIndex, err := encodePlanIndex(req.PlaceCategories, req.Intervals)
+	if err != nil {
+		return "", err
+	}
 
 	radius := strconv.FormatUint(req.Radius, 10)
-	timeCatIdxStr := strconv.FormatInt(timeCatIdx, 10)
+	timeCatIdxStr := strconv.FormatUint(planIndex, 10)
 
-	redisFieldKey := strings.ToLower(strings.Join([]string{"slot_solution", country, city, radius, string(req.Weekday), timeCatIdxStr}, ":"))
-	return redisFieldKey
+	country = strings.Join(strings.Split(strings.ToLower(country), " "), "_")
+	city = strings.Join(strings.Split(strings.ToLower(city), " "), "_")
+
+	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, city, radius, string(req.Weekday), timeCatIdxStr}, ":"))
+	return redisFieldKey, nil
 }
 
 func (redisClient *RedisClient) CachePlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest, response PlanningSolutionsCacheResponse) {
-	redisKey := genSlotSolutionCacheKey(request)
-	json_, err := json.Marshal(response)
-	utils.LogErrorWithLevel(err, utils.LogError)
+	redisKey, keyGenerationErr := generateTravelPlansCacheKey(request)
+	if keyGenerationErr != nil {
+		Logger.Errorf("failed to generate travel plans cache key")
+		return
+	}
 
+	json_, err := json.Marshal(response)
 	if err != nil {
 		Logger.Errorf("cache planning solutions failure for request %+v", request)
 	} else {
@@ -391,7 +395,12 @@ func (redisClient *RedisClient) CachePlanningSolutions(context context.Context, 
 
 func (redisClient *RedisClient) PlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest) (PlanningSolutionsCacheResponse, error) {
 	var response PlanningSolutionsCacheResponse
-	redisKey := genSlotSolutionCacheKey(request)
+	redisKey, keyGenerationErr := generateTravelPlansCacheKey(request)
+	if keyGenerationErr != nil {
+		Logger.Error(keyGenerationErr)
+		return response, keyGenerationErr
+	}
+
 	json_, err := redisClient.client.Get(context, redisKey).Result()
 	if err != nil {
 		Logger.Debugf("[%s] redis server find no result for key: %s", context.Value(RequestIdKey), redisKey)
