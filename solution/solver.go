@@ -17,13 +17,12 @@ type Solver struct {
 	TimeMatcher matching.Matcher
 }
 
-// HTTP status codes
 const (
 	ValidSolutionFound      = 200
 	InvalidRequestLocation  = 400
-	ReqTagInvalid           = 400
 	NoValidSolution         = 404
 	CatPlaceIterInitFailure = 500
+	InternalError           = 500
 )
 
 type PlanningRequest struct {
@@ -101,26 +100,26 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 		iowrappers.Logger.Debugf("Solution cache miss for request %+v with error %s", *request, cacheErr.Error())
 		solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request)
 		if err != nil {
+			response.Err = err
 			if err.Error() == CategorizedPlaceIterInitFailureErrMsg {
 				response.ErrorCode = CatPlaceIterInitFailure
+			} else if len(solutions) == 0 {
+				response.ErrorCode = NoValidSolution
+				invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey})
 			} else {
-				response.ErrorCode = ReqTagInvalid
+				response.ErrorCode = InternalError
 			}
 			return
 		}
 		response.Solutions = solutions
-
-		if len(response.Solutions) == 0 {
-			invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey})
-		}
 		return
 	}
-
 	iowrappers.Logger.Debugf("Found planning solutions in Redis for request %+v.", *request)
-	for _, candidate := range cacheResponse.CachedPlanningSolutions {
+	for _, candidate := range cacheResponse.PlanningSolutionRecords {
 		planningSolution := PlanningSolution{
+			ID:              candidate.ID,
 			PlaceNames:      candidate.PlaceNames,
-			PlaceIDS:        candidate.PlaceIds,
+			PlaceIDS:        candidate.PlaceIDs,
 			PlaceLocations:  candidate.PlaceLocations,
 			PlaceAddresses:  candidate.PlaceAddresses,
 			PlaceURLs:       candidate.PlaceURLs,
@@ -132,8 +131,8 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 	iowrappers.Logger.Debugf("Retrieved %d cached plans from Redis for request %+v.", len(response.Solutions), *request)
 }
 
-func invalidatePlanningSolutionsCache(context context.Context, redisCli *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
-	redisCli.RemoveKeys(context, slotSolutionRedisKeys)
+func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
+	redisClient.RemoveKeys(context, slotSolutionRedisKeys)
 }
 
 // GetStandardRequest generates a standard request while we seek a better way to represent complex REST requests
