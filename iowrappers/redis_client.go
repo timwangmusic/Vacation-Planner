@@ -71,7 +71,8 @@ func (redisClient *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
 		pipeline.Expire(RedisClientDefaultBlankContext, NumVisitorsPlanningAPI, PlanningStatExpirationTime)
 	}
 
-	city := strings.ToLower(strings.Join(strings.Split(event.City, " "), "_"))
+	city := strings.ReplaceAll(strings.ToLower(event.City), " ", "_")
+
 	redisKey := strings.Join([]string{NumVisitorsPrefix, event.Country, city}, ":")
 	pipeline.PFAdd(RedisClientDefaultBlankContext, redisKey, event.User)
 
@@ -380,8 +381,8 @@ func generateTravelPlansCacheKey(req PlanningSolutionsCacheRequest) (string, err
 	radius := strconv.FormatUint(req.Radius, 10)
 	planIndexStr := strconv.FormatUint(planIndex, 10)
 
-	country = strings.Join(strings.Split(strings.ToLower(country), " "), "_")
-	city = strings.Join(strings.Split(strings.ToLower(city), " "), "_")
+	country = strings.ReplaceAll(strings.ToLower(country), " ", "_")
+	city = strings.ReplaceAll(strings.ToLower(city), " ", "_")
 
 	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, city, radius, strconv.Itoa(int(req.Weekday)), planIndexStr}, ":"))
 	return redisFieldKey, nil
