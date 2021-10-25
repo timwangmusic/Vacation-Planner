@@ -52,7 +52,6 @@ func DestroyLogger() {
 
 // Geocode performs geocoding, mapping city and country to latitude and longitude
 func (poiSearcher PoiSearcher) Geocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
-
 	originalGeocodeQuery := GeocodeQuery{}
 	originalGeocodeQuery.City = query.City
 	originalGeocodeQuery.Country = query.Country

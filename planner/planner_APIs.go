@@ -115,7 +115,6 @@ func (planner *MyPlanner) UserSavedPlansGetHandler(context *gin.Context) {
 		context.Status(http.StatusInternalServerError)
 		iowrappers.Logger.Error(err)
 		return
-
 	}
 
 	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})

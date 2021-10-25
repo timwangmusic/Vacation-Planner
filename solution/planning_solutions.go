@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"errors"
+	"github.com/google/uuid"
 	"strconv"
 	"strings"
 
@@ -18,11 +19,12 @@ const (
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 10000
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
-	ErrMsgMismatchIterAndPlace            = "Mismatch in iterator status vector length"
-	ErrMsgRepeatedPlaceInSameTrip         = "Repeated places in the same trip"
+	ErrMsgMismatchIterAndPlace            = "mismatch in iterator status vector length"
+	ErrMsgRepeatedPlaceInSameTrip         = "repeated places in the same trip"
 )
 
 type PlanningSolution struct {
+	ID              string              `json:"id"`
 	PlaceNames      []string            `json:"place_names"`
 	PlaceIDS        []string            `json:"place_ids"`
 	PlaceLocations  [][2]float64        `json:"place_locations"` // lat,lng
@@ -103,7 +105,7 @@ func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount 
 	return res
 }
 
-func GenerateSolutions(context context.Context, matcher matching.Matcher, redisClient iowrappers.RedisClient, redisReq iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest) (solutions []PlanningSolution, slotSolutionRedisKey string, err error) {
+func GenerateSolutions(context context.Context, matcher matching.Matcher, redisClient iowrappers.RedisClient, redisRequest iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest) (solutions []PlanningSolution, solutionRedisKey string, err error) {
 	solutions = make([]PlanningSolution, 0)
 
 	var placeClusters [][]matching.Place
@@ -128,7 +130,7 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 		placeClusters = append(placeClusters, places)
 	}
 
-	placeCategories := ToSlotCategories(request.Slots)
+	placeCategories := ToPlaceCategories(request.Slots)
 
 	mdIter := MultiDimIterator{}
 	if err = mdIter.Init(placeCategories, placeClusters); err != nil {
@@ -136,11 +138,9 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 	}
 
 	for mdIter.HasNext() {
-		curCandidate, err := CreatePlanningSolutionCandidate(mdIter, placeClusters)
-		if err == nil {
+		curCandidate, creationErr := CreatePlanningSolutionCandidate(mdIter, placeClusters)
+		if creationErr == nil {
 			solutions = append(solutions, curCandidate)
-		} else if err.Error() != ErrMsgRepeatedPlaceInSameTrip {
-			iowrappers.Logger.Debug(err)
 		}
 		mdIter.Next()
 	}
@@ -151,12 +151,13 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 	solutions = bestCandidates
 
 	// cache slot solution calculation results
-	slotSolutionToCache := iowrappers.PlanningSolutionsCacheResponse{}
-	slotSolutionToCache.CachedPlanningSolutions = make([]iowrappers.SlotSolutionCandidateCache, len(bestCandidates))
+	planningSolutionsResponse := iowrappers.PlanningSolutionsResponse{}
+	planningSolutionsResponse.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, len(bestCandidates))
 
 	for idx, slotSolutionCandidate := range bestCandidates {
-		candidateCache := iowrappers.SlotSolutionCandidateCache{
-			PlaceIds:        slotSolutionCandidate.PlaceIDS,
+		record := iowrappers.PlanningSolutionRecord{
+			ID:              uuid.NewString(),
+			PlaceIDs:        slotSolutionCandidate.PlaceIDS,
 			Score:           slotSolutionCandidate.Score,
 			PlaceNames:      slotSolutionCandidate.PlaceNames,
 			PlaceLocations:  slotSolutionCandidate.PlaceLocations,
@@ -164,10 +165,13 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 			PlaceURLs:       slotSolutionCandidate.PlaceURLs,
 			PlaceCategories: slotSolutionCandidate.PlaceCategories,
 		}
-		slotSolutionToCache.CachedPlanningSolutions[idx] = candidateCache
+		planningSolutionsResponse.PlanningSolutionRecords[idx] = record
 	}
 
-	redisClient.CachePlanningSolutions(context, redisReq, slotSolutionToCache)
+	redisKey, saveSolutionsErr := redisClient.SavePlanningSolutions(context, redisRequest, planningSolutionsResponse)
+	if saveSolutionsErr != nil {
+		return solutions, redisKey, saveSolutionsErr
+	}
 
 	return
 }
