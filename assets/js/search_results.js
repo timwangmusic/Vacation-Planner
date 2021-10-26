@@ -65,6 +65,10 @@ async function postPlanForUser() {
     ).catch(
         err => console.error(err)
     )
+
+    const button = document.getElementById(this.id);
+    button.setAttribute("disabled", "true");
+    button.parentElement.setAttribute("title", "saved!")
 }
 
 function planToView(plan) {
@@ -95,11 +99,11 @@ for (let i = 0; i < numberOfPlans; i++) {
     document.getElementById(`save-${i}`).onclick = postPlanForUser;
 }
 
-function refreshToolTips() {
+function initializeToolTips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     });
 }
 
-refreshToolTips();
+// initializeToolTips();
