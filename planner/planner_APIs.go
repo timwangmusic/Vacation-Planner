@@ -55,6 +55,7 @@ type TimeSectionPlace struct {
 }
 
 type TravelPlan struct {
+	ID     string             `json:"id"`
 	Places []TimeSectionPlace `json:"places"`
 }
 
@@ -301,11 +302,11 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 	resp.TravelPlans = make([]TravelPlan, len(topSolutions))
 
 	for sIdx, topSolution := range topSolutions {
-		timeSectionPlaces := TravelPlan{
+		travelPlan := TravelPlan{
 			Places: make([]TimeSectionPlace, 0),
 		}
 		for pIdx, placeName := range topSolution.PlaceNames {
-			timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
+			travelPlan.Places = append(travelPlan.Places, TimeSectionPlace{
 				PlaceName: placeName,
 				StartTime: planningRequest.Slots[pIdx].TimeSlot.Slot.Start,
 				EndTime:   planningRequest.Slots[pIdx].TimeSlot.Slot.End,
@@ -314,7 +315,8 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
 			})
 		}
-		resp.TravelPlans[sIdx] = timeSectionPlaces
+		travelPlan.ID = topSolution.ID
+		resp.TravelPlans[sIdx] = travelPlan
 	}
 
 	resp.StatusCode = solution.ValidSolutionFound
