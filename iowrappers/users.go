@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/weihesdlegend/Vacation-planner/user"
@@ -28,7 +29,8 @@ type PlanningEvent struct {
 type FindUserBy string
 
 const (
-	UserSavedTravelPlanPrefix = "user_saved_travel_plan"
+	UserSavedTravelPlansPrefix = "user_saved_travel_plans"
+	UserSavedTravelPlanPrefix  = "user_saved_travel_plan"
 
 	FindUserByName FindUserBy = "FindUserByName"
 	FindUserByID   FindUserBy = "FindUserByID"
@@ -124,8 +126,25 @@ func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView u
 		return planSerializationErr
 	}
 
+	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
+	userSavedPlansRedisKey := strings.Join([]string{UserSavedTravelPlansPrefix, "user", userView.ID, "plans"}, ":")
+	if exists, getPlanErr := redisClient.client.SIsMember(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); getPlanErr != nil || exists {
+		if getPlanErr != nil && getPlanErr != redis.Nil {
+			return getPlanErr
+		}
+		if exists {
+			return fmt.Errorf("travel plan %s is already saved to profile for user %s", planView.ID, userView.ID)
+		}
+	}
+
+	var err error
+	_, err = redisClient.client.SAdd(context, userSavedPlansRedisKey, travelPlanRedisKey).Result()
+	if err != nil {
+		return err
+	}
+
 	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
-	_, err := redisClient.client.Set(context, redisKey, json_, 0).Result()
+	_, err = redisClient.client.Set(context, redisKey, json_, 0).Result()
 	return err
 }
 

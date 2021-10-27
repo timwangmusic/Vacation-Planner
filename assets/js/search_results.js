@@ -77,6 +77,7 @@ function planToView(plan) {
     const view = {
         destination: url.searchParams.get("location"),
         travel_date: url.searchParams.get("date"),
+        original_plan_id: plan.id,
         created_at: new Date().toISOString(),
         places: []
     }
