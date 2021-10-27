@@ -78,9 +78,10 @@ func TestUserCreation(t *testing.T) {
 func TestSaveUserPlan(t *testing.T) {
 	userView := user.View{Username: "mickey_mouse"}
 	planView := user.TravelPlanView{
-		ID:          "33521",
-		Destination: "Los Angeles, USA",
-		TravelDate:  "2022-01-29",
+		ID:             "33521",
+		OriginalPlanID: "09201989",
+		Destination:    "Los Angeles, USA",
+		TravelDate:     "2022-01-29",
 		Places: []user.TravelPlaceView{
 			{
 				TimePeriod: "10 - 12",
@@ -92,9 +93,10 @@ func TestSaveUserPlan(t *testing.T) {
 	}
 
 	planView2 := user.TravelPlanView{
-		ID:          "33522",
-		Destination: "Mountain View, USA",
-		TravelDate:  "2022-01-31",
+		ID:             "33522",
+		OriginalPlanID: "06191990",
+		Destination:    "Mountain View, USA",
+		TravelDate:     "2022-01-31",
 		Places: []user.TravelPlaceView{
 			{
 				TimePeriod: "16 - 17",
