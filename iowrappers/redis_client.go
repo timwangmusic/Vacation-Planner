@@ -347,7 +347,7 @@ type PlanningSolutionsCacheRequest struct {
 // convert time intervals and place categories of a travel plan into an unsigned integer
 // a time interval and place category has 23 * 24 * 2 = 1104 possibilities
 // treat each combination as one digit in a 1104-ary number
-// TODO: [NOTE] that the maximum number of slots it can hold is roughly 5, this encoding should be improved in the future
+// TODO: [NOTE] that the maximum number of slots it can hold is approximately 5, this encoding should be improved in the future
 func encodePlanIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeInterval) (uint64, error) {
 	var result uint64
 	if len(placeCategories) != len(intervals) {

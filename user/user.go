@@ -50,9 +50,10 @@ type TravelPlaceView struct {
 }
 
 type TravelPlanView struct {
-	ID          string            `json:"id"`
-	CreatedAt   string            `json:"created_at"`
-	TravelDate  string            `json:"travel_date"`
-	Destination string            `json:"destination"`
-	Places      []TravelPlaceView `json:"places"`
+	ID             string            `json:"id"`
+	OriginalPlanID string            `json:"original_plan_id"`
+	CreatedAt      string            `json:"created_at"`
+	TravelDate     string            `json:"travel_date"`
+	Destination    string            `json:"destination"`
+	Places         []TravelPlaceView `json:"places"`
 }
