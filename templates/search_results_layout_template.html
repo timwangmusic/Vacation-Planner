@@ -51,6 +51,8 @@
                             <button id="save-{{$i}}" type="button"
                                 class="btn btn-sm btn-outline-primary m-1">save</button>
                         </span>
+                        <button id="edit-{{$i}}" type="button"
+                            class="btn btn-sm btn-outline-primary m-1 float-end">edit</button>
 
                         <table id="plan-table-{{$i}}" class="table table-bordered table-striped table-hover"
                             style="background: lightcyan; table-layout: fixed">
@@ -66,12 +68,12 @@
                                 <tr>
                                     <td class="col-3" style="color: darkcyan">
                                         <div class="d-flex flex-row">
-                                            <span class="material-icons">{{.PlaceIcon}}</span> <span class="mx-2">
-                                                {{.StartTime}} - {{.EndTime}} </span>
+                                            <span class="material-icons">{{.PlaceIcon}}</span> <span class="mx-2"
+                                                id="interval-{{$i}}">{{.StartTime}} - {{.EndTime}}</span>
                                         </div>
                                     </td>
-                                    <td class="col-4 col-md-3"><a href={{.URL}}> {{.PlaceName}} </a></td>
-                                    <td class="d-none d-md-block"> {{.Address}}</td>
+                                    <td class="col-4 col-md-3"><a href={{.URL}}>{{.PlaceName}}</a></td>
+                                    <td class="d-none d-md-block">{{.Address}}</td>
                                 </tr>
                                 {{end}}
                             </tbody>
@@ -90,6 +92,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </body>
 
 </html>
