@@ -366,9 +366,9 @@ func validateLocation(location string) error {
 		return errors.New("location cannot be empty")
 	}
 
-	locationPattern := `[a-zA-Z]+,\s[a-zA-Z]+`
+	locationPattern := `[a-zA-Z\s]+,\s[a-zA-Z\s]+,\s[a-zA-Z\s]+|[a-zA-Z\s]+,\s[a-zA-Z\s]+`
 	if matched, _ := regexp.Match(locationPattern, []byte(location)); !matched {
-		return errors.New("location format must be city, country")
+		return errors.New("location format must be city, region, country or city, country")
 	}
 	return nil
 }
@@ -388,7 +388,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	requestId := requestid.Get(ctx)
-	location := ctx.DefaultQuery("location", "San Jose, USA")
+	location := ctx.DefaultQuery("location", "San Jose, CA, USA")
 	locationFields := strings.Split(location, ", ")
 	if err := validateLocation(location); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
@@ -416,7 +416,15 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 
 	planningReq := solution.GetStandardRequest(POI.Weekday(weekday), numResultsInt)
 	planningReq.SearchRadius = 10000 // default to 10km
-	planningReq.Location = POI.Location{City: locationFields[0], Country: locationFields[1]}
+	switch len(locationFields) {
+	case 2:
+		planningReq.Location = POI.Location{City: locationFields[0], Country: locationFields[1]}
+	case 3:
+		planningReq.Location = POI.Location{City: locationFields[0], AdminAreaLevelOne: locationFields[1], Country: locationFields[2]}
+	default:
+		ctx.String(http.StatusBadRequest, "wrong location input")
+		return
+	}
 
 	c := context.WithValue(ctx, "request_id", requestId)
 	planningResp := planner.Planning(c, &planningReq, userView.Username)

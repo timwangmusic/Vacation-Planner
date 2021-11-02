@@ -3,13 +3,14 @@ package iowrappers
 import (
 	"context"
 	"errors"
+	"os"
+	"reflect"
+	"strings"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"go.uber.org/zap"
 	"googlemaps.github.io/maps"
-	"os"
-	"reflect"
-	"strings"
 )
 
 // SearchClient defines an interface of a client that performs location-based operations such as nearby search
@@ -68,8 +69,8 @@ func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude
 			Lat: latitude,
 			Lng: longitude,
 		},
-		// currently, we only need country and city info
-		ResultType: []string{"country", "locality"},
+		// currently we require country, admistrative area level 1 and city info
+		ResultType: []string{"country", "administrative_area_level_1", "locality"},
 	}
 	Logger.Debugf("reverse geocoding for latitude/longitude: %.2f/%.2f", latitude, longitude)
 	geocodingResults, err := mapsClient.client.ReverseGeocode(context, request)
@@ -84,11 +85,16 @@ func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude
 
 // Geocode converts city, country to its central location
 func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
+	Logger.Debugf("Geocoding for query %+v", *query)
 	req := &maps.GeocodingRequest{
 		Components: map[maps.Component]string{
 			maps.ComponentLocality: query.City,
 			maps.ComponentCountry:  query.Country,
 		}}
+
+	if strings.TrimSpace(query.AdminAreaLevelOne) != "" {
+		req.Components[maps.ComponentAdministrativeArea] = strings.TrimSpace(query.AdminAreaLevelOne)
+	}
 
 	resp, err := mapsClient.client.Geocode(ctx, req)
 	if err != nil {
@@ -106,8 +112,8 @@ func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (
 	lat = location.Lat
 	lng = location.Lng
 
-	cityName := resp[0].AddressComponents[0].LongName
-	query.City = cityName
+	*query = geocodingResultsToGeocodeQuery(resp)
+	Logger.Debugf("Address components for the 1st response is %+v", resp[0].AddressComponents)
 
 	return
 }

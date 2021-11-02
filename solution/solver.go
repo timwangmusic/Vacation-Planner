@@ -52,8 +52,9 @@ func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
 
 func (solver *Solver) ValidateLocation(context context.Context, location *POI.Location) bool {
 	geoQuery := iowrappers.GeocodeQuery{
-		City:    location.City,
-		Country: location.Country,
+		City:              location.City,
+		AdminAreaLevelOne: location.AdminAreaLevelOne,
+		Country:           location.Country,
 	}
 	_, _, err := solver.Searcher.Geocode(context, &geoQuery)
 	if err != nil {

@@ -41,7 +41,7 @@ function logOut() {
         return;
     }
     console.log(`JWT ${cookieToRemove} is removed`);
-    Cookies.remove(cookieToRemove, {path: "/v1"});
+    Cookies.remove(cookieToRemove, { path: "/v1" });
     location.reload();
 }
 
@@ -67,7 +67,8 @@ function locateMe() {
         })
             .then(
                 response => {
-                    document.getElementById("location").value = response.data.results.city + ", " + response.data.results.country;
+                    const reverseGeocodingResults = response.data.results;
+                    document.getElementById("location").value = [reverseGeocodingResults.city, reverseGeocodingResults.admin_area_level_one, reverseGeocodingResults.country].join(", ");
                     let month = today.getMonth() + 1;
                     if (month < 10) {
                         month = "0" + month.toString();
