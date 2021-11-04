@@ -38,3 +38,8 @@ thead {
 tr:nth-child(even) {
     background: beige;
 }
+
+#tripCarousel {
+    height: 350px !important;
+    overflow: hidden;
+  }

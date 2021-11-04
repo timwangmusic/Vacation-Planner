@@ -4,9 +4,10 @@ import (
 	"container/heap"
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
@@ -164,8 +165,10 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 			PlaceAddresses:  slotSolutionCandidate.PlaceAddresses,
 			PlaceURLs:       slotSolutionCandidate.PlaceURLs,
 			PlaceCategories: slotSolutionCandidate.PlaceCategories,
+			Destination:     request.Location,
 		}
 		planningSolutionsResponse.PlanningSolutionRecords[idx] = record
+		solutions[idx].ID = record.ID
 	}
 
 	redisKey, saveSolutionsErr := redisClient.SavePlanningSolutions(context, redisRequest, planningSolutionsResponse)
