@@ -28,6 +28,7 @@ import (
 const (
 	ServerTimeout      = time.Second * 15
 	jobQueueBufferSize = 1000
+	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
 
 var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
@@ -38,8 +39,10 @@ var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
 type MyPlanner struct {
 	RedisClient        iowrappers.RedisClient
 	RedisStreamName    string
+	PhotoClient        iowrappers.PhotoHttpClient
 	Solver             solution.Solver
 	ResultHTMLTemplate *template.Template
+	TripHTMLTemplate   *template.Template
 	PlanningEvents     chan iowrappers.PlanningEvent
 	Environment        string
 	Configs            map[string]interface{}
@@ -62,6 +65,7 @@ type TravelPlan struct {
 type PlanningResponse struct {
 	TravelDestination string       `json:"travel_destination"`
 	TravelPlans       []TravelPlan `json:"travel_plans"`
+	TripDetailsURL    []string     `json:"trip_details_url"`
 	Err               error        `json:"error"`
 	StatusCode        uint         `json:"status_code"`
 }
@@ -76,6 +80,28 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
+type TripDetailResp struct {
+	PlaceDetails      []PlaceDetailsResp
+	ShownActive       []bool
+	TravelDestination string
+}
+
+type PlaceDetailsResp struct {
+	Name            string
+	URL             string
+	FormattedAdress string
+	PhotoURL        string
+}
+
+type TripShowDetails struct {
+	City    string `form:"city"`
+	Country string `form:"country"`
+	Radius  string `form:"radius"`
+	Day     string `form:"day"`
+	TimeIdx string `form:"time"`
+	Id      string `form:"id"`
+}
+
 type RequestIdKey string
 
 func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}) {
@@ -85,12 +111,14 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	if redisStreamName == "" {
 		planner.RedisStreamName = "stream:planning_api_usage"
 	}
+	planner.PhotoClient = iowrappers.CreatePhotoHttpClient(mapsClientApiKey, PhotoApiBaseURL)
 
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 
 	planner.Solver.Init(PoiSearcher)
 
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
+	planner.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
@@ -301,6 +329,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 
 	topSolutions := planningResponse.Solutions
 	resp.TravelPlans = make([]TravelPlan, len(topSolutions))
+	resp.TripDetailsURL = make([]string, len(topSolutions))
 
 	for sIdx, topSolution := range topSolutions {
 		travelPlan := TravelPlan{
@@ -318,6 +347,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 		}
 		travelPlan.ID = topSolution.ID
 		resp.TravelPlans[sIdx] = travelPlan
+		resp.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID
 	}
 
 	resp.StatusCode = solution.ValidSolutionFound
@@ -448,6 +478,64 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	utils.LogErrorWithLevel(planner.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
 }
 
+func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
+
+	var id string = c.Param("id")
+	iowrappers.Logger.Debugf("GET Route /plans/%s", id)
+
+	var cachePlanSolution iowrappers.PlanningSolutionRecord
+	var planRecordRedisKey = strings.Join([]string{iowrappers.TravelPlanRedisCacheKeyPrefix, id}, ":")
+	cacheErr := planner.RedisClient.FetchSingleRecord(c, planRecordRedisKey, &cachePlanSolution)
+	if cacheErr != nil {
+		iowrappers.Logger.Debugf("Error occurs in fetching plan with key %s\n", planRecordRedisKey)
+		c.String(http.StatusBadRequest, cacheErr.Error())
+		return
+	}
+
+	// FIXME: [Rui] check why placeIDs are not stored in order in cached slot solution
+	const fixedPlaceKeyPrefix = "place_details:place_ID:"
+	var placeKey string
+	var cachePlaceDetails POI.Place
+	var destination string = "Dream Place"
+	if cachePlanSolution.Destination != (POI.Location{}) {
+		destination = strings.Title(cachePlanSolution.Destination.City) + ", " + strings.ToUpper(cachePlanSolution.Destination.Country)
+	}
+	var tripResp = TripDetailResp{
+		PlaceDetails:      make([]PlaceDetailsResp, 0),
+		ShownActive:       make([]bool, 0),
+		TravelDestination: destination,
+	}
+	for idx, placeId := range cachePlanSolution.PlaceIDs {
+		placeKey = fixedPlaceKeyPrefix + placeId
+		cacheErr := planner.RedisClient.FetchSingleRecord(c, placeKey, &cachePlaceDetails)
+		if cacheErr != nil {
+			c.String(http.StatusBadRequest, cacheErr.Error())
+			return
+		}
+
+		placeDetails := planner.getTripFromPlace(cachePlaceDetails)
+		tripResp.PlaceDetails = append(tripResp.PlaceDetails, placeDetails)
+		var isActive = false
+		if idx == 0 {
+			isActive = true
+		}
+		tripResp.ShownActive = append(tripResp.ShownActive, isActive)
+	}
+	iowrappers.Logger.Debugf("Trip Details:\n%v\n", tripResp.PlaceDetails)
+
+	// send data
+	utils.LogErrorWithLevel(planner.TripHTMLTemplate.Execute(c.Writer, tripResp), utils.LogError)
+}
+
+func (planner *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
+	return PlaceDetailsResp{
+		Name:            place.Name,
+		URL:             place.URL,
+		FormattedAdress: place.FormattedAddress,
+		PhotoURL:        string(planner.PhotoClient.GetPhotoURL(place.Photo.Reference)),
+	}
+}
+
 func (planner *MyPlanner) login(c *gin.Context) {
 	c.HTML(http.StatusOK, "login_page.html", gin.H{})
 }
@@ -487,6 +575,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/sign-up", planner.signup)
 		v1.POST("/users/:username/plans", planner.UserSavedPlansPostHandler)
 		v1.GET("/users/:username/plans", planner.UserSavedPlansGetHandler)
+		v1.GET("/plans/:id", planner.getPlanDetails)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)

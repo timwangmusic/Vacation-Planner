@@ -342,6 +342,7 @@ type PlanningSolutionRecord struct {
 	PlaceAddresses  []string            `json:"place_addresses"`
 	PlaceURLs       []string            `json:"place_urls"`
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
+	Destination     POI.Location        `json:"destination"`
 }
 
 type PlanningSolutionsResponse struct {
@@ -462,4 +463,19 @@ func (redisClient *RedisClient) PlanningSolutions(context context.Context, reque
 	}
 
 	return response, nil
+}
+
+// Directly reading redis with fixed key to get plan or place
+func (redisClient *RedisClient) FetchSingleRecord(context context.Context, redisKey string, response interface{}) error {
+	json_, err := redisClient.client.Get(context, redisKey).Result()
+	if err != nil {
+		Logger.Debugf("[%s] redis server find no result for key: %p", context.Value(RequestIdKey), redisKey)
+		return err
+	}
+	err = json.Unmarshal([]byte(json_), response)
+	if err != nil {
+		Logger.Error(err)
+		return err
+	}
+	return nil
 }

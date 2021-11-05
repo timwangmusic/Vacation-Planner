@@ -1,15 +1,16 @@
 package main
 
 import (
+	"net/url"
+	"os"
+	"os/signal"
+	"sync"
+
 	"github.com/braintree/manners"
 	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/planner"
 	"gopkg.in/yaml.v2"
-	"net/url"
-	"os"
-	"os/signal"
-	"sync"
 )
 
 const numWorkers = 5

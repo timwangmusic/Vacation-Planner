@@ -1,28 +1,6 @@
-import jwt_decode from "./jwt-decode.js";
+import {updateUsername} from "./user.js";
 
 let numberOfPlans = 5;
-
-function updateUsername() {
-    const jwt = Cookies.get("JWT");
-    let username = "guest";
-
-    if (jwt) {
-        console.log("The JWT token is: ", jwt);
-
-        const decodedJWT = jwt_decode(jwt);
-
-        username = decodedJWT.username;
-        console.log(`The current Logged-in username is ${decodedJWT.username}`)
-    } else {
-        console.log("The session has expired or the user is not logged in.");
-    }
-
-    const userProfileElement = document.getElementById("user-profile");
-
-    userProfileElement.innerText = username;
-    return username;
-}
-
 let username = updateUsername();
 
 async function getPlans() {
