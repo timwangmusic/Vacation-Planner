@@ -1,7 +1,7 @@
 import {updateUsername} from "./user.js";
 
 let numberOfPlans = 5;
-let username = updateUsername();
+const username = updateUsername();
 
 async function getPlans() {
     const plansUrl = document.URL + "&json_only=true";

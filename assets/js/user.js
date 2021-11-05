@@ -17,7 +17,7 @@ const updateUsername = function () {
         document.getElementById("logout-button-item").classList.add("d-none");
         // Display login dropdown item
         document.getElementById("login-button-item").classList.remove("d-none");
-        return;
+        return username;
     }
 
     // Hide signup link when user is already logged in
@@ -29,6 +29,7 @@ const updateUsername = function () {
     const userProfileElement = document.getElementById("user-profile");
 
     userProfileElement.innerText = username;
+    return username;
 }
 
 function logOut() {
