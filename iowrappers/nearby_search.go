@@ -202,7 +202,7 @@ func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeI
 func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.LocationType, microAddrMap map[string]string, placeMap map[string]bool, urlMap map[string]string) (places []POI.Place) {
 	for _, res := range resp.Results {
 		id := res.PlaceID
-		if seen, _ := placeMap[id]; !seen {
+		if seen := placeMap[id]; !seen {
 			placeMap[id] = true
 		} else {
 			continue

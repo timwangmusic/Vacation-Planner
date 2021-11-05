@@ -247,6 +247,10 @@ func (redisClient *RedisClient) CacheLocationAlias(context context.Context, quer
 	if err != nil {
 		return
 	}
+	_, err = redisClient.client.HSet(context, "location_name_alias_mapping:admin_area_level_one_names", strings.ToLower(query.AdminAreaLevelOne), strings.ToLower(correctedQuery.AdminAreaLevelOne)).Result()
+	if err != nil {
+		return
+	}
 	_, err = redisClient.client.HSet(context, "location_name_alias_mapping:country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
 	if err != nil {
 		return
@@ -257,6 +261,7 @@ func (redisClient *RedisClient) CacheLocationAlias(context context.Context, quer
 // GetLocationWithAlias retrieves corrected location name from Redis; returns empty string if not exist;
 // corrects geocode query if corrected location name exists
 func (redisClient *RedisClient) GetLocationWithAlias(context context.Context, query *GeocodeQuery) string {
+	var err error
 	resCity, err := redisClient.client.HGet(context, "location_name_alias_mapping:city_names", strings.ToLower(query.City)).Result()
 	if err != nil {
 		return ""
@@ -267,15 +272,21 @@ func (redisClient *RedisClient) GetLocationWithAlias(context context.Context, qu
 		return ""
 	}
 
+	resAdminAreaLevelOne, err := redisClient.client.HGet(context, "location_name_alias_mapping:admin_area_level_one_names", strings.ToLower(query.AdminAreaLevelOne)).Result()
+	if err != nil {
+		return ""
+	}
+
 	query.Country = resCountry
 	query.City = resCity
-	return strings.Join([]string{resCity, resCountry}, "_")
+	query.AdminAreaLevelOne = resAdminAreaLevelOne
+	return strings.Join([]string{resCity, resAdminAreaLevelOne, resCountry}, "_")
 }
 
 func (redisClient *RedisClient) Geocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
 	redisKey := "geocode:cities"
 	redisField := redisClient.GetLocationWithAlias(context, query)
-	errMsg := fmt.Errorf("geocode of location %s, %s does not exist in cache", query.City, query.Country)
+	errMsg := fmt.Errorf("geocode of location %s, %s, %s does not exist in cache", query.City, query.AdminAreaLevelOne, query.Country)
 	if redisField == "" {
 		err = errMsg
 		return
@@ -294,14 +305,15 @@ func (redisClient *RedisClient) Geocode(context context.Context, query *GeocodeQ
 
 func (redisClient *RedisClient) SetGeocode(context context.Context, query GeocodeQuery, lat float64, lng float64, originalQuery GeocodeQuery) {
 	redisKey := "geocode:cities"
-	redisField := strings.ToLower(strings.Join([]string{query.City, query.Country}, "_"))
-	redisVal := strings.Join([]string{fmt.Sprintf("%.6f", lat), fmt.Sprintf("%.6f", lng)}, ",") // 1/9 meter precision
-	_, err := redisClient.client.HSet(context, redisKey, redisField, redisVal).Result()
+	redisHashField := strings.ToLower(strings.Join([]string{query.City, query.AdminAreaLevelOne, query.Country}, "_"))
+	redisHashVal := strings.Join([]string{fmt.Sprintf("%.6f", lat), fmt.Sprintf("%.6f", lng)}, ",") // 1/9 meter precision
+	_, err := redisClient.client.HSet(context, redisKey, redisHashField, redisHashVal).Result()
 	utils.LogErrorWithLevel(err, utils.LogError)
 	if err != nil {
-		Logger.Errorf("Failed to cache geolocation for location %s, %s", query.City, query.Country)
+		Logger.Errorf("Failed to cache geolocation for location %s, %s with error %s", query.City, query.Country, err.Error())
+		return
 	} else {
-		Logger.Infof("Cached geolocation for location %s, %s success", query.City, query.Country)
+		Logger.Debugf("Cached geolocation for location %s, %s success", query.City, query.Country)
 	}
 	utils.LogErrorWithLevel(redisClient.CacheLocationAlias(context, originalQuery, query), utils.LogError)
 }
@@ -373,7 +385,7 @@ func encodePlanIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeIn
 }
 
 func generateTravelPlansCacheKey(req PlanningSolutionsCacheRequest) (string, error) {
-	country, city := req.Location.Country, req.Location.City
+	country, region, city := req.Location.Country, req.Location.AdminAreaLevelOne, req.Location.City
 	planIndex, err := encodePlanIndex(req.PlaceCategories, req.Intervals)
 	if err != nil {
 		return "", err
@@ -383,9 +395,10 @@ func generateTravelPlansCacheKey(req PlanningSolutionsCacheRequest) (string, err
 	planIndexStr := strconv.FormatUint(planIndex, 10)
 
 	country = strings.ReplaceAll(strings.ToLower(country), " ", "_")
+	region = strings.ReplaceAll(strings.ToLower(region), " ", "_")
 	city = strings.ReplaceAll(strings.ToLower(city), " ", "_")
 
-	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, city, radius, strconv.Itoa(int(req.Weekday)), planIndexStr}, ":"))
+	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, region, city, radius, strconv.Itoa(int(req.Weekday)), planIndexStr}, ":"))
 	return redisFieldKey, nil
 }
 

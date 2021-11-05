@@ -1,7 +1,5 @@
 // methods for the search page
-import {updateUsername, logOut} from "./user.js";
-
-updateUsername();
+import {logOut, updateUsername} from "./user.js";
 
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut
@@ -11,10 +9,8 @@ function locateMe() {
     async function success(location) {
         const latitude = location.coords.latitude;
         const longitude = location.coords.longitude;
-        const today = new Date();
 
-        console.log(latitude, longitude);
-        console.log(today);
+        console.log(`latitude ${latitude} and longitude: ${longitude}`);
 
         const url = "/v1/reverse-geocoding"
         await axios.get(url, {
@@ -25,16 +21,8 @@ function locateMe() {
         })
             .then(
                 response => {
-                    document.getElementById("location").value = response.data.results.city + ", " + response.data.results.country;
-                    let month = today.getMonth() + 1;
-                    if (month < 10) {
-                        month = "0" + month.toString();
-                    }
-                    let day = today.getDate();
-                    if (day < 10) {
-                        day = "0" + day.toString();
-                    }
-                    document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
+                    const reverseGeocodingResults = response.data.results;
+                    document.getElementById("location").value = [reverseGeocodingResults.city, reverseGeocodingResults.admin_area_level_one, reverseGeocodingResults.country].join(", ");
                 }
             ).catch(
                 err => console.error(err)
@@ -48,6 +36,24 @@ function locateMe() {
         navigator.geolocation.getCurrentPosition(success, error);
     }
 }
+
+function setDateToday() {
+    const today = new Date();
+    console.log("today's date is: " + today);
+    let month = today.getMonth() + 1;
+    if (month < 10) {
+        month = "0" + month.toString();
+    }
+    let day = today.getDate();
+    if (day < 10) {
+        day = "0" + day.toString();
+    }
+    document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
+}
+
+updateUsername();
+
+setDateToday();
 
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
