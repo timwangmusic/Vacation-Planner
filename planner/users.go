@@ -9,6 +9,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -16,6 +17,41 @@ type UserLoginResponse struct {
 	Username string `json:"username"`
 	Jwt      string `json:"jwt"`
 	Status   string `json:"status"`
+}
+
+type ProfileView struct {
+	Username    string
+	TravelPlans []user.TravelPlanView
+}
+
+func (planner *MyPlanner) profile(context *gin.Context) {
+	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
+	iowrappers.Logger.Debugf("fetching user profile %s", userView.Username)
+
+	if userView.Username != context.Param("username") {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
+		return
+	}
+
+	if authErr != nil {
+		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		return
+	}
+
+	userTravelPlans, err := planner.RedisClient.FindUserPlans(context, userView)
+	sort.Sort(user.ByCreatedAt(userTravelPlans))
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	userProfile := ProfileView{
+		Username:    userView.Username,
+		TravelPlans: userTravelPlans}
+
+	if templateExecutionErr := planner.ProfileHTMLTemplate.Execute(context.Writer, userProfile); templateExecutionErr != nil {
+		context.Status(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (planner MyPlanner) UserSignup(context *gin.Context) {
@@ -127,4 +163,54 @@ func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLev
 		return userView, errors.New("does not meet minimum user level requirement")
 	}
 	return userView, nil
+}
+
+func (planner *MyPlanner) UserSavedPlansPostHandler(context *gin.Context) {
+	var planView user.TravelPlanView
+	bindErr := context.ShouldBindJSON(&planView)
+	if bindErr != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": bindErr.Error()})
+		return
+	}
+
+	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
+	if userView.Username != context.Param("username") {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
+		return
+	}
+
+	if authErr != nil {
+		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		return
+	}
+
+	// TODO: differentiate between internal plan saving errors against duplicated plan saving requests errors
+	if err := planner.RedisClient.SaveUserPlan(context, userView, planView); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"results": "save user plan succeeded."})
+}
+
+func (planner *MyPlanner) UserSavedPlansGetHandler(context *gin.Context) {
+	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
+	if userView.Username != context.Param("username") {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
+		return
+	}
+
+	if authErr != nil {
+		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		return
+	}
+
+	iowrappers.Logger.Debugf("current USER ID: %s", userView.ID)
+	plans, err := planner.RedisClient.FindUserPlans(context.Request.Context(), userView)
+	if err != nil {
+		context.Status(http.StatusInternalServerError)
+		iowrappers.Logger.Error(err)
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})
 }
