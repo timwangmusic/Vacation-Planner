@@ -21,6 +21,7 @@
 </head>
 
 <body>
+    {{$username := .Username}}
     <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
         <div class="container-fluid">
             <a class="nav-link" onclick="history.back()" href="#">Back</a>
@@ -31,21 +32,48 @@
     <br>
     <div class="d-flex flex-column align-items-center justify-content-center gap-2">
         {{range $planIdx, $travelPlan := .TravelPlans}}
-        <div class="card p-2" style="width:30rem;">
+        <div class="card p-2 shadow-sm border rounded" style="width:30rem;">
             <div class="card-body">
                 <h5 class="card-title">{{.Destination}}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">{{.TravelDate}}</h6>
                 <ul class="list-group list-group-flush">
                     {{range $idx, $place := .Places}}
-                    <li class="list-group-item">{{.PlaceName}}</li>
+                    <li class="list-group-item">
+                        <a href={{.URL}} class="card-link">
+                            {{.PlaceName}} </a>
+                    </li>
                     {{end}}
                 </ul>
                 <br>
-                <button type="button" class="btn btn-outline-warning float-end">delete</button>
+                <button type="button" class="btn btn-outline-warning float-end" id="delete-plan-{{$planIdx}}"
+                    data-user="{{$username}}" data-planId="{{$travelPlan.ID}}">delete</button>
             </div>
         </div>
         {{end}}
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        async function deleteUserPlan() {
+            const username = this.dataset.user;
+            const planId = this.dataset.planid;
+            const url = `/v1/users/${username}/plan/${planId}`;
+
+            await axios.delete(
+                url
+            ).then(
+                response => {
+                    console.log(response.status)
+                    location.reload();
+                }
+            ).catch(
+                err => console.error(err)
+            );
+        }
+
+        document.querySelectorAll("button[id^=delete-plan]").forEach(
+            btn => btn.addEventListener("click", deleteUserPlan)
+        );
+    </script>
 </body>
 
 </html>

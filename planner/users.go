@@ -26,7 +26,7 @@ type ProfileView struct {
 
 func (planner *MyPlanner) profile(context *gin.Context) {
 	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
-	iowrappers.Logger.Debugf("fetching user profile %s", userView.Username)
+	iowrappers.Logger.Debugf("fetching user profile for %s", userView.Username)
 
 	if userView.Username != context.Param("username") {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
@@ -185,7 +185,7 @@ func (planner *MyPlanner) UserSavedPlansPostHandler(context *gin.Context) {
 	}
 
 	// TODO: differentiate between internal plan saving errors against duplicated plan saving requests errors
-	if err := planner.RedisClient.SaveUserPlan(context, userView, planView); err != nil {
+	if err := planner.RedisClient.SaveUserPlan(context, userView, &planView); err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -213,4 +213,23 @@ func (planner *MyPlanner) UserSavedPlansGetHandler(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})
+}
+
+func (planner *MyPlanner) UserPlanDeleteHandler(context *gin.Context) {
+	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
+	if userView.Username != context.Param("username") {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "only authorized users can delete plans"})
+		return
+	}
+
+	if authErr != nil {
+		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		return
+	}
+
+	err := planner.RedisClient.DeleteUserPlan(context, userView, user.TravelPlanView{ID: context.Param("id")})
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 }

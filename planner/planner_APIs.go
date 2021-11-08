@@ -537,6 +537,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 			users.POST("/:username/plans", planner.UserSavedPlansPostHandler)
 			users.GET("/:username/plans", planner.UserSavedPlansGetHandler)
 			users.GET("/:username/profile", planner.profile)
+			users.DELETE("/:username/plan/:id", planner.UserPlanDeleteHandler)
 		}
 	}
 
