@@ -58,8 +58,16 @@
                     data-bs-toggle="dropdown" aria-expanded="false">guest
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:100px;" aria-labelledby="user-profile">
-                    <li class="dropdown-item p-0">
-                        <button class="btn" type="button" id="profile">profile</button>
+                    <li>
+                        <button class="btn dropdown-item" id="profile">
+                            <div class="container d-flex justify-content-evenly p-0">
+                                <span class="material-icons">
+                                    account_circle
+                                </span>
+                                <span> Profile
+                                </span>
+                            </div>
+                        </button>
                     </li>
                     <li id="login-button-item" class="d-none">
                         <a class="dropdown-item p-0" href="/v1/log-in">
