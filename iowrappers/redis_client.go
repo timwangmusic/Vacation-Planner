@@ -244,18 +244,27 @@ func (redisClient *RedisClient) NearbySearch(context context.Context, request *P
 // CacheLocationAlias caches the mapping from user input location name to geo-coding-corrected location name
 // correct location name is an alias of itself
 func (redisClient *RedisClient) CacheLocationAlias(context context.Context, query GeocodeQuery, correctedQuery GeocodeQuery) (err error) {
-	_, err = redisClient.client.HSet(context, "location_name_alias_mapping:city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
-	if err != nil {
-		return
+	if strings.TrimSpace(query.City) != "" {
+		_, err = redisClient.client.HSet(context, "location_name_alias_mapping:city_names", strings.ToLower(query.City), strings.ToLower(correctedQuery.City)).Result()
+		if err != nil {
+			return
+		}
 	}
-	_, err = redisClient.client.HSet(context, "location_name_alias_mapping:admin_area_level_one_names", strings.ToLower(query.AdminAreaLevelOne), strings.ToLower(correctedQuery.AdminAreaLevelOne)).Result()
-	if err != nil {
-		return
+
+	if strings.TrimSpace(query.AdminAreaLevelOne) != "" {
+		_, err = redisClient.client.HSet(context, "location_name_alias_mapping:admin_area_level_one_names", strings.ToLower(query.AdminAreaLevelOne), strings.ToLower(correctedQuery.AdminAreaLevelOne)).Result()
+		if err != nil {
+			return
+		}
 	}
-	_, err = redisClient.client.HSet(context, "location_name_alias_mapping:country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
-	if err != nil {
-		return
+
+	if strings.TrimSpace(query.Country) != "" {
+		_, err = redisClient.client.HSet(context, "location_name_alias_mapping:country_names", strings.ToLower(query.Country), strings.ToLower(correctedQuery.Country)).Result()
+		if err != nil {
+			return
+		}
 	}
+
 	return
 }
 

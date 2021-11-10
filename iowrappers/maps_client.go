@@ -83,7 +83,6 @@ func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude
 	return geocodingResultsToGeocodeQuery(geocodingResults), nil
 }
 
-// Geocode converts city, country to its central location
 func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
 	Logger.Debugf("Geocoding for query %+v", *query)
 	req := &maps.GeocodingRequest{
