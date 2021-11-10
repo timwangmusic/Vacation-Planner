@@ -115,13 +115,13 @@ func TestSaveUserPlan(t *testing.T) {
 		return
 	}
 
-	err = RedisClient.SaveUserPlan(RedisContext, userView, planView)
+	err = RedisClient.SaveUserPlan(RedisContext, userView, &planView)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	err = RedisClient.SaveUserPlan(RedisContext, userView, planView2)
+	err = RedisClient.SaveUserPlan(RedisContext, userView, &planView2)
 	if err != nil {
 		t.Error(err)
 		return
@@ -140,4 +140,55 @@ func TestSaveUserPlan(t *testing.T) {
 	}
 
 	log.Debugf("plan details: %+v", plans)
+}
+
+func TestDeleteUserPlan(t *testing.T) {
+	userView := user.View{Username: "daisy_duck"}
+	planView := user.TravelPlanView{
+		ID:             "33521",
+		OriginalPlanID: "09201989",
+		Destination:    "Los Angeles, USA",
+		TravelDate:     "2022-01-29",
+		Places: []user.TravelPlaceView{
+			{
+				TimePeriod: "10 - 12",
+				PlaceName:  "Philippe The Original",
+				Address:    "1001 N Alameda St, Los Angeles, CA 90012, USA",
+				URL:        "https://maps.google.com/?cid=7772213039771900053",
+			},
+		},
+	}
+
+	var err error
+
+	userView, err = RedisClient.CreateUser(RedisContext, userView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = RedisClient.SaveUserPlan(RedisContext, userView, &planView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = RedisClient.DeleteUserPlan(RedisContext, userView, planView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	var plans []user.TravelPlanView
+	plans, err = RedisClient.FindUserPlans(RedisContext, userView)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(plans) != 0 {
+		t.Errorf("expected no plan remains after deletion, got %d plans remained", len(plans))
+		return
+	}
+	t.Log("test user plan deletion passed")
 }

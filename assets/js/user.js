@@ -13,8 +13,9 @@ const updateUsername = function () {
         console.log(`The current Logged-in username is ${decodedJWT.username}`)
     } else {
         console.log("The session has expired or the user is not logged in.");
-        // Hide logout dropdown item when user is not logged in
+        // Hide logout and profile dropdown items when user is not logged in
         document.getElementById("logout-button-item").classList.add("d-none");
+        document.getElementById("profile").classList.add("d-none");
         // Display login dropdown item
         document.getElementById("login-button-item").classList.remove("d-none");
         return username;
@@ -40,8 +41,8 @@ function logOut() {
         return;
     }
     console.log(`JWT ${cookieToRemove} is removed`);
-    Cookies.remove(cookieToRemove, {path: "/v1"});
+    Cookies.remove(cookieToRemove, { path: "/v1" });
     location.reload();
 }
 
-export {updateUsername, logOut}
+export { updateUsername, logOut }

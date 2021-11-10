@@ -85,3 +85,5 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
         $(this).innerText = "done";
     });
 }
+
+document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);

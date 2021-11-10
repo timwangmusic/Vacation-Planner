@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--Bootstrap CSS-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <style>
+        h1 {
+            text-align: center;
+            color: #24c1e0;
+            line-height: 100px;
+            margin: 0;
+            background-color: whitesmoke;
+        }
+    </style>
+    <title>profile</title>
+</head>
+
+<body>
+    {{$username := .Username}}
+    <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
+        <div class="container-fluid">
+            <a class="nav-link" onclick="history.back()" href="#">Back</a>
+            <span class="navbar-text" id="user-profile"> {{.Username}} </span>
+        </div>
+    </nav>
+    <h1>Profile</h1>
+    <br>
+    <div class="d-flex flex-column align-items-center justify-content-center m-3">
+        {{range $planIdx, $travelPlan := .TravelPlans}}
+        <div class="card shadow-sm border rounded mb-2 w-75" style="max-width: 350px;">
+            <div class="card-body">
+                <h5 class="card-title">{{.Destination}}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{.TravelDate}}</h6>
+                <ul class="list-group list-group-flush">
+                    {{range $idx, $place := .Places}}
+                    <li class="list-group-item">
+                        <a href={{.URL}} class="card-link">
+                            {{.PlaceName}} </a>
+                    </li>
+                    {{end}}
+                </ul>
+                <br>
+                <button type="button" class="btn btn-outline-warning float-end" id="delete-plan-{{$planIdx}}"
+                    data-user="{{$username}}" data-planId="{{$travelPlan.ID}}">delete</button>
+            </div>
+        </div>
+        {{end}}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        async function deleteUserPlan() {
+            const username = this.dataset.user;
+            const planId = this.dataset.planid;
+            const url = `/v1/users/${username}/plan/${planId}`;
+
+            await axios.delete(
+                url
+            ).then(
+                response => {
+                    console.log(response.status)
+                    location.reload();
+                }
+            ).catch(
+                err => console.error(err)
+            );
+        }
+
+        document.querySelectorAll("button[id^=delete-plan]").forEach(
+            btn => btn.addEventListener("click", deleteUserPlan)
+        );
+    </script>
+</body>
+
+</html>

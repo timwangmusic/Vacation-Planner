@@ -55,8 +55,19 @@
 
             <div class="dropdown">
                 <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
-                    data-bs-toggle="dropdown" aria-expanded="false">guest</button>
-                <ul class="dropdown-menu dropdown-menu-end" style="min-width:100px;" aria-labelledby="user-profile">
+                    data-bs-toggle="dropdown" aria-expanded="false">guest
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width:120px;" aria-labelledby="user-profile">
+                    <li>
+                        <a class="dropdown-item p-0" id="profile">
+                            <div class="container d-flex align-items-center justify-content-evenly p-0">
+                                <span class="material-icons">
+                                    account_circle
+                                </span>
+                                <span> Profile </span>
+                            </div>
+                        </a>
+                    </li>
                     <li id="login-button-item" class="d-none">
                         <a class="dropdown-item p-0" href="/v1/log-in">
                             <div class="container d-flex align-items-center justify-content-evenly p-0">

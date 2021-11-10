@@ -114,7 +114,7 @@ func (redisClient *RedisClient) Authenticate(context context.Context, credential
 	return token, tokenExpirationTime, jwtSignErr
 }
 
-func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView user.View, planView user.TravelPlanView) error {
+func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView user.View, planView *user.TravelPlanView) error {
 	userView, findUserErr := redisClient.FindUser(context, FindUserByName, userView)
 	if findUserErr != nil {
 		return findUserErr
@@ -146,6 +146,31 @@ func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView u
 	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
 	_, err = redisClient.client.Set(context, redisKey, json_, 0).Result()
 	return err
+}
+
+func (redisClient *RedisClient) DeleteUserPlan(context context.Context, userView user.View, planView user.TravelPlanView) error {
+	userView, findUserErr := redisClient.FindUser(context, FindUserByName, userView)
+	if findUserErr != nil {
+		return findUserErr
+	}
+
+	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
+	Logger.Debugf("plan to be deleted: %s", redisKey)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	go redisClient.findUserPlan(context, redisKey, &planView, &wg)
+
+	wg.Wait()
+
+	userSavedPlansRedisKey := strings.Join([]string{UserSavedTravelPlansPrefix, "user", userView.ID, "plans"}, ":")
+	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
+	if res, originalPlanIdRemovalErr := redisClient.client.SRem(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); originalPlanIdRemovalErr != nil && originalPlanIdRemovalErr != redis.Nil {
+		Logger.Infof("result from removing original key from hash set is %d", res)
+		return originalPlanIdRemovalErr
+	}
+
+	return redisClient.RemoveKeys(context, []string{redisKey})
 }
 
 func (redisClient *RedisClient) FindUserPlans(context context.Context, userView user.View) ([]user.TravelPlanView, error) {

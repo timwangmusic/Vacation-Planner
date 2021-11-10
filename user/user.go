@@ -57,3 +57,16 @@ type TravelPlanView struct {
 	Destination    string            `json:"destination"`
 	Places         []TravelPlaceView `json:"places"`
 }
+
+type ByCreatedAt []TravelPlanView
+
+func (plans ByCreatedAt) Len() int { return len(plans) }
+
+func (plans ByCreatedAt) Swap(i, j int) { plans[i], plans[j] = plans[j], plans[i] }
+
+func (plans ByCreatedAt) Less(i, j int) bool {
+	createdAtI, _ := time.Parse(time.RFC3339, plans[i].CreatedAt)
+	createdAtJ, _ := time.Parse(time.RFC3339, plans[j].CreatedAt)
+
+	return createdAtI.After(createdAtJ)
+}

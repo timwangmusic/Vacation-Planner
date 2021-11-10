@@ -81,8 +81,9 @@ func (redisClient *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
 	}
 }
 
-func (redisClient *RedisClient) RemoveKeys(context context.Context, keys []string) {
-	redisClient.client.Del(context, keys...)
+func (redisClient *RedisClient) RemoveKeys(context context.Context, keys []string) (err error) {
+	_, err = redisClient.client.Del(context, keys...).Result()
+	return err
 }
 
 // serialize place using JSON and store in Redis with key place_details:place_ID:placeID

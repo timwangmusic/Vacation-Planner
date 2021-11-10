@@ -1,5 +1,5 @@
 // methods for the search page
-import {logOut, updateUsername} from "./user.js";
+import { logOut, updateUsername } from "./user.js";
 
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut
@@ -51,7 +51,7 @@ function setDateToday() {
     document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
 }
 
-updateUsername();
+const username = updateUsername();
 
 setDateToday();
 
@@ -67,3 +67,5 @@ locationSearchInput.addEventListener(
         }
     }
 )
+
+document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);

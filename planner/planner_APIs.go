@@ -37,15 +37,16 @@ var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
 }
 
 type MyPlanner struct {
-	RedisClient        iowrappers.RedisClient
-	RedisStreamName    string
-	PhotoClient        iowrappers.PhotoHttpClient
-	Solver             solution.Solver
-	ResultHTMLTemplate *template.Template
-	TripHTMLTemplate   *template.Template
-	PlanningEvents     chan iowrappers.PlanningEvent
-	Environment        string
-	Configs            map[string]interface{}
+	RedisClient         iowrappers.RedisClient
+	RedisStreamName     string
+	PhotoClient         iowrappers.PhotoHttpClient
+	Solver              solution.Solver
+	ResultHTMLTemplate  *template.Template
+	TripHTMLTemplate    *template.Template
+	ProfileHTMLTemplate *template.Template
+	PlanningEvents      chan iowrappers.PlanningEvent
+	Environment         string
+	Configs             map[string]interface{}
 }
 
 type TimeSectionPlace struct {
@@ -119,61 +120,12 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
 	planner.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
+	planner.ProfileHTMLTemplate = template.Must(template.ParseFiles("templates/profile_page.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
 		planner.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
 	}
-}
-
-func (planner *MyPlanner) UserSavedPlansGetHandler(context *gin.Context) {
-	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
-	if userView.Username != context.Param("username") {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
-		return
-	}
-
-	if authErr != nil {
-		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
-		return
-	}
-
-	iowrappers.Logger.Debugf("current USER ID: %s", userView.ID)
-	plans, err := planner.RedisClient.FindUserPlans(context.Request.Context(), userView)
-	if err != nil {
-		context.Status(http.StatusInternalServerError)
-		iowrappers.Logger.Error(err)
-		return
-	}
-
-	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})
-}
-
-func (planner *MyPlanner) UserSavedPlansPostHandler(context *gin.Context) {
-	var planView user.TravelPlanView
-	bindErr := context.ShouldBindJSON(&planView)
-	if bindErr != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": bindErr.Error()})
-		return
-	}
-
-	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
-	if userView.Username != context.Param("username") {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
-		return
-	}
-
-	if authErr != nil {
-		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
-		return
-	}
-
-	// TODO: differentiate between internal plan saving errors against duplicated plan saving requests errors
-	if err := planner.RedisClient.SaveUserPlan(context, userView, planView); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	context.JSON(http.StatusOK, gin.H{"results": "save user plan succeeded."})
 }
 
 func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
@@ -479,7 +431,6 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 }
 
 func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
-
 	var id string = c.Param("id")
 	iowrappers.Logger.Debugf("GET Route /plans/%s", id)
 
@@ -573,13 +524,20 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
 		v1.GET("/log-in", planner.login)
 		v1.GET("/sign-up", planner.signup)
-		v1.POST("/users/:username/plans", planner.UserSavedPlansPostHandler)
-		v1.GET("/users/:username/plans", planner.UserSavedPlansGetHandler)
 		v1.GET("/plans/:id", planner.getPlanDetails)
+
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
 			migrations.GET("/url", planner.UrlMigrationHandler)
+		}
+
+		users := v1.Group("/users")
+		{
+			users.POST("/:username/plans", planner.UserSavedPlansPostHandler)
+			users.GET("/:username/plans", planner.UserSavedPlansGetHandler)
+			users.GET("/:username/profile", planner.profile)
+			users.DELETE("/:username/plan/:id", planner.UserPlanDeleteHandler)
 		}
 	}
 
