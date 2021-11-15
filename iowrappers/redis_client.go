@@ -268,46 +268,58 @@ func (redisClient *RedisClient) CacheLocationAlias(context context.Context, quer
 	return
 }
 
-// GetLocationWithAlias retrieves corrected location name from Redis; returns empty string if not exist;
-// corrects geocode query if corrected location name exists
-func (redisClient *RedisClient) GetLocationWithAlias(context context.Context, query *GeocodeQuery) string {
+func (redisClient *RedisClient) GetLocationWithAlias(context context.Context, query *GeocodeQuery) (string, error) {
+	Logger.Debugf("(RedisClient)GetLocationWithAlias -> request: %+v", *query)
 	var err error
-	resCity, err := redisClient.client.HGet(context, "location_name_alias_mapping:city_names", strings.ToLower(query.City)).Result()
-	if err != nil {
-		return ""
+	var resCity, resAdminAreaLevelOne, resCountry string
+	var locationSegments []string
+	if strings.TrimSpace(query.City) != "" {
+		resCity, err = redisClient.client.HGet(context, "location_name_alias_mapping:city_names", strings.ToLower(query.City)).Result()
+		if err != nil {
+			return "", err
+		}
+		query.City = resCity
+		locationSegments = append(locationSegments, resCity)
 	}
 
-	resCountry, err := redisClient.client.HGet(context, "location_name_alias_mapping:country_names", strings.ToLower(query.Country)).Result()
-	if err != nil {
-		return ""
+	if strings.TrimSpace(query.AdminAreaLevelOne) != "" {
+		resAdminAreaLevelOne, err = redisClient.client.HGet(context, "location_name_alias_mapping:admin_area_level_one_names", strings.ToLower(query.AdminAreaLevelOne)).Result()
+		if err != nil {
+			return "", err
+		}
+		query.AdminAreaLevelOne = resAdminAreaLevelOne
+		locationSegments = append(locationSegments, resAdminAreaLevelOne)
 	}
 
-	resAdminAreaLevelOne, err := redisClient.client.HGet(context, "location_name_alias_mapping:admin_area_level_one_names", strings.ToLower(query.AdminAreaLevelOne)).Result()
-	if err != nil {
-		return ""
+	if strings.TrimSpace(query.Country) != "" {
+		resCountry, err = redisClient.client.HGet(context, "location_name_alias_mapping:country_names", strings.ToLower(query.Country)).Result()
+		if err != nil {
+			return "", err
+		}
+		query.Country = resCountry
+		locationSegments = append(locationSegments, resCountry)
 	}
 
-	query.Country = resCountry
-	query.City = resCity
-	query.AdminAreaLevelOne = resAdminAreaLevelOne
-	return strings.Join([]string{resCity, resAdminAreaLevelOne, resCountry}, "_")
+	response := strings.Join(locationSegments, "_")
+	Logger.Debugf("(RedisClient)GetLocationWithAlias -> response: %s", response)
+	return response, nil
 }
 
 func (redisClient *RedisClient) Geocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
 	redisKey := "geocode:cities"
-	redisField := redisClient.GetLocationWithAlias(context, query)
-	errMsg := fmt.Errorf("geocode of location %s, %s, %s does not exist in cache", query.City, query.AdminAreaLevelOne, query.Country)
-	if redisField == "" {
-		err = errMsg
+	redisField, err := redisClient.GetLocationWithAlias(context, query)
+	if err != nil {
 		return
 	}
+
 	var geocode string
+	Logger.Debugf("(RedisClient)Geocode -> location in query is %+v", *query)
 	geocode, err = redisClient.client.HGet(context, redisKey, redisField).Result()
 	if err != nil {
-		err = errMsg
 		return
 	}
-	latLng, _ := utils.ParseLocation(geocode)
+	var latLng [2]float64
+	latLng, err = utils.ParseLocation(geocode)
 	lat = latLng[0]
 	lng = latLng[1]
 	return
@@ -475,11 +487,10 @@ func (redisClient *RedisClient) PlanningSolutions(context context.Context, reque
 	return response, nil
 }
 
-// Directly reading redis with fixed key to get plan or place
 func (redisClient *RedisClient) FetchSingleRecord(context context.Context, redisKey string, response interface{}) error {
 	json_, err := redisClient.client.Get(context, redisKey).Result()
 	if err != nil {
-		Logger.Debugf("[%s] redis server find no result for key: %p", context.Value(RequestIdKey), redisKey)
+		Logger.Debugf("[%s] redis server find no result for key: %s", context.Value(RequestIdKey), redisKey)
 		return err
 	}
 	err = json.Unmarshal([]byte(json_), response)
