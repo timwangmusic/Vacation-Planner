@@ -203,6 +203,18 @@ func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
 	}
 }
 
+func (planner *MyPlanner) removePlacesMigrationHandler(context *gin.Context) {
+	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
+	if authenticationErr != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
+	if err := planner.Solver.Searcher.RemovePlaces(context, []iowrappers.PlaceDetailsFields{iowrappers.PlaceDetailsFieldURL, iowrappers.PlaceDetailsFieldPhoto}); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+}
+
 func (planner *MyPlanner) PlaceStatsHandler(context *gin.Context) {
 	var placeCount int
 	var err error
@@ -530,6 +542,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
 			migrations.GET("/url", planner.UrlMigrationHandler)
+			migrations.GET("/remove-places", planner.removePlacesMigrationHandler)
 		}
 
 		users := v1.Group("/users")

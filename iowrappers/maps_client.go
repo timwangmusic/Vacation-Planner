@@ -59,6 +59,9 @@ func CreateLogger() error {
 	}
 
 	Logger = logger.Sugar()
+	if currentEnv == "" {
+		currentEnv = "TEST"
+	}
 	Logger.Infof("current environment is %s", currentEnv)
 	return nil
 }

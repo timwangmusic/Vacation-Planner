@@ -2,6 +2,8 @@ package iowrappers
 
 import (
 	"context"
+	"fmt"
+	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"reflect"
 	"strings"
@@ -11,6 +13,84 @@ import (
 const (
 	BatchSize = 300
 )
+
+type PlaceDetailsFields string
+
+const (
+	PlaceDetailsFieldURL   PlaceDetailsFields = "URL"
+	PlaceDetailsFieldPhoto PlaceDetailsFields = "photo"
+)
+
+func (poiSearcher *PoiSearcher) RemovePlaces(context context.Context, nonEmptyFields []PlaceDetailsFields) error {
+	if err := poiSearcher.redisClient.RemovePlaces(context, nonEmptyFields); err != nil {
+		Logger.Error(err)
+		return fmt.Errorf("failed to removed places: %s", err.Error())
+	}
+	return nil
+}
+
+func (redisClient *RedisClient) RemovePlaces(context context.Context, nonEmptyFields []PlaceDetailsFields) error {
+	var placeDetailsKeys []string
+	redisKeyPrefix := "place_details:place_ID:"
+
+	var err error
+	placeDetailsKeys, err = scanRedisKeys(context, redisClient, redisKeyPrefix)
+	if err != nil {
+		return err
+	}
+
+	Logger.Debugf("RemovePlaces -> obtained keys for %d places", len(placeDetailsKeys))
+	for idx, key := range placeDetailsKeys {
+		if err = redisClient.removePlace(context, key, nonEmptyFields); err != nil {
+			return err
+		}
+		if (idx+1)%100 == 0 {
+			Logger.Debugf("RemovePlaces -> completed processing %d places", idx+1)
+		}
+	}
+	return nil
+}
+
+func (redisClient *RedisClient) removePlace(context context.Context, placeRedisKey string, nonEmptyFields []PlaceDetailsFields) error {
+	segments := strings.Split(placeRedisKey, ":")
+	var placeID string
+	if len(segments) > 0 {
+		placeID = segments[len(segments)-1]
+	}
+
+	var place POI.Place
+	var err error
+	place, err = redisClient.getPlace(context, placeID)
+	if err != nil {
+		return err
+	}
+
+	if isPlaceDetailsValid(place, nonEmptyFields) {
+		return nil
+	}
+
+	// remove keys from all categorized sorted lists in case a place belongs to multiple categories
+	_, _ = redisClient.client.ZRem(context, "placeIDs:visit", placeID).Result()
+	_, _ = redisClient.client.ZRem(context, "placeIDs:eatery", placeID).Result()
+
+	return redisClient.RemoveKeys(context, []string{placeRedisKey})
+}
+
+func isPlaceDetailsValid(place POI.Place, nonEmptyFields []PlaceDetailsFields) bool {
+	for _, field := range nonEmptyFields {
+		switch field {
+		case PlaceDetailsFieldPhoto:
+			if reflect.ValueOf(place.Photo).IsZero() {
+				return false
+			}
+		case PlaceDetailsFieldURL:
+			if reflect.ValueOf(place.URL).IsZero() {
+				return false
+			}
+		}
+	}
+	return true
+}
 
 // a generic migration method
 // returns place details results for the calling function to extract and use specific fields
@@ -67,7 +147,6 @@ func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, f
 	return results, nil
 }
 
-// add user_ratings_total field to Places
 func (poiSearcher *PoiSearcher) AddUserRatingsTotal(context context.Context) error {
 	placeIdToDetailedSearchResults, err := poiSearcher.addDataFieldsToPlaces(context, "user_ratings_total", BatchSize)
 	if err != nil {
