@@ -216,7 +216,7 @@ func (redisClient *RedisClient) NearbySearch(context context.Context, request *P
 		searchRadius = MaxSearchRadius
 	}
 
-	Logger.Debugf("[%s] Redis geo radius is using search radius of %d meters", context.Value(RequestIdKey), searchRadius)
+	Logger.Debugf("[%+v] Redis geo radius is using search radius of %d meters", context.Value(RequestIdKey), searchRadius)
 	geoQuery := redis.GeoRadiusQuery{
 		Radius: float64(searchRadius),
 		Unit:   "m",
