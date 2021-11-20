@@ -39,19 +39,21 @@ func (redisClient *RedisClient) RemovePlaces(context context.Context, nonEmptyFi
 		return err
 	}
 
+	var count uint64
 	Logger.Debugf("RemovePlaces -> obtained keys for %d places", len(placeDetailsKeys))
 	for idx, key := range placeDetailsKeys {
-		if err = redisClient.removePlace(context, key, nonEmptyFields); err != nil {
+		if err = redisClient.removePlace(context, key, nonEmptyFields, &count); err != nil {
 			return err
 		}
 		if (idx+1)%100 == 0 {
 			Logger.Debugf("RemovePlaces -> completed processing %d places", idx+1)
 		}
 	}
+	Logger.Infof("RemovePlaces -> removed %d bad places", count)
 	return nil
 }
 
-func (redisClient *RedisClient) removePlace(context context.Context, placeRedisKey string, nonEmptyFields []PlaceDetailsFields) error {
+func (redisClient *RedisClient) removePlace(context context.Context, placeRedisKey string, nonEmptyFields []PlaceDetailsFields, count *uint64) error {
 	segments := strings.Split(placeRedisKey, ":")
 	var placeID string
 	if len(segments) > 0 {
@@ -69,6 +71,7 @@ func (redisClient *RedisClient) removePlace(context context.Context, placeRedisK
 		return nil
 	}
 
+	*count++
 	// remove keys from all categorized sorted lists in case a place belongs to multiple categories
 	_, _ = redisClient.client.ZRem(context, "placeIDs:visit", placeID).Result()
 	_, _ = redisClient.client.ZRem(context, "placeIDs:eatery", placeID).Result()
