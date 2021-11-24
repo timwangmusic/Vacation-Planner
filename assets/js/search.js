@@ -1,6 +1,31 @@
 // methods for the search page
 import { logOut, updateUsername } from "./user.js";
 
+(function ($) {
+    $("#location").autocomplete(
+        {
+            source: function (request, response) {
+                $.ajax(
+                    {
+                        url: "/v1/cities",
+                        dataType: "json",
+                        data: {term: request.term},
+                        success: function (data) {
+                            response($.map(data.results, function (city) {
+                                if (city.region) {
+                                    return [city.city, city.region, city.country].join(", ")
+                                }
+                                return [city.city, city.country].join(", ")
+                            }))
+                        }
+                    }
+                )
+            },
+            minLength: 2,
+        }
+    )
+})(jQuery);
+
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut
 )

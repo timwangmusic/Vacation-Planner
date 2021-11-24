@@ -246,6 +246,33 @@ type GeocodeCityView struct {
 	Cities map[string]string
 }
 
+func (planner *MyPlanner) GetCitiesHandler(context *gin.Context) {
+	var geocodes map[string]string
+	var err error
+	if geocodes, err = planner.RedisClient.GetCityCountInRedis(context); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	views := toCityViews(geocodes)
+	term := context.DefaultQuery("term", "")
+	term = strings.ToLower(term)
+	iowrappers.Logger.Debugf("Reveived the prefix of %s", term)
+	var results []CityView
+	deduplicateMap := make(map[string]bool)
+	for _, view := range views {
+		viewString := toString(view)
+		if _, exists := deduplicateMap[viewString]; exists {
+			continue
+		}
+		deduplicateMap[viewString] = true
+		if strings.HasPrefix(viewString, term) {
+			results = append(results, view)
+		}
+	}
+	context.JSON(http.StatusOK, gin.H{"results": results})
+}
+
 func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
 	var cityCount int
 	var err error
@@ -537,7 +564,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/log-in", planner.login)
 		v1.GET("/sign-up", planner.signup)
 		v1.GET("/plans/:id", planner.getPlanDetails)
-
+		v1.GET("/cities", planner.GetCitiesHandler)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
