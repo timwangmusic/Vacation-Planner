@@ -13,7 +13,10 @@
     <!--Google Font Icon CSS-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <link href="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+        integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
+
+    <link href="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.css" rel="stylesheet" />
     <title>vacation planner</title>
 </head>
 
@@ -105,7 +108,11 @@
     <div class="container mt-3" style="align-items: center">
         <div class="row">
             <div class="column">
-                <button class="btn btn-outline-info btn-sm" id="autofill"> Autofill</button>
+                <span class="d-inline-block float-end" data-bs-toggle="tooltip" title="Get current location">
+                    <button class="btn btn-outline-info btn-sm" id="autofill">
+                        <i class="fas fa-location-arrow fa-sm"></i>
+                    </button>
+                </span>
             </div>
         </div>
         <br>
@@ -125,7 +132,6 @@
                     <div class="flex-fill">
                         <input class="form-control border-0" type="search" id="location" placeholder="Search"
                             aria-label="Search" name="location" value="Los Angeles, CA, USA">
-
                     </div>
 
                     <div class="fixedwidthicon">
