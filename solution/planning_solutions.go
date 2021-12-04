@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/yourbasic/radix"
 
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"github.com/yourbasic/radix"
 )
 
 const (
@@ -185,7 +185,8 @@ func TravelPlansDeduplication(travelPlans []PlanningSolution) []PlanningSolution
 	results := make([]PlanningSolution, 0)
 
 	for _, travelPlan := range travelPlans {
-		placeIds := travelPlan.PlaceIDS
+		placeIds := make([]string, len(travelPlan.PlaceIDS))
+		copy(placeIds, travelPlan.PlaceIDS)
 		radix.Sort(placeIds)
 		jointPlanIds := strings.Join(placeIds, "_")
 		if _, exists := duplicatedPlans[jointPlanIds]; !exists {
