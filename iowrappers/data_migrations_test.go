@@ -11,6 +11,7 @@ import (
 func TestRemovePlaces(t *testing.T) {
 	// set up
 	RedisMockSvr, _ := miniredis.Run()
+	defer RedisMockSvr.Close()
 
 	redisUrl := "redis://" + RedisMockSvr.Addr()
 	redisURL, _ := url.Parse(redisUrl)
