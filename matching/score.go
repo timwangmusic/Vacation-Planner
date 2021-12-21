@@ -1,4 +1,4 @@
-// score design doc: https://bit.ly/2OTuBhM
+// Package matching score design doc: https://bit.ly/2OTuBhM
 package matching
 
 import (
@@ -10,7 +10,7 @@ import (
 
 const (
 	AvgRating  = 3.0
-	AvgPricing = PriceLevel2
+	AvgPricing = PriceDefaultMean
 )
 
 func Score(places []Place) float64 {
