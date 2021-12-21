@@ -38,8 +38,8 @@ func TestCreatePlace(t *testing.T) {
 		t.Errorf("Address setting is not correct. \n Expected: %s \n Got: %s",
 			addr, place.GetAddress())
 	}
-	if place.GetPriceLevel() != 3 {
-		t.Errorf("Price level setting is not correct. \n Expected: %d \n Got: %d",
+	if place.GetPriceLevel() != POI.PriceLevelThree {
+		t.Errorf("Price level setting is not correct. \n Expected: %d \n Got: %+v",
 			3, place.GetPriceLevel())
 	}
 	if place.GetRating() != 4.5 {

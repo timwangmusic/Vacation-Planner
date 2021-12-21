@@ -8,7 +8,7 @@ func ToPlaceView(place Place) PlaceView {
 		URL:          place.GetURL(),
 		Rating:       place.GetRating(),
 		RatingsCount: place.GetUserRatingsCount(),
-		PriceLevel:   place.Place.GetPriceLevel(),
+		AveragePrice: place.GetPrice(),
 		Hours:        place.GetHours(),
 	}
 	return placeView

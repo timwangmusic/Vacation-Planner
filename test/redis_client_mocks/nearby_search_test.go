@@ -16,7 +16,7 @@ func TestGetPlaces(t *testing.T) {
 		Address:          POI.Address{},
 		FormattedAddress: "20 W 34th St, New York, NY 10001",
 		Location:         POI.Location{Longitude: -73.9857, Latitude: 40.7484},
-		PriceLevel:       3,
+		PriceLevel:       POI.PriceLevelThree,
 		Rating:           4.6,
 		Hours:            [7]string{},
 	}
@@ -28,7 +28,7 @@ func TestGetPlaces(t *testing.T) {
 		Address:          POI.Address{},
 		FormattedAddress: "255 Northern Blvd, Great Neck, NY 11021",
 		Location:         POI.Location{Longitude: -73.7271, Latitude: 40.7773},
-		PriceLevel:       5,
+		PriceLevel:       POI.PriceLevelFour,
 		Rating:           4.9,
 		Hours:            [7]string{},
 	}
@@ -40,7 +40,7 @@ func TestGetPlaces(t *testing.T) {
 		Address:          POI.Address{},
 		FormattedAddress: "72 W 36th St, New York, NY 10018",
 		Location:         POI.Location{Longitude: -73.98597, Latitude: 40.750706},
-		PriceLevel:       5,
+		PriceLevel:       POI.PriceLevelFour,
 		Rating:           4.6,
 		Hours:            [7]string{},
 	}
