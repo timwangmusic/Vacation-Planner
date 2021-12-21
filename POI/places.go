@@ -46,7 +46,7 @@ type Place struct {
 	Address          Address        `bson:"address"`
 	FormattedAddress string         `bson:"formatted_address"`
 	Location         Location       `bson:"location"`
-	PriceLevel       int            `bson:"price_level"`
+	PriceLevel       PriceLevel     `bson:"price_level"`
 	Rating           float32        `bson:"rating"`
 	Hours            [7]string      `bson:"hours"`
 	URL              string         `bson:"url"`
@@ -71,6 +71,17 @@ type Address struct {
 	PostalCode   string
 	Country      string
 }
+
+type PriceLevel int
+
+const (
+	PriceLevelZero    = 0
+	PriceLevelOne     = 1
+	PriceLevelTwo     = 2
+	PriceLevelThree   = 3
+	PriceLevelFour    = 4
+	PriceLevelDefault = 2
+)
 
 func (place *Place) GetName() string {
 	return place.Name
@@ -109,7 +120,7 @@ func (place *Place) GetLocation() Location {
 	return place.Location
 }
 
-func (place *Place) GetPriceLevel() int {
+func (place *Place) GetPriceLevel() PriceLevel {
 	return place.PriceLevel
 }
 
@@ -216,7 +227,20 @@ func (place *Place) SetLocationCoordinates(coordinates [2]float64) {
 }
 
 func (place *Place) SetPriceLevel(priceRange int) {
-	place.PriceLevel = priceRange
+	switch priceRange {
+	case 0:
+		place.PriceLevel = PriceLevelZero
+	case 1:
+		place.PriceLevel = PriceLevelOne
+	case 2:
+		place.PriceLevel = PriceLevelTwo
+	case 3:
+		place.PriceLevel = PriceLevelThree
+	case 4:
+		place.PriceLevel = PriceLevelFour
+	default:
+		place.PriceLevel = PriceLevelDefault
+	}
 }
 
 func (place *Place) SetRating(rating float32) {
