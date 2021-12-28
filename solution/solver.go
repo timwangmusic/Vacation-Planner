@@ -3,6 +3,7 @@ package solution
 import (
 	"context"
 	"errors"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
@@ -30,6 +31,7 @@ type PlanningRequest struct {
 	Location     POI.Location
 	Slots        []SlotRequest
 	Weekday      POI.Weekday
+	TravelDate   string
 	NumPlans     int64
 	SearchRadius uint
 	PriceLevel   POI.PriceLevel
@@ -141,7 +143,7 @@ func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowr
 }
 
 // GetStandardRequest generates a standard request while we seek a better way to represent complex REST requests
-func GetStandardRequest(weekday POI.Weekday, numResults int64, priceLevel POI.PriceLevel) (req PlanningRequest) {
+func GetStandardRequest(travelDate string, weekday POI.Weekday, numResults int64, priceLevel POI.PriceLevel) (req PlanningRequest) {
 	timeSlot1 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
 	slotReq1 := SlotRequest{
 		TimeSlot: timeSlot1,
@@ -163,6 +165,7 @@ func GetStandardRequest(weekday POI.Weekday, numResults int64, priceLevel POI.Pr
 
 	req.Slots = append(req.Slots, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
 	req.Weekday = weekday
+	req.TravelDate = travelDate
 	req.NumPlans = numResults
 	req.PriceLevel = priceLevel
 	return

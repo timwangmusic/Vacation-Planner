@@ -72,9 +72,7 @@
                         </span>
                         <button id="edit-{{$i}}" type="button"
                             class="btn btn-sm btn-outline-primary m-1 float-end">edit</button>
-                        <form action={{index $detailsURL $i}}>
-                            <input type="submit" class="btn btn-sm btn-outline-primary m-1 float-end" value="show" />
-                        </form>
+                        <a class="btn btn-sm btn-outline-primary m-1 float-end" href={{index $detailsURL $i}}>show</a>
 
                         <table id="plan-table-{{$i}}" class="table table-bordered table-striped table-hover"
                             style="background: lightcyan; table-layout: fixed">

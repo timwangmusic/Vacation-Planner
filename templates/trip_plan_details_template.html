@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.6.0/font/bootstrap-icons.css">
     <!-- Customized style -->
     <link rel="stylesheet" href="/v1/assets/css/styles.css">
+    <!--Google Font Icon CSS-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <title>Trip Details</title>
 </head>
 
@@ -20,7 +22,25 @@
         <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
             <div class="container-fluid">
                 <a class="nav-link" href="javascript:history.back()">Back</a>
-                <span class="navbar-text" id="user-profile"> guest </span>
+                <!-- <span class="navbar-text" id="user-profile"> guest </span> -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
+                        data-bs-toggle="dropdown" aria-expanded="false">guest
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" style="min-width:120px;" aria-labelledby="user-profile">
+                        <li>
+                            <a class="dropdown-item p-0" id="profile">
+                                <div class="container d-flex justify-content-evenly p-0">
+                                    <span class="material-icons">
+                                        account_circle
+                                    </span>
+                                    <span> Profile
+                                    </span>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </nav>
 
@@ -32,12 +52,12 @@
 
         <div class="card shadow-sm border rounded" style="width: 30rem;">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <span class="fs-3 fw-bold">
+                <span class="fs-4 fw-bold">
                     {{.TravelDestination}}
                 </span>
                 <div>
-                    <i class="bi bi-bookmark fs-4"></i>
-                    <i class="bi bi-heart fs-4"></i>
+                    <i id="planSaveIcon" class="bi bi-bookmark fs-4" data-bs-toggle="tooltip"
+                        data-bs-original-title="Save"></i>
                 </div>
 
             </div>
