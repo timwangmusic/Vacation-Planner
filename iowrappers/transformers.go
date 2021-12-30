@@ -11,6 +11,8 @@ func geocodingResultsToGeocodeQuery(results []maps.GeocodingResult) GeocodeQuery
 			switch addressType {
 			case "locality":
 				reverseGeocodingResult.City = component.LongName
+			case "administrative_area_level_1":
+				reverseGeocodingResult.AdminAreaLevelOne = component.ShortName
 			case "country":
 				reverseGeocodingResult.Country = component.LongName
 			}

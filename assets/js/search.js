@@ -1,49 +1,30 @@
 // methods for the search page
-import jwt_decode from "./jwt-decode.js";
+import { logOut, updateUsername } from "./user.js";
 
-function updateUsername() {
-    const jwt = Cookies.get("JWT");
-    let username = "guest";
-
-    if (jwt) {
-        console.log("The JWT token is: ", jwt);
-
-        const decodedJWT = jwt_decode(jwt);
-
-        username = decodedJWT.username;
-        console.log(`The current Logged-in username is ${decodedJWT.username}`)
-    } else {
-        console.log("The session has expired or the user is not logged in.");
-
-        // Hide logout dropdown item when user is not logged in
-        document.getElementById("logout-button-item").classList.add("d-none");
-
-        // Display login dropdown item
-        document.getElementById("login-button-item").classList.remove("d-none");
-        return;
-    }
-
-    // Hide signup link when user is already logged in
-    document.getElementById("signup").style.display = "none";
-
-    const userProfileElement = document.getElementById("user-profile");
-
-    userProfileElement.innerText = username;
-}
-
-updateUsername();
-
-function logOut() {
-    const cookieToRemove = "JWT";
-    const jwt = Cookies.get(cookieToRemove);
-    if (jwt === null) {
-        console.error("JWT does not exist");
-        return;
-    }
-    console.log(`JWT ${cookieToRemove} is removed`);
-    Cookies.remove(cookieToRemove, {path: "/v1"});
-    location.reload();
-}
+(function ($) {
+    $("#location").autocomplete(
+        {
+            source: function (request, response) {
+                $.ajax(
+                    {
+                        url: "/v1/cities",
+                        dataType: "json",
+                        data: {term: request.term},
+                        success: function (data) {
+                            response($.map(data.results, function (city) {
+                                if (city.region) {
+                                    return [city.city, city.region, city.country].join(", ")
+                                }
+                                return [city.city, city.country].join(", ")
+                            }))
+                        }
+                    }
+                )
+            },
+            minLength: 2,
+        }
+    )
+})(jQuery);
 
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut
@@ -53,10 +34,8 @@ function locateMe() {
     async function success(location) {
         const latitude = location.coords.latitude;
         const longitude = location.coords.longitude;
-        const today = new Date();
 
-        console.log(latitude, longitude);
-        console.log(today);
+        console.log(`latitude ${latitude} and longitude: ${longitude}`);
 
         const url = "/v1/reverse-geocoding"
         await axios.get(url, {
@@ -67,16 +46,8 @@ function locateMe() {
         })
             .then(
                 response => {
-                    document.getElementById("location").value = response.data.results.city + ", " + response.data.results.country;
-                    let month = today.getMonth() + 1;
-                    if (month < 10) {
-                        month = "0" + month.toString();
-                    }
-                    let day = today.getDate();
-                    if (day < 10) {
-                        day = "0" + day.toString();
-                    }
-                    document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
+                    const reverseGeocodingResults = response.data.results;
+                    document.getElementById("location").value = [reverseGeocodingResults.city, reverseGeocodingResults.admin_area_level_one, reverseGeocodingResults.country].join(", ");
                 }
             ).catch(
                 err => console.error(err)
@@ -91,6 +62,24 @@ function locateMe() {
     }
 }
 
+function setDateToday() {
+    const today = new Date();
+    console.log("today's date is: " + today);
+    let month = today.getMonth() + 1;
+    if (month < 10) {
+        month = "0" + month.toString();
+    }
+    let day = today.getDate();
+    if (day < 10) {
+        day = "0" + day.toString();
+    }
+    document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
+}
+
+const username = updateUsername();
+
+setDateToday();
+
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
 const locationSearchInput = document.getElementById('location');
@@ -103,3 +92,5 @@ locationSearchInput.addEventListener(
         }
     }
 )
+
+document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);

@@ -1,4 +1,4 @@
-FROM golang:alpine as unwindtest
+FROM golang:1.16-alpine
 
 ENV GO111MODULE=on
 

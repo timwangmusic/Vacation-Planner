@@ -1,27 +1,30 @@
 package matching
 
+import "github.com/weihesdlegend/Vacation-planner/POI"
+
 const (
-	PriceLevelDefault = -1.0
-	PriceLevel0       = 0.0
-	PriceLevel1       = 10.0
-	PriceLevel2       = 30.0
-	PriceLevel3       = 50.0
-	PriceLevel4       = 100.0
+	PriceZeroMean    = 0.0
+	PriceOneMean     = 10.0
+	PriceTwoMean     = 30.0
+	PriceThreeMean   = 50.0
+	PriceFourMean    = 100.0
+	PriceDefaultMean = PriceTwoMean
 )
 
-func Pricing(priceLevel int) float64 {
+// AveragePricing returns expected price of the price level
+func AveragePricing(priceLevel POI.PriceLevel) float64 {
 	switch priceLevel {
-	case 0:
-		return PriceLevel0
-	case 1:
-		return PriceLevel1
-	case 2:
-		return PriceLevel2
-	case 3:
-		return PriceLevel3
-	case 4:
-		return PriceLevel4
+	case POI.PriceLevelZero:
+		return PriceZeroMean
+	case POI.PriceLevelOne:
+		return PriceOneMean
+	case POI.PriceLevelTwo:
+		return PriceTwoMean
+	case POI.PriceLevelThree:
+		return PriceThreeMean
+	case POI.PriceLevelFour:
+		return PriceFourMean
 	default:
-		return PriceLevelDefault
+		return PriceDefaultMean
 	}
 }

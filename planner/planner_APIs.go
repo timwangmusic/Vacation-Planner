@@ -28,6 +28,7 @@ import (
 const (
 	ServerTimeout      = time.Second * 15
 	jobQueueBufferSize = 1000
+	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
 
 var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
@@ -36,13 +37,16 @@ var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
 }
 
 type MyPlanner struct {
-	RedisClient        iowrappers.RedisClient
-	RedisStreamName    string
-	Solver             solution.Solver
-	ResultHTMLTemplate *template.Template
-	PlanningEvents     chan iowrappers.PlanningEvent
-	Environment        string
-	Configs            map[string]interface{}
+	RedisClient         iowrappers.RedisClient
+	RedisStreamName     string
+	PhotoClient         iowrappers.PhotoHttpClient
+	Solver              solution.Solver
+	ResultHTMLTemplate  *template.Template
+	TripHTMLTemplate    *template.Template
+	ProfileHTMLTemplate *template.Template
+	PlanningEvents      chan iowrappers.PlanningEvent
+	Environment         string
+	Configs             map[string]interface{}
 }
 
 type TimeSectionPlace struct {
@@ -54,15 +58,17 @@ type TimeSectionPlace struct {
 	PlaceIcon string   `json:"place_icon_css_class"`
 }
 
-type TimeSectionPlaces struct {
+type TravelPlan struct {
+	ID     string             `json:"id"`
 	Places []TimeSectionPlace `json:"places"`
 }
 
 type PlanningResponse struct {
-	TravelDestination string              `json:"travel_destination"`
-	Places            []TimeSectionPlaces `json:"time_section_places"`
-	Err               error               `json:"error"`
-	StatusCode        uint                `json:"status_code"`
+	TravelDestination string       `json:"travel_destination"`
+	TravelPlans       []TravelPlan `json:"travel_plans"`
+	TripDetailsURL    []string     `json:"trip_details_url"`
+	Err               error        `json:"error"`
+	StatusCode        uint         `json:"status_code"`
 }
 
 type PlanningPostRequest struct {
@@ -75,6 +81,28 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
+type TripDetailResp struct {
+	PlaceDetails      []PlaceDetailsResp
+	ShownActive       []bool
+	TravelDestination string
+}
+
+type PlaceDetailsResp struct {
+	Name            string
+	URL             string
+	FormattedAdress string
+	PhotoURL        string
+}
+
+type TripShowDetails struct {
+	City    string `form:"city"`
+	Country string `form:"country"`
+	Radius  string `form:"radius"`
+	Day     string `form:"day"`
+	TimeIdx string `form:"time"`
+	Id      string `form:"id"`
+}
+
 type RequestIdKey string
 
 func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}) {
@@ -84,12 +112,15 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	if redisStreamName == "" {
 		planner.RedisStreamName = "stream:planning_api_usage"
 	}
+	planner.PhotoClient = iowrappers.CreatePhotoHttpClient(mapsClientApiKey, PhotoApiBaseURL)
 
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 
 	planner.Solver.Init(PoiSearcher)
 
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
+	planner.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
+	planner.ProfileHTMLTemplate = template.Must(template.ParseFiles("templates/profile_page.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
@@ -172,6 +203,18 @@ func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
 	}
 }
 
+func (planner *MyPlanner) removePlacesMigrationHandler(context *gin.Context) {
+	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
+	if authenticationErr != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
+	if err := planner.Solver.Searcher.RemovePlaces(context, []iowrappers.PlaceDetailsFields{iowrappers.PlaceDetailsFieldURL, iowrappers.PlaceDetailsFieldPhoto}); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+}
+
 func (planner *MyPlanner) PlaceStatsHandler(context *gin.Context) {
 	var placeCount int
 	var err error
@@ -201,6 +244,33 @@ func (planner *MyPlanner) PlaceStatsHandler(context *gin.Context) {
 type GeocodeCityView struct {
 	Count  int
 	Cities map[string]string
+}
+
+func (planner *MyPlanner) GetCitiesHandler(context *gin.Context) {
+	var geocodes map[string]string
+	var err error
+	if geocodes, err = planner.RedisClient.GetCityCountInRedis(context); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	views := toCityViews(geocodes)
+	term := context.DefaultQuery("term", "")
+	term = strings.ToLower(term)
+	iowrappers.Logger.Debugf("Reveived the prefix of %s", term)
+	var results []CityView
+	deduplicateMap := make(map[string]bool)
+	for _, view := range views {
+		viewString := toString(view)
+		if _, exists := deduplicateMap[viewString]; exists {
+			continue
+		}
+		deduplicateMap[viewString] = true
+		if strings.HasPrefix(viewString, term) {
+			results = append(results, view)
+		}
+	}
+	context.JSON(http.StatusOK, gin.H{"results": results})
 }
 
 func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
@@ -249,14 +319,15 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 	}
 
 	topSolutions := planningResponse.Solutions
-	resp.Places = make([]TimeSectionPlaces, len(topSolutions))
+	resp.TravelPlans = make([]TravelPlan, len(topSolutions))
+	resp.TripDetailsURL = make([]string, len(topSolutions))
 
 	for sIdx, topSolution := range topSolutions {
-		timeSectionPlaces := TimeSectionPlaces{
+		travelPlan := TravelPlan{
 			Places: make([]TimeSectionPlace, 0),
 		}
 		for pIdx, placeName := range topSolution.PlaceNames {
-			timeSectionPlaces.Places = append(timeSectionPlaces.Places, TimeSectionPlace{
+			travelPlan.Places = append(travelPlan.Places, TimeSectionPlace{
 				PlaceName: placeName,
 				StartTime: planningRequest.Slots[pIdx].TimeSlot.Slot.Start,
 				EndTime:   planningRequest.Slots[pIdx].TimeSlot.Slot.End,
@@ -265,7 +336,9 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
 			})
 		}
-		resp.Places[sIdx] = timeSectionPlaces
+		travelPlan.ID = topSolution.ID
+		resp.TravelPlans[sIdx] = travelPlan
+		resp.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID
 	}
 
 	resp.StatusCode = solution.ValidSolutionFound
@@ -314,9 +387,9 @@ func validateLocation(location string) error {
 		return errors.New("location cannot be empty")
 	}
 
-	locationPattern := `[a-zA-Z]+,\s[a-zA-Z]+`
+	locationPattern := `[a-zA-Z\s]+,\s[a-zA-Z\s]+,\s[a-zA-Z\s]+|[a-zA-Z\s]+,\s[a-zA-Z\s]+`
 	if matched, _ := regexp.Match(locationPattern, []byte(location)); !matched {
-		return errors.New("location format must be city, country")
+		return errors.New("location format must be city, region, country or city, country")
 	}
 	return nil
 }
@@ -324,10 +397,10 @@ func validateLocation(location string) error {
 // HTTP GET API end-point handler
 // Return top planning result to user
 func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
-	var username = "guest" // default username
+	var userView user.View
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
-		username, authenticationErr = planner.UserAuthentication(ctx, user.LevelRegular)
+		userView, authenticationErr = planner.UserAuthentication(ctx, user.LevelRegular)
 		if authenticationErr != nil {
 			utils.LogErrorWithLevel(authenticationErr, utils.LogDebug)
 			planner.login(ctx)
@@ -336,7 +409,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	requestId := requestid.Get(ctx)
-	location := ctx.DefaultQuery("location", "San Jose, USA")
+	location := ctx.DefaultQuery("location", "San Jose, CA, USA")
 	locationFields := strings.Split(location, ", ")
 	if err := validateLocation(location); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
@@ -364,10 +437,18 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 
 	planningReq := solution.GetStandardRequest(POI.Weekday(weekday), numResultsInt)
 	planningReq.SearchRadius = 10000 // default to 10km
-	planningReq.Location = POI.Location{City: locationFields[0], Country: locationFields[1]}
+	switch len(locationFields) {
+	case 2:
+		planningReq.Location = POI.Location{City: locationFields[0], Country: locationFields[1]}
+	case 3:
+		planningReq.Location = POI.Location{City: locationFields[0], AdminAreaLevelOne: locationFields[1], Country: locationFields[2]}
+	default:
+		ctx.String(http.StatusBadRequest, "wrong location input")
+		return
+	}
 
 	c := context.WithValue(ctx, "request_id", requestId)
-	planningResp := planner.Planning(c, &planningReq, username)
+	planningResp := planner.Planning(c, &planningReq, userView.Username)
 
 	err := planningResp.Err
 	if err != nil {
@@ -380,7 +461,69 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
+	jsonOnly := ctx.DefaultQuery("json_only", "false")
+	if jsonOnly != "false" {
+		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
+		return
+	}
 	utils.LogErrorWithLevel(planner.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
+}
+
+func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
+	var id string = c.Param("id")
+	iowrappers.Logger.Debugf("GET Route /plans/%s", id)
+
+	var cachePlanSolution iowrappers.PlanningSolutionRecord
+	var planRecordRedisKey = strings.Join([]string{iowrappers.TravelPlanRedisCacheKeyPrefix, id}, ":")
+	cacheErr := planner.RedisClient.FetchSingleRecord(c, planRecordRedisKey, &cachePlanSolution)
+	if cacheErr != nil {
+		iowrappers.Logger.Debugf("Error occurs in fetching plan with key %s\n", planRecordRedisKey)
+		c.String(http.StatusBadRequest, cacheErr.Error())
+		return
+	}
+
+	// FIXME: [Rui] check why placeIDs are not stored in order in cached slot solution
+	const fixedPlaceKeyPrefix = "place_details:place_ID:"
+	var placeKey string
+	var cachePlaceDetails POI.Place
+	var destination string = "Dream Place"
+	if cachePlanSolution.Destination != (POI.Location{}) {
+		destination = strings.Title(cachePlanSolution.Destination.City) + ", " + strings.ToUpper(cachePlanSolution.Destination.Country)
+	}
+	var tripResp = TripDetailResp{
+		PlaceDetails:      make([]PlaceDetailsResp, 0),
+		ShownActive:       make([]bool, 0),
+		TravelDestination: destination,
+	}
+	for idx, placeId := range cachePlanSolution.PlaceIDs {
+		placeKey = fixedPlaceKeyPrefix + placeId
+		cacheErr := planner.RedisClient.FetchSingleRecord(c, placeKey, &cachePlaceDetails)
+		if cacheErr != nil {
+			c.String(http.StatusBadRequest, cacheErr.Error())
+			return
+		}
+
+		placeDetails := planner.getTripFromPlace(cachePlaceDetails)
+		tripResp.PlaceDetails = append(tripResp.PlaceDetails, placeDetails)
+		var isActive = false
+		if idx == 0 {
+			isActive = true
+		}
+		tripResp.ShownActive = append(tripResp.ShownActive, isActive)
+	}
+	iowrappers.Logger.Debugf("Trip Details:\n%v\n", tripResp.PlaceDetails)
+
+	// send data
+	utils.LogErrorWithLevel(planner.TripHTMLTemplate.Execute(c.Writer, tripResp), utils.LogError)
+}
+
+func (planner *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
+	return PlaceDetailsResp{
+		Name:            place.Name,
+		URL:             place.URL,
+		FormattedAdress: place.FormattedAddress,
+		PhotoURL:        string(planner.PhotoClient.GetPhotoURL(place.Photo.Reference)),
+	}
 }
 
 func (planner *MyPlanner) login(c *gin.Context) {
@@ -420,10 +563,21 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
 		v1.GET("/log-in", planner.login)
 		v1.GET("/sign-up", planner.signup)
+		v1.GET("/plans/:id", planner.getPlanDetails)
+		v1.GET("/cities", planner.GetCitiesHandler)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
 			migrations.GET("/url", planner.UrlMigrationHandler)
+			migrations.GET("/remove-places", planner.removePlacesMigrationHandler)
+		}
+
+		users := v1.Group("/users")
+		{
+			users.POST("/:username/plans", planner.UserSavedPlansPostHandler)
+			users.GET("/:username/plans", planner.UserSavedPlansGetHandler)
+			users.GET("/:username/profile", planner.profile)
+			users.DELETE("/:username/plan/:id", planner.UserPlanDeleteHandler)
 		}
 	}
 

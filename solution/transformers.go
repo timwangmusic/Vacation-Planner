@@ -14,7 +14,7 @@ func ToTimeSlots(slotRequests []SlotRequest) []matching.TimeSlot {
 	return timeSlots
 }
 
-func ToSlotCategories(slotRequests []SlotRequest) []POI.PlaceCategory {
+func ToPlaceCategories(slotRequests []SlotRequest) []POI.PlaceCategory {
 	categories := make([]POI.PlaceCategory, len(slotRequests))
 	for idx := range slotRequests {
 		categories[idx] = slotRequests[idx].Category

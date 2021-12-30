@@ -1,81 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vacation Plans</title>
     <!--Bootstrap CSS-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/css/styles.css">
     <!--Google Font Icon CSS-->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-          rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
+
 <body>
-<div class="grid">
-    <div class="header">
-        <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
-            <div class="container-fluid">
-                <a class="nav-link" href="/v1/">New Search</a>
-            </div>
-        </nav>
-
-        <h1>
-            Vacation Plans for {{.TravelDestination}}
-        </h1>
-    </div>
-
-    {{if .Err}}
-    Error: {{.Err}}<br>
-    Error code: {{.StatusCode}}<br>
-    {{else}}
-    {{/* iterate over planning solutions*/}}
-    <div class="accordion accordion-flush" id="accordionSetParent">
-        {{range $i, $p := .Places}}
-        {{/* create one table for each travel plan */}}
-        <div class="accordion-item">
-            <h2 class="accordion-header border">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#plan-{{$i}}"
-                        aria-expanded="true" aria-controls="plan-{{$i}}" style="color: #24c1e0">
-                    One-Day Travel Plan
-                </button>
-            </h2>
-            <div id="plan-{{$i}}" class="accordion-collapse collapse show" data-bs-parent="#accordionSetParent">
-                <div class="accordion-body">
-                    <table class="table table-bordered table-striped table-hover" style="background: lightcyan; table-layout: fixed">
-                        <thead>
-                        <tr>
-                            <th class="col-3"> Time </th>
-                            <th class="col-4 col-md-3"> Place Name</th>
-                            <th class="d-none d-md-block"> Address</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {{range .Places}}
-                        <tr>
-                            <td class="col-3" style="color: darkcyan"> 
-                                <div class="d-flex flex-row">
-                                    <span class="material-icons">{{.PlaceIcon}}</span> <span class="mx-2"> {{.StartTime}} - {{.EndTime}} </span>
-                                </div
-                            ></td>
-                            <td class="col-4 col-md-3"> <a href={{.URL}}> {{.PlaceName}} </a></td>
-                            <td class="d-none d-md-block"> {{.Address}}</td>
-                        </tr>
-                        {{end}}
-                        </tbody>
-                    </table>
+    <div class="grid">
+        <div class="header">
+            <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
+                <div class="container-fluid">
+                    <a class="nav-link" href="/v1/">New Search</a>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
+                            data-bs-toggle="dropdown" aria-expanded="false">guest
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width:120px;"
+                            aria-labelledby="user-profile">
+                            <li>
+                                <a class="dropdown-item p-0" id="profile">
+                                    <div class="container d-flex justify-content-evenly p-0">
+                                        <span class="material-icons">
+                                            account_circle
+                                        </span>
+                                        <span> Profile
+                                        </span>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
+            </nav>
+
+            <h1>
+                Vacation Plans for {{.TravelDestination}}
+            </h1>
+        </div>
+
+        {{if .Err}}
+        Error: {{.Err}}<br>
+        Error code: {{.StatusCode}}<br>
+        {{else}}
+        {{/* iterate over planning solutions*/}}
+        <div class="accordion accordion-flush" id="accordionSetParent">
+            {{$detailsURL := .TripDetailsURL}}
+            {{range $i, $p := .TravelPlans}}
+            {{/* create one table for each travel plan */}}
+            <div class="accordion-item">
+                <h2 class="accordion-header border">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#plan-{{$i}}" aria-expanded="true" aria-controls="plan-{{$i}}"
+                        style="color: #24c1e0">
+                        One-Day Travel Plan
+                    </button>
+                </h2>
+                <div id="plan-{{$i}}" class="accordion-collapse collapse show" data-bs-parent="#accordionSetParent">
+                    <div class="accordion-body">
+                        <span class="d-inline-block float-end" tabindex="0" data-bs-toggle="tooltip"
+                            data-bs-placement="left" title="Save to profile">
+                            <button id="save-{{$i}}" type="button"
+                                class="btn btn-sm btn-outline-primary m-1">save</button>
+                        </span>
+                        <button id="edit-{{$i}}" type="button"
+                            class="btn btn-sm btn-outline-primary m-1 float-end">edit</button>
+                        <form action={{index $detailsURL $i}}>
+                            <input type="submit" class="btn btn-sm btn-outline-primary m-1 float-end" value="show" />
+                        </form>
+
+                        <table id="plan-table-{{$i}}" class="table table-bordered table-striped table-hover"
+                            style="background: lightcyan; table-layout: fixed">
+                            <thead>
+                                <tr>
+                                    <th class="col-3"> Time</th>
+                                    <th class="col-4 col-md-3"> Place Name</th>
+                                    <th class="d-none d-md-block"> Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .Places}}
+                                <tr>
+                                    <td class="col-3" style="color: darkcyan">
+                                        <div class="d-flex flex-row">
+                                            <span class="material-icons">{{.PlaceIcon}}</span> <span class="mx-2"
+                                                id="interval-{{$i}}">{{.StartTime}} - {{.EndTime}}</span>
+                                        </div>
+                                    </td>
+                                    <td class="col-4 col-md-3"><a href={{.URL}}>{{.PlaceName}}</a></td>
+                                    <td class="d-none d-md-block">{{.Address}}</td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {{end}}
             </div>
             {{end}}
         </div>
-        {{end}}
     </div>
-</div>
 
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    <script type="module" src="assets/js/user.js"></script>
+    <script type="module" src="assets/js/search_results.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </body>
+
 </html>

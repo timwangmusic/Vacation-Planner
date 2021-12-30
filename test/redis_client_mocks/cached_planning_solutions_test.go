@@ -2,32 +2,41 @@ package redis_client_mocks
 
 import (
 	"github.com/go-playground/assert/v2"
+	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"testing"
 )
 
 func TestGetCachedPlanningSolutions(t *testing.T) {
 	cacheRequest1 := iowrappers.PlanningSolutionsCacheRequest{
-		City:    "Beijing",
-		Country: "China",
+		Location: POI.Location{City: "Beijing", Country: "China"},
 	}
-	cacheResponse1 := iowrappers.PlanningSolutionsCacheResponse{}
-	cacheResponse1.CachedPlanningSolutions = make([]iowrappers.SlotSolutionCandidateCache, 1)
-	cacheResponse1.CachedPlanningSolutions[0].PlaceIds = []string{"1", "2", "3"}
+	expectedCacheResponse1 := iowrappers.PlanningSolutionsResponse{}
+	expectedCacheResponse1.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, 1)
+	expectedCacheResponse1.PlanningSolutionRecords[0].PlaceIDs = []string{"1", "2", "3"}
+	expectedCacheResponse1.PlanningSolutionRecords[0].ID = "33521-12533"
 
-	RedisClient.CachePlanningSolutions(RedisContext, cacheRequest1, cacheResponse1)
+	var err error
+	_, err = RedisClient.SavePlanningSolutions(RedisContext, cacheRequest1, expectedCacheResponse1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	cacheRequest2 := iowrappers.PlanningSolutionsCacheRequest{
-		City:    "San Francisco",
-		Country: "USA",
+		Location: POI.Location{City: "San Francisco", Country: "United States"},
 	}
-	cacheResponse2 := iowrappers.PlanningSolutionsCacheResponse{}
-	cacheResponse2.CachedPlanningSolutions = make([]iowrappers.SlotSolutionCandidateCache, 1)
-	cacheResponse2.CachedPlanningSolutions[0].PlaceIds = []string{"11", "22", "33"}
+	expectedCacheResponse2 := iowrappers.PlanningSolutionsResponse{}
+	expectedCacheResponse2.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, 1)
+	expectedCacheResponse2.PlanningSolutionRecords[0].PlaceIDs = []string{"111", "222", "333"}
+	expectedCacheResponse2.PlanningSolutionRecords[0].ID = "33522-22533"
 
-	RedisClient.CachePlanningSolutions(RedisContext, cacheRequest2, cacheResponse2)
+	_, err = RedisClient.SavePlanningSolutions(RedisContext, cacheRequest2, expectedCacheResponse2)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
-	expectedCacheResponse := []iowrappers.PlanningSolutionsCacheResponse{cacheResponse1, cacheResponse2}
 	cacheResponse, err := RedisClient.PlanningSolutions(RedisContext, cacheRequest1)
 
 	if err != nil {
@@ -35,7 +44,7 @@ func TestGetCachedPlanningSolutions(t *testing.T) {
 		return
 	}
 
-	for idx, planningSolution := range cacheResponse.CachedPlanningSolutions {
-		assert.Equal(t, expectedCacheResponse[idx].CachedPlanningSolutions[0].PlaceIds, planningSolution.PlaceIds)
+	for idx, planningSolution := range cacheResponse.PlanningSolutionRecords {
+		assert.Equal(t, expectedCacheResponse1.PlanningSolutionRecords[idx].PlaceIDs, planningSolution.PlaceIDs)
 	}
 }

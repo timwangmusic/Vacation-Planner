@@ -24,8 +24,9 @@ type PoiSearcher struct {
 
 // GeocodeQuery can also be used as the result of reverse geocoding
 type GeocodeQuery struct {
-	City    string `json:"city"`
-	Country string `json:"country"`
+	City              string `json:"city"`
+	AdminAreaLevelOne string `json:"admin_area_level_one"`
+	Country           string `json:"country"`
 }
 
 var Logger *zap.SugaredLogger
@@ -52,10 +53,10 @@ func DestroyLogger() {
 
 // Geocode performs geocoding, mapping city and country to latitude and longitude
 func (poiSearcher PoiSearcher) Geocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
-
 	originalGeocodeQuery := GeocodeQuery{}
 	originalGeocodeQuery.City = query.City
 	originalGeocodeQuery.Country = query.Country
+	originalGeocodeQuery.AdminAreaLevelOne = query.AdminAreaLevelOne
 	var geocodeMissingErr error
 	lat, lng, geocodeMissingErr = poiSearcher.redisClient.Geocode(context, query)
 	if geocodeMissingErr != nil {
@@ -63,7 +64,7 @@ func (poiSearcher PoiSearcher) Geocode(context context.Context, query *GeocodeQu
 		if err != nil {
 			return
 		}
-		// either redisClient or mapsClient may have corrected location name in the query
+		// either redisClient or mapsClient may have corrected location fields in the query
 		poiSearcher.redisClient.SetGeocode(context, *query, lat, lng, originalGeocodeQuery)
 		Logger.Debugf("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
 			query.City, query.Country, lat, lng)
@@ -76,8 +77,9 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 
 	places := make([]POI.Place, 0)
 	lat, lng, err := poiSearcher.Geocode(context, &GeocodeQuery{
-		City:    location.City,
-		Country: location.Country,
+		City:              location.City,
+		AdminAreaLevelOne: location.AdminAreaLevelOne,
+		Country:           location.Country,
 	})
 	if logErr(err, utils.LogError) {
 		return places, err

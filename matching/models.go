@@ -7,6 +7,6 @@ type PlaceView struct {
 	URL          string    `json:"url"`
 	Rating       float32   `json:"rating"`
 	RatingsCount int       `json:"ratings_count"`
-	PriceLevel   int       `json:"price_level"`
+	AveragePrice float64   `json:"average_price"`
 	Hours        [7]string `json:"hours"`
 }

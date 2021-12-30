@@ -19,4 +19,5 @@ func init() {
 	redisURL, _ := url.Parse(redisUrl)
 	RedisClient = iowrappers.CreateRedisClient(redisURL)
 	RedisContext = context.Background()
+	_ = iowrappers.CreateLogger()
 }

@@ -1,21 +1,32 @@
 package user
 
-import "time"
+import (
+	"time"
+)
 
 type Level uint8
 
 const (
-	JWTExpirationTime        = time.Hour * 240 // 10 days
-	LevelAdminString         = "admin"
-	LevelRegularString       = "regular"
-	LevelRegular       Level = 0
-	LevelAdmin         Level = 1
+	JWTExpirationTime         = time.Hour * 24 * 10 // 10 days
+	LevelStringAdmin   string = "admin"
+	LevelStringRegular string = "regular"
+	LevelRegular       Level  = 0
+	LevelAdmin         Level  = 1
 )
 
 type User struct {
+	ID        string `json:"id"`
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	Email     string `json:"email"`
+	UserLevel string `json:"user_level"`
+}
+
+type View struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
 	UserLevel string `json:"user_level"`
 }
 
@@ -24,8 +35,38 @@ type Credential struct {
 	Password string
 }
 
-type RemoveUserRequest struct {
-	CurrentUser         string `json:"current_user"`
-	CurrentUserPassword string `json:"current_user_password"`
-	UserToRemove        string `json:"user_to_remove"`
+type Profile struct {
+	ID               string   `json:"id"`
+	UserID           string   `json:"user_id"`
+	SavedTravelPlans []string `json:"saved_travel_plans"`
+}
+
+// TravelPlaceView reflect what users see on Front-end result tables
+type TravelPlaceView struct {
+	TimePeriod string `json:"time_period"`
+	PlaceName  string `json:"place_name"`
+	Address    string `json:"address"`
+	URL        string `json:"url"`
+}
+
+type TravelPlanView struct {
+	ID             string            `json:"id"`
+	OriginalPlanID string            `json:"original_plan_id"`
+	CreatedAt      string            `json:"created_at"`
+	TravelDate     string            `json:"travel_date"`
+	Destination    string            `json:"destination"`
+	Places         []TravelPlaceView `json:"places"`
+}
+
+type ByCreatedAt []TravelPlanView
+
+func (plans ByCreatedAt) Len() int { return len(plans) }
+
+func (plans ByCreatedAt) Swap(i, j int) { plans[i], plans[j] = plans[j], plans[i] }
+
+func (plans ByCreatedAt) Less(i, j int) bool {
+	createdAtI, _ := time.Parse(time.RFC3339, plans[i].CreatedAt)
+	createdAtJ, _ := time.Parse(time.RFC3339, plans[j].CreatedAt)
+
+	return createdAtI.After(createdAtJ)
 }
