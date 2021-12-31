@@ -106,7 +106,7 @@ func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount 
 	return res
 }
 
-func GenerateSolutions(context context.Context, matcher matching.Matcher, redisClient iowrappers.RedisClient, redisRequest iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest) (solutions []PlanningSolution, solutionRedisKey string, err error) {
+func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, redisClient iowrappers.RedisClient, redisRequest iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest, priceRangeMatcher matching.Matcher) (solutions []PlanningSolution, solutionRedisKey string, err error) {
 	solutions = make([]PlanningSolution, 0)
 
 	var placeClusters [][]matching.Place
@@ -117,18 +117,38 @@ func GenerateSolutions(context context.Context, matcher matching.Matcher, redisC
 			Day:          request.Weekday,
 			TimeInterval: slot.TimeSlot.Slot,
 		}
-		places, err_ := matcher.Match(context, matching.Request{
+
+		filterParams[matching.FilterByPriceRange] = matching.PriceRangeFilterParams{
+			Category:   slot.Category,
+			PriceLevel: request.PriceLevel,
+		}
+
+		placesByTime, err_ := timeMatcher.Match(context, matching.Request{
 			Radius:   DefaultPlaceSearchRadius,
 			Location: request.Location,
 			Criteria: matching.FilterByTimePeriod,
 			Params:   filterParams,
 		})
 		if err_ != nil {
-			iowrappers.Logger.Error(err)
+			iowrappers.Logger.Error(err_)
 			err = err_
 			return
 		}
-		placeClusters = append(placeClusters, places)
+
+		placesByPrice, err_ := priceRangeMatcher.Match(context, matching.Request{
+			Radius:   DefaultPlaceSearchRadius,
+			Location: request.Location,
+			Criteria: matching.FilterByPriceRange,
+			Params:   filterParams,
+		})
+		if err_ != nil {
+			iowrappers.Logger.Error(err_)
+			err = err_
+			return
+		}
+
+		iowrappers.Logger.Infof("number of places by price matcher is %d", len(placesByPrice))
+		placeClusters = append(placeClusters, mergePlaceClusters(placesByTime, placesByPrice))
 	}
 
 	placeCategories := ToPlaceCategories(request.Slots)
@@ -222,4 +242,20 @@ func NearbySearchWithPlaceView(context context.Context, matcher matching.Matcher
 		placesView = append(placesView, matching.ToPlaceView(place))
 	}
 	return placesView, nil
+}
+
+// selects mutual places
+func mergePlaceClusters(placesA []matching.Place, placesB []matching.Place) []matching.Place {
+	var results []matching.Place
+	placeMap := make(map[string]bool)
+	for _, place := range placesA {
+		placeMap[place.GetPlaceId()] = true
+	}
+
+	for _, place := range placesB {
+		if _, ok := placeMap[place.GetPlaceId()]; ok {
+			results = append(results, place)
+		}
+	}
+	return results
 }

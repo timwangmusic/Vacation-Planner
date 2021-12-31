@@ -3,7 +3,6 @@ package solution
 import (
 	"context"
 	"errors"
-
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
@@ -14,8 +13,9 @@ const (
 )
 
 type Solver struct {
-	Searcher    *iowrappers.PoiSearcher
-	TimeMatcher matching.Matcher
+	Searcher          *iowrappers.PoiSearcher
+	TimeMatcher       matching.Matcher
+	PriceRangeMatcher matching.Matcher
 }
 
 const (
@@ -32,6 +32,7 @@ type PlanningRequest struct {
 	Weekday      POI.Weekday
 	NumPlans     int64
 	SearchRadius uint
+	PriceLevel   POI.PriceLevel
 }
 
 type PlanningResponse struct {
@@ -49,6 +50,7 @@ type SlotRequest struct {
 func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
 	solver.Searcher = poiSearcher
 	solver.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
+	solver.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
 }
 
 func (solver *Solver) ValidateLocation(context context.Context, location *POI.Location) bool {
@@ -100,7 +102,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 
 	if cacheErr != nil {
 		iowrappers.Logger.Debugf("Solution cache miss for request %+v with error %s", *request, cacheErr.Error())
-		solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request)
+		solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request, solver.PriceRangeMatcher)
 		if err != nil {
 			response.Err = err
 			if err.Error() == CategorizedPlaceIterInitFailureErrMsg {

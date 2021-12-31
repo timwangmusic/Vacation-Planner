@@ -294,6 +294,7 @@ func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
 func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solution.PlanningRequest, user string) (resp PlanningResponse) {
 	var planningResponse solution.PlanningResponse
 
+	planningRequest.PriceLevel = POI.PriceLevelZero
 	planner.Solver.Solve(ctx, planner.RedisClient, planningRequest, &planningResponse)
 
 	if planningResponse.Err != nil {
