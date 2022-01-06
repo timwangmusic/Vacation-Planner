@@ -53,7 +53,12 @@ func (matcher MatcherForPriceRange) Match(ctx context.Context, request Request) 
 	}
 	iowrappers.Logger.Infof("obtained %d places before filtering price", len(basicPlaces))
 
-	filteredPlaces, err := POI.FilterPlacesOnPriceLevel(basicPlaces, priceRangeFilterParams.PriceLevel)
+	var filteredPlaces []POI.Place
+	filteredPlaces = basicPlaces
+	// POI data from Google API does not have price range, therefore we only filter catering places on price
+	if priceRangeFilterParams.Category == POI.PlaceCategoryEatery {
+		filteredPlaces, _ = POI.FilterPlacesOnPriceLevel(basicPlaces, priceRangeFilterParams.PriceLevel)
+	}
 
 	for _, place := range filteredPlaces {
 		results = append(results, CreatePlace(place, priceRangeFilterParams.Category))
