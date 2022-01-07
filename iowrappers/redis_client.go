@@ -374,6 +374,7 @@ type PlanningSolutionsResponse struct {
 type PlanningSolutionsCacheRequest struct {
 	Location        POI.Location
 	Radius          uint64
+	PriceLevel      POI.PriceLevel
 	PlaceCategories []POI.PlaceCategory
 	Intervals       []POI.TimeInterval
 	Weekday         POI.Weekday
@@ -420,7 +421,7 @@ func generateTravelPlansCacheKey(req PlanningSolutionsCacheRequest) (string, err
 	region = strings.ReplaceAll(strings.ToLower(region), " ", "_")
 	city = strings.ReplaceAll(strings.ToLower(city), " ", "_")
 
-	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, region, city, radius, strconv.Itoa(int(req.Weekday)), planIndexStr}, ":"))
+	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, region, city, radius, strconv.Itoa(int(req.Weekday)), strconv.Itoa(int(req.PriceLevel)), planIndexStr}, ":"))
 	return redisFieldKey, nil
 }
 

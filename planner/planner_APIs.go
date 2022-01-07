@@ -371,14 +371,19 @@ func validateDate(date string) error {
 	return nil
 }
 
-func dateToWeekday(date string) time.Weekday {
+func toWeekday(date string) POI.Weekday {
 	datePattern := regexp.MustCompile(`(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})`)
 	dateFields := datePattern.FindStringSubmatch(date)
 	year, _ := strconv.Atoi(dateFields[1])
 	month, _ := strconv.Atoi(dateFields[2])
 	day, _ := strconv.Atoi(dateFields[3])
 	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
-	return t.Weekday()
+	return POI.Weekday(t.Weekday())
+}
+
+func toPriceLevel(priceLevel string) POI.PriceLevel {
+	price, _ := strconv.Atoi(priceLevel)
+	return POI.PriceLevel(price)
 }
 
 // validate location is in the format of city,country
@@ -423,8 +428,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	weekday := dateToWeekday(date)
-	iowrappers.Logger.Debugf("Decoded weekday is %q.", weekday)
+	iowrappers.Logger.Debugf("Requested weekday is %s.", date)
 
 	numResults := ctx.DefaultQuery("numberResults", "5")
 
@@ -435,7 +439,10 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 	iowrappers.Logger.Debugf("[%s] The number of requested planning results is %s.", requestId, numResults)
 
-	planningReq := solution.GetStandardRequest(POI.Weekday(weekday), numResultsInt)
+	priceLevel := ctx.DefaultQuery("price", "2")
+	iowrappers.Logger.Debugf("Requested price range is %s", priceLevel)
+
+	planningReq := solution.GetStandardRequest(toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.SearchRadius = 10000 // default to 10km
 	switch len(locationFields) {
 	case 2:
@@ -455,7 +462,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		if planningResp.StatusCode == solution.InvalidRequestLocation {
 			ctx.String(http.StatusBadRequest, err.Error())
 		} else if planningResp.StatusCode == solution.NoValidSolution {
-			errString := "No valid solution is found.\n Please try to search with larger radius."
+			errString := "No valid travel solution is found.\nPlease try searching with a larger radius or a different price level."
 			ctx.String(http.StatusBadRequest, errString)
 		}
 		return

@@ -17,6 +17,7 @@ type FilterCriteria string
 const (
 	MinResultsForTimePeriodMatching                = 20
 	FilterByTimePeriod              FilterCriteria = "filterByTimePeriod"
+	FilterByPriceRange              FilterCriteria = "filterByPriceRange"
 )
 
 type Request struct {
@@ -24,6 +25,50 @@ type Request struct {
 	Location POI.Location
 	Criteria FilterCriteria
 	Params   map[FilterCriteria]interface{}
+}
+
+type MatcherForPriceRange struct {
+	Searcher *iowrappers.PoiSearcher
+}
+
+func (matcher MatcherForPriceRange) Match(ctx context.Context, request Request) ([]Place, error) {
+	var results []Place
+	filterParams := request.Params[request.Criteria]
+
+	if _, ok := filterParams.(PriceRangeFilterParams); !ok {
+		return results, errors.New("price range matcher received wrong filter params")
+	}
+
+	priceRangeFilterParams := filterParams.(PriceRangeFilterParams)
+	placeSearchRequest := &iowrappers.PlaceSearchRequest{
+		PlaceCat:      priceRangeFilterParams.Category,
+		Location:      request.Location,
+		Radius:        request.Radius,
+		MinNumResults: MinResultsForTimePeriodMatching,
+	}
+
+	basicPlaces, err := matcher.Searcher.NearbySearch(ctx, placeSearchRequest)
+	if err != nil {
+		return results, err
+	}
+	iowrappers.Logger.Infof("obtained %d places before filtering price", len(basicPlaces))
+
+	var filteredPlaces []POI.Place
+	filteredPlaces = basicPlaces
+	// POI data from Google API does not have price range, therefore we only filter catering places on price
+	if priceRangeFilterParams.Category == POI.PlaceCategoryEatery {
+		filteredPlaces, _ = POI.FilterPlacesOnPriceLevel(basicPlaces, priceRangeFilterParams.PriceLevel)
+	}
+
+	for _, place := range filteredPlaces {
+		results = append(results, CreatePlace(place, priceRangeFilterParams.Category))
+	}
+	return results, nil
+}
+
+type PriceRangeFilterParams struct {
+	Category   POI.PlaceCategory
+	PriceLevel POI.PriceLevel
 }
 
 type TimeFilterParams struct {

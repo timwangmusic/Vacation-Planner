@@ -3,7 +3,6 @@ package solution
 import (
 	"context"
 	"errors"
-
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
@@ -14,8 +13,9 @@ const (
 )
 
 type Solver struct {
-	Searcher    *iowrappers.PoiSearcher
-	TimeMatcher matching.Matcher
+	Searcher          *iowrappers.PoiSearcher
+	TimeMatcher       matching.Matcher
+	PriceRangeMatcher matching.Matcher
 }
 
 const (
@@ -32,6 +32,7 @@ type PlanningRequest struct {
 	Weekday      POI.Weekday
 	NumPlans     int64
 	SearchRadius uint
+	PriceLevel   POI.PriceLevel
 }
 
 type PlanningResponse struct {
@@ -49,6 +50,7 @@ type SlotRequest struct {
 func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
 	solver.Searcher = poiSearcher
 	solver.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
+	solver.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
 }
 
 func (solver *Solver) ValidateLocation(context context.Context, location *POI.Location) bool {
@@ -66,7 +68,7 @@ func (solver *Solver) ValidateLocation(context context.Context, location *POI.Lo
 	return true
 }
 
-func PlanningSolutionsRedisRequest(location POI.Location, placeCategories []POI.PlaceCategory, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday) iowrappers.PlanningSolutionsCacheRequest {
+func PlanningSolutionsRedisRequest(location POI.Location, placeCategories []POI.PlaceCategory, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday, priceLevel POI.PriceLevel) iowrappers.PlanningSolutionsCacheRequest {
 	intervals := make([]POI.TimeInterval, len(stayTimes))
 	for idx, stayTime := range stayTimes {
 		intervals[idx] = stayTime.Slot
@@ -75,6 +77,7 @@ func PlanningSolutionsRedisRequest(location POI.Location, placeCategories []POI.
 	req := iowrappers.PlanningSolutionsCacheRequest{
 		Location:        location,
 		Radius:          uint64(radius),
+		PriceLevel:      priceLevel,
 		PlaceCategories: placeCategories,
 		Intervals:       intervals,
 		Weekday:         weekday,
@@ -94,20 +97,20 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 		request.NumPlans = NumPlansDefault
 	}
 
-	redisRequest := PlanningSolutionsRedisRequest(request.Location, ToPlaceCategories(request.Slots), ToTimeSlots(request.Slots), request.SearchRadius, request.Weekday)
+	redisRequest := PlanningSolutionsRedisRequest(request.Location, ToPlaceCategories(request.Slots), ToTimeSlots(request.Slots), request.SearchRadius, request.Weekday, request.PriceLevel)
 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(context, redisRequest)
 
 	if cacheErr != nil {
 		iowrappers.Logger.Debugf("Solution cache miss for request %+v with error %s", *request, cacheErr.Error())
-		solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request)
+		solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request, solver.PriceRangeMatcher)
 		if err != nil {
 			response.Err = err
-			if err.Error() == CategorizedPlaceIterInitFailureErrMsg {
-				response.ErrorCode = CatPlaceIterInitFailure
-			} else if len(solutions) == 0 {
+			if err.Error() == CategorizedPlaceIterInitFailureErrMsg || len(solutions) == 0 {
 				response.ErrorCode = NoValidSolution
-				invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey})
+				if cacheErr := invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey}); cacheErr != nil {
+					iowrappers.Logger.Debug(cacheErr.Error())
+				}
 			} else {
 				response.ErrorCode = InternalError
 			}
@@ -133,12 +136,12 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 	iowrappers.Logger.Debugf("Retrieved %d cached plans from Redis for request %+v.", len(response.Solutions), *request)
 }
 
-func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
-	redisClient.RemoveKeys(context, slotSolutionRedisKeys)
+func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowrappers.RedisClient, slotSolutionRedisKeys []string) error {
+	return redisClient.RemoveKeys(context, slotSolutionRedisKeys)
 }
 
 // GetStandardRequest generates a standard request while we seek a better way to represent complex REST requests
-func GetStandardRequest(weekday POI.Weekday, numResults int64) (req PlanningRequest) {
+func GetStandardRequest(weekday POI.Weekday, numResults int64, priceLevel POI.PriceLevel) (req PlanningRequest) {
 	timeSlot1 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
 	slotReq1 := SlotRequest{
 		TimeSlot: timeSlot1,
@@ -161,5 +164,6 @@ func GetStandardRequest(weekday POI.Weekday, numResults int64) (req PlanningRequ
 	req.Slots = append(req.Slots, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
 	req.Weekday = weekday
 	req.NumPlans = numResults
+	req.PriceLevel = priceLevel
 	return
 }
