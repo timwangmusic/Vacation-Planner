@@ -106,11 +106,11 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 		solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request, solver.PriceRangeMatcher)
 		if err != nil {
 			response.Err = err
-			if err.Error() == CategorizedPlaceIterInitFailureErrMsg {
-				response.ErrorCode = CatPlaceIterInitFailure
-			} else if len(solutions) == 0 {
+			if err.Error() == CategorizedPlaceIterInitFailureErrMsg || len(solutions) == 0 {
 				response.ErrorCode = NoValidSolution
-				iowrappers.Logger.Debug(invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey}))
+				if cacheErr := invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey}); cacheErr != nil {
+					iowrappers.Logger.Debug(cacheErr.Error())
+				}
 			} else {
 				response.ErrorCode = InternalError
 			}

@@ -13,9 +13,9 @@ type MultiDimIterator struct {
 	Size       []int // number of items in each category
 }
 
-func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClustersList [][]matching.Place) error {
+func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClusters [][]matching.Place) error {
 	var err error
-	if len(categories) != len(placeClustersList) {
+	if len(categories) != len(placeClusters) {
 		err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
 		log.Error("place category list length is different from the number of place clusters")
 		return err
@@ -26,11 +26,11 @@ func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClu
 	mdTagIter.Size = make([]int, len(mdTagIter.Categories))
 	for pos, category := range mdTagIter.Categories {
 		mdTagIter.Status[pos] = 0
-		mdTagIter.Size[pos] = len(placeClustersList[pos])
+		mdTagIter.Size[pos] = len(placeClusters[pos])
 
 		if mdTagIter.Size[pos] == 0 {
 			log.Errorf("number of places for category %s is 0, tag index is %d \n", category, pos)
-			err = errors.New(CategorizedPlaceIterInitFailureErrMsg)
+			return errors.New(CategorizedPlaceIterInitFailureErrMsg)
 		}
 	}
 	return err
