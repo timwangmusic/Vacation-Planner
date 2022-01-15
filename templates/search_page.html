@@ -141,16 +141,29 @@
                 </div>
                 <div class="px-1">
                     <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
-                            Price Options
+                        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Price
                         </button>
 
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-                            <li><a class="dropdown-item active" href="#">$</a></li>
+                            <li><a class="dropdown-item" href="#">$</a></li>
                             <li><a class="dropdown-item" href="#">$$</a></li>
                             <li><a class="dropdown-item" href="#">$$$</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Surprise Me!!</a></li>
+                            <li><a class="dropdown-item" href="/v1/Surprise">Surprise Me!!</a></li>
+                            <script>
+                                var items = document.getElementsByClassName('dropdown-item');
+                                for (var i=0 ; i < items.length ; i++){
+                                        (function(index){
+                                            var link = document.querySelector("a");
+                                            link.getAttribute("href");
+                                            items[index].onclick = function(){
+                                                link.setAttribute("href", "/v1/Price=")
+                                                alert("Price level at " + index);
+                                            };
+                                        })(i)
+                                }
+                            </script>
                         </ul>
                     </div>
                 </div>
