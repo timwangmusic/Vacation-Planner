@@ -139,35 +139,40 @@
                     </div>
 
                 </div>
-                <div class="px-1">
-                    <div class="dropdown">
-                        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Price
-                        </button>
+<!--                <div class="px-1">-->
+<!--                    <div class="dropdown">-->
+<!--                        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">-->
+<!--                            Price-->
+<!--                        </button>-->
 
-                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-                            <li><a class="dropdown-item" href="#">$</a></li>
-                            <li><a class="dropdown-item" href="#">$$</a></li>
-                            <li><a class="dropdown-item" href="#">$$$</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/v1/Surprise">Surprise Me!!</a></li>
-                            <script>
-                                var items = document.getElementsByClassName('dropdown-item');
-                                for (var i=0 ; i < items.length ; i++){
-                                        (function(index){
-                                            var link = document.querySelector("a");
-                                            link.getAttribute("href");
-                                            items[index].onclick = function(){
-                                                link.setAttribute("href", "/v1/Price=")
-                                                alert("Price level at " + index);
-                                            };
-                                        })(i)
-                                }
-                            </script>
-                        </ul>
-                    </div>
-                </div>
-
+<!--                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">-->
+<!--                            <li><a class="dropdown-item" href="#">$</a></li>-->
+<!--                            <li><a class="dropdown-item" href="#">$$</a></li>-->
+<!--                            <li><a class="dropdown-item" href="#">$$$</a></li>-->
+<!--                            <li><hr class="dropdown-divider"></li>-->
+<!--                            <li><a class="dropdown-item" href="/v1/Surprise">Surprise Me!!</a></li>-->
+<!--                            <script>-->
+<!--                                var items = document.getElementsByClassName('dropdown-item');-->
+<!--                                for (var i=0 ; i < items.length ; i++){-->
+<!--                                        (function(index){-->
+<!--                                            var link = document.querySelector("a");-->
+<!--                                            link.getAttribute("href");-->
+<!--                                            items[index].onclick = function(){-->
+<!--                                                link.setAttribute("href", "/v1/Price=")-->
+<!--                                                alert("Price level at " + index);-->
+<!--                                            };-->
+<!--                                        })(i)-->
+<!--                                }-->
+<!--                            </script>-->
+<!--                        </ul>-->
+<!--                    </div>-->
+<!--                </div>-->
+                <select class="form-select" aria-label="Default select example">
+                    <option selected>Open this select menu</option>
+                    <option value="1">One</option>
+                    <option value="2">Two</option>
+                    <option value="3">Three</option>
+                </select>
             </form>
         </div>
 
