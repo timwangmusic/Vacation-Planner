@@ -85,6 +85,7 @@ type TripDetailResp struct {
 	PlaceDetails      []PlaceDetailsResp
 	ShownActive       []bool
 	TravelDestination string
+	TravelDate        string
 }
 
 type PlaceDetailsResp struct {
@@ -338,7 +339,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 		}
 		travelPlan.ID = topSolution.ID
 		resp.TravelPlans[sIdx] = travelPlan
-		resp.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID
+		resp.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID + "?" + "date=" + planningRequest.TravelDate
 	}
 
 	resp.StatusCode = solution.ValidSolutionFound
@@ -442,7 +443,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	iowrappers.Logger.Debugf("Requested price range is %s", priceLevel)
 
-	planningReq := solution.GetStandardRequest(toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
+	planningReq := solution.GetStandardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.SearchRadius = 10000 // default to 10km
 	switch len(locationFields) {
 	case 2:
@@ -489,18 +490,20 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 		return
 	}
 
-	// FIXME: [Rui] check why placeIDs are not stored in order in cached slot solution
 	const fixedPlaceKeyPrefix = "place_details:place_ID:"
 	var placeKey string
 	var cachePlaceDetails POI.Place
 	var destination string = "Dream Place"
+	var today = time.Now()
 	if cachePlanSolution.Destination != (POI.Location{}) {
-		destination = strings.Title(cachePlanSolution.Destination.City) + ", " + strings.ToUpper(cachePlanSolution.Destination.Country)
+		destination = strings.Title(cachePlanSolution.Destination.City) + ", " + strings.Title(cachePlanSolution.Destination.Country)
 	}
+	travelDate := c.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
 		PlaceDetails:      make([]PlaceDetailsResp, 0),
 		ShownActive:       make([]bool, 0),
 		TravelDestination: destination,
+		TravelDate:        travelDate,
 	}
 	for idx, placeId := range cachePlanSolution.PlaceIDs {
 		placeKey = fixedPlaceKeyPrefix + placeId
@@ -520,6 +523,11 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 	}
 	iowrappers.Logger.Debugf("Trip Details:\n%v\n", tripResp.PlaceDetails)
 
+	jsonOnly := strings.ToLower(c.DefaultQuery("json_only", "false"))
+	if jsonOnly != "false" {
+		c.JSON(http.StatusOK, tripResp)
+		return
+	}
 	// send data
 	utils.LogErrorWithLevel(planner.TripHTMLTemplate.Execute(c.Writer, tripResp), utils.LogError)
 }

@@ -1,4 +1,5 @@
 import {updateUsername} from "./user.js";
+import {View, Place} from "./place.js";
 
 let numberOfPlans = 5;
 const username = updateUsername();
@@ -53,24 +54,23 @@ async function postPlanForUser() {
 
 function planToView(plan, planIndex) {
     const url = new URL(document.URL);
-
-    const view = {
-        destination: url.searchParams.get("location"),
-        travel_date: url.searchParams.get("date"),
-        original_plan_id: plan.id,
-        created_at: new Date().toISOString(),
-        places: []
-    }
+    const view = new View(
+        url.searchParams.get("location"),
+        url.searchParams.get("date"),
+        plan.id,
+        new Date().toISOString(),
+        []
+    )
 
     $(`#plan-table-${planIndex} tbody tr`).map(function () {
         const $row = $(this);
         view.places.push(
-            {
-                "time_period": $row.find(`:nth-child(1) #interval-${planIndex}`).text().trim(),
-                "place_name": $row.find(':nth-child(2)').find('a').text(),
-                "address": $row.find(':nth-child(3)').text(),
-                "url": $row.find(':nth-child(2)').find('a').attr("href")
-            }
+            new Place(
+                $row.find(`:nth-child(1) #interval-${planIndex}`).text().trim(),
+                $row.find(':nth-child(2)').find('a').text(),
+                $row.find(':nth-child(3)').text(),
+                $row.find(':nth-child(2)').find('a').attr("href")
+            )
         )
     })
 

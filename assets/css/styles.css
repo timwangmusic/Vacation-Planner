@@ -43,3 +43,7 @@ tr:nth-child(even) {
     height: 350px !important;
     overflow: hidden;
   }
+
+#planSaveIcon {
+    cursor: pointer;
+}
