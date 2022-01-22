@@ -549,6 +549,35 @@ func (planner *MyPlanner) signup(c *gin.Context) {
 	c.HTML(http.StatusOK, "signup_page.html", gin.H{})
 }
 
+func (planner *MyPlanner) customizedTemplate(context *gin.Context) {
+	context.HTML(http.StatusOK, "plan_template.html", gin.H{})
+}
+
+// travel plan customization handler
+func (planner *MyPlanner) customize(context *gin.Context) {
+	request := solution.PlanningRequest{
+		Location: POI.Location{
+			Latitude:          0,
+			Longitude:         0,
+			City:              "San Jose",
+			AdminAreaLevelOne: "CA",
+			Country:           "USA",
+		},
+		NumPlans:     3,
+		Weekday:      POI.DateWednesday,
+		SearchRadius: 10000,
+	}
+
+	if err := context.ShouldBindJSON(&request); err != nil {
+		iowrappers.Logger.Error(err)
+		context.Status(http.StatusBadRequest)
+		return
+	}
+
+	planningResp := planner.Planning(context, &request, "guest")
+	context.JSON(http.StatusOK, planningResp)
+}
+
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if planner.Environment == "debug" {
@@ -580,6 +609,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/sign-up", planner.signup)
 		v1.GET("/plans/:id", planner.getPlanDetails)
 		v1.GET("/cities", planner.GetCitiesHandler)
+		v1.POST("/customize", planner.customize)
+		v1.GET("/template", planner.customizedTemplate)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)

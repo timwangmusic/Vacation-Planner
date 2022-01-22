@@ -20,16 +20,15 @@ type Solver struct {
 }
 
 const (
-	ValidSolutionFound      = 200
-	InvalidRequestLocation  = 400
-	NoValidSolution         = 404
-	CatPlaceIterInitFailure = 500
-	InternalError           = 500
+	ValidSolutionFound     = 200
+	InvalidRequestLocation = 400
+	NoValidSolution        = 404
+	InternalError          = 500
 )
 
 type PlanningRequest struct {
 	Location     POI.Location
-	Slots        []SlotRequest
+	Slots        []SlotRequest `json:"slots"`
 	Weekday      POI.Weekday
 	TravelDate   string
 	NumPlans     int64
@@ -45,8 +44,8 @@ type PlanningResponse struct {
 
 //SlotRequest represents the properties of each row in the tabular travel plan, although not all of these are displayed to users
 type SlotRequest struct {
-	TimeSlot matching.TimeSlot
-	Category POI.PlaceCategory
+	TimeSlot matching.TimeSlot `json:"time_slot"`
+	Category POI.PlaceCategory `json:"category"`
 }
 
 func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {

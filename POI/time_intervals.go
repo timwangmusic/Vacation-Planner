@@ -11,8 +11,8 @@ import (
 type Hour uint8
 
 type TimeInterval struct {
-	Start Hour
-	End   Hour
+	Start Hour `json:"start"`
+	End   Hour `json:"end"`
 }
 
 type ByStartTime []TimeInterval

@@ -95,7 +95,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 		Logger.Error(err)
 	}
 
-	Logger.Debugf("[%s] number of results from redis is %d", context.Value(RequestIdKey), len(cachedPlaces))
+	//Logger.Debugf("[%s] number of results from redis is %d", context.Value(RequestIdKey), len(cachedPlaces))
 
 	// update last search time for the city
 	lastSearchTime, cacheMiss := poiSearcher.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
