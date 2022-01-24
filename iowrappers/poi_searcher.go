@@ -10,11 +10,13 @@ import (
 	"go.uber.org/zap"
 )
 
+type ContextKey string
+
 const (
 	MaxSearchRadius              = 16000               // 10 miles
 	MinMapsResultRefreshDuration = time.Hour * 24 * 14 // 14 days
 	GoogleSearchHomePageURL      = "https://www.google.com/"
-	RequestIdKey                 = "request_id"
+	ContextRequestIdKey          = ContextKey("request_id")
 )
 
 type PoiSearcher struct {
@@ -95,7 +97,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 		Logger.Error(err)
 	}
 
-	//Logger.Debugf("[%s] number of results from redis is %d", context.Value(RequestIdKey), len(cachedPlaces))
+	Logger.Debugf("[request_id: %s] number of results from redis is %d", context.Value(ContextRequestIdKey), len(cachedPlaces))
 
 	// update last search time for the city
 	lastSearchTime, cacheMiss := poiSearcher.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
@@ -103,7 +105,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	currentTime := time.Now()
 	// use place data from database if the location is known and the data is fresh, and we have sufficient data
 	if cacheMiss == nil && (currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && uint(len(cachedPlaces)) >= request.MinNumResults) {
-		Logger.Infof("[%s] Using Redis to fulfill request. Place Type: %s", context.Value(RequestIdKey), request.PlaceCat)
+		Logger.Infof("[request_id: %s] Using Redis to fulfill request. Place Type: %s", context.Value(ContextRequestIdKey), request.PlaceCat)
 		places = append(places, cachedPlaces...)
 		return places, nil
 	}
@@ -124,7 +126,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	// update Redis with all the new places obtained
 	poiSearcher.UpdateRedis(context, newPlaces)
 
-	// safe-guard on accessing elements in a nil slice
+	// safeguard on accessing elements in a nil slice
 	if len(newPlaces) > 0 {
 		places = append(places, newPlaces...)
 	}
@@ -143,6 +145,6 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 
 func (poiSearcher PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
 	poiSearcher.redisClient.SetPlacesOnCategory(context, places)
-	requestId := context.Value(RequestIdKey)
-	Logger.Debugf("request trace ID: %s, %s", requestId, "Redis update complete")
+	requestId := context.Value(ContextRequestIdKey)
+	Logger.Debugf("[request_id: %s]Redis update complete", requestId)
 }

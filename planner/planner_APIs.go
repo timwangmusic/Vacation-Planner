@@ -438,7 +438,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
 		return
 	}
-	iowrappers.Logger.Debugf("[%s] The number of requested planning results is %s.", requestId, numResults)
+	iowrappers.Logger.Debugf("[request_id: %s] The number of requested planning results is %s.", requestId, numResults)
 
 	priceLevel := ctx.DefaultQuery("price", "2")
 	iowrappers.Logger.Debugf("Requested price range is %s", priceLevel)
@@ -455,7 +455,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	c := context.WithValue(ctx, "request_id", requestId)
+	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
 	planningResp := planner.Planning(c, &planningReq, userView.Username)
 
 	err := planningResp.Err
@@ -554,7 +554,7 @@ func (planner *MyPlanner) customizedTemplate(context *gin.Context) {
 }
 
 // travel plan customization handler
-func (planner *MyPlanner) customize(context *gin.Context) {
+func (planner *MyPlanner) customize(ctx *gin.Context) {
 	request := solution.PlanningRequest{
 		Location: POI.Location{
 			Latitude:          0,
@@ -568,14 +568,15 @@ func (planner *MyPlanner) customize(context *gin.Context) {
 		SearchRadius: 10000,
 	}
 
-	if err := context.ShouldBindJSON(&request); err != nil {
+	if err := ctx.ShouldBindJSON(&request); err != nil {
 		iowrappers.Logger.Error(err)
-		context.Status(http.StatusBadRequest)
+		ctx.Status(http.StatusBadRequest)
 		return
 	}
 
-	planningResp := planner.Planning(context, &request, "guest")
-	context.JSON(http.StatusOK, planningResp)
+	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
+	planningResp := planner.Planning(c, &request, "guest")
+	ctx.JSON(http.StatusOK, planningResp)
 }
 
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {

@@ -120,7 +120,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 		response.Solutions = solutions
 		return
 	}
-	iowrappers.Logger.Debugf("Found planning solutions in Redis for request %+v.", *request)
+	iowrappers.Logger.Debugf("[request_id: %s]Found planning solutions in Redis for request %+v.", context.Value(iowrappers.ContextRequestIdKey), *request)
 	for _, candidate := range cacheResponse.PlanningSolutionRecords {
 		planningSolution := PlanningSolution{
 			ID:              candidate.ID,
@@ -134,7 +134,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 		}
 		response.Solutions = append(response.Solutions, planningSolution)
 	}
-	iowrappers.Logger.Debugf("Retrieved %d cached plans from Redis for request %+v.", len(response.Solutions), *request)
+	iowrappers.Logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for request %+v.", context.Value(iowrappers.ContextRequestIdKey), len(response.Solutions), *request)
 }
 
 func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowrappers.RedisClient, slotSolutionRedisKeys []string) error {

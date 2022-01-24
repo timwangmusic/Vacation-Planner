@@ -216,7 +216,7 @@ func (redisClient *RedisClient) NearbySearch(context context.Context, request *P
 		searchRadius = MaxSearchRadius
 	}
 
-	Logger.Debugf("[%+v] Redis geo radius is using search radius of %d meters", context.Value(RequestIdKey), searchRadius)
+	Logger.Debugf("[request_id: %s] Redis geo radius is using search radius of %d meters", context.Value(ContextRequestIdKey), searchRadius)
 	geoQuery := redis.GeoRadiusQuery{
 		Radius: float64(searchRadius),
 		Unit:   "m",
@@ -491,7 +491,7 @@ func (redisClient *RedisClient) PlanningSolutions(context context.Context, reque
 func (redisClient *RedisClient) FetchSingleRecord(context context.Context, redisKey string, response interface{}) error {
 	json_, err := redisClient.client.Get(context, redisKey).Result()
 	if err != nil {
-		Logger.Debugf("[%s] redis server find no result for key: %s", context.Value(RequestIdKey), redisKey)
+		Logger.Debugf("[request_id: %s] redis server find no result for key: %s", context.Value(ContextRequestIdKey), redisKey)
 		return err
 	}
 	err = json.Unmarshal([]byte(json_), response)
