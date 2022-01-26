@@ -87,7 +87,25 @@ function tableToSlots() {
 }
 
 async function postTemplate() {
+    const location = document.getElementById('location').value.toString();
+    const locationFields = location.split(",");
+    let locationToPost = {}
+    switch (locationFields.length) {
+        case 2:
+            locationToPost = {
+                "city": locationFields[0],
+                "country": locationFields[1]
+            }
+        case 3:
+            locationToPost = {
+                "city": locationFields[0],
+                "adminAreaLevelOne": locationFields[1],
+                "country": locationFields[2]
+            }
+    }
+
     const data = {
+        "location": locationToPost,
         "slots": tableToSlots()
     }
     const url = "/v1/customize";
@@ -138,9 +156,13 @@ async function parseResponse(response) {
             const newTableBody = document.createElement('tbody');
 
             $.each(plan.places, function (_placeIdx, place) {
+                let aTag = $('<a>', {
+                    text: place.place_name,
+                    href: place.url
+                });
                 let $tr = $('<tr>').append(
-                    $('<td>').text(place.start_time + "-" + place.end_time),
-                    $('<td>').text(place.place_name),
+                    $('<td>').text(place.start_time + " - " + place.end_time),
+                    $('<td>').text('').append(aTag),
                 );
                 $tr.appendTo(newTableBody);
             })

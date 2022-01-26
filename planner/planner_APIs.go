@@ -556,15 +556,8 @@ func (planner *MyPlanner) customizedTemplate(context *gin.Context) {
 // travel plan customization handler
 func (planner *MyPlanner) customize(ctx *gin.Context) {
 	request := solution.PlanningRequest{
-		Location: POI.Location{
-			Latitude:          0,
-			Longitude:         0,
-			City:              "San Jose",
-			AdminAreaLevelOne: "CA",
-			Country:           "USA",
-		},
-		NumPlans:     3,
-		Weekday:      POI.DateWednesday,
+		NumPlans:     1,
+		Weekday:      POI.DateSaturday,
 		SearchRadius: 10000,
 	}
 

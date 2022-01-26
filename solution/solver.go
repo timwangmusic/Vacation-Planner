@@ -27,7 +27,7 @@ const (
 )
 
 type PlanningRequest struct {
-	Location     POI.Location
+	Location     POI.Location  `json:"location"`
 	Slots        []SlotRequest `json:"slots"`
 	Weekday      POI.Weekday
 	TravelDate   string

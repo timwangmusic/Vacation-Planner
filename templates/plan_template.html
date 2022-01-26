@@ -100,14 +100,14 @@
         Vacation Planner
     </h1>
     <div class="container mt-3" style="align-items: center" id="contains-everything">
-
-        <div class="btn-group-sm" role="group">
-            <button type="button" class="btn btn-outline-primary" id="add-row">add</button>
-            <button type="button" class="btn btn-outline-primary" id="remove-row">remove</button>
+        <div class="input-group mb-3">
+            <input class="form-control-sm border-0" type="date" id="datepicker" name="date" value="2022-01-18">
+            <input type="text" class="form-control" placeholder="Location" id="location">
         </div>
+
         <div class="row">
             <div class="col-12">
-                <table class="table table-bordered table-sm" id="template">
+                <table class="table table-bordered" id="template">
                     <thead class="table-light">
                         <tr>
                             <th>Category</th>
@@ -122,12 +122,17 @@
             </div>
         </div>
 
-        <button type="button" class="btn btn-outline-success position-absolute end-0" id="submit"> Search</button>
+        <div class="row">
+            <div class="btn-group-sm mb-3" role="group">
+                <button type="button" class="btn btn-outline-primary" id="add-row">add</button>
+                <button type="button" class="btn btn-outline-primary" id="remove-row">remove</button>
+                <button type="button" class="btn btn-outline-success" id="submit"> Search</button>
 
-        <br>
-        <br>
+            </div>
+        </div>
 
-        <table class="table table-bordered table-sm" id="results">
+
+        <table class="table table-sm table-bordered" style="background: lightcyan; table-layout: fixed" id="results">
             <thead class="table-light">
                 <tr>
                     <th>Time</th>

@@ -57,9 +57,9 @@ type Place struct {
 type Location struct {
 	Latitude          float64
 	Longitude         float64
-	City              string // name of the city where the location belongs to
-	AdminAreaLevelOne string // e.g. state names in the United States
-	Country           string // name of the country where the location belongs to
+	City              string `json:"city"`              // name of the city where the location belongs to
+	AdminAreaLevelOne string `json:"adminAreaLevelOne"` // e.g. state names in the United States
+	Country           string `json:"country"`           // name of the country where the location belongs to
 }
 
 type Address struct {
