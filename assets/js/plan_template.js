@@ -115,12 +115,11 @@ async function postPlanTemplate() {
         function (response) {
             console.log(response.data);
             parseResponse(response.data);
-        }   
+        }
     ).catch(
         err => console.error(err)
     )
 }
-
 
 document.getElementById("add-row").addEventListener(
     "click", insertNewRow
@@ -146,6 +145,7 @@ async function parseResponse(response) {
 
     $(function () {
         if (response["travel_plans"].length > 0) {
+            document.getElementById("results").classList.remove("d-none");
             let plan = response["travel_plans"][0];
             const newTableBody = document.createElement('tbody');
 
