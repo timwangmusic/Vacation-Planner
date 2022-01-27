@@ -27,11 +27,9 @@ function insertNewRow(start = '8', end = '10', category = 'Visit') {
     let attractionOption = document.createElement("option");
 
     let startTime = hourDropdown();
-    startTime.classList.add("form-select");
     startTime.value = start;
 
     let endTime = hourDropdown();
-    endTime.classList.add("form-select");
     endTime.value = end;
 
     cafeOption.text = "Eatery";
@@ -43,14 +41,13 @@ function insertNewRow(start = '8', end = '10', category = 'Visit') {
     select.value = category;
 
     newCell.append(select);
-
     newCell2.append(startTime);
-
     newCell3.append(endTime);
 }
 
 function hourDropdown() {
     let select = document.createElement("select");
+    select.classList.add("form-select");
     for (let hour = 8; hour < 20; hour++) {
         let option = document.createElement("option");
         option.text = hour.toString();
@@ -69,24 +66,26 @@ function tableToJSON() {
     )
 }
 
+function rowToSlot(row) {
+    return {
+        "category": row["Category"],
+        "time_slot": {
+            "slot": {
+                "start": parseInt(row["Start"]),
+                "end": parseInt(row["End"])
+            }
+        }
+    }
+}
+
 function tableToSlots() {
     const rows = tableToJSON()
     return rows.map(
-        function (row) {
-            return {
-                "category": row["Category"],
-                "time_slot": {
-                    "slot": {
-                        "start": parseInt(row["Start"]),
-                        "end": parseInt(row["End"])
-                    }
-                }
-            }
-        }
+        row => rowToSlot(row)
     )
 }
 
-async function postTemplate() {
+async function postPlanTemplate() {
     const location = document.getElementById('location').value.toString();
     const locationFields = location.split(",");
     let locationToPost = {}
@@ -110,21 +109,16 @@ async function postTemplate() {
     }
     const url = "/v1/customize";
     console.log(`data about to send: ${JSON.stringify(data)}`);
-    await fetch(
-        url, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    }
-    ).then(response => response.json())
-        .then(
-            response => parseResponse(response)
-        )
-        .catch(
-            err => console.error(err)
-        )
+    axios.post(
+        url, JSON.stringify(data)
+    ).then(
+        function (response) {
+            console.log(response.data);
+            parseResponse(response.data);
+        }   
+    ).catch(
+        err => console.error(err)
+    )
 }
 
 
@@ -136,8 +130,8 @@ document.getElementById("remove-row").addEventListener(
     "click", removeLastRow
 );
 
-document.getElementById("submit").addEventListener(
-    "click", postTemplate
+document.getElementById("search").addEventListener(
+    "click", postPlanTemplate
 )
 
 document.addEventListener("DOMContentLoaded", () => {
