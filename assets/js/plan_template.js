@@ -1,11 +1,12 @@
 // JS for plan_template.html
-import { logOut, updateUsername } from "./user.js";
+import { logOut } from "./user.js";
+import {setDateToday} from "./utils.js";
+
+setDateToday();
+
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut
 )
-
-const username = updateUsername();
-document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);
 
 function removeLastRow() {
     const table = document.getElementById("template");
