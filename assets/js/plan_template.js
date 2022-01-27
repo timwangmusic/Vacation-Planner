@@ -86,6 +86,7 @@ function tableToSlots() {
 }
 
 async function postPlanTemplate() {
+    document.getElementById("searchSpinner").classList.remove("visually-hidden");
     const location = document.getElementById('location').value.toString();
     const locationFields = location.split(",");
     let locationToPost = {}
@@ -115,6 +116,7 @@ async function postPlanTemplate() {
         function (response) {
             console.log(response.data);
             parseResponse(response.data);
+            document.getElementById("searchSpinner").classList.add("visually-hidden");
         }
     ).catch(
         err => console.error(err)
