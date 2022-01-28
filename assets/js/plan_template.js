@@ -1,6 +1,6 @@
 // JS for plan_template.html
 import { logOut } from "./user.js";
-import {setDateToday} from "./utils.js";
+import { setDateToday } from "./utils.js";
 
 setDateToday();
 
@@ -89,7 +89,7 @@ function tableToSlots() {
 async function postPlanTemplate() {
     document.getElementById("searchSpinner").classList.remove("visually-hidden");
     const location = document.getElementById('location').value.toString();
-    const locationFields = location.split(",");
+    const locationFields = location.split(", ");
     let locationToPost = {}
     switch (locationFields.length) {
         case 2:
@@ -97,6 +97,7 @@ async function postPlanTemplate() {
                 "city": locationFields[0],
                 "country": locationFields[1]
             }
+            break;
         case 3:
             locationToPost = {
                 "city": locationFields[0],
