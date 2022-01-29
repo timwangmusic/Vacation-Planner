@@ -89,7 +89,8 @@ function tableToSlots() {
 async function postPlanTemplate() {
     document.getElementById("searchSpinner").classList.remove("visually-hidden");
     const location = document.getElementById('location').value.toString();
-    const locationFields = location.split(", ");
+    const locationFields = location.split(",");
+    locationFields.map(field => field.trim());
     let locationToPost = {}
     switch (locationFields.length) {
         case 2:
