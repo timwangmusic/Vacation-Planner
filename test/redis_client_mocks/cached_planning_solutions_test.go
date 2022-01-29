@@ -10,6 +10,17 @@ import (
 func TestGetCachedPlanningSolutions(t *testing.T) {
 	cacheRequest1 := iowrappers.PlanningSolutionsCacheRequest{
 		Location: POI.Location{City: "Beijing", Country: "China"},
+		Intervals: []POI.TimeInterval{
+			{
+				Start: 8,
+				End:   10,
+			},
+			{
+				Start: 11,
+				End:   13,
+			},
+		},
+		PlaceCategories: []POI.PlaceCategory{POI.PlaceCategoryVisit, POI.PlaceCategoryEatery},
 	}
 	expectedCacheResponse1 := iowrappers.PlanningSolutionsResponse{}
 	expectedCacheResponse1.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, 1)

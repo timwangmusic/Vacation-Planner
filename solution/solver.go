@@ -20,16 +20,15 @@ type Solver struct {
 }
 
 const (
-	ValidSolutionFound      = 200
-	InvalidRequestLocation  = 400
-	NoValidSolution         = 404
-	CatPlaceIterInitFailure = 500
-	InternalError           = 500
+	ValidSolutionFound     = 200
+	InvalidRequestLocation = 400
+	NoValidSolution        = 404
+	InternalError          = 500
 )
 
 type PlanningRequest struct {
-	Location     POI.Location
-	Slots        []SlotRequest
+	Location     POI.Location  `json:"location"`
+	Slots        []SlotRequest `json:"slots"`
 	Weekday      POI.Weekday
 	TravelDate   string
 	NumPlans     int64
@@ -45,8 +44,8 @@ type PlanningResponse struct {
 
 //SlotRequest represents the properties of each row in the tabular travel plan, although not all of these are displayed to users
 type SlotRequest struct {
-	TimeSlot matching.TimeSlot
-	Category POI.PlaceCategory
+	TimeSlot matching.TimeSlot `json:"time_slot"`
+	Category POI.PlaceCategory `json:"category"`
 }
 
 func (solver *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
@@ -121,7 +120,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 		response.Solutions = solutions
 		return
 	}
-	iowrappers.Logger.Debugf("Found planning solutions in Redis for request %+v.", *request)
+	iowrappers.Logger.Debugf("[request_id: %s]Found planning solutions in Redis for request %+v.", context.Value(iowrappers.ContextRequestIdKey), *request)
 	for _, candidate := range cacheResponse.PlanningSolutionRecords {
 		planningSolution := PlanningSolution{
 			ID:              candidate.ID,
@@ -135,7 +134,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 		}
 		response.Solutions = append(response.Solutions, planningSolution)
 	}
-	iowrappers.Logger.Debugf("Retrieved %d cached plans from Redis for request %+v.", len(response.Solutions), *request)
+	iowrappers.Logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for request %+v.", context.Value(iowrappers.ContextRequestIdKey), len(response.Solutions), *request)
 }
 
 func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowrappers.RedisClient, slotSolutionRedisKeys []string) error {

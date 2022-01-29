@@ -6,7 +6,7 @@ import (
 )
 
 type TimeSlot struct {
-	Slot POI.TimeInterval
+	Slot POI.TimeInterval `json:"slot"`
 }
 
 type QueryTimeInterval struct {

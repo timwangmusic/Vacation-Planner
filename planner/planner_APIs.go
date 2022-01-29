@@ -438,7 +438,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
 		return
 	}
-	iowrappers.Logger.Debugf("[%s] The number of requested planning results is %s.", requestId, numResults)
+	iowrappers.Logger.Debugf("[request_id: %s] The number of requested planning results is %s.", requestId, numResults)
 
 	priceLevel := ctx.DefaultQuery("price", "2")
 	iowrappers.Logger.Debugf("Requested price range is %s", priceLevel)
@@ -455,7 +455,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	c := context.WithValue(ctx, "request_id", requestId)
+	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
 	planningResp := planner.Planning(c, &planningReq, userView.Username)
 
 	err := planningResp.Err
@@ -549,6 +549,29 @@ func (planner *MyPlanner) signup(c *gin.Context) {
 	c.HTML(http.StatusOK, "signup_page.html", gin.H{})
 }
 
+func (planner *MyPlanner) customizedTemplate(context *gin.Context) {
+	context.HTML(http.StatusOK, "plan_template.html", gin.H{})
+}
+
+// travel plan customization handler
+func (planner *MyPlanner) customize(ctx *gin.Context) {
+	request := solution.PlanningRequest{
+		NumPlans:     1,
+		Weekday:      POI.DateSaturday,
+		SearchRadius: 10000,
+	}
+
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		iowrappers.Logger.Error(err)
+		ctx.Status(http.StatusBadRequest)
+		return
+	}
+
+	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
+	planningResp := planner.Planning(c, &request, "guest")
+	ctx.JSON(http.StatusOK, planningResp)
+}
+
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if planner.Environment == "debug" {
@@ -580,6 +603,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/sign-up", planner.signup)
 		v1.GET("/plans/:id", planner.getPlanDetails)
 		v1.GET("/cities", planner.GetCitiesHandler)
+		v1.POST("/customize", planner.customize)
+		v1.GET("/template", planner.customizedTemplate)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
