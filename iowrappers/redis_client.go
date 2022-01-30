@@ -446,11 +446,15 @@ func (redisClient *RedisClient) SavePlanningSolutions(context context.Context, r
 		recordKeys = append(recordKeys, solutionRedisKey)
 	}
 
-	numTravelPlanKeys, listSaveErr := redisClient.client.LPush(context, redisListKey, recordKeys).Result()
-	Logger.Debugf("added the %d travel plan keys to %s", numTravelPlanKeys, redisListKey)
-	redisClient.client.Expire(context, redisListKey, PlanningSolutionsExpirationTime)
+	if len(recordKeys) > 0 {
+		numTravelPlanKeys, listSaveErr := redisClient.client.LPush(context, redisListKey, recordKeys).Result()
+		Logger.Debugf("added the %d travel plan keys to %s", numTravelPlanKeys, redisListKey)
+		redisClient.client.Expire(context, redisListKey, PlanningSolutionsExpirationTime)
 
-	return redisListKey, listSaveErr
+		return redisListKey, listSaveErr
+	}
+
+	return redisListKey, nil
 }
 
 func (redisClient *RedisClient) PlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest) (PlanningSolutionsResponse, error) {
