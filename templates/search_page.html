@@ -120,13 +120,15 @@
         </div>
 
         <div class="row mt-1">
-            <form class="d-flex" action="/v1/plans" method="get">
-                <div class="input-group w-auto">
-                    <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
+            <form class="row d-flex flex-column flex-sm-row align-items-start align-items-sm-center pe-0"
+                action="/v1/plans" method="get">
+                <div class="col ps-1 pe-0 mt-1" id="dateDiv">
+                    <input class="form-control border border-secondary" type="date" id="datepicker" name="date"
                         value="2020-02-29">
                 </div>
 
-                <div class="container px-1 border border-secondary rounded-1 d-flex flex-row align-items-center">
+                <div class="container border border-secondary rounded-1 d-flex flex-row align-items-center col ms-1 mt-1"
+                    id="locationDiv">
                     <div class="fixedwidthicon">
                         <i id="searchIcon" class="bi bi-search mx-1 visible"></i>
                     </div>
@@ -143,9 +145,31 @@
 
                 </div>
 
+                <div class="ps-1 pe-0 mt-1" id="priceDiv">
+                    <select name="price" class="form-select border border-secondary"
+                        aria-label=".form-select-sm example" id="priceToSelect" onchange="randomPriceRange(this)">
+                        <option>price</option>
+                        <option value="0">$</option>
+                        <option value="1">$$</option>
+                        <option value="2">$$$</option>
+                        <option value="3">$$$$</option>
+                        <option value="4">Max</option>
+                        <option value="0,1,2,3,4">Surprise</option>
+                        <script>
+                            function randomPriceRange() {
+                                var item = document.getElementById('priceToSelect');
+                                var valueSel = item.options[item.selectedIndex].text;
+                                if (valueSel === "Surprise") {
+                                    var index = Math.floor(Math.random() * 5);
+                                    var temp = item.value.split(",")[index];
+                                    item.value = temp;
+                                }
+                            }
+                        </script>
+                    </select>
+                </div>
             </form>
         </div>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
