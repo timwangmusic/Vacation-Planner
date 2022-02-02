@@ -119,7 +119,8 @@ async function postPlanTemplate() {
         function (response) {
             console.log(response.data);
             parseResponse(response.data);
-            document.getElementById("searchSpinner").classList.add("visually-hidden");
+            $('#searchSpinner').addClass("visually-hidden");
+            $('#no-valid-plan-error-msg').addClass('d-none');
         }
     ).catch(
         err => console.error(err)
@@ -149,8 +150,9 @@ async function parseResponse(response) {
     console.log("Raw JSON response is", response);
 
     $(function () {
-        if (response["travel_plans"].length > 0) {
-            document.getElementById("results").classList.remove("d-none");
+        const resultsTable = document.getElementById("results");
+        if (response["travel_plans"]?.length > 0) {
+            resultsTable.classList.remove("d-none");
             let plan = response["travel_plans"][0];
             const newTableBody = document.createElement('tbody');
 
@@ -169,6 +171,9 @@ async function parseResponse(response) {
             const oldTableBody = document.getElementById('results-table-body');
             oldTableBody.parentNode.replaceChild(newTableBody, oldTableBody);
             newTableBody.id = 'results-table-body';
+        } else {
+            resultsTable.classList.add("d-none");
+            $('#no-valid-plan-error-msg').removeClass('d-none');
         }
     })
 }
