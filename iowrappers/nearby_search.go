@@ -27,6 +27,8 @@ type PlaceSearchRequest struct {
 	// minimum number of results, set this lower limit for reducing risk of zero result in upper-layer computations.
 	// suppose a location has more places established over time, this field would help trigger new searches to get those new establishments.
 	MinNumResults uint
+
+	BusinessStatus POI.BusinessStatus
 }
 
 func GoogleMapsNearbySearchWrapper(mapsClient MapsClient, location POI.Location, placeType string, radius uint, pageToken string) (resp maps.PlacesSearchResponse, err error) {

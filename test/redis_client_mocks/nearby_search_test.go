@@ -8,7 +8,7 @@ import (
 
 func TestGetPlaces(t *testing.T) {
 	// set up data
-	places := make([]POI.Place, 3)
+	places := make([]POI.Place, 4)
 	places[0] = POI.Place{
 		ID:               "1001",
 		Name:             "Empire state building",
@@ -19,6 +19,7 @@ func TestGetPlaces(t *testing.T) {
 		PriceLevel:       POI.PriceLevelThree,
 		Rating:           4.6,
 		Hours:            [7]string{},
+		Status:           POI.Operational,
 	}
 
 	places[1] = POI.Place{
@@ -31,6 +32,7 @@ func TestGetPlaces(t *testing.T) {
 		PriceLevel:       POI.PriceLevelFour,
 		Rating:           4.9,
 		Hours:            [7]string{},
+		Status:           POI.Operational,
 	}
 
 	places[2] = POI.Place{
@@ -43,6 +45,20 @@ func TestGetPlaces(t *testing.T) {
 		PriceLevel:       POI.PriceLevelFour,
 		Rating:           4.6,
 		Hours:            [7]string{},
+		Status:           POI.ClosedPermanently,
+	}
+
+	places[3] = POI.Place{
+		ID:               "4004",
+		Name:             "The Morgan Library & Museum",
+		LocationType:     POI.LocationTypeMuseum,
+		Address:          POI.Address{},
+		FormattedAddress: "225 Madison Ave, New York, NY 10016",
+		Location:         POI.Location{Longitude: -73.9878, Latitude: 40.7496},
+		PriceLevel:       POI.PriceLevelThree,
+		Rating:           4.6,
+		Hours:            [7]string{},
+		Status:           POI.ClosedTemporarily,
 	}
 
 	_ = iowrappers.CreateLogger()
@@ -60,10 +76,11 @@ func TestGetPlaces(t *testing.T) {
 	// test normal cases
 	nycLatLng := POI.Location{Longitude: -74.006000, Latitude: 40.712800}
 	placeSearchRequest := iowrappers.PlaceSearchRequest{
-		Location:      nycLatLng,
-		PlaceCat:      "Visit",
-		Radius:        uint(5000),
-		MinNumResults: 1,
+		Location:       nycLatLng,
+		PlaceCat:       POI.PlaceCategoryVisit,
+		Radius:         uint(5000),
+		MinNumResults:  1,
+		BusinessStatus: POI.Operational,
 	}
 
 	cachedVisitPlaces, _ := RedisClient.NearbySearch(RedisContext, &placeSearchRequest)
@@ -77,7 +94,7 @@ func TestGetPlaces(t *testing.T) {
 	// OUTSIDE the search radius coverage
 	placeSearchRequest = iowrappers.PlaceSearchRequest{
 		Location:      nycLatLng,
-		PlaceCat:      "Eatery",
+		PlaceCat:      POI.PlaceCategoryEatery,
 		Radius:        uint(5000),
 		MinNumResults: 2,
 	}
@@ -90,7 +107,7 @@ func TestGetPlaces(t *testing.T) {
 	}
 
 	// expect to return empty slice if total number of cached places in a category is less than requested minimum
-	cachedVisitPlaces, _ = RedisClient.NearbySearch(RedisContext, &iowrappers.PlaceSearchRequest{MinNumResults: 2, PlaceCat: "Visit"})
+	cachedVisitPlaces, _ = RedisClient.NearbySearch(RedisContext, &iowrappers.PlaceSearchRequest{MinNumResults: 2, PlaceCat: POI.PlaceCategoryVisit})
 	if len(cachedVisitPlaces) != 0 {
 		t.Error("should return empty slice if total number of cached places in a category is less than requested minimum")
 	}
