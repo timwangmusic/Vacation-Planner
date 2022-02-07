@@ -41,10 +41,11 @@ func (matcher MatcherForPriceRange) Match(ctx context.Context, request Request) 
 
 	priceRangeFilterParams := filterParams.(PriceRangeFilterParams)
 	placeSearchRequest := &iowrappers.PlaceSearchRequest{
-		PlaceCat:      priceRangeFilterParams.Category,
-		Location:      request.Location,
-		Radius:        request.Radius,
-		MinNumResults: MinResultsForTimePeriodMatching,
+		PlaceCat:       priceRangeFilterParams.Category,
+		Location:       request.Location,
+		Radius:         request.Radius,
+		MinNumResults:  MinResultsForTimePeriodMatching,
+		BusinessStatus: POI.Operational,
 	}
 
 	basicPlaces, err := matcher.Searcher.NearbySearch(ctx, placeSearchRequest)
@@ -91,10 +92,11 @@ func (matcher MatcherForTime) Match(ctx context.Context, request Request) ([]Pla
 
 	timeFilterParams := filterParams.(TimeFilterParams)
 	placeSearchRequest := &iowrappers.PlaceSearchRequest{
-		PlaceCat:      timeFilterParams.Category,
-		Location:      request.Location,
-		Radius:        request.Radius,
-		MinNumResults: MinResultsForTimePeriodMatching,
+		PlaceCat:       timeFilterParams.Category,
+		Location:       request.Location,
+		Radius:         request.Radius,
+		MinNumResults:  MinResultsForTimePeriodMatching,
+		BusinessStatus: POI.Operational,
 	}
 
 	basicPlaces, err := matcher.Searcher.NearbySearch(ctx, placeSearchRequest)

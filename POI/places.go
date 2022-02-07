@@ -41,7 +41,7 @@ const (
 type Place struct {
 	ID               string         `bson:"_id"`
 	Name             string         `bson:"name"`
-	Status           BusinessStatus `bson:"business_status"`
+	Status           BusinessStatus `bson:"status"`
 	LocationType     LocationType   `bson:"location_type"`
 	Address          Address        `bson:"address"`
 	FormattedAddress string         `bson:"formatted_address"`
@@ -62,6 +62,11 @@ type Location struct {
 	Country           string `json:"country"`           // name of the country where the location belongs to
 }
 
+// Address in adr micro-format example:
+// 665 3rd St.
+// Suite 207
+// San Francisco, CA 94107
+// U.S.A.
 type Address struct {
 	POBox        string
 	ExtendedAddr string
@@ -103,11 +108,6 @@ func (place *Place) GetID() string {
 	return place.ID
 }
 
-//Sample Address in adr micro-format
-//665 3rd St.
-//Suite 207
-//San Francisco, CA 94107
-//U.S.A.
 func (place *Place) GetAddress() Address {
 	return place.Address
 }
@@ -136,7 +136,6 @@ func (place *Place) GetUserRatingsTotal() int {
 	return place.UserRatingsTotal
 }
 
-// Set name if POI name changed
 func (place *Place) SetName(name string) {
 	place.Name = name
 }
@@ -154,17 +153,15 @@ func (place *Place) SetStatus(status string) {
 	}
 }
 
-// Set human-readable Address of this place
+// SetFormattedAddress sets a human-readable Address
 func (place *Place) SetFormattedAddress(formattedAddress string) {
 	place.FormattedAddress = formattedAddress
 }
 
-// Set type if POI type changed
 func (place *Place) SetType(t LocationType) {
 	place.LocationType = t
 }
 
-// Set time if POI opening hour changed for some day in a week
 func (place *Place) SetHour(day Weekday, hour string) {
 	switch day {
 	case DateSunday:
