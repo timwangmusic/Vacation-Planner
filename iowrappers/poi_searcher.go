@@ -131,6 +131,12 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 		places = append(places, newPlaces...)
 	}
 
+	if request.BusinessStatus == POI.Operational {
+		totalPlacesCount := len(places)
+		places = filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
+		Logger.Debugf("%d places out of %d left after business status filtering", len(places), totalPlacesCount)
+	}
+
 	if uint(len(places)) < request.MinNumResults {
 		Logger.Debugf("Found %d POI results for place type %s, less than requested number of %d",
 			len(places), request.PlaceCat, request.MinNumResults)

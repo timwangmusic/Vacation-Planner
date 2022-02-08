@@ -149,7 +149,6 @@
                 <div class="ps-1 pe-0 mt-1" id="priceDiv">
                     <select name="price" class="form-select border border-secondary"
                         aria-label=".form-select-sm example" id="priceToSelect" onchange="randomPriceRange(this)">
-                        <option>price</option>
                         <option value="0">$</option>
                         <option value="1">$$</option>
                         <option value="2">$$$</option>
@@ -158,12 +157,11 @@
                         <option value="0,1,2,3,4">Surprise</option>
                         <script>
                             function randomPriceRange() {
-                                var item = document.getElementById('priceToSelect');
-                                var valueSel = item.options[item.selectedIndex].text;
+                                const item = document.getElementById('priceToSelect');
+                                const valueSel = item.options[item.selectedIndex].text;
                                 if (valueSel === "Surprise") {
-                                    var index = Math.floor(Math.random() * 5);
-                                    var temp = item.value.split(",")[index];
-                                    item.value = temp;
+                                    const index = Math.floor(Math.random() * 5);
+                                    item.value = [0, 1, 2, 3, 4][index];
                                 }
                             }
                         </script>
