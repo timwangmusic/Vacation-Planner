@@ -161,8 +161,13 @@ async function parseResponse(response) {
                     text: place.place_name,
                     href: place.url
                 });
+
+                let $timeDiv = $(document.createElement('div')).addClass('d-flex').css('color', 'darkcyan');
+                $timeDiv.append($(document.createElement('span')).text(place.place_icon_css_class).addClass('material-icons'));
+                $timeDiv.append($(document.createElement('span')).text(place.start_time + ' - ' + place.end_time).addClass('mx-2'));
+
                 let $tr = $('<tr>').append(
-                    $('<td>').text(place.start_time + " - " + place.end_time),
+                    $('<td>').append($timeDiv),
                     $('<td>').text('').append(aTag),
                 );
                 $tr.appendTo(newTableBody);
