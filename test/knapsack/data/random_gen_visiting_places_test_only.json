@@ -1,0 +1,416 @@
+[
+ {
+  "Place": {
+   "ID": "ChIJzZGmYDXMj4ARnc_EWut9OzQ",
+   "Name": "The Bird Boutique",
+   "Status": "OPERATIONAL",
+   "LocationType": "art_gallery",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "2530 Berryessa Rd #946",
+    "Locality": "San Jose",
+    "Region": "CA",
+    "PostalCode": "95132",
+    "Country": "USA"
+   },
+   "FormattedAddress": "2530 Berryessa Rd #946, San Jose, CA 95132, USA",
+   "Location": {
+    "Latitude": 37.3876444,
+    "Longitude": -121.857703,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 5,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=3763740363391815581",
+   "Photo": {
+    "Reference": "Aap_uEBh-53g8N8bYmEJBzkwH4HnTUzrV27uDVRfYRW3oqRXIqViAWixbqQHKxK-JbxJs6GT4ZPRp-7I_AW8qYyFET9RSmKZKOM_zTs_UxMzODnNg-2WsvB19eQ_jSkf7iOrEDrG_21Tslns8Dy5B64_MSMbsOgE0H3_icm939aCPkq5-IC7",
+    "Height": 1536,
+    "Width": 2048
+   },
+   "UserRatingsTotal": 2
+  },
+  "category": "Visit",
+  "address": "2530 Berryessa Rd #946, San Jose, CA 95132, USA",
+  "price": 21
+ },
+ {
+  "Place": {
+   "ID": "ChIJNdgNqsDJj4ARBUi2ZKG7KQI",
+   "Name": "Screamin' Wombat",
+   "Status": "OPERATIONAL",
+   "LocationType": "amusement_park",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "",
+    "Locality": "Santa Clara",
+    "Region": "CA",
+    "PostalCode": "95054",
+    "Country": "USA"
+   },
+   "FormattedAddress": "Santa Clara, CA 95054, USA",
+   "Location": {
+    "Latitude": 37.3966139,
+    "Longitude": -121.9701729,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 4.3,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=155861963974789125",
+   "Photo": {
+    "Reference": "Aap_uEA7-KImJ_fUAJ5z2J_-bhp6Gpvs8zaM0Ke6GvR2WUYJ8TrAZ2IeiwFdbIw_7HB83fkPEXQsWwvbD4YcUsSk4qUPUzlrkDZI9s8XRQA1od_HaNx3se06wNXtFMeHiCrq_r2uPTRqo5IUoG89UHYd2jFyFSropS1gHAi9ZRLfWcQrTNVQ",
+    "Height": 3096,
+    "Width": 4128
+   },
+   "UserRatingsTotal": 20
+  },
+  "category": "Visit",
+  "address": "Santa Clara, CA 95054, USA",
+  "price": 37
+ },
+ {
+  "Place": {
+   "ID": "ChIJmY-gkAvJj4ARaHok_lOuh8s",
+   "Name": "Coastal Cruz",
+   "Status": "OPERATIONAL",
+   "LocationType": "amusement_park",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "",
+    "Locality": "Santa Clara",
+    "Region": "CA",
+    "PostalCode": "95054",
+    "Country": "USA"
+   },
+   "FormattedAddress": "Santa Clara, CA 95054, USA",
+   "Location": {
+    "Latitude": 37.3960671,
+    "Longitude": -121.9706642,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 5,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=14665882387324631656",
+   "Photo": {
+    "Reference": "",
+    "Height": 0,
+    "Width": 0
+   },
+   "UserRatingsTotal": 1
+  },
+  "category": "Visit",
+  "address": "Santa Clara, CA 95054, USA",
+  "price": 27
+ },
+ {
+  "Place": {
+   "ID": "ChIJDQuOmsDJj4ARGlVd8LNzcRU",
+   "Name": "Planet Snoopy",
+   "Status": "OPERATIONAL",
+   "LocationType": "amusement_park",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "4701 Great America Pkwy",
+    "Locality": "Santa Clara",
+    "Region": "CA",
+    "PostalCode": "95054",
+    "Country": "USA"
+   },
+   "FormattedAddress": "4701 Great America Pkwy, Santa Clara, CA 95054, USA",
+   "Location": {
+    "Latitude": 37.39492689999999,
+    "Longitude": -121.9718436,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 4.6,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=1545143363833779482",
+   "Photo": {
+    "Reference": "Aap_uEC3QIJlFKb7SdO7r09R0-ZRpOFArWX6Uxd3N29sHNHBXphypOWv-5it6-_ER5CFgIprYNryJIaAIy1_Y98oTLapffvUATjNjQ8HVg2OJJ1sC5BVa-iwlIvs_ugvOqqiMoRw5lN0y66UhYohd9j7Cl7efiD0t0sPDwr_hYCCgp7lRPMA",
+    "Height": 3120,
+    "Width": 4160
+   },
+   "UserRatingsTotal": 221
+  },
+  "category": "Visit",
+  "address": "4701 Great America Pkwy, Santa Clara, CA 95054, USA",
+  "price": 39
+ },
+ {
+  "Place": {
+   "ID": "ChIJ9ww7EMDJj4ARjt2dQUjRiIc",
+   "Name": "County Fair Picnic Grove",
+   "Status": "OPERATIONAL",
+   "LocationType": "amusement_park",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "Mission College Blvd",
+    "Locality": "Santa Clara",
+    "Region": "CA",
+    "PostalCode": "95054",
+    "Country": "USA"
+   },
+   "FormattedAddress": "Mission College Blvd, Santa Clara, CA 95054, USA",
+   "Location": {
+    "Latitude": 37.3923767,
+    "Longitude": -121.9705949,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 3.9,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=9766285900221635982",
+   "Photo": {
+    "Reference": "Aap_uEACBBDRg7HhH-QAZbvfYVkRm-smGES62iUKXR63z18nlEnyl7MTwZYUb0LcU9YYk7KgWJwI-zai6bD4cNP7Mbe-yooVhkQLJ-UK6qOgf0d2LcXqZb-SPya4VzrHE5zE7HDDXKBAC5kvms1Hn-_OZTGGE5wSBnb_gYJyu8EHPtlWufkL",
+    "Height": 2368,
+    "Width": 4208
+   },
+   "UserRatingsTotal": 34
+  },
+  "category": "Visit",
+  "address": "Mission College Blvd, Santa Clara, CA 95054, USA",
+  "price": 11
+ },
+ {
+  "Place": {
+   "ID": "ChIJZQxU13jMj4AR0bZuQKfqsnU",
+   "Name": "Brookart Press Inc",
+   "Status": "OPERATIONAL",
+   "LocationType": "art_gallery",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "330 Commercial St",
+    "Locality": "San Jose",
+    "Region": "CA",
+    "PostalCode": "95112-4403",
+    "Country": "USA"
+   },
+   "FormattedAddress": "330 Commercial St, San Jose, CA 95112, USA",
+   "Location": {
+    "Latitude": 37.3608573,
+    "Longitude": -121.8991889,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 0,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=8481099052353500881",
+   "Photo": {
+    "Reference": "",
+    "Height": 0,
+    "Width": 0
+   },
+   "UserRatingsTotal": 0
+  },
+  "category": "Visit",
+  "address": "330 Commercial St, San Jose, CA 95112, USA",
+  "price": 28
+ },
+ {
+  "Place": {
+   "ID": "ChIJzQqhltzJj4ARsqQC1i4yABo",
+   "Name": "Gary S. Gillmor and Family Academic Center",
+   "Status": "OPERATIONAL",
+   "LocationType": "art_gallery",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "3000 Mission College Blvd",
+    "Locality": "Santa Clara",
+    "Region": "CA",
+    "PostalCode": "95054",
+    "Country": "USA"
+   },
+   "FormattedAddress": "3000 Mission College Blvd, Santa Clara, CA 95054, USA",
+   "Location": {
+    "Latitude": 37.3920373,
+    "Longitude": -121.9832585,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 4.7,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=1873552621726508210",
+   "Photo": {
+    "Reference": "Aap_uEBzNyrFKC9ONdvSb67gBYnVoZOxjVeCb4mEfl-EGNWwcm4vgtU0InFI_Bd31TzMrcfzVR292LFemHnbtzB-Eta-ysIKOFviKnzXx-bmpTmmONHwxFu6GTWlEjgSDyeWwsNWPpS1StcES6U3UamepJBPfZwuhjL90kC9Ra1aPUFROkcK",
+    "Height": 2432,
+    "Width": 3286
+   },
+   "UserRatingsTotal": 9
+  },
+  "category": "Visit",
+  "address": "3000 Mission College Blvd, Santa Clara, CA 95054, USA",
+  "price": 35
+ },
+ {
+  "Place": {
+   "ID": "ChIJ-ZogKrvMj4ARKrML-5D1a88",
+   "Name": "Alum Rock Park",
+   "Status": "OPERATIONAL",
+   "LocationType": "park",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "15350 Penitencia Creek Rd",
+    "Locality": "San Jose",
+    "Region": "CA",
+    "PostalCode": "95127",
+    "Country": "USA"
+   },
+   "FormattedAddress": "15350 Penitencia Creek Rd, San Jose, CA 95127, USA",
+   "Location": {
+    "Latitude": 37.396039,
+    "Longitude": -121.801812,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 4.7,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=14946309791395066666",
+   "Photo": {
+    "Reference": "Aap_uEDjlaZJtQZ4b-pLhMwbgD8iwkzujCs0N-ultdHcnjGCISTZeE9WKGqb-aI5N0SZuK9uzQqTzZl3Wucuc8r-6bhHYBHpOsz80OOVpig5eAdDRiMDpqcPEbZLFCj3BnyQndVK1S5VmWU5HmDYo6k7oOi7m2dx7xqT5tPzi6b07NWOIMUo",
+    "Height": 3024,
+    "Width": 4032
+   },
+   "UserRatingsTotal": 2826
+  },
+  "category": "Visit",
+  "address": "15350 Penitencia Creek Rd, San Jose, CA 95127, USA",
+  "price": 30
+ },
+ {
+  "Place": {
+   "ID": "ChIJl4f5rZrMj4AROeYM0DwY_tk",
+   "Name": "Empire Seven Studios",
+   "Status": "OPERATIONAL",
+   "LocationType": "art_gallery",
+   "Address": {
+    "POBox": "",
+    "ExtendedAddr": "",
+    "StreetAddr": "525 N 7th St suite 10",
+    "Locality": "San Jose",
+    "Region": "CA",
+    "PostalCode": "95112",
+    "Country": "USA"
+   },
+   "FormattedAddress": "525 N 7th St suite 10, San Jose, CA 95112, USA",
+   "Location": {
+    "Latitude": 37.3445293,
+    "Longitude": -121.8914463,
+    "city": "",
+    "adminAreaLevelOne": "",
+    "country": ""
+   },
+   "PriceLevel": 0,
+   "Rating": 4.9,
+   "Hours": [
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm",
+    "8:30 am – 9:30 pm"
+   ],
+   "URL": "https://maps.google.com/?cid=15708019199782479417",
+   "Photo": {
+    "Reference": "Aap_uEA3o7SQXr4TDVqoOOJRr4twkqTsrNHrwmD06fn0UMqUdhvM_-oV9bEk8K_Ua7mA_QTv0vMoXt52qh0dINrX-_9VQIY1yaq3eW0VaVXCy69xEh71wzC_Ege59XEC3waln1n8i90PXiHcwFs3bKFImZEzTHQvLDSS2vCerNoYJwLdaSJ-",
+    "Height": 480,
+    "Width": 720
+   },
+   "UserRatingsTotal": 16
+  },
+  "category": "Visit",
+  "address": "525 N 7th St suite 10, San Jose, CA 95112, USA",
+  "price": 26
+ }
+]

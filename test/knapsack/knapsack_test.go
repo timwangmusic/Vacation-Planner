@@ -9,17 +9,10 @@ import (
 )
 
 func TestKnapsack(t *testing.T) {
-	places := make([]matching.Place, 20)
-	placesFromData := make([]POI.Place, 20)
-	err := utils.ReadFromFile("data/random_gen_visiting_places_for_test.json", &placesFromData)
+	places := make([]matching.Place, 20, 20)
+	err := utils.ReadFromFile("data/random_gen_visiting_places_test_only.json", &places)
 	if err != nil || len(places) == 0 {
 		t.Fatal("Json file read error")
-	}
-	for idx, p := range placesFromData {
-		if idx >= len(places) {
-			break
-		}
-		places[idx] = matching.CreatePlace(p, POI.PlaceCategoryVisit)
 	}
 	budget := uint(80)
 	querystart := matching.QueryTimeInterval{StartHour: 8, Day: POI.DateMonday, EndHour: 16}
@@ -58,5 +51,5 @@ func TestKnapsack(t *testing.T) {
 			t.Error("v2 result is not the same")
 		}
 	}
-	assert.Equal(t, "ChIJ36yUcg3xNIgRtvNioeVfK7E", result2[0].GetPlaceId())
+	assert.Equal(t, "ChIJDQuOmsDJj4ARGlVd8LNzcRU", result2[0].GetPlaceId())
 }
