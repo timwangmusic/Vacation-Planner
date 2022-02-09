@@ -30,7 +30,7 @@ func TestKnapsack(t *testing.T) {
 	}
 	result2, totalCost, totalTimeSpent, err := matching.Knapsack(places, querystart, budget)
 	if err != nil {
-		t.Error("Error message: #{err.Error()}")
+		t.Errorf("Error message: #{err.Error()}")
 	}
 
 	t.Logf("total cost of the trip is %d", totalCost)

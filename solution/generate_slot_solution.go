@@ -169,8 +169,12 @@ func NearbySearchAllCategories(context context.Context, timeMatcher *matching.Ti
 	var places []matching.Place
 	places = append(places, categorizedPlaces[0].EateryPlaces...)
 	places = append(places, categorizedPlaces[0].VisitPlaces...)
+
+	//places := make(map[string][]matching.Place)
+	//places["EateryPlaces"] = append(places["EateryPlaces"], categorizedPlaces[0].EateryPlaces...)
+	//places["VisitPlaces"] = append(places["VisitPlaces"], categorizedPlaces[0].VisitPlaces...)
 	if len(places) == 0 {
-		err = errors.New("no places found at current location and time")
+		return nil, errors.New("no places found at current location and time")
 	}
 	return places, err
 }

@@ -65,8 +65,7 @@ func Knapsack(places []Place, interval QueryTimeInterval, budget uint) (results 
 	var recordTable knapsackRecordTable
 	timeLimit := interval.EndHour - interval.StartHour
 	if timeLimit <= 0 {
-		err = errors.New(fmt.Sprintf("Invalid traveltime %d hours between start time: %d and endtime: %d", timeLimit, interval.StartHour, interval.EndHour))
-		return
+		return nil, 0, 0, errors.New(fmt.Sprintf("Invalid traveltime %d hours between start time: %d and endtime: %d", timeLimit, interval.StartHour, interval.EndHour))
 	}
 	rt := &recordTable
 	rt.Init(timeLimit, budget)
@@ -86,7 +85,7 @@ func Knapsack(places []Place, interval QueryTimeInterval, budget uint) (results 
 				newSolution := make([]Place, len(record.Solution))
 				copy(newSolution, record.Solution)
 				newSolution = append(newSolution, place)
-				newScore := ScoreNoDistance(newSolution)
+				newScore := ScorePlacesOnly(newSolution)
 				newRecord := knapsackNodeRecord{newTimeSpent, newCost, newScore, newSolution}
 				if alreadyRecord, ok := rt.NewRecord[newKey]; ok {
 					if alreadyRecord.score < newRecord.score {

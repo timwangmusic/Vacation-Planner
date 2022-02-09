@@ -40,7 +40,7 @@ func Score(places []Place, distNorm int) float64 {
 	return avgScore - avgDistance
 }
 
-func ScoreNoDistance(places []Place) float64 {
+func ScorePlacesOnly(places []Place) float64 {
 	if len(places) == 1 {
 		return singlePlaceScore(places[0])
 	}
