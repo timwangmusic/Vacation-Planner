@@ -111,8 +111,9 @@ async function postPlanTemplate() {
         "location": locationToPost,
         "slots": tableToSlots()
     }
-    const url = "/v1/customize";
+    const url = "/v1/customize?date=" + document.getElementById("datepicker").value.toString();
     console.log(`data about to send: ${JSON.stringify(data)}`);
+
     axios.post(
         url, JSON.stringify(data)
     ).then(
