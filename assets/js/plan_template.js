@@ -111,8 +111,9 @@ async function postPlanTemplate() {
         "location": locationToPost,
         "slots": tableToSlots()
     }
-    const url = "/v1/customize";
+    const url = "/v1/customize?date=" + document.getElementById("datepicker").value.toString();
     console.log(`data about to send: ${JSON.stringify(data)}`);
+
     axios.post(
         url, JSON.stringify(data)
     ).then(
@@ -161,8 +162,13 @@ async function parseResponse(response) {
                     text: place.place_name,
                     href: place.url
                 });
+
+                let $timeDiv = $(document.createElement('div')).addClass('d-flex').css('color', 'darkcyan');
+                $timeDiv.append($(document.createElement('span')).text(place.place_icon_css_class).addClass('material-icons'));
+                $timeDiv.append($(document.createElement('span')).text(place.start_time + ' - ' + place.end_time).addClass('mx-2'));
+
                 let $tr = $('<tr>').append(
-                    $('<td>').text(place.start_time + " - " + place.end_time),
+                    $('<td>').append($timeDiv),
                     $('<td>').text('').append(aTag),
                 );
                 $tr.appendTo(newTableBody);
