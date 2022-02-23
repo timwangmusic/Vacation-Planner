@@ -81,6 +81,8 @@ type PlanningPostRequest struct {
 }
 
 type TripDetailResp struct {
+	LatLongs          [][2]float64
+	PlaceCategories   []POI.PlaceCategory
 	PlaceDetails      []PlaceDetailsResp
 	ShownActive       []bool
 	TravelDestination string
@@ -92,15 +94,6 @@ type PlaceDetailsResp struct {
 	URL             string
 	FormattedAdress string
 	PhotoURL        string
-}
-
-type TripShowDetails struct {
-	City    string `form:"city"`
-	Country string `form:"country"`
-	Radius  string `form:"radius"`
-	Day     string `form:"day"`
-	TimeIdx string `form:"time"`
-	Id      string `form:"id"`
 }
 
 type RequestIdKey string
@@ -458,6 +451,8 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 	}
 	travelDate := c.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
+		LatLongs:          cachePlanSolution.PlaceLocations,
+		PlaceCategories:   cachePlanSolution.PlaceCategories,
 		PlaceDetails:      make([]PlaceDetailsResp, 0),
 		ShownActive:       make([]bool, 0),
 		TravelDestination: destination,
