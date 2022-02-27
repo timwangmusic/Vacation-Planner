@@ -19,7 +19,18 @@
         <div class="header">
             <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
                 <div class="container-fluid">
-                    <a class="nav-link" href="/v1/"><i class="fa-brands fa-searchengin fa-2x" style='color:#5d9ba8'></i></a>
+                    <!--New Search-->
+                    <a class="nav-link" onclick="passLocation()" href="/v1/"><i class="fa-brands fa-searchengin fa-2x" style='color:#5d9ba8'></i></a>
+                    <script>
+                        try {
+                            function passLocation() {
+                                var loc = document.getElementById("d-none d-md-block").value;
+                                console.log('The location is ${loc}')
+                            }
+                        } catch (error) {
+                            console.error(error)
+                        }
+                    </script>
                     <div class="dropdown">
                         <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
                             data-bs-toggle="dropdown" aria-expanded="false">guest
