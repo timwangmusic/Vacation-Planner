@@ -30,6 +30,8 @@ const (
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
 
+var geocodes map[string]string
+
 var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
 	POI.PlaceCategoryEatery: POI.PlaceIconEatery,
 	POI.PlaceCategoryVisit:  POI.PlaceIconVisit,
@@ -118,6 +120,11 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
 		planner.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
+	}
+	var err error
+	geocodes, err = planner.RedisClient.GetCities(context.Background())
+	if err != nil {
+		log.Errorf("failed to load city geocodes: %v", err.Error())
 	}
 }
 
@@ -240,13 +247,6 @@ type GeocodeCityView struct {
 }
 
 func (planner *MyPlanner) GetCitiesHandler(context *gin.Context) {
-	var geocodes map[string]string
-	var err error
-	if geocodes, err = planner.RedisClient.GetCityCountInRedis(context); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	views := toCityViews(geocodes)
 	term := context.DefaultQuery("term", "")
 	term = strings.ToLower(term)
@@ -267,16 +267,7 @@ func (planner *MyPlanner) GetCitiesHandler(context *gin.Context) {
 }
 
 func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
-	var cityCount int
-	var err error
-	var geocodes map[string]string
-
-	if geocodes, err = planner.RedisClient.GetCityCountInRedis(context); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	cityCount = len(geocodes)
+	cityCount := len(geocodes)
 	view := GeocodeCityView{
 		Count:  cityCount,
 		Cities: geocodes,

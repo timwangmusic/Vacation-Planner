@@ -31,7 +31,7 @@ func (redisClient *RedisClient) GetPlaceCountInRedis(context context.Context) (p
 	return placeKeys, count, nil
 }
 
-func (redisClient *RedisClient) GetCityCountInRedis(context context.Context) (map[string]string, error) {
+func (redisClient *RedisClient) GetCities(context context.Context) (map[string]string, error) {
 	redisKey := "geocode:cities"
 	geocodes, err := redisClient.client.HGetAll(context, redisKey).Result()
 	if err != nil {
