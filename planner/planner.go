@@ -210,7 +210,7 @@ func (planner *MyPlanner) SingleDayTimeCostPlanHandler(ctx *gin.Context) {
 	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
 	location := POI.Location{City: city, Country: country}
 	budgetUint, budgetParsingErr := strconv.ParseUint(budget, 10, 32)
-	if budgetUint == 0 || budgetParsingErr != nil {
+	if budgetParsingErr != nil || budgetUint == 0 {
 		ctx.String(http.StatusBadRequest, "invalid input of budget %s", budget)
 		return
 	}

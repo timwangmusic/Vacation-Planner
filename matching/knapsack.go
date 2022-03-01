@@ -85,7 +85,10 @@ func Knapsack(places []Place, interval QueryTimeInterval, budget uint) (results 
 				newSolution := make([]Place, len(record.Solution))
 				copy(newSolution, record.Solution)
 				newSolution = append(newSolution, place)
-				newScore := ScorePlacesOnly(newSolution)
+				newScore := float64(0)
+				for _, place := range newSolution {
+					newScore += singlePlaceScoreKnapSack(place)
+				}
 				newRecord := knapsackNodeRecord{newTimeSpent, newCost, newScore, newSolution}
 				if alreadyRecord, ok := rt.NewRecord[newKey]; ok {
 					if alreadyRecord.score < newRecord.score {
