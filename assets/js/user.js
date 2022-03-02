@@ -14,10 +14,17 @@ const updateUsername = function () {
     } else {
         console.log("The session has expired or the user is not logged in.");
         // Hide logout and profile dropdown items when user is not logged in
-        document.getElementById("logout-button-item").classList.add("d-none");
-        document.getElementById("profile").classList.add("d-none");
-        // Display login dropdown item
-        document.getElementById("login-button-item").classList.remove("d-none");
+        var lbi = document.getElementById("logout-button-item");
+        var prf = document.getElementById("profile");
+        if (lbi)
+        {
+            lbi.classList.add("d-none");
+            // Display login dropdown item
+            lbi.classList.remove("d-none");
+        }
+        if (prf){
+            prf.classList.add("d-none");
+        }
         return username;
     }
 

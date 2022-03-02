@@ -136,7 +136,16 @@
 
                     <div class="flex-fill">
                         <input class="form-control border-0" type="search" id="location" placeholder="Search"
-                            aria-label="Search" name="location" value="Los Angeles, CA, USA">
+                            aria-label="Search" name="location" value="Los Angeles, CA, USA" onchange="fetchLoc(this)">
+                        <script>
+                            function fetchLoc() {
+                                const loc = document.getElementById('location');
+                                if (loc) {
+                                    sessionStorage.setItem("locationPerm", loc.value)
+                                    console.log(`The location is ${loc.value}`);
+                                }
+                            }
+                        </script>
                     </div>
 
                     <div class="fixedwidthicon">
