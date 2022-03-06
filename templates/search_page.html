@@ -21,7 +21,7 @@
     <title>vacation planner</title>
 </head>
 
-<body>
+<body onload="CheckPrevLoc()">
     <div class="modal fade" id="logout-confirm" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -136,7 +136,7 @@
 
                     <div class="flex-fill">
                         <input class="form-control border-0" type="search" id="location" placeholder="Search"
-                            aria-label="Search" name="location" value="Los Angeles, CA, USA" onload="checkValue()" onchange="fetchLoc(this)">
+                            aria-label="Search" name="location" value="" onchange="fetchLoc(this)">
                         <script>
                             try {
                                 function fetchLoc() {
@@ -184,7 +184,20 @@
             </form>
         </div>
     </div>
-
+    <script>
+        try {
+            function CheckPrevLoc() {
+                const elem = document.getElementById('location');
+                if (sessionStorage.getItem("locationPerm")) {
+                    console.log(`Set the Location based on PageLoad...`);
+                    elem.value =  sessionStorage.getItem("locationPerm");
+                }
+            }
+        }
+        catch (error) {
+            console.error(error)
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
