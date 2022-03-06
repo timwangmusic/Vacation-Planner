@@ -80,6 +80,7 @@ func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCou
 	}
 
 	priorityQueue := &graph.MinPriorityQueueVertex{}
+	deduplicatedPlans := make(map[string]bool)
 
 	for iterator.HasNext() {
 		var candidate PlanningSolution
@@ -90,11 +91,15 @@ func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCou
 			log.Debug(err)
 			continue
 		}
+		if !isDuplicatedPlan(deduplicatedPlans, candidate) {
+			continue
+		}
 		newVertex := graph.Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
 		if priorityQueue.Len() == int(topSolutionsCount) {
 			topVertex := (*priorityQueue)[0]
 			if topVertex.Key < newVertex.Key {
 				heap.Pop(priorityQueue)
+				delete(deduplicatedPlans, jointPlaceIdsForPlan(topVertex.Object.(PlanningSolution)))
 				heap.Push(priorityQueue, newVertex)
 			}
 		} else {
@@ -195,22 +200,22 @@ func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, re
 	return
 }
 
-//TravelPlansDeduplication removes travel plans contain places that are permutations of each other
-func TravelPlansDeduplication(travelPlans []PlanningSolution) []PlanningSolution {
-	duplicatedPlans := make(map[string]bool)
-	results := make([]PlanningSolution, 0)
-
-	for _, travelPlan := range travelPlans {
-		placeIds := make([]string, len(travelPlan.PlaceIDS))
-		copy(placeIds, travelPlan.PlaceIDS)
-		radix.Sort(placeIds)
-		jointPlanIds := strings.Join(placeIds, "_")
-		if _, exists := duplicatedPlans[jointPlanIds]; !exists {
-			results = append(results, travelPlan)
-			duplicatedPlans[jointPlanIds] = true
-		}
+// returns true if the new travel plan can be added to priority queue
+func isDuplicatedPlan(plans map[string]bool, newPlan PlanningSolution) bool {
+	jointPlaceIDs := jointPlaceIdsForPlan(newPlan)
+	if _, exists := plans[jointPlaceIDs]; !exists {
+		plans[jointPlaceIDs] = true
+		return true
 	}
-	return results
+	return false
+}
+
+func jointPlaceIdsForPlan(newPlan PlanningSolution) string {
+	placeIDs := make([]string, len(newPlan.PlaceIDS))
+	copy(placeIDs, newPlan.PlaceIDS)
+	radix.Sort(placeIDs)
+	jointPlaceIDs := strings.Join(placeIDs, "_")
+	return jointPlaceIDs
 }
 
 func NearbySearchWithPlaceView(context context.Context, matcher matching.Matcher, location POI.Location, weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {
