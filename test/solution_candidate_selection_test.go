@@ -4,6 +4,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/solution"
+	"strconv"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ func TestSolutionCandidateSelection(t *testing.T) {
 	places := make([]matching.Place, 0)
 
 	for i := 0; i < 100; i++ {
-		places = append(places, matching.Place{Place: &POI.Place{Rating: float32(i), UserRatingsTotal: 9}, Price: 1})
+		places = append(places, matching.Place{Place: &POI.Place{ID: strconv.Itoa(i), Rating: float32(i), UserRatingsTotal: 9}, Price: 1})
 	}
 
 	iterator := &solution.MultiDimIterator{}
