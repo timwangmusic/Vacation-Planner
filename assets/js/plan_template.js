@@ -18,6 +18,8 @@ function removeLastRow() {
 
 function insertNewRow(start = '8', end = '10', category = 'Visit') {
     const template = document.getElementById("template");
+    const lastColumnOfLastRow = document.querySelector('table tr:last-child td:last-child');
+
     let newRow = template.insertRow(-1);
     let newCell = newRow.insertCell(0);
     let newCell2 = newRow.insertCell(1);
@@ -27,10 +29,14 @@ function insertNewRow(start = '8', end = '10', category = 'Visit') {
     let cafeOption = document.createElement("option");
     let attractionOption = document.createElement("option");
 
-    let startTime = hourDropdown();
+    if (template.rows.length > 2) {
+        start = lastColumnOfLastRow.firstChild.value;
+    }
+
+    let startTime = hourDropdown(start);
     startTime.value = start;
 
-    let endTime = hourDropdown();
+    let endTime = hourDropdown(start);
     endTime.value = end;
 
     cafeOption.text = "Eatery";
@@ -46,10 +52,10 @@ function insertNewRow(start = '8', end = '10', category = 'Visit') {
     newCell3.append(endTime);
 }
 
-function hourDropdown() {
+function hourDropdown(start) {
     let select = document.createElement("select");
     select.classList.add("form-select");
-    for (let hour = 8; hour < 20; hour++) {
+    for (let hour = start; hour < 24; hour++) {
         let option = document.createElement("option");
         option.text = hour.toString();
         select.add(option);
