@@ -1,9 +1,11 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"testing"
+	"github.com/weihesdlegend/Vacation-planner/solution"
 )
 
 func TestScoreFunction(t *testing.T) {
@@ -15,7 +17,7 @@ func TestScoreFunction(t *testing.T) {
 	}, POI.PlaceCategoryVisit)
 
 	expectedScore := 0.2
-	score := matching.Score([]matching.Place{place1})
+	score := matching.Score([]matching.Place{place1}, solution.DefaultPlaceSearchRadius)
 	if score != expectedScore {
 		t.Errorf("Expected score %f, got %f", expectedScore, score)
 		return
@@ -29,7 +31,7 @@ func TestScoreFunction(t *testing.T) {
 	}, POI.PlaceCategoryVisit)
 
 	expectedScore = 0.0
-	score = matching.Score([]matching.Place{place2})
+	score = matching.Score([]matching.Place{place2}, solution.DefaultPlaceSearchRadius)
 	if score != expectedScore {
 		t.Errorf("Expected score %f, got %f", expectedScore, score)
 		return

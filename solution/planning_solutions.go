@@ -34,6 +34,7 @@ type PlanningSolution struct {
 	PlaceURLs       []string            `json:"place_urls"`
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 	Score           float64             `json:"score"`
+	ScoreOld        float64             `json:"score_old"`
 }
 
 func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]matching.Place) (PlanningSolution, error) {
@@ -70,7 +71,9 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 		}
 		res.PlaceURLs = append(res.PlaceURLs, place.GetURL())
 	}
-	res.Score = matching.Score(places)
+	// TODO: replace default search radius with user search input
+	res.Score = matching.Score(places, DefaultPlaceSearchRadius)
+	res.ScoreOld = matching.ScoreOld(places)
 	res.ID = uuid.NewString()
 	return res, nil
 }
@@ -191,6 +194,7 @@ func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, re
 			ID:              candidate.ID,
 			PlaceIDs:        candidate.PlaceIDS,
 			Score:           candidate.Score,
+			ScoreOld:        candidate.ScoreOld,
 			PlaceNames:      candidate.PlaceNames,
 			PlaceLocations:  candidate.PlaceLocations,
 			PlaceAddresses:  candidate.PlaceAddresses,

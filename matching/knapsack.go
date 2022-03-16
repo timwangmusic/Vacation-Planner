@@ -1,8 +1,9 @@
 package matching
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"math"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 const SelectionThreshold = -1
@@ -80,7 +81,7 @@ func Knapsack(places []Place, interval QueryTimeInterval, budget uint) (results 
 				newSolution := make([]Place, len(record.Solution))
 				copy(newSolution, record.Solution)
 				newSolution = append(newSolution, place)
-				newScore := Score(newSolution)
+				newScore := ScoreOld(newSolution)
 				newRecord := knapsackNodeRecord{newTimeSpent, newCost, newScore, newSolution}
 				if alreadyRecord, ok := rt.NewRecord[newKey]; ok {
 					if alreadyRecord.score < newRecord.score {

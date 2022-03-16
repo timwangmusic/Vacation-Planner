@@ -2,10 +2,11 @@
 package matching
 
 import (
+	"math"
+
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/stat"
-	"math"
 )
 
 const (
@@ -13,14 +14,27 @@ const (
 	AvgPricing = PriceDefaultMean
 )
 
-func Score(places []Place) float64 {
+// OLD plan scoring method, use maxDist as the normalisation factor
+// TODO, RW: remove in the future
+func ScoreOld(places []Place) float64 {
 	if len(places) == 1 {
 		return singlePlaceScore(places[0])
 	}
 	distances := calDistances(places)                     // Haversine distances
 	maxDist := math.Max(0.001, calMaxDistance(distances)) // protect against maximum distance being zero
 	avgDistance := stat.Mean(distances, nil) / maxDist    // normalized average distance
+	avgScore := avgPlacesScore(places)
 
+	return avgScore - avgDistance
+}
+
+// Plan scoring method, use constant distance normalisation factor
+func Score(places []Place, distNorm int) float64 {
+	if len(places) == 1 {
+		return singlePlaceScore(places[0])
+	}
+	distances := calDistances(places)                            // Haversine distances
+	avgDistance := stat.Mean(distances, nil) / float64(distNorm) // normalized average distance
 	avgScore := avgPlacesScore(places)
 
 	return avgScore - avgDistance

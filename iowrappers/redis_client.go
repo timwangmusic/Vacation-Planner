@@ -370,6 +370,7 @@ type PlanningSolutionRecord struct {
 	ID              string              `json:"id"`
 	PlaceIDs        []string            `json:"place_ids"`
 	Score           float64             `json:"score"`
+	ScoreOld        float64             `json:"score_old"`
 	PlaceNames      []string            `json:"place_names"`
 	PlaceLocations  [][2]float64        `json:"place_locations"`
 	PlaceAddresses  []string            `json:"place_addresses"`

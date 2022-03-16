@@ -96,6 +96,8 @@ type TripDetailResp struct {
 	ShownActive       []bool
 	TravelDestination string
 	TravelDate        string
+	Score             float64
+	ScoreOld          float64
 }
 
 type PlaceDetailsResp struct {
@@ -485,6 +487,8 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 		ShownActive:       make([]bool, 0),
 		TravelDestination: destination,
 		TravelDate:        travelDate,
+		Score:             cachePlanSolution.Score,
+		ScoreOld:          cachePlanSolution.ScoreOld,
 	}
 	for idx, placeId := range cachePlanSolution.PlaceIDs {
 		placeKey = fixedPlaceKeyPrefix + placeId
