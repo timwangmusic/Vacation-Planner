@@ -1,115 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!--Bootstrap CSS-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+    <!--Scripts-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
     <title>Vacation Planner Sign up</title>
 </head>
-<body>
 
-<div>
+<body>
     <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
-        <a class="nav-link" href="https://github.com/weihesdlegend/Vacation-Planner">About</a>
+        <a class="nav-link" href="https://github.com/weihesdlegend/Vacation-Planner"><i
+                class="fa fa-github-alt fa_custom fa-2x" style='color:#5d9ba8'></i></a>
     </nav>
-    <h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
-        Vacation Planner
-    </h1>
-</div>
-<div class="container">
-    <div class="login-form">
-        <form id="signup-form" style="align-content: center">
-            <h2 class="text-center"></h2>
-            <div class="form-group">
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">
-                            <span class="fa fa-user"></span>
-                        </span>
-                    </div>
-                    <input id="username" type="text" class="form-control" name="username" placeholder="Username" required="required">
-                </div>
+    <h1> Vacation Planner </h1>
+
+    <div class="container mt-3" style="align-content: center">
+        <form id="signup-form">
+            <div class="input-group mb-3">
+                <span class="input-group-text">
+                    <span class="fa fa-user"></span>
+                </span>
+                <input id="username" type="text" class="form-control" name="username" placeholder="Username" required>
             </div>
-            <div class="form-group">
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">
-                            <i class="fa fa-lock"></i>
-                        </span>
-                    </div>
-                    <input id="password" type="password" class="form-control" name="password" placeholder="Password" required="required">
-                </div>
+            <div class="input-group mb-3">
+                <span class="input-group-text">
+                    <i class="fa fa-lock"></i>
+                </span>
+                <input id="password" type="password" class="form-control" name="password" placeholder="Password"
+                    required>
             </div>
-            <div class="form-group">
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">
-                            <span class="fa fa-envelope"></span>
-                        </span>
-                    </div>
-                    <input id="email" type="text" class="form-control" name="email" placeholder="Email" required="required">
-                </div>
+            <div class="input-group mb-3">
+                <span class="input-group-text">
+                    <span class="fa fa-envelope"></span>
+                </span>
+                <input id="email" type="text" class="form-control" name="email" placeholder="Email" required>
             </div>
             <div class="form-group">
                 <button type="submit" class="btn btn-primary login-btn btn-block">Sign up</button>
             </div>
         </form>
     </div>
-</div>
 
-<script>
-    window.addEventListener("load", function () {
-        function sendData() {
-            const XHR = new XMLHttpRequest();
+    <script>
+        window.addEventListener("load", function () {
+            function sendData() {
+                const XHR = new XMLHttpRequest();
 
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-            const email = document.getElementById("email").value;
+                const username = document.getElementById("username").value;
+                const password = document.getElementById("password").value;
+                const email = document.getElementById("email").value;
 
-            XHR.onload = function () {
-                if (XHR.readyState === XHR.DONE) {
-                    if (XHR.status === 201) {
-                        window.location = "/v1/log-in";
-                    } else if (XHR.status === 400) {
-                        const errorMessage = jQuery.parseJSON(XHR.responseText).error;
-                        alert(errorMessage);
-                        if (errorMessage === "user already exists") {
+                XHR.onload = function () {
+                    if (XHR.readyState === XHR.DONE) {
+                        if (XHR.status === 201) {
                             window.location = "/v1/log-in";
+                        } else if (XHR.status === 400) {
+                            const errorMessage = jQuery.parseJSON(XHR.responseText).error;
+                            alert(errorMessage);
+                            if (errorMessage === "user already exists") {
+                                window.location = "/v1/log-in";
+                            }
                         }
                     }
                 }
+
+                XHR.open("POST", "/v1/signup", true);
+
+                XHR.setRequestHeader("Content-Type", "application/json");
+
+                XHR.send(JSON.stringify({
+                    username: username,
+                    password: password,
+                    email: email,
+                }));
             }
 
-            XHR.open("POST", "/v1/signup", true);
+            const form = document.getElementById("signup-form");
 
-            XHR.setRequestHeader("Content-Type", "application/json");
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
 
-            XHR.send(JSON.stringify({
-                username: username,
-                password: password,
-                email: email,
-            }));
-        }
-
-        const form = document.getElementById("signup-form");
-
-        form.addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            sendData();
+                sendData();
+            });
         });
-    });
-</script>
-
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
-        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
-        crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-
+    </script>
 </body>
+
 </html>
