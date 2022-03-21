@@ -11,6 +11,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/crypto/bcrypt"
+	"net/mail"
 	"os"
 	"strings"
 	"sync"
@@ -64,6 +65,10 @@ func (redisClient *RedisClient) CreateUser(context context.Context, userView use
 	redisKeyUsername := strings.Join([]string{UserKeyPrefix, userView.Username}, ":")
 	if redisClient.client.Exists(context, redisKeyUsername).Val() == 1 {
 		return userView, fmt.Errorf("user %s already exists", userView.Username)
+	}
+
+	if _, err := mail.ParseAddress(userView.Email); err != nil {
+		return userView, fmt.Errorf("invalid email: %v", err)
 	}
 
 	passwordEncrypted, _ := bcrypt.GenerateFromPassword([]byte(userView.Password), bcrypt.DefaultCost)

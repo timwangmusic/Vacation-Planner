@@ -53,6 +53,18 @@
         </form>
     </div>
 
+    <div class="d-flex justify-content-center align-items-center">
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="sign-up-error-toast">
+            <div class="toast-header">
+                <strong class="me-auto">Sign-up Failure</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="sign-up-error-toast-body">
+            </div>
+        </div>
+    </div>
+
+
     <script>
         window.addEventListener("load", function () {
             function sendData() {
@@ -68,10 +80,10 @@
                             window.location = "/v1/log-in";
                         } else if (XHR.status === 400) {
                             const errorMessage = jQuery.parseJSON(XHR.responseText).error;
-                            alert(errorMessage);
-                            if (errorMessage === "user already exists") {
-                                window.location = "/v1/log-in";
-                            }
+
+                            const errorToast = document.getElementById("sign-up-error-toast");
+                            document.getElementById("sign-up-error-toast-body").innerText = errorMessage;
+                            new bootstrap.Toast(errorToast).show();
                         }
                     }
                 }
