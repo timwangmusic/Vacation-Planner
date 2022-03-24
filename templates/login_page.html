@@ -52,8 +52,8 @@
                 <span class="input-group-text">
                     <span class="fa fa-user"></span>
                 </span>
-                <input id="username" type="username" class="form-control" name="username" placeholder="Username or Email"
-                    required="required">
+                <input id="username" type="username" class="form-control" name="username"
+                    placeholder="Username or Email" required="required">
             </div>
 
             <div class="input-group mb-3">
@@ -67,6 +67,11 @@
             <button type="submit" class="btn btn-primary login-btn btn-block">Sign in</button>
             <!-- TODO: Add Login buttons for Social media (FB, G, TWT) as a separate PR -->
         </form>
+        <div class="d-flex justify-content-center align-items-center mt-2">
+            <div class="alert alert-primary d-none" type="alert" id="log-in-error-alert">
+                login failed, please check your credentials.
+            </div>
+        </div>
     </div>
 
     <script>
@@ -82,7 +87,7 @@
                         if (XHR.status === 200) {
                             window.location = "/";
                         } else if (XHR.status === 401) {
-                            alert("login failed, please check your credentials");
+                            document.getElementById("log-in-error-alert").classList.remove("d-none");
                         }
                     }
                 }
