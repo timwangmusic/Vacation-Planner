@@ -11,6 +11,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/crypto/bcrypt"
+	"net/mail"
 	"os"
 	"strings"
 	"sync"
@@ -32,24 +33,42 @@ const (
 	UserSavedTravelPlansPrefix = "user_saved_travel_plans"
 	UserSavedTravelPlanPrefix  = "user_saved_travel_plan"
 
-	FindUserByName FindUserBy = "FindUserByName"
-	FindUserByID   FindUserBy = "FindUserByID"
+	//UserNamesKey maps usernames to IDs
+	UserNamesKey = "user_names"
+
+	//UserEmailsKey maps emails to IDs
+	UserEmailsKey = "user_emails"
+
+	FindUserByName  FindUserBy = "FindUserByName"
+	FindUserByID    FindUserBy = "FindUserByID"
+	FindUserByEmail FindUserBy = "FindUserByEmail"
 )
 
 func (redisClient *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, userView user.View) (user.View, error) {
+	client := redisClient.client
 	redisKey := ""
 	switch findUserBy {
 	case FindUserByID:
 		redisKey = strings.Join([]string{UserKeyPrefix, userView.ID}, ":")
 	case FindUserByName:
-		redisKey = strings.Join([]string{UserKeyPrefix, userView.Username}, ":")
+		userId, err := client.HGet(context, UserNamesKey, userView.Username).Result()
+		if err != nil {
+			return user.View{}, err
+		}
+		redisKey = strings.Join([]string{UserKeyPrefix, userId}, ":")
+	case FindUserByEmail:
+		userId, err := client.HGet(context, UserEmailsKey, userView.Email).Result()
+		if err != nil {
+			return user.View{}, err
+		}
+		redisKey = strings.Join([]string{UserKeyPrefix, userId}, ":")
 	}
 
-	if redisClient.client.Exists(context, redisKey).Val() == 0 {
+	if client.Exists(context, redisKey).Val() == 0 {
 		return userView, errors.New("user does not exist")
 	}
 
-	u := redisClient.client.HGetAll(context, redisKey).Val()
+	u := client.HGetAll(context, redisKey).Val()
 	userView.ID = u["id"]
 	userView.Username = u["username"]
 	userView.Password = u["password"]
@@ -60,10 +79,18 @@ func (redisClient *RedisClient) FindUser(context context.Context, findUserBy Fin
 }
 
 func (redisClient *RedisClient) CreateUser(context context.Context, userView user.View) (user.View, error) {
-	// users can only provide username, instead of an ID
-	redisKeyUsername := strings.Join([]string{UserKeyPrefix, userView.Username}, ":")
-	if redisClient.client.Exists(context, redisKeyUsername).Val() == 1 {
+	client := redisClient.client
+
+	if client.HExists(context, UserNamesKey, userView.Username).Val() {
 		return userView, fmt.Errorf("user %s already exists", userView.Username)
+	}
+
+	if client.HExists(context, UserEmailsKey, userView.Email).Val() {
+		return userView, fmt.Errorf("user %s already exists", userView.Email)
+	}
+
+	if _, err := mail.ParseAddress(userView.Email); err != nil {
+		return userView, fmt.Errorf("invalid email: %v", err)
 	}
 
 	passwordEncrypted, _ := bcrypt.GenerateFromPassword([]byte(userView.Password), bcrypt.DefaultCost)
@@ -76,22 +103,41 @@ func (redisClient *RedisClient) CreateUser(context context.Context, userView use
 		"password":   string(passwordEncrypted),
 		"email":      userView.Email,
 	}
-	_, err := redisClient.client.HMSet(context, redisKeyUsername, userData).Result()
-	if err != nil {
+
+	// username is required
+	if _, err := client.HSet(context, UserNamesKey, userView.Username, userID).Result(); err != nil {
 		return userView, err
 	}
 
+	if userView.Email != "" {
+		if _, err := client.HSet(context, UserEmailsKey, userView.Email, userID).Result(); err != nil {
+			return userView, err
+		}
+	}
+
 	redisKeyUserID := strings.Join([]string{UserKeyPrefix, userID}, ":")
-	_, err = redisClient.client.HMSet(context, redisKeyUserID, userData).Result()
+	_, err := client.HMSet(context, redisKeyUserID, userData).Result()
 	userView.ID = userID
 	return userView, err
 }
 
 func (redisClient *RedisClient) Authenticate(context context.Context, credential user.Credential) (string, time.Time, error) {
 	userView := user.View{Username: credential.Username}
-	u, err := redisClient.FindUser(context, FindUserByName, userView)
+	var u user.View
+	var err error
+	var loggedInByUsername bool
+	u, err = redisClient.FindUser(context, FindUserByName, userView)
+	loggedInByUsername = true
 	if err != nil {
-		return "", time.Now(), err
+		loggedInByUsername = false
+	}
+
+	if !loggedInByUsername {
+		userView.Email = credential.Username
+		u, err = redisClient.FindUser(context, FindUserByEmail, userView)
+		if err != nil {
+			return "", time.Now(), err
+		}
 	}
 
 	pswCompErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(credential.Password))

@@ -51,7 +51,11 @@
                 <button type="submit" class="btn btn-primary login-btn btn-block">Sign up</button>
             </div>
         </form>
+        <div class="d-flex justify-content-center align-items-center mt-2">
+            <div class="alert alert-primary d-none" type="alert" id="sign-up-error-alert"></div>
+        </div>
     </div>
+
 
     <script>
         window.addEventListener("load", function () {
@@ -68,10 +72,10 @@
                             window.location = "/v1/log-in";
                         } else if (XHR.status === 400) {
                             const errorMessage = jQuery.parseJSON(XHR.responseText).error;
-                            alert(errorMessage);
-                            if (errorMessage === "user already exists") {
-                                window.location = "/v1/log-in";
-                            }
+
+                            const signUpError = document.getElementById("sign-up-error-alert");
+                            signUpError.innerText = errorMessage;
+                            signUpError.classList.remove("d-none");
                         }
                     }
                 }
