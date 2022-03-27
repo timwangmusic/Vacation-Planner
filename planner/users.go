@@ -91,9 +91,14 @@ func (planner MyPlanner) UserLogin(context *gin.Context) {
 		return
 	}
 
-	token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(context, c)
+	planner.loginHelper(context, c)
+}
+
+func (planner MyPlanner) loginHelper(context *gin.Context, c user.Credential) {
+	logger := iowrappers.Logger
+	_, token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(context, c)
 	if loginErr != nil {
-		log.Debug(loginErr)
+		logger.Debug(loginErr)
 		context.JSON(http.StatusUnauthorized, UserLoginResponse{
 			Username: c.Username,
 			Jwt:      "",
@@ -106,12 +111,6 @@ func (planner MyPlanner) UserLogin(context *gin.Context) {
 		Name:    "JWT",
 		Value:   token,
 		Expires: tokenExpirationTime,
-	})
-
-	context.JSON(http.StatusOK, UserLoginResponse{
-		Username: c.Username,
-		Jwt:      token,
-		Status:   "you are logged in",
 	})
 }
 

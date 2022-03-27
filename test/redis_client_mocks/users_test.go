@@ -22,7 +22,7 @@ func TestUserAuthentication(t *testing.T) {
 	}
 
 	// authenticate the user
-	_, _, err := RedisClient.Authenticate(RedisContext, user.Credential{
+	_, _, _, err := RedisClient.Authenticate(RedisContext, user.Credential{
 		Username: username,
 		Password: password,
 	})
