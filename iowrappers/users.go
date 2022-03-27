@@ -132,15 +132,14 @@ func (redisClient *RedisClient) Authenticate(context context.Context, credential
 	userView := user.View{Username: credential.Username, Email: credential.Email}
 	var u user.View
 	var err error
-	var loggedInByUsername bool
+	var loggedInByEmail bool
 	u, err = redisClient.FindUser(context, FindUserByName, userView)
-	loggedInByUsername = true
 	if err != nil {
 		Logger.Debugf("cannot find user by username %s, error: %v", credential.Username, err)
-		loggedInByUsername = false
+		loggedInByEmail = true
 	}
 
-	if !loggedInByUsername {
+	if loggedInByEmail {
 		Logger.Debugf("user view: %v", u)
 		userView.Email = credential.Email
 		if userView.Email == "" {

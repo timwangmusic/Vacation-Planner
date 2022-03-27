@@ -596,8 +596,11 @@ func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
 		}
 
 		u := user.Credential{Email: userCredentials.Email, WithOAuth: true}
-		planner.loginHelper(ctx, u)
-		ctx.Redirect(http.StatusPermanentRedirect, "/v1")
+		if planner.loginHelper(ctx, u, false) {
+			ctx.Redirect(http.StatusPermanentRedirect, "/v1")
+		} else {
+			ctx.Redirect(http.StatusPermanentRedirect, "/v1/log-in")
+		}
 	}
 }
 

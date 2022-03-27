@@ -91,20 +91,24 @@ func (planner MyPlanner) UserLogin(context *gin.Context) {
 		return
 	}
 
-	planner.loginHelper(context, c)
+	planner.loginHelper(context, c, true)
 }
 
-func (planner MyPlanner) loginHelper(context *gin.Context, c user.Credential) {
+func (planner MyPlanner) loginHelper(context *gin.Context, c user.Credential, frontEndLogin bool) (loggedIn bool) {
 	logger := iowrappers.Logger
+
 	_, token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(context, c)
 	if loginErr != nil {
 		logger.Debug(loginErr)
-		context.JSON(http.StatusUnauthorized, UserLoginResponse{
-			Username: c.Username,
-			Jwt:      "",
-			Status:   "unauthorized",
-		})
-		return
+
+		if frontEndLogin {
+			context.JSON(http.StatusUnauthorized, UserLoginResponse{
+				Username: c.Username,
+				Jwt:      "",
+				Status:   "Unauthorized",
+			})
+		}
+		return false
 	}
 
 	http.SetCookie(context.Writer, &http.Cookie{
@@ -112,6 +116,7 @@ func (planner MyPlanner) loginHelper(context *gin.Context, c user.Credential) {
 		Value:   token,
 		Expires: tokenExpirationTime,
 	})
+	return true
 }
 
 func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLevel user.Level) (user.View, error) {
