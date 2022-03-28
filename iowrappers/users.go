@@ -20,6 +20,13 @@ import (
 
 const UserKeyPrefix = "user"
 
+type GoogleOAuthResponse struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	VerifiedEmail bool   `json:"verified_email"`
+	PictureURL    string `json:"picture"`
+}
+
 type PlanningEvent struct {
 	User      string `json:"user"`
 	City      string `json:"city"`
@@ -121,29 +128,36 @@ func (redisClient *RedisClient) CreateUser(context context.Context, userView use
 	return userView, err
 }
 
-func (redisClient *RedisClient) Authenticate(context context.Context, credential user.Credential) (string, time.Time, error) {
-	userView := user.View{Username: credential.Username}
+func (redisClient *RedisClient) Authenticate(context context.Context, credential user.Credential) (user.View, string, time.Time, error) {
+	userView := user.View{Username: credential.Username, Email: credential.Email}
 	var u user.View
 	var err error
-	var loggedInByUsername bool
+	var loggedInByEmail bool
 	u, err = redisClient.FindUser(context, FindUserByName, userView)
-	loggedInByUsername = true
 	if err != nil {
-		loggedInByUsername = false
+		Logger.Debugf("cannot find user by username %s, error: %v", credential.Username, err)
+		loggedInByEmail = true
 	}
 
-	if !loggedInByUsername {
-		userView.Email = credential.Username
+	if loggedInByEmail {
+		Logger.Debugf("user view: %v", u)
+		userView.Email = credential.Email
+		if userView.Email == "" {
+			userView.Email = credential.Username
+		}
 		u, err = redisClient.FindUser(context, FindUserByEmail, userView)
+		Logger.Debugf("cannot find user by email %s, error: %v", credential.Email, err)
 		if err != nil {
-			return "", time.Now(), err
+			return u, "", time.Now(), err
 		}
 	}
 
-	pswCompErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(credential.Password))
-	if pswCompErr != nil { // wrong password
-		err = errors.New("wrong password")
-		return "", time.Now(), err
+	if !credential.WithOAuth {
+		pswCompErr := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(credential.Password))
+		if pswCompErr != nil { // wrong password
+			err = errors.New("wrong password")
+			return u, "", time.Now(), err
+		}
 	}
 
 	lastLoginTime := time.Now()
@@ -157,7 +171,7 @@ func (redisClient *RedisClient) Authenticate(context context.Context, credential
 	})
 
 	token, jwtSignErr := jwtToken.SignedString([]byte(jwtSigningSecret))
-	return token, tokenExpirationTime, jwtSignErr
+	return u, token, tokenExpirationTime, jwtSignErr
 }
 
 func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView user.View, planView *user.TravelPlanView) error {

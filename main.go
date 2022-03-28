@@ -17,13 +17,16 @@ const numWorkers = 5
 
 type Config struct {
 	Server struct {
+		Domain     string `envconfig:"DOMAIN"`
 		ServerPort string `envconfig:"PORT" default:"10000"`
 	}
 	Redis struct {
 		RedisUrl        string `envconfig:"REDIS_URL" default:"redis://localhost:6379"`
 		RedisStreamName string `default:"stream:planning_api_usage"`
 	}
-	MapsClientApiKey string `default:"YOUR_GOOGLE_API_KEY" split_words:"true"`
+	MapsClientApiKey        string `default:"YOUR_GOOGLE_API_KEY" split_words:"true"`
+	GoogleOAuthClientID     string `envconfig:"GOOGLE_OAUTH_CLIENT_ID"`
+	GoogleOAuthClientSecret string `envconfig:"GOOGLE_OAUTH_CLIENT_SECRET"`
 }
 
 type Configurations struct {
@@ -66,7 +69,7 @@ func RunServer() {
 
 	myPlanner := planner.MyPlanner{}
 
-	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs))
+	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs), conf.GoogleOAuthClientID, conf.GoogleOAuthClientSecret, conf.Server.Domain)
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
 	c := make(chan os.Signal, 1)
