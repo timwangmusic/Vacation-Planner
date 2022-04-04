@@ -30,6 +30,15 @@ setDateToday();
     )
 })(jQuery);
 
+$(document).ready(
+    function CheckPreviousLocation() {
+        const elem = document.getElementById('location');
+        if (sessionStorage.getItem("locationPerm")) {
+            console.log(`Set the Location based on PageLoad...`);
+            elem.value =  sessionStorage.getItem("locationPerm");
+        }
+});
+
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut
 )

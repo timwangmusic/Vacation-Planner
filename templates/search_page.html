@@ -17,6 +17,7 @@
         integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
 
     <link href="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <script src="https://kit.fontawesome.com/0ee567c03b.js" crossorigin="anonymous"></script>
     <title>vacation planner</title>
 </head>
@@ -136,23 +137,19 @@
 
                     <div class="flex-fill">
                         <input class="form-control border-0" type="search" id="location" placeholder="Search"
-                            aria-label="Search" name="location" value="" onchange="fetchLoc(this)">
-                        <script>
-                            try {
-                                function fetchLoc() {
-                                    const loc = document.getElementById('location');
-                                    if (loc) {
-                                        sessionStorage.setItem("locationPerm", loc.value)
-                                        console.log(`The location is ${loc.value}`);
-                                    }
-                                }
-                            }
-                            catch (error) {
-                                console.error(error)
-                            }
-                        </script>
+                            aria-label="Search" name="location" value="" onchange="fetchLocation(this)"> 
                     </div>
-                    <div class="fixedwidthicon">
+
+                    <script>
+                        function fetchLocation() {
+                            const loc = document.getElementById('location');
+                            if (loc) {
+                                sessionStorage.setItem("locationPerm", loc.value)
+                                console.log(`The location is ${loc.value}`)
+                            }
+                        }
+                    </script>
+                            <div class="fixedwidthicon">
                         <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
                             role="status" aria-hidden="true"></span>
                     </div>
@@ -192,18 +189,7 @@
     <script type="module" src="assets/js/user.js"></script>
     <script type="module" src="assets/js/utils.js"></script>
     <script type="module" src="assets/js/search.js"></script>
-
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script>
-        $(document).ready(
-            function CheckPrevLoc() {
-                const elem = document.getElementById('location');
-                if (sessionStorage.getItem("locationPerm")) {
-                    console.log(`Set the Location based on PageLoad...`);
-                    elem.value =  sessionStorage.getItem("locationPerm");
-                }
-            });
-    </script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 </body>
 
