@@ -39,7 +39,7 @@ type PlanningRequest struct {
 type PlanningResponse struct {
 	Solutions []PlanningSolution
 	Err       error
-	ErrorCode uint
+	ErrorCode int
 }
 
 //SlotRequest represents the properties of each row in the tabular travel plan, although not all of these are displayed to users
@@ -109,9 +109,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 			response.Err = err
 			if err.Error() == CategorizedPlaceIterInitFailureErrMsg || len(solutions) == 0 {
 				response.ErrorCode = NoValidSolution
-				if cacheErr := invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey}); cacheErr != nil {
-					iowrappers.Logger.Debug(cacheErr.Error())
-				}
+				invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey})
 			} else {
 				response.ErrorCode = InternalError
 			}
@@ -137,8 +135,11 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 	iowrappers.Logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for request %+v.", context.Value(iowrappers.ContextRequestIdKey), len(response.Solutions), *request)
 }
 
-func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowrappers.RedisClient, slotSolutionRedisKeys []string) error {
-	return redisClient.RemoveKeys(context, slotSolutionRedisKeys)
+func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
+	if err := redisClient.RemoveKeys(context, slotSolutionRedisKeys); err != nil {
+		iowrappers.Logger.Error(err)
+	}
+	return
 }
 
 // GetStandardRequest generates a standard request while we seek a better way to represent complex REST requests

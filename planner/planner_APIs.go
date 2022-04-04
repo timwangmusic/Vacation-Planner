@@ -73,7 +73,7 @@ type PlanningResponse struct {
 	TravelPlans       []TravelPlan `json:"travel_plans"`
 	TripDetailsURL    []string     `json:"trip_details_url"`
 	Err               error        `json:"error"`
-	StatusCode        uint         `json:"status_code"`
+	StatusCode        int          `json:"status_code"`
 }
 
 type PlanningPostRequest struct {
