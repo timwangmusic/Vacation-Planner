@@ -34,7 +34,7 @@ $(document).ready(
     function CheckPreviousLocation() {
         const elem = document.getElementById('location');
         if (sessionStorage.getItem("locationPerm")) {
-            console.log(`Set the Location based on PageLoad...`);
+            console.log(`Set the Location based on PageLoad...` + sessionStorage.getItem("locationPerm"));
             elem.value =  sessionStorage.getItem("locationPerm");
         }
 });
