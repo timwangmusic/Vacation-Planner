@@ -1,196 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!--Bootstrap CSS-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/css/styles.css">
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
     <!--Google Font Icon CSS-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
-        integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
-
+          integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
     <link href="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <title>vacation planner</title>
 </head>
-
 <body>
-    <div class="modal fade" id="logout-confirm" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title" id="staticBackdropLabel">Log out</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Finished using the Vacation Planner?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="logout-confirm-btn">Confirm</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
+<div class="modal fade" id="logout-confirm" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="staticBackdropLabel">Log out</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Finished using the Vacation Planner?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="logout-confirm-btn">Confirm</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
         </div>
     </div>
-
-    <!--navigation bar-->
-    <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
-        <div class="container-fluid">
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-items"
+</div>
+<!--navigation bar-->
+<nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-items"
                 aria-controls="navbar-items" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbar-items">
-                <ul class="nav">
-                    <li class="nav-item">
-                        <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner"><i class="fa fa-github-alt fa_custom fa-2x" style='color:#5d9ba8'></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link link-success" href="/v1/template"><i class="fa fa-edit fa-2x" style='color:#5d9ba8'></i></a>
-                    </li>
-                    <li class="nav-item" id="signup">
-                        <a class="nav-link" href="/v1/sign-up"><i class="fa fa-user-plus fa-2x" style='color:#5d9ba8'></i> </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="dropdown">
-                <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar-items">
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner"><i class="fa fa-github-alt fa_custom fa-2x" style='color:#5d9ba8'></i></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link link-success" href="/v1/template"><i class="fa fa-edit fa-2x" style='color:#5d9ba8'></i></a>
+                </li>
+                <li class="nav-item" id="signup">
+                    <a class="nav-link" href="/v1/sign-up"><i class="fa fa-user-plus fa-2x" style='color:#5d9ba8'></i> </a>
+                </li>
+            </ul>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
                     data-bs-toggle="dropdown" aria-expanded="false">guest
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" style="min-width:120px;" aria-labelledby="user-profile">
-                    <li>
-                        <a class="dropdown-item p-0" id="profile">
-                            <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class="material-icons">
-                                    account_circle
-                                </span>
-                                <span> Profile </span>
-                            </div>
-                        </a>
-                    </li>
-                    <li id="login-button-item" class="d-none">
-                        <a class="dropdown-item p-0" href="/v1/log-in">
-                            <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class="material-icons">
-                                    login
-                                </span>
-                                <span>Login</span>
-                            </div>
-                        </a>
-                    </li>
-                    <li id="logout-button-item">
-                        <a class="dropdown-item p-0" data-bs-toggle="modal" data-bs-target="#logout-confirm" href="#">
-                            <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class=" material-icons">
-                                    logout
-                                </span>
-                                <span>Logout</span>
-                            </div>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" style="min-width:120px;" aria-labelledby="user-profile">
+                <li>
+                    <a class="dropdown-item p-0" id="profile">
+                        <div class="container d-flex align-items-center justify-content-evenly p-0">
+                           <span class="material-icons">
+                           account_circle
+                           </span>
+                            <span> Profile </span>
+                        </div>
+                    </a>
+                </li>
+                <li id="login-button-item" class="d-none">
+                    <a class="dropdown-item p-0" href="/v1/log-in">
+                        <div class="container d-flex align-items-center justify-content-evenly p-0">
+                           <span class="material-icons">
+                           login
+                           </span>
+                            <span>Login</span>
+                        </div>
+                    </a>
+                </li>
+                <li id="logout-button-item">
+                    <a class="dropdown-item p-0" data-bs-toggle="modal" data-bs-target="#logout-confirm" href="#">
+                        <div class="container d-flex align-items-center justify-content-evenly p-0">
+                           <span class=" material-icons">
+                           logout
+                           </span>
+                            <span>Logout</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
         </div>
-    </nav>
-
-    <h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
-        Vacation Planner
-    </h1>
-
-    <!--forms and inputs-->
-    <div class="container mt-3" style="align-items: center">
-        <div class="row">
-            <div class="column">
-                <span class="d-inline-block float-end" data-bs-toggle="tooltip" title="Get current location">
-                    <button class="btn btn-outline-info btn-sm" id="autofill">
-                        <i class="fas fa-location-arrow fa-sm"></i>
-                    </button>
-                </span>
-            </div>
+    </div>
+</nav>
+<h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
+    Vacation Planner
+</h1>
+<!--forms and inputs-->
+<div class="container mt-3" style="align-items: center">
+    <div class="row">
+        <div class="column">
+               <span class="d-inline-block float-end" data-bs-toggle="tooltip" title="Get current location">
+               <button class="btn btn-outline-info btn-sm" id="autofill">
+               <i class="fas fa-location-arrow fa-sm"></i>
+               </button>
+               </span>
         </div>
-
-        <div class="row mt-1">
-            <form class="row d-flex flex-column flex-sm-row align-items-start align-items-sm-center pe-0"
-                action="/v1/plans" method="get">
-                <div class="col ps-1 pe-0 mt-1" id="dateDiv">
-                    <input class="form-control border border-secondary" type="date" id="datepicker" name="date"
-                        value="2020-02-29">
+    </div>
+    <div class="row mt-1">
+        <form class="row d-flex flex-column flex-sm-row align-items-start align-items-sm-center pe-0"
+              action="/v1/plans" method="get">
+            <div class="col ps-1 pe-0 mt-1" id="dateDiv">
+                <input class="form-control border border-secondary" type="date" id="datepicker" name="date"
+                       value="2020-02-29">
+            </div>
+            <div class="container border border-secondary rounded-1 d-flex flex-row align-items-center col ms-1 mt-1"
+                 id="locationDiv">
+                <div class="fixedwidthicon">
+                    <i id="searchIcon" class="bi bi-search mx-1 visible"></i>
                 </div>
-
-                <div class="container border border-secondary rounded-1 d-flex flex-row align-items-center col ms-1 mt-1"
-                    id="locationDiv">
-                    <div class="fixedwidthicon">
-                        <i id="searchIcon" class="bi bi-search mx-1 visible"></i>
-                    </div>
-
-                    <div class="flex-fill">
-                        <input class="form-control border-0" type="search" id="location" placeholder="Search"
-                            aria-label="Search" name="location" value="Los Angeles, CA, USA" onchange="fetchLocation(this)"> 
-                    </div>
-
+                <div class="flex-fill">
+                    <input class="form-control border-0" type="search" id="location" placeholder="Search"
+                           aria-label="Search" name="location" value="Los Angeles, CA, USA" onchange="fetchLocation(this)">
+                </div>
+                <script>
+                    function fetchLocation() {
+                        const loc = document.getElementById('location');
+                        if (loc) {
+                            sessionStorage.setItem("locationPerm", loc.value)
+                            console.log(`The location is ${loc.value}`)
+                        }
+                    }
+                </script>
+                <div class="fixedwidthicon">
+                     <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
+                           role="status" aria-hidden="true"></span>
+                </div>
+            </div>
+            <div class="ps-1 pe-0 mt-1" id="priceDiv">
+                <select name="price" class="form-select border border-secondary"
+                        aria-label=".form-select-sm example" id="priceToSelect" onchange="randomPriceRange(this)">
+                    <option value="0">$</option>
+                    <option value="1">$$</option>
+                    <option value="2">$$$</option>
+                    <option value="3">$$$$</option>
+                    <option value="4">Max</option>
+                    <option value="0,1,2,3,4">Surprise</option>
                     <script>
-                        function fetchLocation() {
-                            const loc = document.getElementById('location');
-                            if (loc) {
-                                sessionStorage.setItem("locationPerm", loc.value)
-                                console.log(`The location is ${loc.value}`)
+                        function randomPriceRange() {
+                            const item = document.getElementById('priceToSelect');
+                            const valueSel = item.options[item.selectedIndex].text;
+                            if (valueSel === "Surprise") {
+                                const index = Math.floor(Math.random() * 5);
+                                item.value = [0, 1, 2, 3, 4][index];
                             }
                         }
                     </script>
-                            <div class="fixedwidthicon">
-                        <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
-                            role="status" aria-hidden="true"></span>
-                    </div>
-
-                </div>
-
-                <div class="ps-1 pe-0 mt-1" id="priceDiv">
-                    <select name="price" class="form-select border border-secondary"
-                        aria-label=".form-select-sm example" id="priceToSelect" onchange="randomPriceRange(this)">
-                        <option value="0">$</option>
-                        <option value="1">$$</option>
-                        <option value="2">$$$</option>
-                        <option value="3">$$$$</option>
-                        <option value="4">Max</option>
-                        <option value="0,1,2,3,4">Surprise</option>
-                        <script>
-                            function randomPriceRange() {
-                                const item = document.getElementById('priceToSelect');
-                                const valueSel = item.options[item.selectedIndex].text;
-                                if (valueSel === "Surprise") {
-                                    const index = Math.floor(Math.random() * 5);
-                                    item.value = [0, 1, 2, 3, 4][index];
-                                }
-                            }
-                        </script>
-                    </select>
-                </div>
-            </form>
-        </div>
+                </select>
+            </div>
+        </form>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-    <script type="module" src="assets/js/jwt-decode.js"></script>
-    <script type="module" src="assets/js/user.js"></script>
-    <script type="module" src="assets/js/utils.js"></script>
-    <script type="module" src="assets/js/search.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script src="https://kit.fontawesome.com/0ee567c03b.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+<script type="module" src="assets/js/jwt-decode.js"></script>
+<script type="module" src="assets/js/user.js"></script>
+<script type="module" src="assets/js/utils.js"></script>
+<script type="module" src="assets/js/search.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="https://kit.fontawesome.com/0ee567c03b.js" crossorigin="anonymous"></script>
 </body>
-
 </html>
