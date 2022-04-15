@@ -33,6 +33,20 @@ function locateMe() {
     }
 }
 
+function preciseLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            async function (location) {
+                const latitude = location.coords.latitude;
+                const longitude = location.coords.longitude;
+                console.log(`latitude ${latitude} and longitude: ${longitude}`);
+                document.getElementById("location").value = longitude.toString() + ', ' + latitude.toString();
+                document.getElementById("precise-location-flag").value = "true";
+            }, (error) => { console.log(error) }
+        )
+    }
+}
+
 // set today's date for a datepicker element
 function setDateToday() {
     const today = new Date();
@@ -48,4 +62,4 @@ function setDateToday() {
     document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
 }
 
-export{ locateMe, setDateToday }
+export { locateMe, setDateToday, preciseLocation }

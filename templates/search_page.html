@@ -51,13 +51,16 @@
             <div class="collapse navbar-collapse" id="navbar-items">
                 <ul class="nav">
                     <li class="nav-item">
-                        <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner"><i class="fa fa-github-alt fa_custom fa-2x" style='color:#5d9ba8'></i></a>
+                        <a class="nav-link link-info" href="https://github.com/weihesdlegend/Vacation-Planner"><i
+                                class="fa fa-github-alt fa_custom fa-2x" style='color:#5d9ba8'></i></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link link-success" href="/v1/template"><i class="fa fa-edit fa-2x" style='color:#5d9ba8'></i></a>
+                        <a class="nav-link link-success" href="/v1/template"><i class="fa fa-edit fa-2x"
+                                style='color:#5d9ba8'></i></a>
                     </li>
                     <li class="nav-item" id="signup">
-                        <a class="nav-link" href="/v1/sign-up"><i class="fa fa-user-plus fa-2x" style='color:#5d9ba8'></i> </a>
+                        <a class="nav-link" href="/v1/sign-up"><i class="fa fa-user-plus fa-2x"
+                                style='color:#5d9ba8'></i> </a>
                     </li>
                 </ul>
             </div>
@@ -111,7 +114,12 @@
     <!--forms and inputs-->
     <div class="container mt-3" style="align-items: center">
         <div class="row">
-            <div class="column">
+            <div class="col">
+                <button class="btn btn-sm btn-outline-info" id="use-precise-location">
+                    <i class="fa fa-map-marker"></i>
+                </button>
+            </div>
+            <div class="col">
                 <span class="d-inline-block float-end" data-bs-toggle="tooltip" title="Get current location">
                     <button class="btn btn-outline-info btn-sm" id="autofill">
                         <i class="fas fa-location-arrow fa-sm"></i>
@@ -121,8 +129,8 @@
         </div>
 
         <div class="row mt-1">
-            <form class="row d-flex flex-column flex-sm-row align-items-start align-items-sm-center pe-0"
-                action="/v1/plans" method="get">
+            <form class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center pe-0" action="/v1/plans"
+                method="get">
                 <div class="col ps-1 pe-0 mt-1" id="dateDiv">
                     <input class="form-control border border-secondary" type="date" id="datepicker" name="date"
                         value="2020-02-29">
@@ -146,14 +154,16 @@
 
                 </div>
 
+                <input type="hidden" name="precise" value="false" id="precise-location-flag">
+
                 <div class="ps-1 pe-0 mt-1" id="priceDiv">
                     <select name="price" class="form-select border border-secondary"
                         aria-label=".form-select-sm example" id="priceToSelect" onchange="randomPriceRange(this)">
-                        <option value="0">$</option>
-                        <option value="1">$$</option>
-                        <option value="2">$$$</option>
-                        <option value="3">$$$$</option>
-                        <option value="4">Max</option>
+                        <option value="2">$$</option>
+                        <option value="3">$$$</option>
+                        <option value="4">$$$$</option>
+                        <option value="1">$</option>
+                        <option value="0">Free</option>
                         <option value="0,1,2,3,4">Surprise</option>
                         <script>
                             function randomPriceRange() {
@@ -166,6 +176,9 @@
                             }
                         </script>
                     </select>
+                </div>
+                <div class="ps-1 pe-0 mt-1">
+                    <button class="btn btn-outline-primary" type="submit">search</button>
                 </div>
             </form>
         </div>
