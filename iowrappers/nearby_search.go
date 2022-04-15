@@ -29,6 +29,8 @@ type PlaceSearchRequest struct {
 	MinNumResults uint
 
 	BusinessStatus POI.BusinessStatus
+	// true if using precise geolocation instead of using a grander administrative area
+	UsePreciseLocation bool
 }
 
 func GoogleMapsNearbySearchWrapper(mapsClient MapsClient, location POI.Location, placeType string, radius uint, pageToken string) (resp maps.PlacesSearchResponse, err error) {

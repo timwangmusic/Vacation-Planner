@@ -27,13 +27,14 @@ const (
 )
 
 type PlanningRequest struct {
-	Location     POI.Location  `json:"location"`
-	Slots        []SlotRequest `json:"slots"`
-	Weekday      POI.Weekday
-	TravelDate   string
-	NumPlans     int64
-	SearchRadius uint
-	PriceLevel   POI.PriceLevel
+	Location        POI.Location  `json:"location"`
+	Slots           []SlotRequest `json:"slots"`
+	Weekday         POI.Weekday
+	TravelDate      string
+	NumPlans        int64
+	SearchRadius    uint
+	PriceLevel      POI.PriceLevel
+	PreciseLocation bool
 }
 
 type PlanningResponse struct {
@@ -87,7 +88,7 @@ func PlanningSolutionsRedisRequest(location POI.Location, placeCategories []POI.
 }
 
 func (solver *Solver) Solve(context context.Context, redisClient iowrappers.RedisClient, request *PlanningRequest, response *PlanningResponse) {
-	if !solver.ValidateLocation(context, &request.Location) {
+	if !request.PreciseLocation && !solver.ValidateLocation(context, &request.Location) {
 		response.Err = errors.New("invalid travel destination")
 		response.ErrorCode = InvalidRequestLocation
 		return

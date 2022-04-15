@@ -37,7 +37,10 @@ func toPriceLevel(priceLevel string) POI.PriceLevel {
 }
 
 // validate location is in the format of city,country
-func validateLocation(location string) error {
+func validateLocation(location string, precise bool) error {
+	if precise {
+		return nil
+	}
 	if len(location) == 0 {
 		return errors.New("location cannot be empty")
 	}
