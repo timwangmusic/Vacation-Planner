@@ -113,15 +113,17 @@
 
     <!--forms and inputs-->
     <div class="container mt-3" style="align-items: center">
-        <div class="row">
-            <div class="col">
-                <button class="btn btn-sm btn-outline-info" id="use-precise-location">
-                    <i class="fa fa-map-marker"></i>
-                </button>
+        <div class="d-flex justify-content-end">
+            <div>
+                <span data-bs-toggle="tooltip" title="Use Precise location">
+                    <button class="btn btn-sm btn-outline-info square-button" id="use-precise-location">
+                        <i class="fas fa-map-marker fa-sm"></i>
+                    </button>
+                </span>
             </div>
-            <div class="col">
-                <span class="d-inline-block float-end" data-bs-toggle="tooltip" title="Get current location">
-                    <button class="btn btn-outline-info btn-sm" id="autofill">
+            <div class="ms-1">
+                <span data-bs-toggle="tooltip" title="Get current location">
+                    <button class="btn btn-sm btn-outline-info square-button" id="autofill">
                         <i class="fas fa-location-arrow fa-sm"></i>
                     </button>
                 </span>
@@ -129,8 +131,8 @@
         </div>
 
         <div class="row mt-1">
-            <form class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center pe-0" action="/v1/plans"
-                method="get">
+            <form class="row d-flex flex-column flex-sm-row align-items-start align-items-sm-center pe-0"
+                action="/v1/plans" method="get">
                 <div class="col ps-1 pe-0 mt-1" id="dateDiv">
                     <input class="form-control border border-secondary" type="date" id="datepicker" name="date"
                         value="2020-02-29">
@@ -156,7 +158,7 @@
 
                 <input type="hidden" name="precise" value="false" id="precise-location-flag">
 
-                <div class="ps-1 pe-0 mt-1" id="priceDiv">
+                <div class="col-sm-2 ps-1 pe-0 mt-1" id="priceDiv">
                     <select name="price" class="form-select border border-secondary"
                         aria-label=".form-select-sm example" id="priceToSelect" onchange="randomPriceRange(this)">
                         <option value="2">$$</option>
@@ -177,7 +179,7 @@
                         </script>
                     </select>
                 </div>
-                <div class="ps-1 pe-0 mt-1">
+                <div class="d-flex flex-row-reverse ps-1 pe-0 mt-1">
                     <button class="btn btn-outline-primary" type="submit">search</button>
                 </div>
             </form>
