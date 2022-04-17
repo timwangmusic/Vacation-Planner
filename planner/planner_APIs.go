@@ -2,7 +2,9 @@ package planner
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"golang.org/x/oauth2/google"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -22,6 +24,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -29,6 +32,8 @@ const (
 	jobQueueBufferSize = 1000
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
+
+var geocodes map[string]string
 
 var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
 	POI.PlaceCategoryEatery: POI.PlaceIconEatery,
@@ -46,6 +51,7 @@ type MyPlanner struct {
 	PlanningEvents      chan iowrappers.PlanningEvent
 	Environment         string
 	Configs             map[string]interface{}
+	OAuth2Config        *oauth2.Config
 }
 
 type TimeSectionPlace struct {
@@ -67,7 +73,7 @@ type PlanningResponse struct {
 	TravelPlans       []TravelPlan `json:"travel_plans"`
 	TripDetailsURL    []string     `json:"trip_details_url"`
 	Err               error        `json:"error"`
-	StatusCode        uint         `json:"status_code"`
+	StatusCode        int          `json:"status_code"`
 }
 
 type PlanningPostRequest struct {
@@ -81,6 +87,8 @@ type PlanningPostRequest struct {
 }
 
 type TripDetailResp struct {
+	LatLongs          [][2]float64
+	PlaceCategories   []POI.PlaceCategory
 	PlaceDetails      []PlaceDetailsResp
 	ShownActive       []bool
 	TravelDestination string
@@ -94,18 +102,9 @@ type PlaceDetailsResp struct {
 	PhotoURL        string
 }
 
-type TripShowDetails struct {
-	City    string `form:"city"`
-	Country string `form:"country"`
-	Radius  string `form:"radius"`
-	Day     string `form:"day"`
-	TimeIdx string `form:"time"`
-	Id      string `form:"id"`
-}
-
 type RequestIdKey string
 
-func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}) {
+func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string) {
 	planner.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	planner.RedisClient = iowrappers.CreateRedisClient(redisURL)
 	planner.RedisStreamName = redisStreamName
@@ -125,6 +124,18 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
 		planner.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
+	}
+	var err error
+	geocodes, err = planner.RedisClient.GetCities(context.Background())
+	if err != nil {
+		log.Errorf("failed to load city geocodes: %v", err.Error())
+	}
+	planner.OAuth2Config = &oauth2.Config{
+		ClientID:     oauthClientID,
+		ClientSecret: oauthClientSecret,
+		RedirectURL:  domain + "/v1/callback-google",
+		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+		Endpoint:     google.Endpoint,
 	}
 }
 
@@ -247,13 +258,6 @@ type GeocodeCityView struct {
 }
 
 func (planner *MyPlanner) GetCitiesHandler(context *gin.Context) {
-	var geocodes map[string]string
-	var err error
-	if geocodes, err = planner.RedisClient.GetCityCountInRedis(context); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	views := toCityViews(geocodes)
 	term := context.DefaultQuery("term", "")
 	term = strings.ToLower(term)
@@ -274,16 +278,7 @@ func (planner *MyPlanner) GetCitiesHandler(context *gin.Context) {
 }
 
 func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
-	var cityCount int
-	var err error
-	var geocodes map[string]string
-
-	if geocodes, err = planner.RedisClient.GetCityCountInRedis(context); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	cityCount = len(geocodes)
+	cityCount := len(geocodes)
 	view := GeocodeCityView{
 		Count:  cityCount,
 		Cities: geocodes,
@@ -458,6 +453,8 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 	}
 	travelDate := c.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
+		LatLongs:          cachePlanSolution.PlaceLocations,
+		PlaceCategories:   cachePlanSolution.PlaceCategories,
 		PlaceDetails:      make([]PlaceDetailsResp, 0),
 		ShownActive:       make([]bool, 0),
 		TravelDestination: destination,
@@ -538,6 +535,75 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, planningResp)
 }
 
+func (planner *MyPlanner) handleLogin(ctx *gin.Context) {
+	oauthConfig := planner.OAuth2Config
+	logger := iowrappers.Logger
+	URL, err := url.Parse(oauthConfig.Endpoint.AuthURL)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	logger.Infof("Parsed authorization URL is %s", URL.String())
+	parameters := url.Values{}
+	parameters.Add("client_id", oauthConfig.ClientID)
+	parameters.Add("scope", strings.Join(oauthConfig.Scopes, " "))
+	parameters.Add("redirect_uri", oauthConfig.RedirectURL)
+	parameters.Add("response_type", "code")
+	// use empty string for state value
+	parameters.Add("state", "")
+	URL.RawQuery = parameters.Encode()
+
+	logger.Debugf("Parameters in authorization URL is %s", URL.RawQuery)
+
+	ctx.Redirect(http.StatusTemporaryRedirect, URL.String())
+}
+
+func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
+	logger := iowrappers.Logger
+	r := ctx.Request
+	code := r.FormValue("code")
+
+	if code == "" {
+		logger.Warn("OAuth code not found")
+		ctx.String(http.StatusBadRequest, "OAuth code not found")
+		return
+	} else {
+		token, err := planner.OAuth2Config.Exchange(ctx, code)
+		if err != nil {
+			ctx.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(token.AccessToken))
+		if err != nil {
+			logger.Errorf("failed to get response from Google: %v", err)
+			ctx.String(http.StatusBadGateway, err.Error())
+			return
+		}
+		defer resp.Body.Close()
+
+		response, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logger.Errorf("failed to read response body: %v", err)
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		userCredentials := &iowrappers.GoogleOAuthResponse{}
+		if err := json.Unmarshal(response, userCredentials); err != nil {
+			logger.Errorf("failed to unmarshal response to JSON: %v", err)
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		u := user.Credential{Email: userCredentials.Email, WithOAuth: true}
+		if planner.loginHelper(ctx, u, false) {
+			ctx.Redirect(http.StatusPermanentRedirect, "/v1")
+		} else {
+			ctx.Redirect(http.StatusPermanentRedirect, "/v1/log-in")
+		}
+	}
+}
+
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if planner.Environment == "debug" {
@@ -571,6 +637,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/cities", planner.GetCitiesHandler)
 		v1.POST("/customize", planner.customize)
 		v1.GET("/template", planner.customizedTemplate)
+		v1.GET("/login-google", planner.handleLogin)
+		v1.GET("/callback-google", planner.oauthCallback)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)

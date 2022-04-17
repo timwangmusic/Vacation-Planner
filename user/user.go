@@ -31,8 +31,10 @@ type View struct {
 }
 
 type Credential struct {
-	Username string
-	Password string
+	Username  string
+	Password  string
+	Email     string
+	WithOAuth bool
 }
 
 type Profile struct {

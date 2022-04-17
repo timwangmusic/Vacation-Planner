@@ -4,7 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"errors"
-	"strconv"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/google/uuid"
@@ -35,18 +35,21 @@ type PlanningSolution struct {
 	Score           float64             `json:"score"`
 }
 
-func CreatePlanningSolutionCandidate(iter MultiDimIterator, placeClusters [][]matching.Place) (PlanningSolution, error) {
+func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]matching.Place) (PlanningSolution, error) {
 	var res PlanningSolution
-	if len(iter.Status) != len(placeClusters) {
+	if len(placeIndexes) != len(placeClusters) {
 		return res, errors.New(ErrMsgMismatchIterAndPlace)
 	}
 	// deduplication of repeating places in the result
 
 	record := make(map[string]bool)
-	places := make([]matching.Place, len(iter.Status))
-	for idx, placeIdx := range iter.Status {
+	places := make([]matching.Place, len(placeIndexes))
+	for idx, placeIdx := range placeIndexes {
 		placesByCategory := placeClusters[idx]
 
+		if placeIdx >= len(placesByCategory) {
+			return res, errors.New("place index out of bound")
+		}
 		var place = placesByCategory[placeIdx]
 
 		// if the same place appears in two indexes, return incomplete result
@@ -67,40 +70,48 @@ func CreatePlanningSolutionCandidate(iter MultiDimIterator, placeClusters [][]ma
 		res.PlaceURLs = append(res.PlaceURLs, place.GetURL())
 	}
 	res.Score = matching.Score(places)
+	res.ID = uuid.NewString()
 	return res, nil
 }
 
-func FindBestPlanningSolutions(candidates []PlanningSolution, topSolutionsCount int64) []PlanningSolution {
+func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCount int64, iterator *MultiDimIterator) []PlanningSolution {
 	if topSolutionsCount <= 0 {
 		topSolutionsCount = TopSolutionsCountDefault
 	}
-	m := make(map[string]PlanningSolution) // map for result extraction
-	vertexes := make([]graph.Vertex, len(candidates))
-	for idx, candidate := range candidates {
-		candidateKey := strconv.FormatInt(int64(idx), 10)
-		vertex := graph.Vertex{Name: candidateKey, Key: candidate.Score}
-		vertexes[idx] = vertex
-		m[candidateKey] = candidate
-	}
-	// use limited-size minimum priority queue
+
 	priorityQueue := &graph.MinPriorityQueueVertex{}
-	for _, vertex := range vertexes {
-		if priorityQueue.Len() == int(topSolutionsCount) {
-			top := (*priorityQueue)[0]
-			if vertex.Key > top.Key {
-				heap.Pop(priorityQueue)
-			} else {
-				continue
-			}
+	deduplicatedPlans := make(map[string]bool)
+
+	for iterator.HasNext() {
+		var candidate PlanningSolution
+		var err error
+		candidate, err = createPlanningSolutionCandidate(iterator.Status, placeClusters)
+		iterator.Next()
+		if err != nil {
+			log.Debug(err)
+			continue
 		}
-		heap.Push(priorityQueue, vertex)
+		if !isDuplicatedPlan(deduplicatedPlans, candidate) {
+			continue
+		}
+		newVertex := graph.Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
+		if priorityQueue.Len() == int(topSolutionsCount) {
+			topVertex := (*priorityQueue)[0]
+			if topVertex.Key < newVertex.Key {
+				heap.Pop(priorityQueue)
+				delete(deduplicatedPlans, jointPlaceIdsForPlan(topVertex.Object.(PlanningSolution)))
+				heap.Push(priorityQueue, newVertex)
+			}
+		} else {
+			heap.Push(priorityQueue, newVertex)
+		}
 	}
 
 	res := make([]PlanningSolution, 0)
 
 	for priorityQueue.Len() > 0 {
 		top := heap.Pop(priorityQueue).(graph.Vertex)
-		res = append(res, m[top.Name])
+		res = append(res, top.Object.(PlanningSolution))
 	}
 
 	return res
@@ -158,33 +169,23 @@ func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, re
 		return
 	}
 
-	for mdIter.HasNext() {
-		curCandidate, creationErr := CreatePlanningSolutionCandidate(mdIter, placeClusters)
-		if creationErr == nil {
-			solutions = append(solutions, curCandidate)
-		}
-		mdIter.Next()
-	}
-
-	solutions = TravelPlansDeduplication(solutions)
-
-	bestCandidates := FindBestPlanningSolutions(solutions, request.NumPlans)
+	bestCandidates := FindBestPlanningSolutions(placeClusters, request.NumPlans, &mdIter)
 	solutions = bestCandidates
 
 	// cache slot solution calculation results
 	planningSolutionsResponse := iowrappers.PlanningSolutionsResponse{}
 	planningSolutionsResponse.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, len(bestCandidates))
 
-	for idx, slotSolutionCandidate := range bestCandidates {
+	for idx, candidate := range bestCandidates {
 		record := iowrappers.PlanningSolutionRecord{
-			ID:              uuid.NewString(),
-			PlaceIDs:        slotSolutionCandidate.PlaceIDS,
-			Score:           slotSolutionCandidate.Score,
-			PlaceNames:      slotSolutionCandidate.PlaceNames,
-			PlaceLocations:  slotSolutionCandidate.PlaceLocations,
-			PlaceAddresses:  slotSolutionCandidate.PlaceAddresses,
-			PlaceURLs:       slotSolutionCandidate.PlaceURLs,
-			PlaceCategories: slotSolutionCandidate.PlaceCategories,
+			ID:              candidate.ID,
+			PlaceIDs:        candidate.PlaceIDS,
+			Score:           candidate.Score,
+			PlaceNames:      candidate.PlaceNames,
+			PlaceLocations:  candidate.PlaceLocations,
+			PlaceAddresses:  candidate.PlaceAddresses,
+			PlaceURLs:       candidate.PlaceURLs,
+			PlaceCategories: candidate.PlaceCategories,
 			Destination:     request.Location,
 		}
 		planningSolutionsResponse.PlanningSolutionRecords[idx] = record
@@ -199,22 +200,22 @@ func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, re
 	return
 }
 
-//TravelPlansDeduplication removes travel plans contain places that are permutations of each other
-func TravelPlansDeduplication(travelPlans []PlanningSolution) []PlanningSolution {
-	duplicatedPlans := make(map[string]bool)
-	results := make([]PlanningSolution, 0)
-
-	for _, travelPlan := range travelPlans {
-		placeIds := make([]string, len(travelPlan.PlaceIDS))
-		copy(placeIds, travelPlan.PlaceIDS)
-		radix.Sort(placeIds)
-		jointPlanIds := strings.Join(placeIds, "_")
-		if _, exists := duplicatedPlans[jointPlanIds]; !exists {
-			results = append(results, travelPlan)
-			duplicatedPlans[jointPlanIds] = true
-		}
+// returns true if the new travel plan can be added to priority queue
+func isDuplicatedPlan(plans map[string]bool, newPlan PlanningSolution) bool {
+	jointPlaceIDs := jointPlaceIdsForPlan(newPlan)
+	if _, exists := plans[jointPlaceIDs]; !exists {
+		plans[jointPlaceIDs] = true
+		return true
 	}
-	return results
+	return false
+}
+
+func jointPlaceIdsForPlan(newPlan PlanningSolution) string {
+	placeIDs := make([]string, len(newPlan.PlaceIDS))
+	copy(placeIDs, newPlan.PlaceIDS)
+	radix.Sort(placeIDs)
+	jointPlaceIDs := strings.Join(placeIDs, "_")
+	return jointPlaceIDs
 }
 
 func NearbySearchWithPlaceView(context context.Context, matcher matching.Matcher, location POI.Location, weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {

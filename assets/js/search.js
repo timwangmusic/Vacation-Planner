@@ -55,5 +55,10 @@ locationSearchInput.addEventListener(
         }
     }
 )
+// hide spinner when switching pages
+const hideSpinner = function () {
+    spinner.classList.add("visually-hidden");
+}
+document.addEventListener("visibilitychange", hideSpinner);
 
 document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);

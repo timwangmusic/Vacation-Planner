@@ -1,10 +1,11 @@
 package redis_client_mocks
 
 import (
-	"errors"
-	log "github.com/sirupsen/logrus"
 	"testing"
 
+	log "github.com/sirupsen/logrus"
+
+	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
@@ -21,7 +22,7 @@ func TestUserAuthentication(t *testing.T) {
 	}
 
 	// authenticate the user
-	_, _, err := RedisClient.Authenticate(RedisContext, user.Credential{
+	_, _, _, err := RedisClient.Authenticate(RedisContext, user.Credential{
 		Username: username,
 		Password: password,
 	})
@@ -35,10 +36,10 @@ func TestUserFind(t *testing.T) {
 
 	var err error
 	_, err = RedisClient.FindUser(RedisContext, iowrappers.FindUserByName, userView)
-	expectedErr := errors.New("user does not exist")
+	expectedErr := redis.Nil
 
 	if assert.Error(t, err, "an error was expected") {
-		assert.Equal(t, err, expectedErr)
+		assert.Equal(t, expectedErr, err)
 	}
 }
 
@@ -76,7 +77,7 @@ func TestUserCreation(t *testing.T) {
 }
 
 func TestSaveUserPlan(t *testing.T) {
-	userView := user.View{Username: "mickey_mouse"}
+	userView := user.View{Username: "mickey_mouse", Email: "micky_mouse@google.com"}
 	planView := user.TravelPlanView{
 		ID:             "33521",
 		OriginalPlanID: "09201989",
@@ -143,7 +144,7 @@ func TestSaveUserPlan(t *testing.T) {
 }
 
 func TestDeleteUserPlan(t *testing.T) {
-	userView := user.View{Username: "daisy_duck"}
+	userView := user.View{Username: "daisy_duck", Email: "daisy_duck@disney.com"}
 	planView := user.TravelPlanView{
 		ID:             "33521",
 		OriginalPlanID: "09201989",

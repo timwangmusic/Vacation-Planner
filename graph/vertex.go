@@ -12,6 +12,7 @@ type Vertex struct {
 	Neighbors []*Vertex // neighbor list
 	Location  Point     // geo-location
 	Parent    string    // parent name
+	Object    interface{}
 }
 
 // Point defines a location with latitude and longitude
