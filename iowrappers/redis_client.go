@@ -6,6 +6,7 @@ package iowrappers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -329,6 +330,10 @@ func (redisClient *RedisClient) Geocode(context context.Context, query *GeocodeQ
 	lat = latLng[0]
 	lng = latLng[1]
 	return
+}
+
+func (redisClient *RedisClient) ReverseGeocode(context.Context, float64, float64) (*GeocodeQuery, error) {
+	return nil, errors.New("->ReverseGeocode: not implemented for the RedisClient")
 }
 
 func (redisClient *RedisClient) SetGeocode(context context.Context, query GeocodeQuery, lat float64, lng float64, originalQuery GeocodeQuery) {

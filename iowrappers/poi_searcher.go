@@ -74,24 +74,19 @@ func (poiSearcher PoiSearcher) Geocode(context context.Context, query *GeocodeQu
 	return
 }
 
+func (poiSearcher PoiSearcher) ReverseGeocode(ctx context.Context, lat, lng float64) (*GeocodeQuery, error) {
+	Logger.Debugf("PoiSearcher ->ReverseGeocode: decoding latitude %.2f, longitude %.2f", lat, lng)
+	return poiSearcher.mapsClient.ReverseGeocode(ctx, lat, lng)
+}
+
 func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
+	if err := poiSearcher.processLocation(context, request); err != nil {
+		return nil, err
+	}
 	location := request.Location
 
-	places := make([]POI.Place, 0)
-	lat, lng, err := poiSearcher.Geocode(context, &GeocodeQuery{
-		City:              location.City,
-		AdminAreaLevelOne: location.AdminAreaLevelOne,
-		Country:           location.Country,
-	})
-	if logErr(err, utils.LogError) {
-		return places, err
-	}
-
-	// update request.Location after the city,country conversion
-	request.Location.Latitude = lat
-	request.Location.Longitude = lng
-
-	var cachedPlaces []POI.Place
+	var cachedPlaces, places []POI.Place
+	var err error
 	cachedPlaces, err = poiSearcher.redisClient.NearbySearch(context, request)
 	if err != nil {
 		Logger.Error(err)
@@ -110,40 +105,81 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 		return places, nil
 	}
 
-	cacheMiss = poiSearcher.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339))
-	utils.LogErrorWithLevel(cacheMiss, utils.LogError)
-
-	originalSearchRadius := request.Radius
-
-	request.Radius = MaxSearchRadius // use a large search radius whenever we call external maps services
+	utils.LogErrorWithLevel(poiSearcher.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339)), utils.LogError)
 
 	// initiate a new external search
-	newPlaces, mapsNearbySearchErr := poiSearcher.mapsClient.NearbySearch(context, request)
-	utils.LogErrorWithLevel(mapsNearbySearchErr, utils.LogError)
-
-	request.Radius = originalSearchRadius // restore search radius
-
-	// update Redis with all the new places obtained
-	poiSearcher.UpdateRedis(context, newPlaces)
+	newPlaces, searchErr := poiSearcher.searchPlacesWithMaps(context, request)
+	if searchErr != nil {
+		return nil, searchErr
+	}
 
 	// safeguard on accessing elements in a nil slice
 	if len(newPlaces) > 0 {
+		// update Redis with all the new places obtained
+		poiSearcher.UpdateRedis(context, newPlaces)
+
+		// include places from cache in the result
 		places = append(places, newPlaces...)
 	}
 
-	if request.BusinessStatus == POI.Operational {
+	return places, nil
+}
+
+//processLocation performs reverse geocoding for precise location to find city-level information and performs geocoding to find precise latitude and longitude values
+func (poiSearcher PoiSearcher) processLocation(ctx context.Context, req *PlaceSearchRequest) error {
+	location := &req.Location
+	if req.UsePreciseLocation {
+		Logger.Debugf("->NearbySearch: using precise location")
+		geoQuery, err := poiSearcher.GetMapsClient().ReverseGeocode(ctx, req.Location.Latitude, req.Location.Longitude)
+		if err != nil {
+			return err
+		}
+		location.City = geoQuery.City
+		location.AdminAreaLevelOne = geoQuery.AdminAreaLevelOne
+		location.Country = geoQuery.Country
+		return nil
+	}
+
+	lat, lng, err := poiSearcher.Geocode(ctx, &GeocodeQuery{
+		City:              location.City,
+		AdminAreaLevelOne: location.AdminAreaLevelOne,
+		Country:           location.Country,
+	})
+	if err != nil {
+		return err
+	}
+	location.Latitude = lat
+	location.Longitude = lng
+	return nil
+}
+
+func (poiSearcher PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
+	originalRadius := req.Radius
+
+	// use a large search radius whenever we call external maps services
+	req.Radius = MaxSearchRadius
+
+	places, err := poiSearcher.GetMapsClient().NearbySearch(ctx, req)
+
+	// restore search radius upon search completion
+	req.Radius = originalRadius
+	if err != nil {
+		return nil, err
+	}
+
+	if req.BusinessStatus == POI.Operational {
 		totalPlacesCount := len(places)
 		places = filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
 		Logger.Debugf("%d places out of %d left after business status filtering", len(places), totalPlacesCount)
 	}
 
-	if uint(len(places)) < request.MinNumResults {
+	if uint(len(places)) < req.MinNumResults {
 		Logger.Debugf("Found %d POI results for place type %s, less than requested number of %d",
-			len(places), request.PlaceCat, request.MinNumResults)
+			len(places), req.PlaceCat, req.MinNumResults)
 	}
 	if len(places) == 0 {
 		Logger.Debugf("No qualified POI result found in the given location %v, radius %d, and place type: %s",
-			request.Location, request.Radius, request.PlaceCat)
+			req.Location, req.Radius, req.PlaceCat)
 		Logger.Debug("location may be invalid")
 	}
 	return places, nil

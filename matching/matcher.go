@@ -21,10 +21,11 @@ const (
 )
 
 type Request struct {
-	Radius   uint
-	Location POI.Location
-	Criteria FilterCriteria
-	Params   map[FilterCriteria]interface{}
+	Radius             uint
+	Location           POI.Location
+	Criteria           FilterCriteria
+	Params             map[FilterCriteria]interface{}
+	UsePreciseLocation bool
 }
 
 type MatcherForPriceRange struct {
@@ -41,11 +42,12 @@ func (matcher MatcherForPriceRange) Match(ctx context.Context, request Request) 
 
 	priceRangeFilterParams := filterParams.(PriceRangeFilterParams)
 	placeSearchRequest := &iowrappers.PlaceSearchRequest{
-		PlaceCat:       priceRangeFilterParams.Category,
-		Location:       request.Location,
-		Radius:         request.Radius,
-		MinNumResults:  MinResultsForTimePeriodMatching,
-		BusinessStatus: POI.Operational,
+		PlaceCat:           priceRangeFilterParams.Category,
+		Location:           request.Location,
+		Radius:             request.Radius,
+		MinNumResults:      MinResultsForTimePeriodMatching,
+		BusinessStatus:     POI.Operational,
+		UsePreciseLocation: request.UsePreciseLocation,
 	}
 
 	basicPlaces, err := matcher.Searcher.NearbySearch(ctx, placeSearchRequest)
@@ -92,11 +94,12 @@ func (matcher MatcherForTime) Match(ctx context.Context, request Request) ([]Pla
 
 	timeFilterParams := filterParams.(TimeFilterParams)
 	placeSearchRequest := &iowrappers.PlaceSearchRequest{
-		PlaceCat:       timeFilterParams.Category,
-		Location:       request.Location,
-		Radius:         request.Radius,
-		MinNumResults:  MinResultsForTimePeriodMatching,
-		BusinessStatus: POI.Operational,
+		PlaceCat:           timeFilterParams.Category,
+		Location:           request.Location,
+		Radius:             request.Radius,
+		MinNumResults:      MinResultsForTimePeriodMatching,
+		BusinessStatus:     POI.Operational,
+		UsePreciseLocation: request.UsePreciseLocation,
 	}
 
 	basicPlaces, err := matcher.Searcher.NearbySearch(ctx, placeSearchRequest)
