@@ -340,7 +340,12 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 	if len(planningRequest.Location.City) > 0 {
 		resp.TravelDestination = strings.Title(planningRequest.Location.City)
 	} else {
-		resp.TravelDestination = "Dream Vacation Destination"
+		geocodes, err := planner.Solver.Searcher.ReverseGeocode(ctx, planningRequest.Location.Latitude, planningRequest.Location.Longitude)
+		if err != nil {
+			resp.TravelDestination = "Dream Vacation Destination"
+			return
+		}
+		resp.TravelDestination = geocodes.City
 	}
 	return
 }
