@@ -181,7 +181,7 @@ func (planner *MyPlanner) Destroy() {
 func (planner *MyPlanner) ReverseGeocodingHandler(context *gin.Context) {
 	latitude, _ := strconv.ParseFloat(context.Query("lat"), 64)
 	longitude, _ := strconv.ParseFloat(context.Query("lng"), 64)
-	result, err := planner.Solver.Searcher.GetMapsClient().ReverseGeocoding(context, latitude, longitude)
+	result, err := planner.Solver.Searcher.GetMapsClient().ReverseGeocode(context, latitude, longitude)
 	if err != nil {
 		log.Error(err)
 		context.JSON(http.StatusInternalServerError, err.Error())

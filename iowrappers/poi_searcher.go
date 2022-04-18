@@ -74,6 +74,11 @@ func (poiSearcher PoiSearcher) Geocode(context context.Context, query *GeocodeQu
 	return
 }
 
+func (poiSearcher PoiSearcher) ReverseGeocode(ctx context.Context, lat, lng float64) (*GeocodeQuery, error) {
+	Logger.Debugf("PoiSearcher ->ReverseGeocode: decoding latitude %.2f, longitude %.2f", lat, lng)
+	return poiSearcher.mapsClient.ReverseGeocode(ctx, lat, lng)
+}
+
 func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
 	if err := poiSearcher.processLocation(context, request); err != nil {
 		return nil, err
@@ -125,7 +130,7 @@ func (poiSearcher PoiSearcher) processLocation(ctx context.Context, req *PlaceSe
 	location := &req.Location
 	if req.UsePreciseLocation {
 		Logger.Debugf("->NearbySearch: using precise location")
-		geoQuery, err := poiSearcher.GetMapsClient().ReverseGeocoding(ctx, req.Location.Latitude, req.Location.Longitude)
+		geoQuery, err := poiSearcher.GetMapsClient().ReverseGeocode(ctx, req.Location.Latitude, req.Location.Longitude)
 		if err != nil {
 			return err
 		}

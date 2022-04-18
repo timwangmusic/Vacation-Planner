@@ -16,6 +16,7 @@ import (
 // SearchClient defines an interface of a client that performs location-based operations such as nearby search
 type SearchClient interface {
 	Geocode(context.Context, *GeocodeQuery) (float64, float64, error)       // translate a textual location to latitude and longitude
+	ReverseGeocode(context.Context, float64, float64) (*GeocodeQuery, error) // look up a textual location based on latitude and longitude
 	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error) // search nearby places in a category around a central location
 }
 
@@ -66,7 +67,7 @@ func CreateLogger() error {
 	return nil
 }
 
-func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude, longitude float64) (GeocodeQuery, error) {
+func (mapsClient *MapsClient) ReverseGeocode(context context.Context, latitude, longitude float64) (*GeocodeQuery, error) {
 	request := &maps.GeocodingRequest{
 		LatLng: &maps.LatLng{
 			Lat: latitude,
@@ -78,10 +79,10 @@ func (mapsClient *MapsClient) ReverseGeocoding(context context.Context, latitude
 	Logger.Debugf("reverse geocoding for latitude/longitude: %.2f/%.2f", latitude, longitude)
 	geocodingResults, err := mapsClient.client.ReverseGeocode(context, request)
 	if err != nil {
-		return GeocodeQuery{}, err
+		return nil, err
 	}
 	if len(geocodingResults) == 0 {
-		return GeocodeQuery{}, errors.New("no geocoding results found")
+		return nil, errors.New("no geocoding results found")
 	}
 	return geocodingResultsToGeocodeQuery(geocodingResults), nil
 }
@@ -114,7 +115,7 @@ func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (
 	lat = location.Lat
 	lng = location.Lng
 
-	*query = geocodingResultsToGeocodeQuery(resp)
+	query = geocodingResultsToGeocodeQuery(resp)
 	Logger.Debugf("Address components for the 1st response is %+v", resp[0].AddressComponents)
 
 	return

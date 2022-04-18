@@ -2,7 +2,7 @@ package iowrappers
 
 import "googlemaps.github.io/maps"
 
-func geocodingResultsToGeocodeQuery(results []maps.GeocodingResult) GeocodeQuery {
+func geocodingResultsToGeocodeQuery(results []maps.GeocodingResult) *GeocodeQuery {
 	reverseGeocodingResult := GeocodeQuery{}
 	// take the most specific result
 	firstGeocodingResult := results[0]
@@ -18,5 +18,5 @@ func geocodingResultsToGeocodeQuery(results []maps.GeocodingResult) GeocodeQuery
 			}
 		}
 	}
-	return reverseGeocodingResult
+	return &reverseGeocodingResult
 }
