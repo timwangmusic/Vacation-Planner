@@ -181,7 +181,7 @@ func (planner *MyPlanner) Destroy() {
 func (planner *MyPlanner) ReverseGeocodingHandler(context *gin.Context) {
 	latitude, _ := strconv.ParseFloat(context.Query("lat"), 64)
 	longitude, _ := strconv.ParseFloat(context.Query("lng"), 64)
-	result, err := planner.Solver.Searcher.GetMapsClient().ReverseGeocoding(context, latitude, longitude)
+	result, err := planner.Solver.Searcher.GetMapsClient().ReverseGeocode(context, latitude, longitude)
 	if err != nil {
 		log.Error(err)
 		context.JSON(http.StatusInternalServerError, err.Error())
@@ -340,7 +340,12 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 	if len(planningRequest.Location.City) > 0 {
 		resp.TravelDestination = strings.Title(planningRequest.Location.City)
 	} else {
-		resp.TravelDestination = "Dream Vacation Destination"
+		geocodes, err := planner.Solver.Searcher.ReverseGeocode(ctx, planningRequest.Location.Latitude, planningRequest.Location.Longitude)
+		if err != nil {
+			resp.TravelDestination = "Dream Vacation Destination"
+			return
+		}
+		resp.TravelDestination = geocodes.City
 	}
 	return
 }
@@ -356,33 +361,42 @@ func (planner *MyPlanner) homePageHandler(c *gin.Context) {
 // HTTP GET API end-point handler
 // Return top planning result to user
 func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
+	logger := iowrappers.Logger
 	var userView user.View
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
 		userView, authenticationErr = planner.UserAuthentication(ctx, user.LevelRegular)
 		if authenticationErr != nil {
-			utils.LogErrorWithLevel(authenticationErr, utils.LogDebug)
+			logger.Debug(authenticationErr)
 			planner.login(ctx)
 			return
 		}
 	}
 
 	requestId := requestid.Get(ctx)
+
+	var err error
+	var preciseLocation bool
+	preciseLocation, err = strconv.ParseBool(ctx.DefaultQuery("precise", "false"))
+	if err != nil {
+		logger.Errorf("failed to parse Precise Location query parameter: %v", err)
+	}
+
 	location := ctx.DefaultQuery("location", "San Jose, CA, USA")
 	locationFields := strings.Split(location, ", ")
-	if err := validateLocation(location); err != nil {
+	if err = validateLocation(location, preciseLocation); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// date is in the format of yyyy-mm-dd
 	date := ctx.DefaultQuery("date", "")
-	if err := validateDate(date); err != nil {
+	if err = validateDate(date); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	iowrappers.Logger.Debugf("Requested weekday is %s.", date)
+	logger.Debugf("Requested weekday is %s.", date)
 
 	numResults := ctx.DefaultQuery("numberResults", "5")
 
@@ -391,30 +405,37 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
 		return
 	}
-	iowrappers.Logger.Debugf("[request_id: %s] The number of requested planning results is %s.", requestId, numResults)
+	logger.Debugf("[request_id: %s] The number of requested planning results is %s.", requestId, numResults)
 
 	priceLevel := ctx.DefaultQuery("price", "2")
-	iowrappers.Logger.Debugf("Requested price range is %s", priceLevel)
+	logger.Debugf("Requested price range is %s", priceLevel)
 
 	planningReq := solution.GetStandardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.SearchRadius = 10000 // default to 10km
-	switch len(locationFields) {
-	case 2:
-		planningReq.Location = POI.Location{City: locationFields[0], Country: locationFields[1]}
-	case 3:
-		planningReq.Location = POI.Location{City: locationFields[0], AdminAreaLevelOne: locationFields[1], Country: locationFields[2]}
-	default:
-		ctx.String(http.StatusBadRequest, "wrong location input")
-		return
+	planningReq.PreciseLocation = preciseLocation
+	logger.Debugf("use precise location: %t", preciseLocation)
+	if preciseLocation {
+		planningReq.Location = POI.Location{}
+		planningReq.Location.Longitude, _ = strconv.ParseFloat(locationFields[0], 64)
+		planningReq.Location.Latitude, _ = strconv.ParseFloat(locationFields[1], 64)
+	} else {
+		switch len(locationFields) {
+		case 2:
+			planningReq.Location = POI.Location{City: locationFields[0], Country: locationFields[1]}
+		case 3:
+			planningReq.Location = POI.Location{City: locationFields[0], AdminAreaLevelOne: locationFields[1], Country: locationFields[2]}
+		default:
+			ctx.String(http.StatusBadRequest, "wrong location input")
+			return
+		}
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
 	planningResp := planner.Planning(c, &planningReq, userView.Username)
 
-	err := planningResp.Err
-	if err != nil {
+	if planningResp.Err != nil {
 		if planningResp.StatusCode == solution.InvalidRequestLocation {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.String(http.StatusBadRequest, planningResp.Err.Error())
 		} else if planningResp.StatusCode == solution.NoValidSolution {
 			errString := "No valid travel solution is found.\nPlease try searching with a larger radius or a different price level."
 			ctx.String(http.StatusBadRequest, errString)

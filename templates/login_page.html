@@ -67,13 +67,7 @@
             <button type="submit" class="btn btn-primary login-btn btn-block">Sign in</button>
             <!-- TODO: Add Login buttons for Social media (FB, G, TWT) as a separate PR -->
         </form>
-        <div class="d-flex justify-content-center align-items-center mt-2">
-            <div class="alert alert-primary d-none" type="alert" id="log-in-error-alert">
-                login failed, please check your credentials.
-            </div>
-        </div>
-        <!-- <a href="/v1/login-google" role="button" class="btn btn-outline-info">login with Google</a> -->
-        <div class="col s12 m6 offset-m3 center-align">
+        <div class="mt-2">
             <a class="btn btn-outline-info darken-4 white black-text" href="/v1/login-google"
                 style="text-transform:none">
                 <div class="d-flex flex-row align-items-center">
@@ -82,6 +76,10 @@
                     <span class="ms-1">Login with Google</span>
                 </div>
             </a>
+        </div>
+        <div class="mt-2 alert alert-danger alert-dismissible fade show d-none" role="alert" id="log-in-error-alert">
+            <strong>Login failed!</strong> Please check your credentials.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </div>
 

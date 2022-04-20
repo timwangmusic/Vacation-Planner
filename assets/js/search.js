@@ -1,5 +1,5 @@
 // methods for the search page
-import { locateMe, setDateToday } from "./utils.js";
+import { locateMe, setDateToday, preciseLocation } from "./utils.js";
 
 import { logOut } from "./user.js";
 
@@ -41,9 +41,9 @@ $(document).ready(function CheckPreviousLocation() {
 
 document.getElementById("logout-confirm-btn").addEventListener("click", logOut);
 
-document.querySelector("#autofill").addEventListener("click", locateMe);
+document.querySelector('#use-precise-location').addEventListener('click', preciseLocation);
 
-const locationSearchInput = document.getElementById("location");
+const locationSearchInput = document.getElementById('location');
 const spinner = document.getElementById("searchSpinner");
 locationSearchInput.addEventListener("keyup", (evt) => {
   if (evt.key === "Enter") {

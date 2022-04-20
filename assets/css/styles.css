@@ -17,6 +17,9 @@
 div.fixedwidthicon {
     width: 25px;
 }
+button.square-button{
+    width: 31px;
+}
 
 h1 {
     text-align: center;
@@ -50,9 +53,6 @@ tr:nth-child(even) {
     }
     #locationDiv {
         min-width: 13em;
-    }
-    #priceDiv {
-        width: 6em;
     }
   }
 #planSaveIcon {

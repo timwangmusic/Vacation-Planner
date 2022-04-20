@@ -135,10 +135,11 @@ func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, re
 		}
 
 		placesByTime, err_ := timeMatcher.Match(context, matching.Request{
-			Radius:   DefaultPlaceSearchRadius,
-			Location: request.Location,
-			Criteria: matching.FilterByTimePeriod,
-			Params:   filterParams,
+			Radius:             DefaultPlaceSearchRadius,
+			Location:           request.Location,
+			Criteria:           matching.FilterByTimePeriod,
+			Params:             filterParams,
+			UsePreciseLocation: request.PreciseLocation,
 		})
 		if err_ != nil {
 			iowrappers.Logger.Error(err_)
@@ -147,10 +148,11 @@ func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, re
 		}
 
 		placesByPrice, err_ := priceRangeMatcher.Match(context, matching.Request{
-			Radius:   DefaultPlaceSearchRadius,
-			Location: request.Location,
-			Criteria: matching.FilterByPriceRange,
-			Params:   filterParams,
+			Radius:             DefaultPlaceSearchRadius,
+			Location:           request.Location,
+			Criteria:           matching.FilterByPriceRange,
+			Params:             filterParams,
+			UsePreciseLocation: request.PreciseLocation,
 		})
 		if err_ != nil {
 			iowrappers.Logger.Error(err_)
