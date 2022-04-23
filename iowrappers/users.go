@@ -92,6 +92,9 @@ func (redisClient *RedisClient) CreateUser(context context.Context, userView use
 		return userView, fmt.Errorf("user %s already exists", userView.Username)
 	}
 
+	// email addresses are not case sensitive
+	userView.Email = strings.ToLower(userView.Email)
+
 	if client.HExists(context, UserEmailsKey, userView.Email).Val() {
 		return userView, fmt.Errorf("user %s already exists", userView.Email)
 	}
@@ -129,7 +132,8 @@ func (redisClient *RedisClient) CreateUser(context context.Context, userView use
 }
 
 func (redisClient *RedisClient) Authenticate(context context.Context, credential user.Credential) (user.View, string, time.Time, error) {
-	userView := user.View{Username: credential.Username, Email: credential.Email}
+	userView := user.View{Username: credential.Username, Email: strings.ToLower(credential.Email)}
+	Logger.Debugf("->Authenticate: user view is %v", userView)
 	var u user.View
 	var err error
 	var loggedInByEmail bool
@@ -140,10 +144,10 @@ func (redisClient *RedisClient) Authenticate(context context.Context, credential
 	}
 
 	if loggedInByEmail {
-		Logger.Debugf("user view: %v", u)
+		Logger.Debugf("->Authenticate: email from credential is %s", credential.Email)
 		userView.Email = credential.Email
-		if userView.Email == "" {
-			userView.Email = credential.Username
+		if strings.TrimSpace(credential.Email) == "" {
+			userView.Email = strings.ToLower(credential.Username)
 		}
 		u, err = redisClient.FindUser(context, FindUserByEmail, userView)
 		Logger.Debugf("cannot find user by email %s, error: %v", credential.Email, err)

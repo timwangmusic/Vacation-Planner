@@ -15,9 +15,9 @@ import (
 
 // SearchClient defines an interface of a client that performs location-based operations such as nearby search
 type SearchClient interface {
-	Geocode(context.Context, *GeocodeQuery) (float64, float64, error)       // translate a textual location to latitude and longitude
+	Geocode(context.Context, *GeocodeQuery) (float64, float64, error)        // translate a textual location to latitude and longitude
 	ReverseGeocode(context.Context, float64, float64) (*GeocodeQuery, error) // look up a textual location based on latitude and longitude
-	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error) // search nearby places in a category around a central location
+	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error)  // search nearby places in a category around a central location
 }
 
 type MapsClient struct {
