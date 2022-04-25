@@ -41,9 +41,11 @@ $(document).ready(function CheckPreviousLocation() {
 
 document.getElementById("logout-confirm-btn").addEventListener("click", logOut);
 
-document.querySelector('#use-precise-location').addEventListener('click', preciseLocation);
+document
+  .querySelector("#use-precise-location")
+  .addEventListener("click", preciseLocation);
 
-const locationSearchInput = document.getElementById('location');
+const locationSearchInput = document.getElementById("location");
 const spinner = document.getElementById("searchSpinner");
 locationSearchInput.addEventListener("keyup", (evt) => {
   if (evt.key === "Enter") {
