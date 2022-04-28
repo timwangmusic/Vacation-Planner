@@ -4,8 +4,9 @@ import (
 	"container/heap"
 	"context"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 	"github.com/yourbasic/radix"
@@ -113,8 +114,15 @@ func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCou
 		top := heap.Pop(priorityQueue).(graph.Vertex)
 		res = append(res, top.Object.(PlanningSolution))
 	}
+	// min-heap, res needs to be reversed to get the descending order
+	return reversePlans(res)
+}
 
-	return res
+func reversePlans(plans []PlanningSolution) []PlanningSolution {
+	for i, j := 0, len(plans)-1; i < j; i, j = i+1, j-1 {
+		plans[i], plans[j] = plans[j], plans[i]
+	}
+	return plans
 }
 
 func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, redisClient iowrappers.RedisClient, redisRequest iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest, priceRangeMatcher matching.Matcher) (solutions []PlanningSolution, solutionRedisKey string, err error) {
