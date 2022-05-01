@@ -146,9 +146,18 @@
 
                     <div class="flex-fill">
                         <input class="form-control border-0" type="search" id="location" placeholder="Search"
-                            aria-label="Search" name="location" value="Los Angeles, CA, USA">
+                            aria-label="Search" name="location" value="Los Angeles, CA, USA"
+                            onchange="fetchLocation(this)">
                     </div>
-
+                    <script>
+                        function fetchLocation() {
+                            const loc = document.getElementById("location");
+                            if (loc) {
+                                sessionStorage.setItem("locationPerm", loc.value);
+                                console.log(`The location is ${loc.value}`);
+                            }
+                        }
+                    </script>
                     <div class="fixedwidthicon">
                         <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
                             role="status" aria-hidden="true"></span>
@@ -198,6 +207,7 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://kit.fontawesome.com/0ee567c03b.js" crossorigin="anonymous"></script>
 </body>
 
 </html>

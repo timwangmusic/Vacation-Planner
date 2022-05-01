@@ -30,9 +30,16 @@ setDateToday();
     )
 })(jQuery);
 
-document.getElementById("logout-confirm-btn").addEventListener(
-    "click", logOut
-)
+$(document).ready(function CheckPreviousLocation() {
+  const elem = document.getElementById("location");
+  if (sessionStorage.getItem("locationPerm")) {
+    console.log(
+      `Set the Location based on PageLoad...` +
+        sessionStorage.getItem("locationPerm")
+    );
+    elem.value = sessionStorage.getItem("locationPerm");
+  }
+});
 
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
@@ -47,7 +54,7 @@ locationSearchInput.addEventListener(
             spinner.classList.remove("visually-hidden");
         }
     }
-)
+);
 // hide spinner when switching pages
 const hideSpinner = function () {
     spinner.classList.add("visually-hidden");
