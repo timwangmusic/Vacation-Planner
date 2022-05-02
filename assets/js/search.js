@@ -1,6 +1,5 @@
 // methods for the search page
-import { locateMe, setDateToday, preciseLocation } from "./utils.js";
-
+import { locateMe, preciseLocation, setDateToday } from "./utils.js";
 import { logOut } from "./user.js";
 
 setDateToday();
@@ -30,16 +29,27 @@ setDateToday();
     )
 })(jQuery);
 
-$(document).ready(function CheckPreviousLocation() {
-  const elem = document.getElementById("location");
-  if (sessionStorage.getItem("locationPerm")) {
-    console.log(
-      `Set the Location based on PageLoad...` +
-        sessionStorage.getItem("locationPerm")
-    );
-    elem.value = sessionStorage.getItem("locationPerm");
-  }
+document.getElementById("logout-confirm-btn").addEventListener(
+    "click", logOut
+)
+
+const FORM = document.getElementById("main-form");
+const STORAGE_ITEM = "location";
+const LOCATION_INPUT = document.getElementById("location");
+$(document).ready(() => {
+    const val = sessionStorage.getItem(STORAGE_ITEM);
+    if (val) {
+        console.log(`Set the Location based on PageLoad...` + val);
+        LOCATION_INPUT.value = val;
+    }
 });
+
+FORM.addEventListener('submit', () => {
+    if (LOCATION_INPUT.value) {
+        sessionStorage.setItem(STORAGE_ITEM, LOCATION_INPUT.value);
+        console.log(`The location is ${LOCATION_INPUT.value}`);
+    }
+})
 
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
