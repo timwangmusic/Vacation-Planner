@@ -132,7 +132,7 @@
 
         <div class="row mt-1">
             <form class="row d-flex flex-column flex-sm-row align-items-start align-items-sm-center pe-0"
-                action="/v1/plans" method="get">
+                action="/v1/plans" method="get" id="main-form">
                 <div class="col ps-1 pe-0 mt-1" id="dateDiv">
                     <input class="form-control border border-secondary" type="date" id="datepicker" name="date"
                         value="2020-02-29">
@@ -146,18 +146,8 @@
 
                     <div class="flex-fill">
                         <input class="form-control border-0" type="search" id="location" placeholder="Search"
-                            aria-label="Search" name="location" value="Los Angeles, CA, USA"
-                            onchange="fetchLocation(this)">
+                            aria-label="Search" name="location" value="Los Angeles, CA, USA">
                     </div>
-                    <script>
-                        function fetchLocation() {
-                            const loc = document.getElementById("location");
-                            if (loc) {
-                                sessionStorage.setItem("locationPerm", loc.value);
-                                console.log(`The location is ${loc.value}`);
-                            }
-                        }
-                    </script>
                     <div class="fixedwidthicon">
                         <span id="searchSpinner" class="spinner-border spinner-border-sm text-info mx-1 visually-hidden"
                             role="status" aria-hidden="true"></span>
