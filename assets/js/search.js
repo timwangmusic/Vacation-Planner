@@ -1,5 +1,5 @@
 // methods for the search page
-import { locateMe, preciseLocation, setDateToday } from "./utils.js";
+import { locateMe, preciseLocation, setDateToday, randomPriceRange } from "./utils.js";
 import { logOut } from "./user.js";
 
 setDateToday();
@@ -54,6 +54,8 @@ FORM.addEventListener('submit', () => {
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
 document.querySelector('#use-precise-location').addEventListener('click', preciseLocation);
+
+document.querySelector('#priceToSelect').addEventListener('change', randomPriceRange)
 
 const locationSearchInput = document.getElementById('location');
 const spinner = document.getElementById("searchSpinner");
