@@ -62,13 +62,4 @@ function setDateToday() {
     document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
 }
 
-function randomPriceRange() {
-                                const item = document.getElementById('priceToSelect');
-                                const valueSel = item.options[item.selectedIndex].text;
-                                if (valueSel === "Surprise") {
-                                    const index = Math.floor(Math.random() * 5);
-                                    item.value = [0, 1, 2, 3, 4][index];
-                                }
-                            }
-
-export { locateMe, setDateToday, preciseLocation , randomPriceRange}
+export { locateMe, setDateToday, preciseLocation }
