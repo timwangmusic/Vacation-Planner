@@ -469,6 +469,7 @@ func (redisClient *RedisClient) SavePlanningSolutions(context context.Context, r
 }
 
 func (redisClient *RedisClient) PlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest) (PlanningSolutionsResponse, error) {
+	Logger.Debugf("->RedisClient.PlanningSolutions(%v)", request)
 	var response PlanningSolutionsResponse
 	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
 	if keyGenerationErr != nil {
