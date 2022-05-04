@@ -88,10 +88,23 @@ func PlanningSolutionsRedisRequest(location POI.Location, placeCategories []POI.
 }
 
 func (solver *Solver) Solve(context context.Context, redisClient iowrappers.RedisClient, request *PlanningRequest, response *PlanningResponse) {
+	iowrappers.Logger.Debugf("->Solve(context.Context, iowrappers.RedisClient, %v, *PlanningResponse)", request)
 	if !request.PreciseLocation && !solver.ValidateLocation(context, &request.Location) {
 		response.Err = errors.New("invalid travel destination")
 		response.ErrorCode = InvalidRequestLocation
 		return
+	}
+
+	if request.PreciseLocation {
+		geocode, err := solver.Searcher.ReverseGeocode(context, request.Location.Latitude, request.Location.Longitude)
+		if err != nil {
+			response.Err = err
+			response.ErrorCode = InvalidRequestLocation
+			return
+		}
+		request.Location.City = geocode.City
+		request.Location.AdminAreaLevelOne = geocode.AdminAreaLevelOne
+		request.Location.Country = geocode.Country
 	}
 
 	// set default planning results count
