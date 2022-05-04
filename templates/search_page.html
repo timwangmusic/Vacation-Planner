@@ -159,23 +159,13 @@
 
                 <div class="col-sm-2 ps-1 pe-0 mt-1" id="priceDiv">
                     <select name="price" class="form-select border border-secondary"
-                        aria-label=".form-select-sm example" id="priceToSelect" onchange="randomPriceRange(this)">
+                        aria-label=".form-select-sm example" id="priceToSelect">
                         <option value="2">$$</option>
                         <option value="3">$$$</option>
                         <option value="4">$$$$</option>
                         <option value="1">$</option>
                         <option value="0">Free</option>
                         <option value="0,1,2,3,4">Surprise</option>
-                        <script>
-                            function randomPriceRange() {
-                                const item = document.getElementById('priceToSelect');
-                                const valueSel = item.options[item.selectedIndex].text;
-                                if (valueSel === "Surprise") {
-                                    const index = Math.floor(Math.random() * 5);
-                                    item.value = [0, 1, 2, 3, 4][index];
-                                }
-                            }
-                        </script>
                     </select>
                 </div>
                 <div class="d-flex flex-row-reverse ps-1 pe-0 mt-1">

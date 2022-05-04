@@ -2,6 +2,15 @@
 import { locateMe, preciseLocation, setDateToday } from "./utils.js";
 import { logOut } from "./user.js";
 
+function randomPriceRange() {
+                                const item = document.getElementById('priceToSelect');
+                                const valueSel = item.options[item.selectedIndex].text;
+                                if (valueSel === "Surprise") {
+                                    const index = Math.floor(Math.random() * 5);
+                                    item.value = [0, 1, 2, 3, 4][index];
+                                }
+                            }
+
 setDateToday();
 
 (function ($) {
@@ -54,6 +63,8 @@ FORM.addEventListener('submit', () => {
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
 document.querySelector('#use-precise-location').addEventListener('click', preciseLocation);
+
+document.querySelector('#priceToSelect').addEventListener('change', randomPriceRange)
 
 const locationSearchInput = document.getElementById('location');
 const spinner = document.getElementById("searchSpinner");
