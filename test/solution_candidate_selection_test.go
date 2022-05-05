@@ -1,11 +1,12 @@
 package test
 
 import (
+	"strconv"
+	"testing"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/solution"
-	"strconv"
-	"testing"
 )
 
 // test if priority queue gives top solution candidates
@@ -33,7 +34,7 @@ func TestSolutionCandidateSelection(t *testing.T) {
 		return
 	}
 
-	expectation := []float64{94, 95, 96, 97, 98}
+	expectation := []float64{98, 97, 96, 95, 94}
 	for idx, r := range res {
 		if r.Score != expectation[idx] {
 			t.Errorf("expected %f, got %f", expectation[idx], r.Score)
