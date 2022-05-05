@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/braintree/manners"
 	"github.com/kelseyhightower/envconfig"
@@ -73,7 +74,7 @@ func RunServer() {
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	graceSvr := manners.NewWithServer(svr)
 
