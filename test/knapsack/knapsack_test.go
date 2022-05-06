@@ -9,8 +9,8 @@ import (
 )
 
 func TestKnapsack(t *testing.T) {
-	places := make([]matching.Place, 20, 20)
-	placesFromData := make([]POI.Place, 20, 20)
+	places := make([]matching.Place, 20)
+	placesFromData := make([]POI.Place, 20)
 	err := utils.ReadFromFile("data/random_gen_visiting_places_for_test.json", &placesFromData)
 	if err != nil || len(places) == 0 {
 		t.Fatal("Json file read error")

@@ -16,7 +16,7 @@ func TestRemovePlaces(t *testing.T) {
 	redisUrl := "redis://" + RedisMockSvr.Addr()
 	redisURL, _ := url.Parse(redisUrl)
 	redisClient := CreateRedisClient(redisURL)
-	ctx := context.WithValue(context.Background(), "request_id", "r-33521-345")
+	ctx := context.WithValue(context.Background(), ContextRequestIdKey, "r-33521-345")
 	_ = CreateLogger()
 
 	// create entities in the mock database

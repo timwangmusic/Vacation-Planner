@@ -84,7 +84,9 @@ func (mapsClient *MapsClient) ReverseGeocode(context context.Context, latitude, 
 	if len(geocodingResults) == 0 {
 		return nil, errors.New("no geocoding results found")
 	}
-	return geocodingResultsToGeocodeQuery(geocodingResults), nil
+	var query GeocodeQuery
+	geocodingResultsToGeocodeQuery(&query, geocodingResults)
+	return &query, nil
 }
 
 func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
@@ -115,7 +117,7 @@ func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (
 	lat = location.Lat
 	lng = location.Lng
 
-	query = geocodingResultsToGeocodeQuery(resp)
+	geocodingResultsToGeocodeQuery(query, resp)
 	Logger.Debugf("Address components for the 1st response is %+v", resp[0].AddressComponents)
 
 	return
