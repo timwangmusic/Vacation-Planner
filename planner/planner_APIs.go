@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"golang.org/x/oauth2/google"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +12,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2/google"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/requestid"
@@ -338,7 +341,8 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 
 	resp.StatusCode = solution.ValidSolutionFound
 	if len(planningRequest.Location.City) > 0 {
-		resp.TravelDestination = strings.Title(planningRequest.Location.City)
+		c := cases.Title(language.English)
+		resp.TravelDestination = c.String(planningRequest.Location.City)
 	} else {
 		geocodes, err := planner.Solver.Searcher.ReverseGeocode(ctx, planningRequest.Location.Latitude, planningRequest.Location.Longitude)
 		if err != nil {
@@ -470,7 +474,8 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 	var destination string = "Dream Place"
 	var today = time.Now()
 	if cachePlanSolution.Destination != (POI.Location{}) {
-		destination = strings.Title(cachePlanSolution.Destination.City) + ", " + strings.Title(cachePlanSolution.Destination.Country)
+		c := cases.Title(language.English)
+		destination = c.String(cachePlanSolution.Destination.City) + ", " + c.String(cachePlanSolution.Destination.Country)
 	}
 	travelDate := c.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
