@@ -1,8 +1,9 @@
 package matching
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"math"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 type knapsackNode struct {
@@ -47,8 +48,8 @@ func KnapsackV1(places []Place, interval QueryTimeInterval, budget uint) (result
 		}
 	}
 	optimalNode := knapsackNode{SelectionThreshold, make([]Place, 0)}
-	tempPlaces := make([]Place, 0)
-	var tempScore float64 = SelectionThreshold
+	var tempPlaces []Place
+	var tempScore float64
 	tempi := 0
 	tempj := 0
 

@@ -153,7 +153,6 @@ func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowr
 	if err := redisClient.RemoveKeys(context, slotSolutionRedisKeys); err != nil {
 		iowrappers.Logger.Error(err)
 	}
-	return
 }
 
 // GetStandardRequest generates a standard request while we seek a better way to represent complex REST requests
