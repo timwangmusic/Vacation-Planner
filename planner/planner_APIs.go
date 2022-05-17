@@ -55,6 +55,7 @@ type MyPlanner struct {
 	Environment         string
 	Configs             map[string]interface{}
 	OAuth2Config        *oauth2.Config
+	Mailer              *iowrappers.Mailer
 }
 
 type TimeSectionPlace struct {
@@ -101,10 +102,10 @@ type TripDetailResp struct {
 }
 
 type PlaceDetailsResp struct {
-	Name            string
-	URL             string
-	FormattedAdress string
-	PhotoURL        string
+	Name             string
+	URL              string
+	FormattedAddress string
+	PhotoURL         string
 }
 
 type RequestIdKey string
@@ -141,6 +142,10 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 		RedirectURL:  domain + "/v1/callback-google",
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint:     google.Endpoint,
+	}
+	planner.Mailer = &iowrappers.Mailer{}
+	if err = planner.Mailer.Init(&planner.RedisClient); err != nil {
+		log.Fatalf("planner failed to create a Mailer: %s", err.Error())
 	}
 }
 
@@ -458,7 +463,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 }
 
 func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
-	var id string = c.Param("id")
+	id := c.Param("id")
 	iowrappers.Logger.Debugf("GET Route /plans/%s", id)
 
 	var cachePlanSolution iowrappers.PlanningSolutionRecord
@@ -473,7 +478,7 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 	const fixedPlaceKeyPrefix = "place_details:place_ID:"
 	var placeKey string
 	var cachePlaceDetails POI.Place
-	var destination string = "Dream Place"
+	destination := "Dream Place"
 	var today = time.Now()
 	if cachePlanSolution.Destination != (POI.Location{}) {
 		c := cases.Title(language.English)
@@ -519,10 +524,10 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 
 func (planner *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
 	return PlaceDetailsResp{
-		Name:            place.Name,
-		URL:             place.URL,
-		FormattedAdress: place.FormattedAddress,
-		PhotoURL:        string(planner.PhotoClient.GetPhotoURL(place.Photo.Reference)),
+		Name:             place.Name,
+		URL:              place.URL,
+		FormattedAddress: place.FormattedAddress,
+		PhotoURL:         string(planner.PhotoClient.GetPhotoURL(place.Photo.Reference)),
 	}
 }
 
@@ -634,6 +639,14 @@ func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
 	}
 }
 
+func (planner MyPlanner) UserClickOnEmailVerification(ctx *gin.Context) {
+	code := ctx.DefaultQuery("code", "")
+	if err := planner.RedisClient.CreateUserOnEmailVerified(ctx, code); err != nil {
+		ctx.String(http.StatusBadRequest, "failed to verify user email, please contact Vacation Planner")
+	}
+	ctx.Redirect(http.StatusMovedPermanently, "/v1/log-in")
+}
+
 func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if planner.Environment == "debug" {
@@ -657,7 +670,8 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	{
 		v1.GET("/", planner.searchPageHandler)
 		v1.GET("/plans", planner.getPlanningApi)
-		v1.POST("/signup", planner.UserSignup)
+		v1.POST("/signup", planner.UserEmailVerify)
+		v1.GET("/verify", planner.UserClickOnEmailVerification)
 		v1.POST("/login", planner.UserLogin)
 		v1.GET("/reverse-geocoding", planner.ReverseGeocodingHandler)
 		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)

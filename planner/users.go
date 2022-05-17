@@ -53,6 +53,30 @@ func (planner *MyPlanner) profile(context *gin.Context) {
 		return
 	}
 }
+func (planner MyPlanner) UserEmailVerify(ctx *gin.Context) {
+	userView := user.View{}
+
+	decodeErr := ctx.ShouldBindJSON(&userView)
+	if decodeErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
+		return
+	}
+
+	userLevel := user.LevelStringRegular
+	adminUsers := strings.Split(os.Getenv("ADMIN_USERS"), ",")
+	for _, username := range adminUsers {
+		if userView.Username == username {
+			userLevel = user.LevelStringAdmin
+		}
+	}
+	userView.UserLevel = userLevel
+	if err := planner.Mailer.Send(iowrappers.EmailVerification, userView); err != nil {
+		iowrappers.Logger.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "Email sent. Please check the inbox to verify your email address."})
+}
 
 func (planner MyPlanner) UserSignup(context *gin.Context) {
 	userView := user.View{}
@@ -73,7 +97,7 @@ func (planner MyPlanner) UserSignup(context *gin.Context) {
 
 	userView.UserLevel = userLevel
 
-	view, createErr := planner.RedisClient.CreateUser(context, userView)
+	view, createErr := planner.RedisClient.CreateUser(context, userView, false)
 	if createErr != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
 		return

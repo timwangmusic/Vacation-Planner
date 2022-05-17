@@ -46,6 +46,9 @@ const (
 	//UserEmailsKey maps emails to IDs
 	UserEmailsKey = "user_emails"
 
+	//EmailVerificationCodes maps email to verification code
+	EmailVerificationCodes = "email_verification_codes"
+
 	FindUserByName  FindUserBy = "FindUserByName"
 	FindUserByID    FindUserBy = "FindUserByID"
 	FindUserByEmail FindUserBy = "FindUserByEmail"
@@ -85,7 +88,7 @@ func (redisClient *RedisClient) FindUser(context context.Context, findUserBy Fin
 	return userView, nil
 }
 
-func (redisClient *RedisClient) CreateUser(context context.Context, userView user.View) (user.View, error) {
+func (redisClient *RedisClient) CreateUser(context context.Context, userView user.View, skipPasswordGeneration bool) (user.View, error) {
 	client := redisClient.client
 
 	if client.HExists(context, UserNamesKey, userView.Username).Val() {
@@ -104,6 +107,9 @@ func (redisClient *RedisClient) CreateUser(context context.Context, userView use
 	}
 
 	passwordEncrypted, _ := bcrypt.GenerateFromPassword([]byte(userView.Password), bcrypt.DefaultCost)
+	if skipPasswordGeneration {
+		passwordEncrypted = []byte(userView.Password)
+	}
 
 	userID := uuid.NewString()
 	userData := map[string]interface{}{
@@ -276,4 +282,43 @@ func (redisClient *RedisClient) findUserPlan(context context.Context, redisKey s
 		return
 	}
 	utils.LogErrorWithLevel(json.Unmarshal([]byte(cachedPlan), view), utils.LogError)
+}
+
+func (redisClient *RedisClient) saveUserEmailVerificationCode(ctx context.Context, view user.View) (string, error) {
+	if len(view.Email) == 0 {
+		return "", errors.New("email address cannot be empty")
+	}
+	c := redisClient.client
+	// overwrites existing verification code
+	// the code serves as a temporary user ID
+	code := uuid.NewString()
+	if _, err := c.HSet(ctx, EmailVerificationCodes, view.Email, code).Result(); err != nil {
+		return "", err
+	}
+	passwordEncrypted, _ := bcrypt.GenerateFromPassword([]byte(view.Password), bcrypt.DefaultCost)
+	if _, err := c.HSet(ctx, "temp_user:"+code, "id", code, "email", view.Email, "username", view.Username, "password", passwordEncrypted, "user_level", view.UserLevel).Result(); err != nil {
+		return "", err
+	}
+	// set 6 hour expiration time
+	c.Expire(ctx, "temp_user:"+code, 6*time.Hour)
+	return code, nil
+}
+
+func (redisClient *RedisClient) CreateUserOnEmailVerified(ctx context.Context, tmpUserID string) error {
+	c := redisClient.client
+	var tmpUserData map[string]string
+	var err error
+	if tmpUserData, err = c.HGetAll(ctx, "temp_user:"+tmpUserID).Result(); err != nil {
+		return err
+	}
+	view := user.View{
+		Username:  tmpUserData["username"],
+		Email:     tmpUserData["email"],
+		Password:  tmpUserData["password"],
+		UserLevel: tmpUserData["user_level"],
+	}
+	if _, err = redisClient.CreateUser(ctx, view, true); err != nil {
+		return err
+	}
+	return nil
 }
