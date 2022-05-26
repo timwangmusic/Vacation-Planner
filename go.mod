@@ -30,5 +30,5 @@ require (
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	gonum.org/v1/gonum v0.0.0-20190808205415-ced62fe5104b
 	googlemaps.github.io/maps v1.3.2
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.0
 )
