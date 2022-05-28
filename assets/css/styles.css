@@ -45,7 +45,7 @@ tr:nth-child(even) {
 #tripCarousel {
     height: 350px !important;
     overflow: hidden;
-  }
+  }     
 
 @media only screen and (min-width: 576px) {
     #dateDiv {
@@ -58,4 +58,9 @@ tr:nth-child(even) {
 #planSaveIcon {
     cursor: pointer;
 }
-  
+
+.svg {
+    background: url("http://fofwebdesign.co.uk/template/_testing/test/svg/page-bg.svg") 50% 100% no-repeat;
+    background-size: contain;
+    height: 100vh;
+}
