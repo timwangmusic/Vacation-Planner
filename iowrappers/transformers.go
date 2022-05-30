@@ -2,7 +2,7 @@ package iowrappers
 
 import "googlemaps.github.io/maps"
 
-func geocodingResultsToGeocodeQuery(query *GeocodeQuery, results []maps.GeocodingResult)  {
+func geocodingResultsToGeocodeQuery(query *GeocodeQuery, results []maps.GeocodingResult) {
 	// take the most specific result
 	firstGeocodingResult := results[0]
 	for _, component := range firstGeocodingResult.AddressComponents {

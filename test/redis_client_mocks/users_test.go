@@ -16,7 +16,7 @@ func TestUserAuthentication(t *testing.T) {
 	username := "johnny_depp"
 	password := "33521"
 	userEmail := "johnny_depp@gmail.com"
-	if _, err := RedisClient.CreateUser(RedisContext, user.View{Username: username, Password: password, Email: userEmail}); err != nil {
+	if _, err := RedisClient.CreateUser(RedisContext, user.View{Username: username, Password: password, Email: userEmail}, false); err != nil {
 		t.Error(err)
 		return
 	}
@@ -57,7 +57,7 @@ func TestUserCreation(t *testing.T) {
 	}
 
 	var err error
-	_, err = RedisClient.CreateUser(RedisContext, expectedUserView)
+	_, err = RedisClient.CreateUser(RedisContext, expectedUserView, false)
 
 	if err != nil {
 		t.Error(err)
@@ -110,7 +110,7 @@ func TestSaveUserPlan(t *testing.T) {
 
 	var err error
 
-	userView, err = RedisClient.CreateUser(RedisContext, userView)
+	userView, err = RedisClient.CreateUser(RedisContext, userView, false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -162,7 +162,7 @@ func TestDeleteUserPlan(t *testing.T) {
 
 	var err error
 
-	userView, err = RedisClient.CreateUser(RedisContext, userView)
+	userView, err = RedisClient.CreateUser(RedisContext, userView, false)
 	if err != nil {
 		t.Error(err)
 		return
