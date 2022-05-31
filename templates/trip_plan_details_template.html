@@ -96,7 +96,7 @@
             {{range $i, $p := .PlaceDetails}}
             <div class={{if index $active $i}} "card-body" {{else}} "card-body d-none" {{end}}>
                 <h5 class="card-title">{{ .Name }}</h5>
-                <p class="card-text"><a href={{ .URL }}>{{ .FormattedAdress }}</a></p>
+                <p class="card-text"><a href={{ .URL }}>{{ .FormattedAddress }}</a></p>
             </div>
             {{end}}
         </div>

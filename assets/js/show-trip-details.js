@@ -52,7 +52,7 @@ function planToView(plan) {
     for (const pDetail of plan.PlaceDetails) {
         const {
             Name: placeName,
-            FormattedAdress: address,
+            FormattedAddress: address,
             TimePeriod: timePeriod = '10 - 16', // TODO: use actual time period for each place
             URL: mapURL
         } = pDetail
