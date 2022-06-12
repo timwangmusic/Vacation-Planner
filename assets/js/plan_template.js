@@ -1,8 +1,12 @@
 // JS for plan_template.html
 import { logOut } from "./user.js";
-import { setDateToday } from "./utils.js";
+import { setDateToday, locateMe } from "./utils.js";
 
 setDateToday();
+
+document.getElementById("autofill").addEventListener(
+    "click", locateMe
+)
 
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut
