@@ -41,7 +41,9 @@ function insertNewRow(start = '8', end = '10', category = 'Visit') {
     startTime.value = start;
 
     let endTime = hourDropdown(start);
-    endTime.value = end;
+    if (startTime.value) {
+        endTime.value = end;
+    }
 
     cafeOption.text = "Eatery";
     attractionOption.text = "Visit";
@@ -121,7 +123,7 @@ async function postPlanTemplate() {
         "location": locationToPost,
         "slots": tableToSlots()
     }
-    const url = "/v1/customize?date=" + document.getElementById("datepicker").value.toString();
+    const url = "/v1/customize?date=" + document.getElementById("datepicker").value.toString() + "&price=" + document.getElementById("price").value.toString();
     console.log(`data about to send: ${JSON.stringify(data)}`);
 
     axios.post(
