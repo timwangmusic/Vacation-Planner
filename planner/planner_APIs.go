@@ -545,18 +545,23 @@ func (planner *MyPlanner) customizedTemplate(context *gin.Context) {
 
 // travel plan customization handler
 func (planner *MyPlanner) customize(ctx *gin.Context) {
+	logger := iowrappers.Logger
 	// date is in the format of yyyy-mm-dd
 	date := ctx.DefaultQuery("date", "")
 	if err := validateDate(date); err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
-
 	iowrappers.Logger.Debugf("received date in request: %s", date)
+
+	priceLevel := ctx.DefaultQuery("price", "2")
+	logger.Debugf("Requested price range is %s", priceLevel)
+
 	request := solution.PlanningRequest{
 		NumPlans:     1,
 		Weekday:      toWeekday(date),
 		SearchRadius: 10000,
+		PriceLevel:   toPriceLevel(priceLevel),
 	}
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {

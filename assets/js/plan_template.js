@@ -1,8 +1,12 @@
 // JS for plan_template.html
 import { logOut } from "./user.js";
-import { setDateToday } from "./utils.js";
+import { setDateToday, locateMe } from "./utils.js";
 
 setDateToday();
+
+document.getElementById("autofill").addEventListener(
+    "click", locateMe
+)
 
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut
@@ -18,6 +22,8 @@ function removeLastRow() {
 
 function insertNewRow(start = '8', end = '10', category = 'Visit') {
     const template = document.getElementById("template");
+    const lastColumnOfLastRow = document.querySelector('table tr:last-child td:last-child');
+
     let newRow = template.insertRow(-1);
     let newCell = newRow.insertCell(0);
     let newCell2 = newRow.insertCell(1);
@@ -27,11 +33,17 @@ function insertNewRow(start = '8', end = '10', category = 'Visit') {
     let cafeOption = document.createElement("option");
     let attractionOption = document.createElement("option");
 
-    let startTime = hourDropdown();
+    if (template.rows.length > 2) {
+        start = lastColumnOfLastRow.firstChild.value;
+    }
+
+    let startTime = hourDropdown(start);
     startTime.value = start;
 
-    let endTime = hourDropdown();
-    endTime.value = end;
+    let endTime = hourDropdown(start);
+    if (startTime.value) {
+        endTime.value = end;
+    }
 
     cafeOption.text = "Eatery";
     attractionOption.text = "Visit";
@@ -46,10 +58,10 @@ function insertNewRow(start = '8', end = '10', category = 'Visit') {
     newCell3.append(endTime);
 }
 
-function hourDropdown() {
+function hourDropdown(start) {
     let select = document.createElement("select");
     select.classList.add("form-select");
-    for (let hour = 8; hour < 20; hour++) {
+    for (let hour = start; hour < 24; hour++) {
         let option = document.createElement("option");
         option.text = hour.toString();
         select.add(option);
@@ -111,7 +123,7 @@ async function postPlanTemplate() {
         "location": locationToPost,
         "slots": tableToSlots()
     }
-    const url = "/v1/customize?date=" + document.getElementById("datepicker").value.toString();
+    const url = "/v1/customize?date=" + document.getElementById("datepicker").value.toString() + "&price=" + document.getElementById("price").value.toString();
     console.log(`data about to send: ${JSON.stringify(data)}`);
 
     axios.post(
