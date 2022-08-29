@@ -1,5 +1,6 @@
+import {Place, View} from "./place.js";
+
 import {updateUsername} from "./user.js";
-import {View, Place} from "./place.js";
 
 let numberOfPlans = 5;
 const username = updateUsername();
@@ -87,3 +88,13 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
 }
 
 document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);
+
+const rollUpButton = document.getElementById("scroll-to-top");
+rollUpButton.addEventListener("click", () => {
+    window.scrollTo(
+        {
+            top: 0,
+            behavior: 'smooth'
+        }
+    )
+})

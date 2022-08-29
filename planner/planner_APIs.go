@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -621,7 +621,7 @@ func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
 		}
 		defer resp.Body.Close()
 
-		response, err := ioutil.ReadAll(resp.Body)
+		response, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logger.Errorf("failed to read response body: %v", err)
 			ctx.String(http.StatusInternalServerError, err.Error())
@@ -657,7 +657,7 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 	if planner.Environment == "debug" {
 		gin.SetMode(gin.DebugMode)
 	}
-	gin.DefaultWriter = ioutil.Discard
+	gin.DefaultWriter = io.Discard
 
 	myRouter := gin.Default()
 	myRouter.LoadHTMLGlob("templates/*")
