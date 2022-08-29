@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
+	"io"
 	"os"
 )
 
@@ -30,7 +30,7 @@ func ReadFromFile(fileName string, ptr interface{}) error {
 		}
 	}(jsonFile)
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := io.ReadAll(jsonFile)
 	err = json.Unmarshal(byteValue, ptr)
 	if err != nil {
 		logrus.Error(err.Error())
