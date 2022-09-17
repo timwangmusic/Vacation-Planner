@@ -87,7 +87,7 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
     });
 }
 
-document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);
+document.getElementById("profile").addEventListener("click", () => window.location = `/v1/profile?username=`+username);
 
 const rollUpButton = document.getElementById("scroll-to-top");
 rollUpButton.addEventListener("click", () => {

@@ -46,6 +46,5 @@ function logOut() {
 }
 
 const username = updateUsername();
-document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);
 
 export { updateUsername, logOut }

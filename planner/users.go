@@ -28,7 +28,8 @@ func (planner *MyPlanner) profile(context *gin.Context) {
 	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
 	iowrappers.Logger.Debugf("fetching user profile for %s", userView.Username)
 
-	if userView.Username != context.Param("username") {
+	if userView.Username != context.DefaultQuery("username", "guest") {
+		iowrappers.Logger.Debugf("username in view: %s, username in context: %s", userView.Username, context.Param("username"))
 		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
 		return
 	}
