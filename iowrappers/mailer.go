@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/weihesdlegend/Vacation-planner/user"
-	"os"
 )
 
 type Mailer struct {
@@ -21,6 +23,9 @@ type EmailType string
 const EmailVerification EmailType = "Email Verification"
 
 func (m *Mailer) Init(redisClient *RedisClient) error {
+	if strings.ToLower(os.Getenv("ENVIRONMENT")) != "production" {
+		return nil
+	}
 	if os.Getenv("SENDGRID_API_KEY") == "" {
 		return errors.New("failed to create mailer: SENDGRID_API_KEY does not exist")
 	}
