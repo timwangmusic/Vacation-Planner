@@ -695,11 +695,11 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/remove-places", planner.removePlacesMigrationHandler)
 		}
 
+		v1.GET("/profile", planner.profile)
 		users := v1.Group("/users")
 		{
 			users.POST("/:username/plans", planner.UserSavedPlansPostHandler)
 			users.GET("/:username/plans", planner.UserSavedPlansGetHandler)
-			users.GET("/:username/profile", planner.profile)
 			users.DELETE("/:username/plan/:id", planner.UserPlanDeleteHandler)
 		}
 	}

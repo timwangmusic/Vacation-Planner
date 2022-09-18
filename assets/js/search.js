@@ -1,7 +1,8 @@
 // methods for the search page
 import { locateMe, preciseLocation, setDateToday } from "./utils.js";
-import { logOut } from "./user.js";
+import { logOut, updateUsername } from "./user.js";
 
+const username = updateUsername();
 function randomPriceRange() {
                                 const item = document.getElementById('priceToSelect');
                                 const valueSel = item.options[item.selectedIndex].text;
@@ -82,4 +83,4 @@ const hideSpinner = function () {
 }
 document.addEventListener("visibilitychange", hideSpinner);
 
-document.getElementById("profile").addEventListener("click", () => window.location = `/v1/users/${username}/profile`);
+document.getElementById("profile").addEventListener("click", () => window.location = `/v1/profile?username=`+username);
