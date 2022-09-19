@@ -4,13 +4,13 @@ import { logOut, updateUsername } from "./user.js";
 
 const username = updateUsername();
 function randomPriceRange() {
-                                const item = document.getElementById('priceToSelect');
-                                const valueSel = item.options[item.selectedIndex].text;
-                                if (valueSel === "Surprise") {
-                                    const index = Math.floor(Math.random() * 5);
-                                    item.value = [0, 1, 2, 3, 4][index];
-                                }
-                            }
+    const item = document.getElementById('priceToSelect');
+    const valueSel = item.options[item.selectedIndex].text;
+    if (valueSel === "Surprise") {
+        const index = Math.floor(Math.random() * 5);
+        item.value = [0, 1, 2, 3, 4][index];
+    }
+}
 
 setDateToday();
 
@@ -69,6 +69,11 @@ document.querySelector('#priceToSelect').addEventListener('change', randomPriceR
 
 const locationSearchInput = document.getElementById('location');
 const spinner = document.getElementById("searchSpinner");
+const searchBtn = document.getElementById("searchBtn");
+
+// Show the wasearch spinner in two cases
+// 1. Enter key is pressed in the location search box
+// 2. Search button is clicked
 locationSearchInput.addEventListener(
     "keyup", (evt) => {
         if (evt.key === "Enter") {
@@ -77,10 +82,14 @@ locationSearchInput.addEventListener(
         }
     }
 );
+searchBtn.addEventListener("click", () => {
+    spinner.classList.remove("visually-hidden");
+});
+
 // hide spinner when switching pages
 const hideSpinner = function () {
     spinner.classList.add("visually-hidden");
 }
 document.addEventListener("visibilitychange", hideSpinner);
 
-document.getElementById("profile").addEventListener("click", () => window.location = `/v1/profile?username=`+username);
+document.getElementById("profile").addEventListener("click", () => window.location = `/v1/profile?username=` + username);
