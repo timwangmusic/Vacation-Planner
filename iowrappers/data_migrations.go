@@ -29,12 +29,12 @@ func (poiSearcher *PoiSearcher) RemovePlaces(context context.Context, nonEmptyFi
 	return nil
 }
 
-func (redisClient *RedisClient) RemovePlaces(context context.Context, nonEmptyFields []PlaceDetailsFields) error {
+func (r *RedisClient) RemovePlaces(context context.Context, nonEmptyFields []PlaceDetailsFields) error {
 	var placeDetailsKeys []string
 	redisKeyPrefix := "place_details:place_ID:"
 
 	var err error
-	placeDetailsKeys, err = scanRedisKeys(context, redisClient, redisKeyPrefix)
+	placeDetailsKeys, err = scanRedisKeys(context, r, redisKeyPrefix)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (redisClient *RedisClient) RemovePlaces(context context.Context, nonEmptyFi
 	var count uint64
 	Logger.Debugf("RemovePlaces -> obtained keys for %d places", len(placeDetailsKeys))
 	for idx, key := range placeDetailsKeys {
-		if err = redisClient.removePlace(context, key, nonEmptyFields, &count); err != nil {
+		if err = r.removePlace(context, key, nonEmptyFields, &count); err != nil {
 			return err
 		}
 		if (idx+1)%100 == 0 {
@@ -53,7 +53,7 @@ func (redisClient *RedisClient) RemovePlaces(context context.Context, nonEmptyFi
 	return nil
 }
 
-func (redisClient *RedisClient) removePlace(context context.Context, placeRedisKey string, nonEmptyFields []PlaceDetailsFields, count *uint64) error {
+func (r *RedisClient) removePlace(context context.Context, placeRedisKey string, nonEmptyFields []PlaceDetailsFields, count *uint64) error {
 	segments := strings.Split(placeRedisKey, ":")
 	var placeID string
 	if len(segments) > 0 {
@@ -62,7 +62,7 @@ func (redisClient *RedisClient) removePlace(context context.Context, placeRedisK
 
 	var place POI.Place
 	var err error
-	place, err = redisClient.getPlace(context, placeID)
+	place, err = r.getPlace(context, placeID)
 	if err != nil {
 		return err
 	}
@@ -73,10 +73,10 @@ func (redisClient *RedisClient) removePlace(context context.Context, placeRedisK
 
 	*count++
 	// remove keys from all categorized sorted lists in case a place belongs to multiple categories
-	_, _ = redisClient.client.ZRem(context, "placeIDs:visit", placeID).Result()
-	_, _ = redisClient.client.ZRem(context, "placeIDs:eatery", placeID).Result()
+	_, _ = r.client.ZRem(context, "placeIDs:visit", placeID).Result()
+	_, _ = r.client.ZRem(context, "placeIDs:eatery", placeID).Result()
 
-	return redisClient.RemoveKeys(context, []string{placeRedisKey})
+	return r.RemoveKeys(context, []string{placeRedisKey})
 }
 
 func isPlaceDetailsValid(place POI.Place, nonEmptyFields []PlaceDetailsFields) bool {
