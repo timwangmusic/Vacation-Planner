@@ -20,6 +20,10 @@ const (
 	DateSunday
 )
 
+func (w Weekday) String() string {
+	return string(w)
+}
+
 type PlacePhoto struct {
 	// reference from Google Images
 	Reference string `bson:"reference"`
@@ -55,11 +59,11 @@ type Place struct {
 }
 
 type Location struct {
-	Latitude          float64
-	Longitude         float64
-	City              string `json:"city"`              // name of the city where the location belongs to
-	AdminAreaLevelOne string `json:"adminAreaLevelOne"` // e.g. state names in the United States
-	Country           string `json:"country"`           // name of the country where the location belongs to
+	Latitude          float64 `json:"latitude"`
+	Longitude         float64 `json:"longitude"`
+	City              string  `json:"city"`              // name of the city where the location belongs to
+	AdminAreaLevelOne string  `json:"adminAreaLevelOne"` // e.g. state names in the United States
+	Country           string  `json:"country"`           // name of the country where the location belongs to
 }
 
 // Address in adr micro-format example:

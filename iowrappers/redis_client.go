@@ -42,6 +42,10 @@ type RedisClient struct {
 	client redis.Client
 }
 
+func (r *RedisClient) Get() *redis.Client {
+	return &r.client
+}
+
 // Destroy closes Redis connection from the client
 func (r *RedisClient) Destroy() {
 	if err := r.client.Close(); err != nil {
