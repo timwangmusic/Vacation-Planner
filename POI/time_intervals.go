@@ -10,6 +10,10 @@ import (
 
 type Hour uint8
 
+func (h Hour) String() string {
+	return string(h)
+}
+
 type TimeInterval struct {
 	Start Hour `json:"start"`
 	End   Hour `json:"end"`

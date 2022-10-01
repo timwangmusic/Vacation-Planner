@@ -22,12 +22,12 @@ func MatchClusterCenters(eClusterCenters [][]float64, vClusterCenters [][]float6
 		indexes[i] = i
 	}
 
-	permutations := [][]int{}
+	var permutations [][]int
 	utils.Permutations(indexes, &permutations, 0)
 
 	score := math.Inf(1) // positive infinity
 
-	finalPermutation := []int{}
+	var finalPermutation []int
 	for _, permutation := range permutations {
 		pScore := calculateScore(eClusterCenters, vClusterCenters, permutation)
 		if pScore < score {

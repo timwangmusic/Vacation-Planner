@@ -54,8 +54,8 @@ const (
 	FindUserByEmail FindUserBy = "FindUserByEmail"
 )
 
-func (redisClient *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, userView user.View) (user.View, error) {
-	client := redisClient.client
+func (r *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, userView user.View) (user.View, error) {
+	client := r.client
 	redisKey := ""
 	switch findUserBy {
 	case FindUserByID:
@@ -88,8 +88,8 @@ func (redisClient *RedisClient) FindUser(context context.Context, findUserBy Fin
 	return userView, nil
 }
 
-func (redisClient *RedisClient) CreateUser(context context.Context, userView user.View, skipPasswordGeneration bool) (user.View, error) {
-	client := redisClient.client
+func (r *RedisClient) CreateUser(context context.Context, userView user.View, skipPasswordGeneration bool) (user.View, error) {
+	client := r.client
 
 	if client.HExists(context, UserNamesKey, userView.Username).Val() {
 		return userView, fmt.Errorf("user %s already exists", userView.Username)
@@ -137,13 +137,13 @@ func (redisClient *RedisClient) CreateUser(context context.Context, userView use
 	return userView, err
 }
 
-func (redisClient *RedisClient) Authenticate(context context.Context, credential user.Credential) (user.View, string, time.Time, error) {
+func (r *RedisClient) Authenticate(context context.Context, credential user.Credential) (user.View, string, time.Time, error) {
 	userView := user.View{Username: credential.Username, Email: strings.ToLower(credential.Email)}
 	Logger.Debugf("->Authenticate: user view is %v", userView)
 	var u user.View
 	var err error
 	var loggedInByEmail bool
-	u, err = redisClient.FindUser(context, FindUserByName, userView)
+	u, err = r.FindUser(context, FindUserByName, userView)
 	if err != nil {
 		Logger.Debugf("cannot find user by username %s, error: %v", credential.Username, err)
 		loggedInByEmail = true
@@ -155,7 +155,7 @@ func (redisClient *RedisClient) Authenticate(context context.Context, credential
 		if strings.TrimSpace(credential.Email) == "" {
 			userView.Email = strings.ToLower(credential.Username)
 		}
-		u, err = redisClient.FindUser(context, FindUserByEmail, userView)
+		u, err = r.FindUser(context, FindUserByEmail, userView)
 		Logger.Debugf("cannot find user by email %s, error: %v", credential.Email, err)
 		if err != nil {
 			return u, "", time.Now(), err
@@ -184,8 +184,8 @@ func (redisClient *RedisClient) Authenticate(context context.Context, credential
 	return u, token, tokenExpirationTime, jwtSignErr
 }
 
-func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView user.View, planView *user.TravelPlanView) error {
-	userView, findUserErr := redisClient.FindUser(context, FindUserByName, userView)
+func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, planView *user.TravelPlanView) error {
+	userView, findUserErr := r.FindUser(context, FindUserByName, userView)
 	if findUserErr != nil {
 		return findUserErr
 	}
@@ -198,7 +198,7 @@ func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView u
 
 	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
 	userSavedPlansRedisKey := strings.Join([]string{UserSavedTravelPlansPrefix, "user", userView.ID, "plans"}, ":")
-	if exists, getPlanErr := redisClient.client.SIsMember(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); getPlanErr != nil || exists {
+	if exists, getPlanErr := r.client.SIsMember(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); getPlanErr != nil || exists {
 		if getPlanErr != nil && getPlanErr != redis.Nil {
 			return getPlanErr
 		}
@@ -208,18 +208,18 @@ func (redisClient *RedisClient) SaveUserPlan(context context.Context, userView u
 	}
 
 	var err error
-	_, err = redisClient.client.SAdd(context, userSavedPlansRedisKey, travelPlanRedisKey).Result()
+	_, err = r.client.SAdd(context, userSavedPlansRedisKey, travelPlanRedisKey).Result()
 	if err != nil {
 		return err
 	}
 
 	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
-	_, err = redisClient.client.Set(context, redisKey, json_, 0).Result()
+	_, err = r.client.Set(context, redisKey, json_, 0).Result()
 	return err
 }
 
-func (redisClient *RedisClient) DeleteUserPlan(context context.Context, userView user.View, planView user.TravelPlanView) error {
-	userView, findUserErr := redisClient.FindUser(context, FindUserByName, userView)
+func (r *RedisClient) DeleteUserPlan(context context.Context, userView user.View, planView user.TravelPlanView) error {
+	userView, findUserErr := r.FindUser(context, FindUserByName, userView)
 	if findUserErr != nil {
 		return findUserErr
 	}
@@ -229,21 +229,21 @@ func (redisClient *RedisClient) DeleteUserPlan(context context.Context, userView
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	go redisClient.findUserPlan(context, redisKey, &planView, &wg)
+	go r.findUserPlan(context, redisKey, &planView, &wg)
 
 	wg.Wait()
 
 	userSavedPlansRedisKey := strings.Join([]string{UserSavedTravelPlansPrefix, "user", userView.ID, "plans"}, ":")
 	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
-	if res, originalPlanIdRemovalErr := redisClient.client.SRem(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); originalPlanIdRemovalErr != nil && originalPlanIdRemovalErr != redis.Nil {
+	if res, originalPlanIdRemovalErr := r.client.SRem(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); originalPlanIdRemovalErr != nil && originalPlanIdRemovalErr != redis.Nil {
 		Logger.Infof("result from removing original key from hash set is %d", res)
 		return originalPlanIdRemovalErr
 	}
 
-	return redisClient.RemoveKeys(context, []string{redisKey})
+	return r.RemoveKeys(context, []string{redisKey})
 }
 
-func (redisClient *RedisClient) FindUserPlans(context context.Context, userView user.View) ([]user.TravelPlanView, error) {
+func (r *RedisClient) FindUserPlans(context context.Context, userView user.View) ([]user.TravelPlanView, error) {
 	var cursor uint64 = 0
 	travelPlanKeys := make([]string, 0)
 
@@ -251,7 +251,7 @@ func (redisClient *RedisClient) FindUserPlans(context context.Context, userView 
 	for {
 		var err error
 		var keys []string
-		keys, cursor, err = redisClient.client.Scan(context, cursor, redisKeysPrefix+"*", 100).Result()
+		keys, cursor, err = r.client.Scan(context, cursor, redisKeysPrefix+"*", 100).Result()
 		if err != nil {
 			break
 		}
@@ -267,16 +267,16 @@ func (redisClient *RedisClient) FindUserPlans(context context.Context, userView 
 	result := make([]user.TravelPlanView, len(travelPlanKeys))
 
 	for idx, key := range travelPlanKeys {
-		go redisClient.findUserPlan(context, key, &result[idx], &wg)
+		go r.findUserPlan(context, key, &result[idx], &wg)
 	}
 	wg.Wait()
 
 	return result, nil
 }
 
-func (redisClient *RedisClient) findUserPlan(context context.Context, redisKey string, view *user.TravelPlanView, wg *sync.WaitGroup) {
+func (r *RedisClient) findUserPlan(context context.Context, redisKey string, view *user.TravelPlanView, wg *sync.WaitGroup) {
 	defer wg.Done()
-	cachedPlan, err := redisClient.client.Get(context, redisKey).Result()
+	cachedPlan, err := r.client.Get(context, redisKey).Result()
 	if err != nil {
 		Logger.Error(err)
 		return
@@ -284,11 +284,11 @@ func (redisClient *RedisClient) findUserPlan(context context.Context, redisKey s
 	utils.LogErrorWithLevel(json.Unmarshal([]byte(cachedPlan), view), utils.LogError)
 }
 
-func (redisClient *RedisClient) saveUserEmailVerificationCode(ctx context.Context, view user.View) (string, error) {
+func (r *RedisClient) saveUserEmailVerificationCode(ctx context.Context, view user.View) (string, error) {
 	if len(view.Email) == 0 {
 		return "", errors.New("email address cannot be empty")
 	}
-	c := redisClient.client
+	c := r.client
 	// overwrites existing verification code
 	// the code serves as a temporary user ID
 	code := uuid.NewString()
@@ -304,8 +304,8 @@ func (redisClient *RedisClient) saveUserEmailVerificationCode(ctx context.Contex
 	return code, nil
 }
 
-func (redisClient *RedisClient) CreateUserOnEmailVerified(ctx context.Context, tmpUserID string) error {
-	c := redisClient.client
+func (r *RedisClient) CreateUserOnEmailVerified(ctx context.Context, tmpUserID string) error {
+	c := r.client
 	var tmpUserData map[string]string
 	var err error
 	if tmpUserData, err = c.HGetAll(ctx, "temp_user:"+tmpUserID).Result(); err != nil {
@@ -317,7 +317,7 @@ func (redisClient *RedisClient) CreateUserOnEmailVerified(ctx context.Context, t
 		Password:  tmpUserData["password"],
 		UserLevel: tmpUserData["user_level"],
 	}
-	if _, err = redisClient.CreateUser(ctx, view, true); err != nil {
+	if _, err = r.CreateUser(ctx, view, true); err != nil {
 		return err
 	}
 	return nil
