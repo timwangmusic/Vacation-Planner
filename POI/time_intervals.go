@@ -10,7 +10,7 @@ import (
 
 type Hour uint8
 
-func (h Hour) String() string {
+func (h Hour) ToString() string {
 	return string(h)
 }
 

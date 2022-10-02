@@ -23,7 +23,7 @@ type ReverseIndex struct {
 }
 
 func reverseIndexKey(metadata *IndexMetadata) string {
-	start, end := metadata.Interval.Start.String(), metadata.Interval.End.String()
+	start, end := metadata.Interval.Start.ToString(), metadata.Interval.End.ToString()
 	return strings.Join([]string{ReverseIndexStringPrefix, metadata.Location.Country, metadata.Location.AdminAreaLevelOne, metadata.Location.City, metadata.Weekday.String(), start, end}, ":")
 }
 
