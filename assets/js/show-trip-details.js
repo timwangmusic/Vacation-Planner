@@ -1,5 +1,6 @@
-import { updateUsername } from "./user.js";
 import { Place, View } from "./place.js";
+
+import { updateUsername } from "./user.js";
 
 const saveIcon = document.querySelector("i.bi-bookmark");
 const saveTooltip = new bootstrap.Tooltip(saveIcon);
@@ -77,4 +78,4 @@ function getTravelDate(url) {
 }
 
 // Link to User Profile page
-profile.addEventListener("click", () => window.location = `/v1/users/${username}/profile`);
+profile.addEventListener("click", () => window.location = `/v1/profile?username=`+username);
