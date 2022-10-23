@@ -33,7 +33,7 @@ func (mapsClient *MapsClient) SetDetailedSearchFields(fields []string) {
 }
 
 // CreateMapsClient is a factory method for MapsClient
-func CreateMapsClient(apiKey string) MapsClient {
+func CreateMapsClient(apiKey string) *MapsClient {
 	logErr(CreateLogger(), utils.LogError)
 	mapsClient, err := maps.NewClient(maps.WithAPIKey(apiKey))
 	if err != nil {
@@ -42,7 +42,7 @@ func CreateMapsClient(apiKey string) MapsClient {
 	if reflect.ValueOf(mapsClient).IsNil() {
 		Logger.Fatal(errors.New("maps client does not exist"))
 	}
-	return MapsClient{client: mapsClient, apiKey: apiKey}
+	return &MapsClient{client: mapsClient, apiKey: apiKey}
 }
 
 func CreateLogger() error {

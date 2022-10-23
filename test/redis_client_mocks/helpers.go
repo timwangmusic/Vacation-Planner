@@ -7,7 +7,7 @@ import (
 	"net/url"
 )
 
-var RedisClient iowrappers.RedisClient
+var RedisClient *iowrappers.RedisClient
 var RedisMockSvr *miniredis.Miniredis
 var RedisContext context.Context
 

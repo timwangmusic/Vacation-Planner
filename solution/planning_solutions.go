@@ -128,7 +128,7 @@ func reversePlans(plans []PlanningSolution) []PlanningSolution {
 	return plans
 }
 
-func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, redisClient iowrappers.RedisClient, redisRequest iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest, priceRangeMatcher matching.Matcher) (solutions []PlanningSolution, solutionRedisKey string, err error) {
+func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, redisClient *iowrappers.RedisClient, redisRequest iowrappers.PlanningSolutionsCacheRequest, request PlanningRequest, priceRangeMatcher matching.Matcher) (solutions []PlanningSolution, solutionRedisKey string, err error) {
 	solutions = make([]PlanningSolution, 0)
 
 	var placeClusters [][]matching.Place

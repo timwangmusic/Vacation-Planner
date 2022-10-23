@@ -54,9 +54,9 @@ func (r *RedisClient) Destroy() {
 }
 
 // CreateRedisClient is a factory method for RedisClient
-func CreateRedisClient(url *url.URL) RedisClient {
+func CreateRedisClient(url *url.URL) *RedisClient {
 	password, _ := url.User.Password()
-	return RedisClient{client: *redis.NewClient(&redis.Options{
+	return &RedisClient{client: *redis.NewClient(&redis.Options{
 		Addr:     url.Host,
 		Password: password,
 	})}

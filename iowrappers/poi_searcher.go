@@ -20,8 +20,8 @@ const (
 )
 
 type PoiSearcher struct {
-	mapsClient  MapsClient
-	redisClient RedisClient
+	mapsClient  *MapsClient
+	redisClient *RedisClient
 }
 
 // GeocodeQuery can also be used as the result of reverse geocoding
@@ -42,11 +42,11 @@ func CreatePoiSearcher(mapsApiKey string, redisUrl *url.URL) *PoiSearcher {
 }
 
 func (poiSearcher PoiSearcher) GetMapsClient() *MapsClient {
-	return &poiSearcher.mapsClient
+	return poiSearcher.mapsClient
 }
 
 func (poiSearcher PoiSearcher) GetRedisClient() *RedisClient {
-	return &poiSearcher.redisClient
+	return poiSearcher.redisClient
 }
 
 func DestroyLogger() {

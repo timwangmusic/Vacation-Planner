@@ -87,7 +87,7 @@ func PlanningSolutionsRedisRequest(location POI.Location, placeCategories []POI.
 	return req
 }
 
-func (solver *Solver) Solve(context context.Context, redisClient iowrappers.RedisClient, request *PlanningRequest, response *PlanningResponse) {
+func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.RedisClient, request *PlanningRequest, response *PlanningResponse) {
 	iowrappers.Logger.Debugf("->Solve(context.Context, iowrappers.RedisClient, %v, *PlanningResponse)", request)
 	if !request.PreciseLocation && !solver.ValidateLocation(context, &request.Location) {
 		response.Err = errors.New("invalid travel destination")
@@ -123,7 +123,7 @@ func (solver *Solver) Solve(context context.Context, redisClient iowrappers.Redi
 			response.Err = err
 			if err.Error() == CategorizedPlaceIterInitFailureErrMsg || len(solutions) == 0 {
 				response.ErrorCode = NoValidSolution
-				invalidatePlanningSolutionsCache(context, &redisClient, []string{slotSolutionRedisKey})
+				invalidatePlanningSolutionsCache(context, redisClient, []string{slotSolutionRedisKey})
 			} else {
 				response.ErrorCode = InternalError
 			}

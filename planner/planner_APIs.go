@@ -44,7 +44,7 @@ var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
 }
 
 type MyPlanner struct {
-	RedisClient         iowrappers.RedisClient
+	RedisClient         *iowrappers.RedisClient
 	RedisStreamName     string
 	PhotoClient         iowrappers.PhotoHttpClient
 	Solver              solution.Solver
@@ -144,7 +144,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 		Endpoint:     google.Endpoint,
 	}
 	planner.Mailer = &iowrappers.Mailer{}
-	if err = planner.Mailer.Init(&planner.RedisClient); err != nil {
+	if err = planner.Mailer.Init(planner.RedisClient); err != nil {
 		log.Fatalf("planner failed to create a Mailer: %s", err.Error())
 	}
 }
