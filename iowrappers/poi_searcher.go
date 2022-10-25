@@ -125,7 +125,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	return places, nil
 }
 
-//processLocation performs reverse geocoding for precise location to find city-level information and performs geocoding to find precise latitude and longitude values
+// processLocation performs reverse geocoding for precise location to find city-level information and performs geocoding to find precise latitude and longitude values
 func (poiSearcher PoiSearcher) processLocation(ctx context.Context, req *PlaceSearchRequest) error {
 	location := &req.Location
 	if req.UsePreciseLocation {

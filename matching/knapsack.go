@@ -56,8 +56,8 @@ func (recordTable *knapsackRecordTable) update() {
 }
 
 /*
-	KnapsackV1 v2 uses sparse matrix like storage for step values and saves memory
-	KnapsackV1 v1 is migrated to knapsack_old_test_only.go
+KnapsackV1 v2 uses sparse matrix like storage for step values and saves memory
+KnapsackV1 v1 is migrated to knapsack_old_test_only.go
 */
 func Knapsack(places []Place, interval QueryTimeInterval, budget uint) (results []Place, totalCost uint, totalTimeSpent uint8) {
 	//Initialize knapsack data structures
