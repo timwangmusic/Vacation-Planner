@@ -24,7 +24,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/oauth2"
@@ -47,7 +46,7 @@ type MyPlanner struct {
 	RedisClient         *iowrappers.RedisClient
 	RedisStreamName     string
 	PhotoClient         iowrappers.PhotoHttpClient
-	Solver              solution.Solver
+	Solver              Solver
 	ResultHTMLTemplate  *template.Template
 	TripHTMLTemplate    *template.Template
 	ProfileHTMLTemplate *template.Template
@@ -149,7 +148,7 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	}
 }
 
-func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
+func (planner *MyPlanner) singleDayNearbySearchHandler(context *gin.Context) {
 	country := context.DefaultQuery("country", "USA")
 	city := context.DefaultQuery("city", "San Diego")
 	radius := context.DefaultQuery("radius", "10000")
@@ -172,7 +171,7 @@ func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
 	}
 
 	location := POI.Location{City: city, Country: country}
-	places, err := solution.NearbySearchWithPlaceView(context, planner.Solver.TimeMatcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
+	places, err := NearbySearchWithPlaceView(context, planner.Solver.TimeMatcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
 		Start: 8,
 		End:   21,
 	}}, placeCategory)
@@ -188,7 +187,7 @@ func (planner *MyPlanner) Destroy() {
 	planner.RedisClient.Destroy()
 }
 
-func (planner *MyPlanner) ReverseGeocodingHandler(context *gin.Context) {
+func (planner *MyPlanner) reverseGeocodingHandler(context *gin.Context) {
 	latitude, _ := strconv.ParseFloat(context.Query("lat"), 64)
 	longitude, _ := strconv.ParseFloat(context.Query("lng"), 64)
 	result, err := planner.Solver.Searcher.GetMapsClient().ReverseGeocode(context, latitude, longitude)
@@ -236,7 +235,7 @@ func (planner *MyPlanner) removePlacesMigrationHandler(context *gin.Context) {
 	}
 }
 
-func (planner *MyPlanner) PlaceStatsHandler(context *gin.Context) {
+func (planner *MyPlanner) placeStatsHandler(context *gin.Context) {
 	var placeCount int
 	var err error
 	if _, placeCount, err = planner.RedisClient.GetPlaceCountInRedis(context); err != nil {
@@ -267,7 +266,7 @@ type GeocodeCityView struct {
 	Cities map[string]string
 }
 
-func (planner *MyPlanner) GetCitiesHandler(context *gin.Context) {
+func (planner *MyPlanner) getCitiesHandler(context *gin.Context) {
 	views := toCityViews(geocodes)
 	term := context.DefaultQuery("term", "")
 	term = strings.ToLower(term)
@@ -287,7 +286,7 @@ func (planner *MyPlanner) GetCitiesHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"results": results})
 }
 
-func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
+func (planner *MyPlanner) cityStatsHandler(context *gin.Context) {
 	cityCount := len(geocodes)
 	view := GeocodeCityView{
 		Count:  cityCount,
@@ -296,8 +295,8 @@ func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, view)
 }
 
-func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solution.PlanningRequest, user string) (resp PlanningResponse) {
-	var planningResponse solution.PlanningResponse
+func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReq, user string) (resp PlanningResponse) {
+	var planningResponse PlanningResp
 
 	planner.Solver.Solve(ctx, planner.RedisClient, planningRequest, &planningResponse)
 
@@ -315,11 +314,11 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
 	planner.PlanningEvents <- event
-	planner.PlanningEventLogging(event)
+	planner.planningEventLogging(event)
 
 	if len(planningResponse.Solutions) == 0 {
 		resp.Err = errors.New("cannot find a valid solution")
-		resp.StatusCode = solution.NoValidSolution
+		resp.StatusCode = NoValidSolution
 		return
 	}
 
@@ -346,7 +345,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 		resp.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID + "?" + "date=" + planningRequest.TravelDate
 	}
 
-	resp.StatusCode = solution.ValidSolutionFound
+	resp.StatusCode = ValidSolutionFound
 	if len(planningRequest.Location.City) > 0 {
 		c := cases.Title(language.English)
 		resp.TravelDestination = c.String(planningRequest.Location.City)
@@ -421,7 +420,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
 
-	planningReq := solution.GetStandardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
+	planningReq := GetStandardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.SearchRadius = 10000 // default to 10km
 	planningReq.PreciseLocation = preciseLocation
 	logger.Debugf("use precise location: %t", preciseLocation)
@@ -445,9 +444,9 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	planningResp := planner.Planning(c, &planningReq, userView.Username)
 
 	if planningResp.Err != nil {
-		if planningResp.StatusCode == solution.InvalidRequestLocation {
+		if planningResp.StatusCode == InvalidRequestLocation {
 			ctx.String(http.StatusBadRequest, planningResp.Err.Error())
-		} else if planningResp.StatusCode == solution.NoValidSolution {
+		} else if planningResp.StatusCode == NoValidSolution {
 			errString := "No valid travel solution is found.\nPlease try searching with a larger radius or a different price level."
 			ctx.String(http.StatusBadRequest, errString)
 		}
@@ -557,7 +556,7 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
 
-	request := solution.PlanningRequest{
+	request := PlanningReq{
 		NumPlans:     1,
 		Weekday:      toWeekday(date),
 		SearchRadius: 10000,
@@ -644,7 +643,7 @@ func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
 	}
 }
 
-func (planner MyPlanner) UserClickOnEmailVerification(ctx *gin.Context) {
+func (planner *MyPlanner) userClickOnEmailVerification(ctx *gin.Context) {
 	code := ctx.DefaultQuery("code", "")
 	if err := planner.RedisClient.CreateUserOnEmailVerified(ctx, code); err != nil {
 		ctx.String(http.StatusBadRequest, "failed to verify user email, please contact Vacation Planner")
@@ -652,7 +651,7 @@ func (planner MyPlanner) UserClickOnEmailVerification(ctx *gin.Context) {
 	ctx.Redirect(http.StatusMovedPermanently, "/v1/log-in")
 }
 
-func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
+func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if planner.Environment == "debug" {
 		gin.SetMode(gin.DebugMode)
@@ -676,14 +675,14 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/", planner.searchPageHandler)
 		v1.GET("/plans", planner.getPlanningApi)
 		v1.POST("/signup", planner.UserEmailVerify)
-		v1.GET("/verify", planner.UserClickOnEmailVerification)
-		v1.POST("/login", planner.UserLogin)
-		v1.GET("/reverse-geocoding", planner.ReverseGeocodingHandler)
-		v1.GET("/single-day-nearby-search", planner.SingleDayNearbySearchHandler)
+		v1.GET("/verify", planner.userClickOnEmailVerification)
+		v1.POST("/login", planner.userLogin)
+		v1.GET("/reverse-geocoding", planner.reverseGeocodingHandler)
+		v1.GET("/single-day-nearby-search", planner.singleDayNearbySearchHandler)
 		v1.GET("/log-in", planner.login)
 		v1.GET("/sign-up", planner.signup)
 		v1.GET("/plans/:id", planner.getPlanDetails)
-		v1.GET("/cities", planner.GetCitiesHandler)
+		v1.GET("/cities", planner.getCitiesHandler)
 		v1.POST("/customize", planner.customize)
 		v1.GET("/template", planner.customizedTemplate)
 		v1.GET("/login-google", planner.handleLogin)
@@ -698,17 +697,17 @@ func (planner MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/profile", planner.profile)
 		users := v1.Group("/users")
 		{
-			users.POST("/:username/plans", planner.UserSavedPlansPostHandler)
-			users.GET("/:username/plans", planner.UserSavedPlansGetHandler)
-			users.DELETE("/:username/plan/:id", planner.UserPlanDeleteHandler)
+			users.POST("/:username/plans", planner.userSavedPlansPostHandler)
+			users.GET("/:username/plans", planner.userSavedPlansGetHandler)
+			users.DELETE("/:username/plan/:id", planner.userPlanDeleteHandler)
 		}
 	}
 
 	// API endpoints for collecting database statistics
 	stats := myRouter.Group("/stats")
 	{
-		stats.GET("places", planner.PlaceStatsHandler)
-		stats.GET("cities", planner.CityStatsHandler)
+		stats.GET("places", planner.placeStatsHandler)
+		stats.GET("cities", planner.cityStatsHandler)
 	}
 
 	svr := &http.Server{

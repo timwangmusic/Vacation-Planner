@@ -1,4 +1,4 @@
-package solution
+package planner
 
 import (
 	"errors"

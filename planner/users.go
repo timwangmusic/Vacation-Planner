@@ -54,7 +54,7 @@ func (planner *MyPlanner) profile(context *gin.Context) {
 		return
 	}
 }
-func (planner MyPlanner) UserEmailVerify(ctx *gin.Context) {
+func (planner *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 	userView := user.View{}
 
 	decodeErr := ctx.ShouldBindJSON(&userView)
@@ -79,7 +79,7 @@ func (planner MyPlanner) UserEmailVerify(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Email sent. Please check the inbox to verify your email address."})
 }
 
-func (planner MyPlanner) UserSignup(context *gin.Context) {
+func (planner *MyPlanner) UserSignup(context *gin.Context) {
 	userView := user.View{}
 
 	decodeErr := context.ShouldBindJSON(&userView)
@@ -107,7 +107,7 @@ func (planner MyPlanner) UserSignup(context *gin.Context) {
 	context.JSON(http.StatusCreated, gin.H{"user creation success": view.Username})
 }
 
-func (planner MyPlanner) UserLogin(context *gin.Context) {
+func (planner *MyPlanner) userLogin(context *gin.Context) {
 	c := user.Credential{}
 
 	decodeErr := context.ShouldBindJSON(&c)
@@ -119,7 +119,7 @@ func (planner MyPlanner) UserLogin(context *gin.Context) {
 	planner.loginHelper(context, c, true)
 }
 
-func (planner MyPlanner) loginHelper(context *gin.Context, c user.Credential, frontEndLogin bool) (loggedIn bool) {
+func (planner *MyPlanner) loginHelper(context *gin.Context, c user.Credential, frontEndLogin bool) (loggedIn bool) {
 	logger := iowrappers.Logger
 
 	_, token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(context, c)
@@ -144,7 +144,7 @@ func (planner MyPlanner) loginHelper(context *gin.Context, c user.Credential, fr
 	return true
 }
 
-func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLevel user.Level) (user.View, error) {
+func (planner *MyPlanner) UserAuthentication(context *gin.Context, minimumUserLevel user.Level) (user.View, error) {
 	request := context.Request
 
 	var userView user.View
@@ -194,7 +194,7 @@ func (planner MyPlanner) UserAuthentication(context *gin.Context, minimumUserLev
 	return userView, nil
 }
 
-func (planner *MyPlanner) UserSavedPlansPostHandler(context *gin.Context) {
+func (planner *MyPlanner) userSavedPlansPostHandler(context *gin.Context) {
 	var planView user.TravelPlanView
 	bindErr := context.ShouldBindJSON(&planView)
 	if bindErr != nil {
@@ -221,7 +221,7 @@ func (planner *MyPlanner) UserSavedPlansPostHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"results": "save user plan succeeded."})
 }
 
-func (planner *MyPlanner) UserSavedPlansGetHandler(context *gin.Context) {
+func (planner *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
 	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
 	if userView.Username != context.Param("username") {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
@@ -244,7 +244,7 @@ func (planner *MyPlanner) UserSavedPlansGetHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})
 }
 
-func (planner *MyPlanner) UserPlanDeleteHandler(context *gin.Context) {
+func (planner *MyPlanner) userPlanDeleteHandler(context *gin.Context) {
 	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
 	if userView.Username != context.Param("username") {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "only authorized users can delete plans"})

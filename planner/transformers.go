@@ -1,6 +1,10 @@
 package planner
 
-import "strings"
+import (
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/matching"
+	"strings"
+)
 
 type CityView struct {
 	City    string `json:"city"`
@@ -33,4 +37,20 @@ func toString(view CityView) string {
 		results = append(results, strings.TrimSpace(view.Country))
 	}
 	return strings.Join(results, ", ")
+}
+
+func toTimeSlots(slotRequests []SlotRequest) []matching.TimeSlot {
+	timeSlots := make([]matching.TimeSlot, len(slotRequests))
+	for idx := range slotRequests {
+		timeSlots[idx] = slotRequests[idx].TimeSlot
+	}
+	return timeSlots
+}
+
+func toPlaceCategories(slotRequests []SlotRequest) []POI.PlaceCategory {
+	categories := make([]POI.PlaceCategory, len(slotRequests))
+	for idx := range slotRequests {
+		categories[idx] = slotRequests[idx].Category
+	}
+	return categories
 }
