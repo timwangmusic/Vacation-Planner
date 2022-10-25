@@ -24,7 +24,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"github.com/weihesdlegend/Vacation-planner/solution"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/oauth2"
@@ -47,7 +46,7 @@ type MyPlanner struct {
 	RedisClient         *iowrappers.RedisClient
 	RedisStreamName     string
 	PhotoClient         iowrappers.PhotoHttpClient
-	Solver              solution.Solver
+	Solver              Solver
 	ResultHTMLTemplate  *template.Template
 	TripHTMLTemplate    *template.Template
 	ProfileHTMLTemplate *template.Template
@@ -172,7 +171,7 @@ func (planner *MyPlanner) SingleDayNearbySearchHandler(context *gin.Context) {
 	}
 
 	location := POI.Location{City: city, Country: country}
-	places, err := solution.NearbySearchWithPlaceView(context, planner.Solver.TimeMatcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
+	places, err := NearbySearchWithPlaceView(context, planner.Solver.TimeMatcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
 		Start: 8,
 		End:   21,
 	}}, placeCategory)
@@ -296,8 +295,8 @@ func (planner *MyPlanner) CityStatsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, view)
 }
 
-func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solution.PlanningRequest, user string) (resp PlanningResponse) {
-	var planningResponse solution.PlanningResponse
+func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReq, user string) (resp PlanningResponse) {
+	var planningResponse PlanningResp
 
 	planner.Solver.Solve(ctx, planner.RedisClient, planningRequest, &planningResponse)
 
@@ -319,7 +318,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 
 	if len(planningResponse.Solutions) == 0 {
 		resp.Err = errors.New("cannot find a valid solution")
-		resp.StatusCode = solution.NoValidSolution
+		resp.StatusCode = NoValidSolution
 		return
 	}
 
@@ -346,7 +345,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *solutio
 		resp.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID + "?" + "date=" + planningRequest.TravelDate
 	}
 
-	resp.StatusCode = solution.ValidSolutionFound
+	resp.StatusCode = ValidSolutionFound
 	if len(planningRequest.Location.City) > 0 {
 		c := cases.Title(language.English)
 		resp.TravelDestination = c.String(planningRequest.Location.City)
@@ -421,7 +420,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
 
-	planningReq := solution.GetStandardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
+	planningReq := GetStandardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.SearchRadius = 10000 // default to 10km
 	planningReq.PreciseLocation = preciseLocation
 	logger.Debugf("use precise location: %t", preciseLocation)
@@ -445,9 +444,9 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	planningResp := planner.Planning(c, &planningReq, userView.Username)
 
 	if planningResp.Err != nil {
-		if planningResp.StatusCode == solution.InvalidRequestLocation {
+		if planningResp.StatusCode == InvalidRequestLocation {
 			ctx.String(http.StatusBadRequest, planningResp.Err.Error())
-		} else if planningResp.StatusCode == solution.NoValidSolution {
+		} else if planningResp.StatusCode == NoValidSolution {
 			errString := "No valid travel solution is found.\nPlease try searching with a larger radius or a different price level."
 			ctx.String(http.StatusBadRequest, errString)
 		}
@@ -557,7 +556,7 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
 
-	request := solution.PlanningRequest{
+	request := PlanningReq{
 		NumPlans:     1,
 		Weekday:      toWeekday(date),
 		SearchRadius: 10000,

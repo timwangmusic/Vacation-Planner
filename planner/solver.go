@@ -1,9 +1,8 @@
-package solution
+package planner
 
 import (
 	"context"
 	"errors"
-
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
@@ -26,7 +25,7 @@ const (
 	InternalError          = 500
 )
 
-type PlanningRequest struct {
+type PlanningReq struct {
 	Location        POI.Location  `json:"location"`
 	Slots           []SlotRequest `json:"slots"`
 	Weekday         POI.Weekday
@@ -37,13 +36,13 @@ type PlanningRequest struct {
 	PreciseLocation bool
 }
 
-type PlanningResponse struct {
+type PlanningResp struct {
 	Solutions []PlanningSolution
 	Err       error
 	ErrorCode int
 }
 
-//SlotRequest represents the properties of each row in the tabular travel plan, although not all of these are displayed to users
+// SlotRequest represents the properties of each row in the tabular travel plan, although not all of these are displayed to users
 type SlotRequest struct {
 	TimeSlot matching.TimeSlot `json:"time_slot"`
 	Category POI.PlaceCategory `json:"category"`
@@ -87,8 +86,8 @@ func PlanningSolutionsRedisRequest(location POI.Location, placeCategories []POI.
 	return req
 }
 
-func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.RedisClient, request *PlanningRequest, response *PlanningResponse) {
-	iowrappers.Logger.Debugf("->Solve(context.Context, iowrappers.RedisClient, %v, *PlanningResponse)", request)
+func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.RedisClient, request *PlanningReq, response *PlanningResp) {
+	iowrappers.Logger.Debugf("->Solve(context.Context, iowrappers.RedisClient, %v, *PlanningResp)", request)
 	if !request.PreciseLocation && !solver.ValidateLocation(context, &request.Location) {
 		response.Err = errors.New("invalid travel destination")
 		response.ErrorCode = InvalidRequestLocation
@@ -112,7 +111,7 @@ func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.Red
 		request.NumPlans = NumPlansDefault
 	}
 
-	redisRequest := PlanningSolutionsRedisRequest(request.Location, ToPlaceCategories(request.Slots), ToTimeSlots(request.Slots), request.SearchRadius, request.Weekday, request.PriceLevel)
+	redisRequest := PlanningSolutionsRedisRequest(request.Location, toPlaceCategories(request.Slots), toTimeSlots(request.Slots), request.SearchRadius, request.Weekday, request.PriceLevel)
 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(context, redisRequest)
 
@@ -157,7 +156,7 @@ func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowr
 }
 
 // GetStandardRequest generates a standard request while we seek a better way to represent complex REST requests
-func GetStandardRequest(travelDate string, weekday POI.Weekday, numResults int64, priceLevel POI.PriceLevel) (req PlanningRequest) {
+func GetStandardRequest(travelDate string, weekday POI.Weekday, numResults int64, priceLevel POI.PriceLevel) (req PlanningReq) {
 	timeSlot1 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
 	slotReq1 := SlotRequest{
 		TimeSlot: timeSlot1,
