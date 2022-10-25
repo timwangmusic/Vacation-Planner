@@ -26,10 +26,10 @@ func TestSolutionCandidateSelection(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	topSolutionsCount := int64(5)
+	topSolutionsCount := 5
 	res := planner.FindBestPlanningSolutions(clusters, topSolutionsCount, iterator)
 
-	if int64(len(res)) != topSolutionsCount {
+	if len(res) != topSolutionsCount {
 		t.Errorf("expected number of solutions equals %d, got %d", topSolutionsCount, len(res))
 		return
 	}
