@@ -43,18 +43,17 @@ var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
 }
 
 type MyPlanner struct {
-	RedisClient         *iowrappers.RedisClient
-	RedisStreamName     string
-	PhotoClient         iowrappers.PhotoHttpClient
-	Solver              Solver
-	ResultHTMLTemplate  *template.Template
-	TripHTMLTemplate    *template.Template
-	ProfileHTMLTemplate *template.Template
-	PlanningEvents      chan iowrappers.PlanningEvent
-	Environment         string
-	Configs             map[string]interface{}
-	OAuth2Config        *oauth2.Config
-	Mailer              *iowrappers.Mailer
+	RedisClient        *iowrappers.RedisClient
+	RedisStreamName    string
+	PhotoClient        iowrappers.PhotoHttpClient
+	Solver             Solver
+	ResultHTMLTemplate *template.Template
+	TripHTMLTemplate   *template.Template
+	PlanningEvents     chan iowrappers.PlanningEvent
+	Environment        string
+	Configs            map[string]interface{}
+	OAuth2Config       *oauth2.Config
+	Mailer             *iowrappers.Mailer
 }
 
 type TimeSectionPlace struct {
@@ -124,7 +123,6 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 
 	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
 	planner.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
-	planner.ProfileHTMLTemplate = template.Must(template.ParseFiles("templates/profile_page.html"))
 	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
 	planner.Configs = configs
 	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
@@ -542,6 +540,10 @@ func (planner *MyPlanner) customizedTemplate(context *gin.Context) {
 	context.HTML(http.StatusOK, "plan_template.html", gin.H{})
 }
 
+func (planner *MyPlanner) userProfile(context *gin.Context) {
+	context.HTML(http.StatusOK, "user_profile.html", gin.H{})
+}
+
 // travel plan customization handler
 func (planner *MyPlanner) customize(ctx *gin.Context) {
 	logger := iowrappers.Logger
@@ -694,7 +696,7 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/remove-places", planner.removePlacesMigrationHandler)
 		}
 
-		v1.GET("/profile", planner.profile)
+		v1.GET("/profile", planner.userProfile)
 		users := v1.Group("/users")
 		{
 			users.POST("/:username/plans", planner.userSavedPlansPostHandler)
