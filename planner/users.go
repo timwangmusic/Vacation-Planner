@@ -9,7 +9,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 )
 
@@ -24,36 +23,6 @@ type ProfileView struct {
 	TravelPlans []user.TravelPlanView
 }
 
-func (planner *MyPlanner) profile(context *gin.Context) {
-	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
-	iowrappers.Logger.Debugf("fetching user profile for %s", userView.Username)
-
-	if userView.Username != context.DefaultQuery("username", "guest") {
-		iowrappers.Logger.Debugf("username in view: %s, username in context: %s", userView.Username, context.Param("username"))
-		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
-		return
-	}
-
-	if authErr != nil {
-		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
-		return
-	}
-
-	userTravelPlans, err := planner.RedisClient.FindUserPlans(context, userView)
-	sort.Sort(user.ByCreatedAt(userTravelPlans))
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	userProfile := ProfileView{
-		Username:    userView.Username,
-		TravelPlans: userTravelPlans}
-
-	if templateExecutionErr := planner.ProfileHTMLTemplate.Execute(context.Writer, userProfile); templateExecutionErr != nil {
-		context.Status(http.StatusInternalServerError)
-		return
-	}
-}
 func (planner *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 	userView := user.View{}
 

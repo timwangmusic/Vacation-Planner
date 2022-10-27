@@ -1,6 +1,7 @@
+import { locateMe, setDateToday } from "./utils.js";
+
 // JS for plan_template.html
 import { logOut } from "./user.js";
-import { setDateToday, locateMe } from "./utils.js";
 
 setDateToday();
 
