@@ -53,7 +53,7 @@ type PlanningReq struct {
 	Slots           []SlotRequest `json:"slots"`
 	Weekday         POI.Weekday
 	TravelDate      string
-	NumPlans        int64
+	NumPlans        int
 	SearchRadius    uint
 	PriceLevel      POI.PriceLevel
 	PreciseLocation bool
@@ -138,8 +138,7 @@ func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.Red
 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(context, redisRequest)
 
-	if cacheErr != nil {
-		iowrappers.Logger.Debugf("Solution cache miss for request %+v with error %s", *request, cacheErr.Error())
+	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < request.NumPlans {
 		solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request, solver.PriceRangeMatcher)
 		if err != nil {
 			response.Err = err
@@ -155,7 +154,11 @@ func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.Red
 		return
 	}
 	iowrappers.Logger.Debugf("[request_id: %s]Found planning solutions in Redis for request %+v.", context.Value(iowrappers.ContextRequestIdKey), *request)
-	for _, candidate := range cacheResponse.PlanningSolutionRecords {
+	for idx, candidate := range cacheResponse.PlanningSolutionRecords {
+		// deal with cases where there are more cached solutions than requested
+		if idx >= request.NumPlans {
+			break
+		}
 		planningSolution := PlanningSolution{
 			ID:              candidate.ID,
 			PlaceNames:      candidate.PlaceNames,
@@ -179,7 +182,7 @@ func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowr
 }
 
 // GetStandardRequest generates a standard request while we seek a better way to represent complex REST requests
-func GetStandardRequest(travelDate string, weekday POI.Weekday, numResults int64, priceLevel POI.PriceLevel) (req PlanningReq) {
+func GetStandardRequest(travelDate string, weekday POI.Weekday, numResults int, priceLevel POI.PriceLevel) (req PlanningReq) {
 	timeSlot1 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
 	slotReq1 := SlotRequest{
 		TimeSlot: timeSlot1,
@@ -248,7 +251,7 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 	return res, nil
 }
 
-func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCount int64, iterator *MultiDimIterator) []PlanningSolution {
+func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) []PlanningSolution {
 	if topSolutionsCount <= 0 {
 		topSolutionsCount = TopSolutionsCountDefault
 	}

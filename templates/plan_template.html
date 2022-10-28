@@ -104,7 +104,8 @@
     </h1>
     <div class="container mt-3" style="align-items: center" id="contains-everything">
         <div class="input-group mb-3">
-            <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date" value="2022-01-18">
+            <input class="form-control-sm border border-secondary" type="date" id="datepicker" name="date"
+                value="2022-01-18">
             <input type="text" class="form-control border border-secondary" placeholder="Location" id="location">
             <select class="form-select-sm border border-secondary" id="price">
                 <option value="2">$$</option>
@@ -149,18 +150,9 @@
             </div>
         </div>
 
-
-        <table class="table table-sm table-bordered d-none" style="background: lightcyan; table-layout: fixed"
-            id="results">
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Place</th>
-                </tr>
-            </thead>
-            <tbody id="results-table-body">
-            </tbody>
-        </table>
+        <div id="tables" class="row">
+            <div class="d-flex justify-content-end"></div>
+        </div>
 
         <div class="d-flex d-none" id="no-valid-plan-error-msg">
             <div class="alert alert-primary" type="alert">No valid plan is found, please try

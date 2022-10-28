@@ -408,7 +408,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 
 	numResults := ctx.DefaultQuery("numberResults", "5")
 
-	numResultsInt, numResultsParsingErr := strconv.ParseInt(numResults, 10, 64)
+	numResultsInt, numResultsParsingErr := strconv.Atoi(numResults)
 	if numResultsParsingErr != nil {
 		ctx.String(http.StatusBadRequest, "number of planning results of %d is invalid", numResultsInt)
 		return
@@ -558,8 +558,14 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
 
+	pageSize, err := strconv.Atoi(ctx.DefaultQuery("size", "5"))
+	if err != nil {
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
 	request := PlanningReq{
-		NumPlans:     1,
+		NumPlans:     pageSize,
 		Weekday:      toWeekday(date),
 		SearchRadius: 10000,
 		PriceLevel:   toPriceLevel(priceLevel),

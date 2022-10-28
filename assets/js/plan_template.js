@@ -1,7 +1,9 @@
-import { locateMe, setDateToday } from "./utils.js";
-
 // JS for plan_template.html
-import { logOut } from "./user.js";
+
+import { locateMe, setDateToday } from "./utils.js";
+import { logOut, updateUsername } from "./user.js";
+
+const username = updateUsername();
 
 setDateToday();
 
@@ -100,6 +102,8 @@ function tableToSlots() {
 }
 
 async function postPlanTemplate() {
+    // remove previous search results
+    $('#tables').empty();
     document.getElementById("searchSpinner").classList.remove("visually-hidden");
     const location = document.getElementById('location').value.toString();
     const locationFields = location.split(",");
@@ -162,37 +166,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function parseResponse(response) {
     console.log("Raw JSON response is", response);
+    const plansCount = response["travel_plans"]?.length;
 
     $(function () {
-        const resultsTable = document.getElementById("results");
-        if (response["travel_plans"]?.length > 0) {
-            resultsTable.classList.remove("d-none");
-            let plan = response["travel_plans"][0];
-            const newTableBody = document.createElement('tbody');
+        if (plansCount > 0) {
+            createPlanResultTables(plansCount);
+            $.each(
+                response["travel_plans"], function (idx, plan) {
+                    console.log("processing travel plan:", plan);
+                    let planTableBody = $(`#plan-${idx} tbody`);
+                    $.each(plan.places, function (_, place) {
+                        let aTag = $('<a>', {
+                            text: place.place_name,
+                            href: place.url
+                        });
 
-            $.each(plan.places, function (_placeIdx, place) {
-                let aTag = $('<a>', {
-                    text: place.place_name,
-                    href: place.url
-                });
+                        let $timeDiv = $('<div>').addClass('d-flex').css('color', 'darkcyan');
+                        $timeDiv.append($('<span>').text(place.place_icon_css_class).addClass('material-icons'));
+                        $timeDiv.append($('<span>').text(place.start_time + ' - ' + place.end_time).addClass('mx-2'));
 
-                let $timeDiv = $(document.createElement('div')).addClass('d-flex').css('color', 'darkcyan');
-                $timeDiv.append($(document.createElement('span')).text(place.place_icon_css_class).addClass('material-icons'));
-                $timeDiv.append($(document.createElement('span')).text(place.start_time + ' - ' + place.end_time).addClass('mx-2'));
-
-                let $tr = $('<tr>').append(
-                    $('<td>').append($timeDiv),
-                    $('<td>').text('').append(aTag),
-                );
-                $tr.appendTo(newTableBody);
-            })
-
-            const oldTableBody = document.getElementById('results-table-body');
-            oldTableBody.parentNode.replaceChild(newTableBody, oldTableBody);
-            newTableBody.id = 'results-table-body';
+                        let $tr = $('<tr>').append(
+                            $('<td>').append($timeDiv),
+                            $('<td>').text('').append(aTag),
+                        );
+                        planTableBody.append($tr);
+                    })
+                }
+            )
         } else {
-            resultsTable.classList.add("d-none");
             $('#no-valid-plan-error-msg').removeClass('d-none');
         }
     })
 }
+
+function createPlanResultTables(planCount) {
+    for (let i = 0; i < planCount; i++) {
+        let newTable = $('<table>')
+            .addClass('table table-sm table-bordered')
+            .attr('id', 'plan-' + i)
+            .css('background', 'lightcyan')
+            .css('table-layout', 'fixed');
+        let headerRow = $('<tr>');
+        headerRow.append($('<th>').text('Time'));
+        headerRow.append($('<th>').text('Place'));
+
+        newTable.append($('<thead>').append(headerRow));
+
+        newTable.append($('<tbody>'));
+
+        $('#tables').append(newTable);
+    }
+}
+
+$('#profile').click(() => window.location = `/v1/profile?username=` + username);
