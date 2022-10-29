@@ -9,6 +9,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -210,6 +211,7 @@ func (planner *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
 		return
 	}
 
+	sort.Sort(user.ByCreatedAt(plans))
 	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})
 }
 
