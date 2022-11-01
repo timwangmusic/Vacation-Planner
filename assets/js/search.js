@@ -14,6 +14,7 @@ function randomPriceRange() {
 
 setDateToday();
 
+// auto-completes location input
 (function ($) {
     $("#location").autocomplete(
         {
@@ -24,11 +25,11 @@ setDateToday();
                         dataType: "json",
                         data: { term: request.term },
                         success: function (data) {
-                            response($.map(data.results, function (city) {
-                                if (city.region) {
-                                    return [city.city, city.region, city.country].join(", ")
+                            response($.map(data.results, function (location) {
+                                if (location.region) {
+                                    return [location.city, location.region, location.country].join(", ")
                                 }
-                                return [city.city, city.country].join(", ")
+                                return [location.city, location.country].join(", ")
                             }))
                         }
                     }

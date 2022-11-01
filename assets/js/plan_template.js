@@ -104,6 +104,8 @@ function tableToSlots() {
 }
 
 async function postPlanTemplate() {
+    // remove pagination buttons
+    $('#pagination').hide();
     // remove previous search results
     $('#tables').empty();
     document.getElementById("searchSpinner").classList.remove("visually-hidden");
@@ -197,6 +199,7 @@ function parseResponse(response) {
             )
             // only shows the first 3 results
             $('#tables .table').slice(itemsPerPage).hide();
+            $('#pagination').show();
             $('#pagination').pagination({
 
                 // Total number of items to be paginated
@@ -237,3 +240,29 @@ function createPlanResultTables(planCount) {
 }
 
 $('#profile').click(() => window.location = `/v1/profile?username=` + username);
+
+// auto-completes location input
+(function ($) {
+    $("#location").autocomplete(
+        {
+            source: function (request, response) {
+                $.ajax(
+                    {
+                        url: "/v1/cities",
+                        dataType: "json",
+                        data: { term: request.term },
+                        success: function (data) {
+                            response($.map(data.results, function (location) {
+                                if (location.region) {
+                                    return [location.city, location.region, location.country].join(", ")
+                                }
+                                return [location.city, location.country].join(", ")
+                            }))
+                        }
+                    }
+                )
+            },
+            minLength: 2,
+        }
+    )
+})(jQuery);
