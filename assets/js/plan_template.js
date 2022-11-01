@@ -4,6 +4,8 @@ import { locateMe, setDateToday } from "./utils.js";
 import { logOut, updateUsername } from "./user.js";
 
 const username = updateUsername();
+const totalItemsCount = 10;
+const itemsPerPage = 2;
 
 setDateToday();
 
@@ -128,7 +130,7 @@ async function postPlanTemplate() {
         "location": locationToPost,
         "slots": tableToSlots()
     }
-    const url = "/v1/customize?date=" + document.getElementById("datepicker").value.toString() + "&price=" + document.getElementById("price").value.toString();
+    const url = "/v1/customize?date=" + document.getElementById("datepicker").value.toString() + "&price=" + document.getElementById("price").value.toString() + "&size=" + totalItemsCount;
     console.log(`data about to send: ${JSON.stringify(data)}`);
 
     axios.post(
@@ -164,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
     insertNewRow(13, 17, 'Visit');
 });
 
-async function parseResponse(response) {
+function parseResponse(response) {
     console.log("Raw JSON response is", response);
     const plansCount = response["travel_plans"]?.length;
 
@@ -193,6 +195,22 @@ async function parseResponse(response) {
                     })
                 }
             )
+            // only shows the first 3 results
+            $('#tables .table').slice(itemsPerPage).hide();
+            $('#pagination').pagination({
+
+                // Total number of items to be paginated
+                items: totalItemsCount,
+
+                // Items allowed on a single page
+                itemsOnPage: itemsPerPage,
+                onPageClick: function (pageIdx) {
+                    const itemsOnPage = 2;
+                    $('#tables .table').hide()
+                        .slice(itemsOnPage * (pageIdx - 1),
+                            itemsOnPage + itemsOnPage * (pageIdx - 1)).show();
+                }
+            });
         } else {
             $('#no-valid-plan-error-msg').removeClass('d-none');
         }
