@@ -1,6 +1,7 @@
-import {Place, View} from "./place.js";
+import { Place, View } from "./place.js";
 
-import {updateUsername} from "./user.js";
+import { capitalizeFirstChar } from "./utils.js"
+import { updateUsername } from "./user.js";
 
 let numberOfPlans = 5;
 const username = updateUsername();
@@ -55,8 +56,10 @@ async function postPlanForUser() {
 
 function planToView(plan, planIndex) {
     const url = new URL(document.URL);
+    const location = normalizeLocation(url.searchParams.get("location"));
+    console.log("The format fixed location is: ", location);
     const view = new View(
-        url.searchParams.get("location"),
+        location,
         url.searchParams.get("date"),
         plan.id,
         new Date().toISOString(),
@@ -78,6 +81,19 @@ function planToView(plan, planIndex) {
     return view;
 }
 
+// The autocompleted locations need to be fixed. City and country names need to be capitalized and admin level 2 names need to be changed to all upper cases.
+function normalizeLocation(location) {
+    const results = location.split(', ').map(
+        s => s.split(' ').map(word => capitalizeFirstChar(word)).join(' '))
+
+    // city, admin level 2, country format
+    if (results.length === 3) {
+        return [results[0], results[1].toUpperCase(), results[2]].join(", ");
+    }
+    // city, country format
+    return [results[0], results[1]].join(", ");
+}
+
 // create button event actions
 for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
     $(`#save-${planIndex}`).click(postPlanForUser);
@@ -87,7 +103,7 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
     });
 }
 
-document.getElementById("profile").addEventListener("click", () => window.location = `/v1/profile?username=`+username);
+document.getElementById("profile").addEventListener("click", () => window.location = `/v1/profile?username=` + username);
 
 const rollUpButton = document.getElementById("scroll-to-top");
 rollUpButton.addEventListener("click", () => {
