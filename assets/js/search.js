@@ -1,5 +1,5 @@
 // methods for the search page
-import { locateMe, preciseLocation, setDateToday } from "./utils.js";
+import { locateMe, locationAutocomplete, preciseLocation, setDateToday } from "./utils.js";
 import { logOut, updateUsername } from "./user.js";
 
 const username = updateUsername();
@@ -15,30 +15,7 @@ function randomPriceRange() {
 setDateToday();
 
 // auto-completes location input
-(function ($) {
-    $("#location").autocomplete(
-        {
-            source: function (request, response) {
-                $.ajax(
-                    {
-                        url: "/v1/cities",
-                        dataType: "json",
-                        data: { term: request.term },
-                        success: function (data) {
-                            response($.map(data.results, function (location) {
-                                if (location.region) {
-                                    return [location.city, location.region, location.country].join(", ")
-                                }
-                                return [location.city, location.country].join(", ")
-                            }))
-                        }
-                    }
-                )
-            },
-            minLength: 2,
-        }
-    )
-})(jQuery);
+locationAutocomplete(jQuery);
 
 document.getElementById("logout-confirm-btn").addEventListener(
     "click", logOut

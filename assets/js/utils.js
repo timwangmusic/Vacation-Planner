@@ -67,4 +67,30 @@ function setDateToday() {
     document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
 }
 
-export { locateMe, setDateToday, preciseLocation, capitalizeFirstChar }
+// location input autocomplete
+function locationAutocomplete($) {
+    $("#location").autocomplete(
+        {
+            source: function (request, response) {
+                $.ajax(
+                    {
+                        url: "/v1/cities",
+                        dataType: "json",
+                        data: { term: request.term },
+                        success: function (data) {
+                            response($.map(data.results, function (location) {
+                                if (location.region) {
+                                    return [location.city, location.region, location.country].join(", ")
+                                }
+                                return [location.city, location.country].join(", ")
+                            }))
+                        }
+                    }
+                )
+            },
+            minLength: 2,
+        }
+    )
+}
+
+export { locateMe, setDateToday, preciseLocation, capitalizeFirstChar, locationAutocomplete }
