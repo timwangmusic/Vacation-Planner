@@ -47,6 +47,11 @@ function preciseLocation() {
     }
 }
 
+// capitalize the first character in a string
+function capitalizeFirstChar(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 // set today's date for a datepicker element
 function setDateToday() {
     const today = new Date();
@@ -62,4 +67,4 @@ function setDateToday() {
     document.getElementById("datepicker").value = [today.getFullYear(), month, day].join("-");
 }
 
-export { locateMe, setDateToday, preciseLocation }
+export { locateMe, setDateToday, preciseLocation, capitalizeFirstChar }
