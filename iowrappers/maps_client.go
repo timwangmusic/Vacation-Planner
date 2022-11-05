@@ -26,10 +26,10 @@ type MapsClient struct {
 	DetailedSearchFields []string
 }
 
-func (mapsClient *MapsClient) SetDetailedSearchFields(fields []string) {
-	mapsClient.DetailedSearchFields = fields
+func (c *MapsClient) SetDetailedSearchFields(fields []string) {
+	c.DetailedSearchFields = fields
 	Logger.Debugf("Set the following fields for detailed place searches: %s",
-		strings.Join(mapsClient.DetailedSearchFields, ", "))
+		strings.Join(c.DetailedSearchFields, ", "))
 }
 
 // CreateMapsClient is a factory method for MapsClient
@@ -67,7 +67,7 @@ func CreateLogger() error {
 	return nil
 }
 
-func (mapsClient *MapsClient) ReverseGeocode(context context.Context, latitude, longitude float64) (*GeocodeQuery, error) {
+func (c *MapsClient) ReverseGeocode(context context.Context, latitude, longitude float64) (*GeocodeQuery, error) {
 	request := &maps.GeocodingRequest{
 		LatLng: &maps.LatLng{
 			Lat: latitude,
@@ -77,7 +77,7 @@ func (mapsClient *MapsClient) ReverseGeocode(context context.Context, latitude, 
 		ResultType: []string{"country", "administrative_area_level_1", "locality"},
 	}
 	Logger.Debugf("reverse geocoding for latitude/longitude: %.2f/%.2f", latitude, longitude)
-	geocodingResults, err := mapsClient.client.ReverseGeocode(context, request)
+	geocodingResults, err := c.client.ReverseGeocode(context, request)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (mapsClient *MapsClient) ReverseGeocode(context context.Context, latitude, 
 	return &query, nil
 }
 
-func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
+func (c *MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
 	Logger.Debugf("Geocoding for query %+v", *query)
 	req := &maps.GeocodingRequest{
 		Components: map[maps.Component]string{
@@ -101,7 +101,7 @@ func (mapsClient MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (
 		req.Components[maps.ComponentAdministrativeArea] = strings.TrimSpace(query.AdminAreaLevelOne)
 	}
 
-	resp, err := mapsClient.client.Geocode(ctx, req)
+	resp, err := c.client.Geocode(ctx, req)
 	if err != nil {
 		utils.LogErrorWithLevel(err, utils.LogError)
 		return

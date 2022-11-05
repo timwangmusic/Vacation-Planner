@@ -49,14 +49,14 @@ func GoogleMapsNearbySearchWrapper(mapsClient MapsClient, location POI.Location,
 	return
 }
 
-func (mapsClient *MapsClient) NearbySearch(c context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
+func (c *MapsClient) NearbySearch(ctx context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
 	var maxReqTimes uint = 5
 	var places = make([]POI.Place, 0)
 	var searchDone = make(chan bool)
-	ctx, cancelFunc := context.WithTimeout(c, GoogleMapsSearchTimeout)
+	ctx, cancelFunc := context.WithTimeout(ctx, GoogleMapsSearchTimeout)
 	defer cancelFunc()
 
-	go mapsClient.ExtensiveNearbySearch(ctx, maxReqTimes, request, &places, searchDone)
+	go c.extensiveNearbySearch(ctx, maxReqTimes, request, &places, searchDone)
 
 	select {
 	case <-searchDone:
@@ -66,9 +66,7 @@ func (mapsClient *MapsClient) NearbySearch(c context.Context, request *PlaceSear
 	}
 }
 
-// ExtensiveNearbySearch attempts to find a specified number of places satisfy the request
-// within the maxRequestTime times of calling external APIs
-func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, maxRequestTimes uint, request *PlaceSearchRequest, places *[]POI.Place, done chan bool) {
+func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes uint, request *PlaceSearchRequest, places *[]POI.Place, done chan bool) {
 	placeTypes := POI.GetPlaceTypes(request.PlaceCat) // get place types in a category
 
 	nextPageTokenMap := make(map[POI.LocationType]string) // map for place type to search token
@@ -98,7 +96,7 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, max
 			}
 
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp, error_ := GoogleMapsNearbySearchWrapper(*mapsClient, request.Location, string(placeType), request.Radius, nextPageToken)
+			searchResp, error_ := GoogleMapsNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken)
 			if error_ != nil {
 				err = error_
 				Logger.Error(err)
@@ -116,7 +114,7 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, max
 			var wg sync.WaitGroup
 			wg.Add(len(placeIdMap))
 			for idx, placeId := range placeIdMap {
-				go PlaceDetailsSearchWrapper(context, mapsClient, idx, placeId, mapsClient.DetailedSearchFields, &detailSearchResults[idx], &wg)
+				go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailSearchResults[idx], &wg)
 			}
 			wg.Wait()
 
@@ -143,8 +141,6 @@ func (mapsClient *MapsClient) ExtensiveNearbySearch(context context.Context, max
 
 	searchDuration := time.Since(searchStartTime)
 
-	// logging
-	//requestId := context.Value(RequestIdKey).(string)
 	Logger.Infow("request:", "requestId", "Logging nearby search",
 		"Maps API call time", searchDuration,
 		"center location (lat,lng)", request.Location,
