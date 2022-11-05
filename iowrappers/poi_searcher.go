@@ -41,12 +41,12 @@ func CreatePoiSearcher(mapsApiKey string, redisUrl *url.URL) *PoiSearcher {
 	return &poiSearcher
 }
 
-func (poiSearcher PoiSearcher) GetMapsClient() *MapsClient {
-	return poiSearcher.mapsClient
+func (s *PoiSearcher) GetMapsClient() *MapsClient {
+	return s.mapsClient
 }
 
-func (poiSearcher PoiSearcher) GetRedisClient() *RedisClient {
-	return poiSearcher.redisClient
+func (s *PoiSearcher) GetRedisClient() *RedisClient {
+	return s.redisClient
 }
 
 func DestroyLogger() {
@@ -54,40 +54,40 @@ func DestroyLogger() {
 }
 
 // Geocode performs geocoding, mapping city and country to latitude and longitude
-func (poiSearcher PoiSearcher) Geocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
+func (s *PoiSearcher) Geocode(context context.Context, query *GeocodeQuery) (lat float64, lng float64, err error) {
 	originalGeocodeQuery := GeocodeQuery{}
 	originalGeocodeQuery.City = query.City
 	originalGeocodeQuery.Country = query.Country
 	originalGeocodeQuery.AdminAreaLevelOne = query.AdminAreaLevelOne
 	var geocodeMissingErr error
-	lat, lng, geocodeMissingErr = poiSearcher.redisClient.Geocode(context, query)
+	lat, lng, geocodeMissingErr = s.redisClient.Geocode(context, query)
 	if geocodeMissingErr != nil {
-		lat, lng, err = poiSearcher.mapsClient.Geocode(context, query)
+		lat, lng, err = s.mapsClient.Geocode(context, query)
 		if err != nil {
 			return
 		}
 		// either redisClient or mapsClient may have corrected location fields in the query
-		poiSearcher.redisClient.SetGeocode(context, *query, lat, lng, originalGeocodeQuery)
+		s.redisClient.SetGeocode(context, *query, lat, lng, originalGeocodeQuery)
 		Logger.Debugf("Geolocation (lat,lng) Cache miss for location %s, %s is %.4f, %.4f",
 			query.City, query.Country, lat, lng)
 	}
 	return
 }
 
-func (poiSearcher PoiSearcher) ReverseGeocode(ctx context.Context, lat, lng float64) (*GeocodeQuery, error) {
+func (s *PoiSearcher) ReverseGeocode(ctx context.Context, lat, lng float64) (*GeocodeQuery, error) {
 	Logger.Debugf("PoiSearcher ->ReverseGeocode: decoding latitude %.2f, longitude %.2f", lat, lng)
-	return poiSearcher.mapsClient.ReverseGeocode(ctx, lat, lng)
+	return s.mapsClient.ReverseGeocode(ctx, lat, lng)
 }
 
-func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
-	if err := poiSearcher.processLocation(context, request); err != nil {
+func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
+	if err := s.processLocation(context, request); err != nil {
 		return nil, err
 	}
 	location := request.Location
 
 	var cachedPlaces, places []POI.Place
 	var err error
-	cachedPlaces, err = poiSearcher.redisClient.NearbySearch(context, request)
+	cachedPlaces, err = s.redisClient.NearbySearch(context, request)
 	if err != nil {
 		Logger.Error(err)
 	}
@@ -95,7 +95,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	Logger.Debugf("[request_id: %s] number of results from redis is %d", context.Value(ContextRequestIdKey), len(cachedPlaces))
 
 	// update last search time for the city
-	lastSearchTime, cacheMiss := poiSearcher.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
+	lastSearchTime, cacheMiss := s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
 
 	currentTime := time.Now()
 	// use place data from database if the location is known and the data is fresh, and we have sufficient data
@@ -105,10 +105,10 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 		return places, nil
 	}
 
-	utils.LogErrorWithLevel(poiSearcher.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339)), utils.LogError)
+	utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339)), utils.LogError)
 
 	// initiate a new external search
-	newPlaces, searchErr := poiSearcher.searchPlacesWithMaps(context, request)
+	newPlaces, searchErr := s.searchPlacesWithMaps(context, request)
 	if searchErr != nil {
 		return nil, searchErr
 	}
@@ -116,7 +116,7 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 	// safeguard on accessing elements in a nil slice
 	if len(newPlaces) > 0 {
 		// update Redis with all the new places obtained
-		poiSearcher.UpdateRedis(context, newPlaces)
+		s.UpdateRedis(context, newPlaces)
 
 		// include places from cache in the result
 		places = append(places, newPlaces...)
@@ -126,11 +126,11 @@ func (poiSearcher PoiSearcher) NearbySearch(context context.Context, request *Pl
 }
 
 // processLocation performs reverse geocoding for precise location to find city-level information and performs geocoding to find precise latitude and longitude values
-func (poiSearcher PoiSearcher) processLocation(ctx context.Context, req *PlaceSearchRequest) error {
+func (s *PoiSearcher) processLocation(ctx context.Context, req *PlaceSearchRequest) error {
 	location := &req.Location
 	if req.UsePreciseLocation {
 		Logger.Debugf("->NearbySearch: using precise location")
-		geoQuery, err := poiSearcher.GetMapsClient().ReverseGeocode(ctx, req.Location.Latitude, req.Location.Longitude)
+		geoQuery, err := s.GetMapsClient().ReverseGeocode(ctx, req.Location.Latitude, req.Location.Longitude)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (poiSearcher PoiSearcher) processLocation(ctx context.Context, req *PlaceSe
 		return nil
 	}
 
-	lat, lng, err := poiSearcher.Geocode(ctx, &GeocodeQuery{
+	lat, lng, err := s.Geocode(ctx, &GeocodeQuery{
 		City:              location.City,
 		AdminAreaLevelOne: location.AdminAreaLevelOne,
 		Country:           location.Country,
@@ -153,13 +153,13 @@ func (poiSearcher PoiSearcher) processLocation(ctx context.Context, req *PlaceSe
 	return nil
 }
 
-func (poiSearcher PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
+func (s *PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
 	originalRadius := req.Radius
 
 	// use a large search radius whenever we call external maps services
 	req.Radius = MaxSearchRadius
 
-	places, err := poiSearcher.GetMapsClient().NearbySearch(ctx, req)
+	places, err := s.GetMapsClient().NearbySearch(ctx, req)
 
 	// restore search radius upon search completion
 	req.Radius = originalRadius
@@ -185,8 +185,8 @@ func (poiSearcher PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *Pl
 	return places, nil
 }
 
-func (poiSearcher PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
-	poiSearcher.redisClient.SetPlacesOnCategory(context, places)
+func (s *PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
+	s.redisClient.SetPlacesOnCategory(context, places)
 	requestId := context.Value(ContextRequestIdKey)
 	Logger.Debugf("[request_id: %s]Redis update complete", requestId)
 }

@@ -21,8 +21,8 @@ const (
 	PlaceDetailsFieldPhoto PlaceDetailsFields = "photo"
 )
 
-func (poiSearcher *PoiSearcher) RemovePlaces(context context.Context, nonEmptyFields []PlaceDetailsFields) error {
-	if err := poiSearcher.redisClient.RemovePlaces(context, nonEmptyFields); err != nil {
+func (s *PoiSearcher) RemovePlaces(context context.Context, nonEmptyFields []PlaceDetailsFields) error {
+	if err := s.redisClient.RemovePlaces(context, nonEmptyFields); err != nil {
 		Logger.Error(err)
 		return fmt.Errorf("failed to removed places: %s", err.Error())
 	}
@@ -97,9 +97,9 @@ func isPlaceDetailsValid(place POI.Place, nonEmptyFields []PlaceDetailsFields) b
 
 // a generic migration method
 // returns place details results for the calling function to extract and use specific fields
-func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, field string, batchSize int) (map[string]PlaceDetailSearchResult, error) {
-	mapsClient := poiSearcher.GetMapsClient()
-	redisClient := poiSearcher.GetRedisClient()
+func (s *PoiSearcher) addDataFieldsToPlaces(context context.Context, field string, batchSize int) (map[string]PlaceDetailSearchResult, error) {
+	mapsClient := s.GetMapsClient()
+	redisClient := s.GetRedisClient()
 	placeDetailsKeys, totalPlacesCount, err := redisClient.GetPlaceCountInRedis(context)
 	if err != nil {
 		return nil, err
@@ -150,13 +150,13 @@ func (poiSearcher *PoiSearcher) addDataFieldsToPlaces(context context.Context, f
 	return results, nil
 }
 
-func (poiSearcher *PoiSearcher) AddUserRatingsTotal(context context.Context) error {
-	placeIdToDetailedSearchResults, err := poiSearcher.addDataFieldsToPlaces(context, "user_ratings_total", BatchSize)
+func (s *PoiSearcher) AddUserRatingsTotal(context context.Context) error {
+	placeIdToDetailedSearchResults, err := s.addDataFieldsToPlaces(context, "user_ratings_total", BatchSize)
 	if err != nil {
 		return err
 	}
 
-	redisClient := poiSearcher.GetRedisClient()
+	redisClient := s.GetRedisClient()
 	wg := sync.WaitGroup{}
 	wg.Add(len(placeIdToDetailedSearchResults))
 	for placeId, detailedResult := range placeIdToDetailedSearchResults {
@@ -176,13 +176,13 @@ func (poiSearcher *PoiSearcher) AddUserRatingsTotal(context context.Context) err
 	return nil
 }
 
-func (poiSearcher *PoiSearcher) AddUrl(context context.Context) error {
-	placeIdToDetailedSearchResults, err := poiSearcher.addDataFieldsToPlaces(context, "url", BatchSize)
+func (s *PoiSearcher) AddUrl(context context.Context) error {
+	placeIdToDetailedSearchResults, err := s.addDataFieldsToPlaces(context, "url", BatchSize)
 	if err != nil {
 		return err
 	}
 
-	redisClient := poiSearcher.GetRedisClient()
+	redisClient := s.GetRedisClient()
 	wg := sync.WaitGroup{}
 	wg.Add(len(placeIdToDetailedSearchResults))
 	for placeId, detailedResult := range placeIdToDetailedSearchResults {
