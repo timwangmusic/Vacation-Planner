@@ -31,7 +31,8 @@ import (
 )
 
 const (
-	ServerTimeout      = time.Second * 3
+	ServerTimeout      = time.Second * 15
+	SolverTimeout      = time.Second * 10
 	jobQueueBufferSize = 1000
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
@@ -418,7 +419,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
 
-	planningReq := GetStandardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
+	planningReq := standardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.SearchRadius = 10000 // default to 10km
 	planningReq.PreciseLocation = preciseLocation
 	logger.Debugf("use precise location: %t", preciseLocation)
@@ -691,7 +692,7 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/sign-up", planner.signup)
 		v1.GET("/plans/:id", planner.getPlanDetails)
 		v1.GET("/cities", planner.getCitiesHandler)
-		v1.POST("/customize", timeout.New(timeout.WithTimeout(2*time.Second), timeout.WithHandler(planner.customize)))
+		v1.POST("/customize", planner.customize)
 		v1.GET("/template", planner.planTemplate)
 		v1.GET("/login-google", planner.handleLogin)
 		v1.GET("/callback-google", planner.oauthCallback)
@@ -721,8 +722,6 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	svr := &http.Server{
 		Addr:    ":" + serverPort,
 		Handler: myRouter,
-		//ReadTimeout:  ServerTimeout,
-		//WriteTimeout: ServerTimeout,
 	}
 
 	return svr
