@@ -60,12 +60,9 @@ tr:nth-child(even) {
 }
 
 .svg-container {
-    display: inline-block;
-    position: center;
-    width: 200%;
-    padding-bottom: 50%;
-    vertical-align: middle;
-    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    text-align: center;
 }
 
 .svg-content {
