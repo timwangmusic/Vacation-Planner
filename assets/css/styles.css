@@ -2,8 +2,8 @@
     display: grid;
     grid-template-rows: auto;
     grid-template-areas:
-                    'header'
-                    'content';
+        'header'
+        'content';
 }
 
 .header {
@@ -17,7 +17,8 @@
 div.fixedwidthicon {
     width: 25px;
 }
-button.square-button{
+
+button.square-button {
     width: 31px;
 }
 
@@ -45,16 +46,18 @@ tr:nth-child(even) {
 #tripCarousel {
     height: 350px !important;
     overflow: hidden;
-  }     
+}
 
 @media only screen and (min-width: 576px) {
     #dateDiv {
-        max-width: 11em; 
+        max-width: 11em;
     }
+
     #locationDiv {
         min-width: 13em;
     }
-  }
+}
+
 #planSaveIcon {
     cursor: pointer;
 }
@@ -80,5 +83,5 @@ tr:nth-child(even) {
     height: 100vh;
     width: 100%;
     background-position: 50px 50px;
-    color:transparent;
+    color: transparent;
 }
