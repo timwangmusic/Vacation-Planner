@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/gin-contrib/timeout"
 	"html/template"
 	"io"
 	"net/http"
@@ -30,7 +31,7 @@ import (
 )
 
 const (
-	ServerTimeout      = time.Second * 15
+	ServerTimeout      = time.Second * 3
 	jobQueueBufferSize = 1000
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
@@ -366,8 +367,7 @@ func (planner *MyPlanner) homePageHandler(c *gin.Context) {
 	c.Redirect(http.StatusMovedPermanently, "/v1/")
 }
 
-// HTTP GET API end-point handler
-// Return top planning result to user
+// Return top planning results to user
 func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
 	var userView user.View
@@ -536,7 +536,7 @@ func (planner *MyPlanner) signup(c *gin.Context) {
 	c.HTML(http.StatusOK, "signup_page.html", gin.H{})
 }
 
-func (planner *MyPlanner) customizedTemplate(context *gin.Context) {
+func (planner *MyPlanner) planTemplate(context *gin.Context) {
 	context.HTML(http.StatusOK, "plan_template.html", gin.H{})
 }
 
@@ -681,7 +681,7 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	v1 := myRouter.Group("/v1")
 	{
 		v1.GET("/", planner.searchPageHandler)
-		v1.GET("/plans", planner.getPlanningApi)
+		v1.GET("/plans", timeout.New(timeout.WithTimeout(ServerTimeout), timeout.WithHandler(planner.getPlanningApi)))
 		v1.POST("/signup", planner.UserEmailVerify)
 		v1.GET("/verify", planner.userClickOnEmailVerification)
 		v1.POST("/login", planner.userLogin)
@@ -691,8 +691,8 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/sign-up", planner.signup)
 		v1.GET("/plans/:id", planner.getPlanDetails)
 		v1.GET("/cities", planner.getCitiesHandler)
-		v1.POST("/customize", planner.customize)
-		v1.GET("/template", planner.customizedTemplate)
+		v1.POST("/customize", timeout.New(timeout.WithTimeout(2*time.Second), timeout.WithHandler(planner.customize)))
+		v1.GET("/template", planner.planTemplate)
 		v1.GET("/login-google", planner.handleLogin)
 		v1.GET("/callback-google", planner.oauthCallback)
 		migrations := v1.Group("/migrate")
@@ -719,10 +719,10 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	}
 
 	svr := &http.Server{
-		Addr:         ":" + serverPort,
-		Handler:      myRouter,
-		ReadTimeout:  ServerTimeout,
-		WriteTimeout: ServerTimeout,
+		Addr:    ":" + serverPort,
+		Handler: myRouter,
+		//ReadTimeout:  ServerTimeout,
+		//WriteTimeout: ServerTimeout,
 	}
 
 	return svr

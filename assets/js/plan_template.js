@@ -106,6 +106,7 @@ function tableToSlots() {
 async function postPlanTemplate() {
     // remove pagination buttons
     $('#pagination').hide();
+    $('#no-valid-plan-error-msg').hide();
     // remove previous search results
     $('#tables').empty();
     document.getElementById("searchSpinner").classList.remove("visually-hidden");
