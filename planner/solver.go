@@ -92,33 +92,33 @@ func (solver *Solver) ValidateLocation(context context.Context, location *POI.Lo
 	return true
 }
 
-func PlanningSolutionsRedisRequest(location POI.Location, placeCategories []POI.PlaceCategory, stayTimes []matching.TimeSlot, radius uint, weekday POI.Weekday, priceLevel POI.PriceLevel) iowrappers.PlanningSolutionsCacheRequest {
+func ToRedisRequest(req *PlanningReq) *iowrappers.PlanningSolutionsCacheRequest {
+	stayTimes := toTimeSlots(req.Slots)
 	intervals := make([]POI.TimeInterval, len(stayTimes))
 	for idx, stayTime := range stayTimes {
 		intervals[idx] = stayTime.Slot
 	}
 
-	req := iowrappers.PlanningSolutionsCacheRequest{
-		Location:        location,
-		Radius:          uint64(radius),
-		PriceLevel:      priceLevel,
-		PlaceCategories: placeCategories,
+	return &iowrappers.PlanningSolutionsCacheRequest{
+		Location:        req.Location,
+		Radius:          uint64(req.SearchRadius),
+		PriceLevel:      req.PriceLevel,
+		PlaceCategories: toPlaceCategories(req.Slots),
 		Intervals:       intervals,
-		Weekday:         weekday,
+		Weekday:         req.Weekday,
 	}
-	return req
 }
 
-func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.RedisClient, request *PlanningReq, response *PlanningResp) {
-	iowrappers.Logger.Debugf("->Solve(context.Context, iowrappers.RedisClient, %v, *PlanningResp)", request)
-	if !request.PreciseLocation && !solver.ValidateLocation(context, &request.Location) {
+func (solver *Solver) Solve(ctx context.Context, redisClient *iowrappers.RedisClient, request *PlanningReq, response *PlanningResp) {
+	iowrappers.Logger.Debugf("->Solve(ctx.Context, iowrappers.RedisClient, %v, *PlanningResp)", request)
+	if !request.PreciseLocation && !solver.ValidateLocation(ctx, &request.Location) {
 		response.Err = errors.New("invalid travel destination")
 		response.ErrorCode = InvalidRequestLocation
 		return
 	}
 
 	if request.PreciseLocation {
-		geocode, err := solver.Searcher.ReverseGeocode(context, request.Location.Latitude, request.Location.Longitude)
+		geocode, err := solver.Searcher.ReverseGeocode(ctx, request.Location.Latitude, request.Location.Longitude)
 		if err != nil {
 			response.Err = err
 			response.ErrorCode = InvalidRequestLocation
@@ -134,17 +134,16 @@ func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.Red
 		request.NumPlans = NumPlansDefault
 	}
 
-	redisRequest := PlanningSolutionsRedisRequest(request.Location, toPlaceCategories(request.Slots), toTimeSlots(request.Slots), request.SearchRadius, request.Weekday, request.PriceLevel)
+	redisRequest := ToRedisRequest(request)
 
-	cacheResponse, cacheErr := redisClient.PlanningSolutions(context, redisRequest)
+	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, redisRequest)
 
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < request.NumPlans {
-		solutions, slotSolutionRedisKey, err := GenerateSolutions(context, solver.TimeMatcher, redisClient, redisRequest, *request, solver.PriceRangeMatcher)
+		solutions, err := GenerateSolutions(ctx, redisClient, redisRequest, request, solver.TimeMatcher, solver.PriceRangeMatcher)
 		if err != nil {
 			response.Err = err
 			if err.Error() == CategorizedPlaceIterInitFailureErrMsg || len(solutions) == 0 {
 				response.ErrorCode = NoValidSolution
-				invalidatePlanningSolutionsCache(context, redisClient, []string{slotSolutionRedisKey})
 			} else {
 				response.ErrorCode = InternalError
 			}
@@ -153,7 +152,7 @@ func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.Red
 		response.Solutions = solutions
 		return
 	}
-	iowrappers.Logger.Debugf("[request_id: %s]Found planning solutions in Redis for request %+v.", context.Value(iowrappers.ContextRequestIdKey), *request)
+	iowrappers.Logger.Debugf("[request_id: %s]Found planning solutions in Redis for request %+v.", ctx.Value(iowrappers.ContextRequestIdKey), *request)
 	for idx, candidate := range cacheResponse.PlanningSolutionRecords {
 		// deal with cases where there are more cached solutions than requested
 		if idx >= request.NumPlans {
@@ -172,13 +171,7 @@ func (solver *Solver) Solve(context context.Context, redisClient *iowrappers.Red
 		}
 		response.Solutions = append(response.Solutions, planningSolution)
 	}
-	iowrappers.Logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for request %+v.", context.Value(iowrappers.ContextRequestIdKey), len(response.Solutions), *request)
-}
-
-func invalidatePlanningSolutionsCache(context context.Context, redisClient *iowrappers.RedisClient, slotSolutionRedisKeys []string) {
-	if err := redisClient.RemoveKeys(context, slotSolutionRedisKeys); err != nil {
-		iowrappers.Logger.Error(err)
-	}
+	iowrappers.Logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for request %+v.", ctx.Value(iowrappers.ContextRequestIdKey), len(response.Solutions), *request)
 }
 
 // GetStandardRequest generates a standard request while we seek a better way to represent complex REST requests
@@ -301,7 +294,7 @@ func reversePlans(plans []PlanningSolution) []PlanningSolution {
 	return plans
 }
 
-func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, redisClient *iowrappers.RedisClient, redisRequest iowrappers.PlanningSolutionsCacheRequest, request PlanningReq, priceRangeMatcher matching.Matcher) (solutions []PlanningSolution, solutionRedisKey string, err error) {
+func GenerateSolutions(context context.Context, redisClient *iowrappers.RedisClient, redisRequest *iowrappers.PlanningSolutionsCacheRequest, request *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) (solutions []PlanningSolution, err error) {
 	solutions = make([]PlanningSolution, 0)
 
 	var placeClusters [][]matching.Place
@@ -358,8 +351,7 @@ func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, re
 	bestCandidates := FindBestPlanningSolutions(placeClusters, request.NumPlans, &mdIter)
 	solutions = bestCandidates
 
-	// cache slot solution calculation results
-	planningSolutionsResponse := iowrappers.PlanningSolutionsResponse{}
+	planningSolutionsResponse := &iowrappers.PlanningSolutionsResponse{}
 	planningSolutionsResponse.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, len(bestCandidates))
 
 	for idx, candidate := range bestCandidates {
@@ -379,9 +371,9 @@ func GenerateSolutions(context context.Context, timeMatcher matching.Matcher, re
 		solutions[idx].ID = record.ID
 	}
 
-	redisKey, saveSolutionsErr := redisClient.SavePlanningSolutions(context, redisRequest, planningSolutionsResponse)
+	saveSolutionsErr := redisClient.SavePlanningSolutions(context, redisRequest, planningSolutionsResponse)
 	if saveSolutionsErr != nil {
-		return solutions, redisKey, saveSolutionsErr
+		return solutions, saveSolutionsErr
 	}
 
 	return
