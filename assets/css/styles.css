@@ -2,8 +2,8 @@
     display: grid;
     grid-template-rows: auto;
     grid-template-areas:
-                    'header'
-                    'content';
+        'header'
+        'content';
 }
 
 .header {
@@ -17,7 +17,8 @@
 div.fixedwidthicon {
     width: 25px;
 }
-button.square-button{
+
+button.square-button {
     width: 31px;
 }
 
@@ -45,17 +46,41 @@ tr:nth-child(even) {
 #tripCarousel {
     height: 350px !important;
     overflow: hidden;
-  }
+}
 
 @media only screen and (min-width: 576px) {
     #dateDiv {
-        max-width: 11em; 
+        max-width: 11em;
     }
+
     #locationDiv {
         min-width: 13em;
     }
-  }
+}
+
 #planSaveIcon {
     cursor: pointer;
 }
-  
+
+.svg-container {
+    display: flex;
+    justify-content: center;
+}
+
+.svg-content {
+    display: inline-block;
+    position: absolute;
+    transform: translate(300px, 300px);
+    top: 0;
+    left: 0;
+}
+
+/*an option for a svg to be used directly*/
+.svg {
+    background: url("http://fofwebdesign.co.uk/template/_testing/test/svg/page-bg.svg") no-repeat;
+    background-size: 100%;
+    height: 100vh;
+    width: 100%;
+    background-position: 50px 50px;
+    color: transparent;
+}
