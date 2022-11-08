@@ -92,23 +92,6 @@ func (s *Solver) ValidateLocation(context context.Context, location *POI.Locatio
 	return true
 }
 
-func ToRedisRequest(req *PlanningReq) *iowrappers.PlanningSolutionsCacheRequest {
-	stayTimes := toTimeSlots(req.Slots)
-	intervals := make([]POI.TimeInterval, len(stayTimes))
-	for idx, stayTime := range stayTimes {
-		intervals[idx] = stayTime.Slot
-	}
-
-	return &iowrappers.PlanningSolutionsCacheRequest{
-		Location:        req.Location,
-		Radius:          uint64(req.SearchRadius),
-		PriceLevel:      req.PriceLevel,
-		PlaceCategories: toPlaceCategories(req.Slots),
-		Intervals:       intervals,
-		Weekday:         req.Weekday,
-	}
-}
-
 func (s *Solver) Solve(ctx context.Context, redisClient *iowrappers.RedisClient, req *PlanningReq, response *PlanningResp) {
 	iowrappers.Logger.Debugf("->Solve(ctx.Context, iowrappers.RedisClient, %v, *PlanningResp)", req)
 	if !req.PreciseLocation && !s.ValidateLocation(ctx, &req.Location) {
@@ -134,7 +117,7 @@ func (s *Solver) Solve(ctx context.Context, redisClient *iowrappers.RedisClient,
 		req.NumPlans = NumPlansDefault
 	}
 
-	redisRequest := ToRedisRequest(req)
+	redisRequest := toRedisRequest(req)
 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, redisRequest)
 
@@ -393,7 +376,7 @@ func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *Planning
 		planningSolutionsResponse.PlanningSolutionRecords[idx] = record
 	}
 
-	err := c.SavePlanningSolutions(ctx, ToRedisRequest(req), planningSolutionsResponse)
+	err := c.SavePlanningSolutions(ctx, toRedisRequest(req), planningSolutionsResponse)
 	if err != nil {
 		return err
 	}
