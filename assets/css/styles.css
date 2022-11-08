@@ -69,6 +69,8 @@ tr:nth-child(even) {
 
 .svg-content {
     display: inline-block;
+    position: absolute;
+    transform: translate(300px, 300px);
     top: 0;
     left: 0;
 }
