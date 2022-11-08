@@ -580,6 +580,9 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
 	planningResp := planner.Planning(c, &request, "guest")
+	if planningResp.StatusCode == RequestTimeOut {
+		ctx.JSON(http.StatusRequestTimeout, nil)
+	}
 	ctx.JSON(http.StatusOK, planningResp)
 }
 

@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -45,6 +46,7 @@ const (
 	ValidSolutionFound     = 200
 	InvalidRequestLocation = 400
 	NoValidSolution        = 404
+	RequestTimeOut         = 408
 	InternalError          = 500
 )
 
@@ -130,7 +132,8 @@ func (s *Solver) Solve(ctx context.Context, redisClient *iowrappers.RedisClient,
 
 		select {
 		case <-ctxTimeout.Done():
-			response.Err = errors.New("planning request timed out")
+			response.Err = fmt.Errorf("the planning request %s timed out", ctx.Value(iowrappers.ContextRequestIdKey))
+			response.ErrorCode = RequestTimeOut
 			return
 		case res := <-c:
 			response.Solutions = res.Solutions

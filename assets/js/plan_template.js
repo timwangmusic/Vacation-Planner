@@ -106,6 +106,8 @@ function tableToSlots() {
 async function postPlanTemplate() {
     // remove pagination buttons
     $('#pagination').hide();
+    // hide timeout alert message
+    $('#request-timeout-error-msg').addClass('d-none');
     // remove previous search results
     $('#tables').empty();
     document.getElementById("searchSpinner").classList.remove("visually-hidden");
@@ -145,7 +147,14 @@ async function postPlanTemplate() {
             $('#no-valid-plan-error-msg').addClass('d-none');
         }
     ).catch(
-        err => console.error(err)
+        err => {
+            console.error(err)
+            $('#searchSpinner').addClass("visually-hidden");
+            $('#no-valid-plan-error-msg').addClass('d-none');
+            if (err.response?.status === 408) {
+                $('#request-timeout-error-msg').removeClass('d-none');
+            }
+        }
     )
 }
 
