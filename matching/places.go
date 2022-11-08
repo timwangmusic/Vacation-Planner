@@ -4,12 +4,24 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
+const DefaultPlaceSearchRadius = 10000
+
 type Place struct {
 	Place    *POI.Place
 	Category POI.PlaceCategory `json:"category"`
 	Address  string            `json:"address"`
 	Price    float64           `json:"price"`
 }
+
+type ByScore []Place
+
+func (p ByScore) Len() int { return len(p) }
+
+func (p ByScore) Less(i, j int) bool {
+	return Score([]Place{p[i]}, DefaultPlaceSearchRadius) > Score([]Place{p[j]}, DefaultPlaceSearchRadius)
+}
+
+func (p ByScore) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 func (place Place) GetHours() [7]string {
 	return place.Place.Hours

@@ -36,7 +36,7 @@ func TestSolutionCandidateSelection(t *testing.T) {
 		t.Fatalf("expected number of solutions equals %d, got %d", topSolutionsCount, len(res))
 	}
 
-	expectation := []float64{98, 97, 96, 95, 94}
+	expectation := []float64{99, 98, 97, 96, 95}
 	for idx, r := range res {
 		if r.Score != expectation[idx] {
 			t.Errorf("expected %f, got %f", expectation[idx], r.Score)

@@ -11,6 +11,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/yourbasic/radix"
+	"sort"
 	"strings"
 	"time"
 )
@@ -239,7 +240,11 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 	priorityQueue := &graph.MinPriorityQueueVertex{}
 	deduplicatedPlans := make(map[string]bool)
 
-	for iterator.HasNext() {
+	for _, cluster := range placeClusters {
+		sort.Sort(matching.ByScore(cluster))
+	}
+
+	for iterator.HasNext() && priorityQueue.Len() < topSolutionsCount {
 		select {
 		case <-ctx.Done():
 			return nil, errors.New(ComputationTimedOutErrMsg)
@@ -256,16 +261,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 				continue
 			}
 			newVertex := graph.Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
-			if priorityQueue.Len() == topSolutionsCount {
-				topVertex := (*priorityQueue)[0]
-				if topVertex.Key < newVertex.Key {
-					heap.Pop(priorityQueue)
-					delete(deduplicatedPlans, jointPlaceIdsForPlan(topVertex.Object.(PlanningSolution)))
-					heap.Push(priorityQueue, newVertex)
-				}
-			} else {
-				heap.Push(priorityQueue, newVertex)
-			}
+			heap.Push(priorityQueue, newVertex)
 		}
 	}
 
