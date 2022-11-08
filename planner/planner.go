@@ -296,9 +296,7 @@ func (planner *MyPlanner) cityStatsHandler(context *gin.Context) {
 }
 
 func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReq, user string) (resp PlanningResponse) {
-	var planningResponse PlanningResp
-
-	planner.Solver.Solve(ctx, planner.RedisClient, planningRequest, &planningResponse)
+	planningResponse := planner.Solver.Solve(ctx, planningRequest)
 
 	if planningResponse.Err != nil {
 		resp.Err = planningResponse.Err
@@ -580,6 +578,7 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
 	planningResp := planner.Planning(c, &request, "guest")
+	iowrappers.Logger.Debugf("response status code is: %d", planningResp.StatusCode)
 	if planningResp.StatusCode == RequestTimeOut {
 		ctx.JSON(http.StatusRequestTimeout, nil)
 	}

@@ -108,6 +108,8 @@ async function postPlanTemplate() {
     $('#pagination').hide();
     // hide timeout alert message
     $('#request-timeout-error-msg').addClass('d-none');
+    // hide no result alert message
+    $('#no-valid-plan-error-msg').addClass('d-none');
     // remove previous search results
     $('#tables').empty();
     document.getElementById("searchSpinner").classList.remove("visually-hidden");

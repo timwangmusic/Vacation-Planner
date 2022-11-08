@@ -4,7 +4,6 @@ import (
 	"container/heap"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -13,6 +12,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/yourbasic/radix"
 	"strings"
+	"time"
 )
 
 const (
@@ -20,6 +20,7 @@ const (
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 10000
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
+	ComputationTimedOutErrMsg             = "computation timed out"
 	ErrMsgMismatchIterAndPlace            = "mismatch in iterator status vector length"
 	ErrMsgRepeatedPlaceInSameTrip         = "repeated places in the same trip"
 )
@@ -94,20 +95,18 @@ func (s *Solver) ValidateLocation(context context.Context, location *POI.Locatio
 	return true
 }
 
-func (s *Solver) Solve(ctx context.Context, redisClient *iowrappers.RedisClient, req *PlanningReq, response *PlanningResp) {
-	iowrappers.Logger.Debugf("->Solve(ctx.Context, iowrappers.RedisClient, %v, *PlanningResp)", req)
+func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
+	redisClient := s.Searcher.GetRedisClient()
+	logger := iowrappers.Logger
+	logger.Debugf("->Solve(ctx.Context, iowrappers.RedisClient, %v, *PlanningResp)", req)
 	if !req.PreciseLocation && !s.ValidateLocation(ctx, &req.Location) {
-		response.Err = errors.New("invalid travel destination")
-		response.ErrorCode = InvalidRequestLocation
-		return
+		return &PlanningResp{Err: errors.New("invalid travel destination"), ErrorCode: InvalidRequestLocation}
 	}
 
 	if req.PreciseLocation {
 		geocode, err := s.Searcher.ReverseGeocode(ctx, req.Location.Latitude, req.Location.Longitude)
 		if err != nil {
-			response.Err = err
-			response.ErrorCode = InvalidRequestLocation
-			return
+			return &PlanningResp{Err: err, ErrorCode: InvalidRequestLocation}
 		}
 		req.Location.City = geocode.City
 		req.Location.AdminAreaLevelOne = geocode.AdminAreaLevelOne
@@ -123,39 +122,25 @@ func (s *Solver) Solve(ctx context.Context, redisClient *iowrappers.RedisClient,
 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, redisRequest)
 
+	var resp PlanningResp
+	var err error
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < req.NumPlans {
-		c := make(chan *PlanningResp)
-		ctxTimeout, cancel := context.WithTimeout(ctx, SolverTimeout)
-		defer cancel()
+		ctxTimeout, cancel := context.WithCancel(ctx)
+		go func() {
+			time.Sleep(SolverTimeout)
+			cancel()
+		}()
 
-		go generateSolutions(ctxTimeout, req, s.TimeMatcher, s.PriceRangeMatcher, c)
-
-		select {
-		case <-ctxTimeout.Done():
-			response.Err = fmt.Errorf("the planning request %s timed out", ctx.Value(iowrappers.ContextRequestIdKey))
-			response.ErrorCode = RequestTimeOut
-			return
-		case res := <-c:
-			response.Solutions = res.Solutions
-			response.Err = res.Err
-			if response.Err != nil {
-				if response.Err.Error() == CategorizedPlaceIterInitFailureErrMsg || len(response.Solutions) == 0 {
-					response.ErrorCode = NoValidSolution
-				} else {
-					response.ErrorCode = InternalError
-				}
-			} else {
-				err := saveSolutions(ctx, s.Searcher.GetRedisClient(), req, &response.Solutions)
-				if err != nil {
-					iowrappers.Logger.Error(err)
-				}
-			}
+		if resp, err = generateSolutions(ctxTimeout, req, s.TimeMatcher, s.PriceRangeMatcher); err != nil {
+			resp.Err = err
+		} else if err = saveSolutions(ctx, redisClient, req, &resp.Solutions); err != nil {
+			logger.Error(err)
 		}
-		return
+		return &resp
 	}
-	iowrappers.Logger.Debugf("[request_id: %s]Found planning solutions in Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), *req)
+	logger.Debugf("[request_id: %s]Found planning solutions in Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), *req)
 	for idx, candidate := range cacheResponse.PlanningSolutionRecords {
-		// deal with cases where there are more cached solutions than requested
+		// deal with cases where there are more saved solutions than requested
 		if idx >= req.NumPlans {
 			break
 		}
@@ -170,9 +155,10 @@ func (s *Solver) Solve(ctx context.Context, redisClient *iowrappers.RedisClient,
 			Score:           candidate.Score,
 			ScoreOld:        candidate.ScoreOld,
 		}
-		response.Solutions = append(response.Solutions, planningSolution)
+		resp.Solutions = append(resp.Solutions, planningSolution)
 	}
-	iowrappers.Logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), len(response.Solutions), *req)
+	logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), len(resp.Solutions), *req)
+	return &resp
 }
 
 // generates a request for normal template used by the regular search
@@ -245,7 +231,7 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 	return res, nil
 }
 
-func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) []PlanningSolution {
+func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) ([]PlanningSolution, error) {
 	if topSolutionsCount <= 0 {
 		topSolutionsCount = TopSolutionsCountDefault
 	}
@@ -254,27 +240,32 @@ func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCou
 	deduplicatedPlans := make(map[string]bool)
 
 	for iterator.HasNext() {
-		var candidate PlanningSolution
-		var err error
-		candidate, err = createPlanningSolutionCandidate(iterator.Status, placeClusters)
-		iterator.Next()
-		if err != nil {
-			log.Debug(err)
-			continue
-		}
-		if !isDuplicatedPlan(deduplicatedPlans, candidate) {
-			continue
-		}
-		newVertex := graph.Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
-		if priorityQueue.Len() == topSolutionsCount {
-			topVertex := (*priorityQueue)[0]
-			if topVertex.Key < newVertex.Key {
-				heap.Pop(priorityQueue)
-				delete(deduplicatedPlans, jointPlaceIdsForPlan(topVertex.Object.(PlanningSolution)))
+		select {
+		case <-ctx.Done():
+			return nil, errors.New(ComputationTimedOutErrMsg)
+		default:
+			var candidate PlanningSolution
+			var err error
+			candidate, err = createPlanningSolutionCandidate(iterator.Status, placeClusters)
+			iterator.Next()
+			if err != nil {
+				log.Debug(err)
+				continue
+			}
+			if !isDuplicatedPlan(deduplicatedPlans, candidate) {
+				continue
+			}
+			newVertex := graph.Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
+			if priorityQueue.Len() == topSolutionsCount {
+				topVertex := (*priorityQueue)[0]
+				if topVertex.Key < newVertex.Key {
+					heap.Pop(priorityQueue)
+					delete(deduplicatedPlans, jointPlaceIdsForPlan(topVertex.Object.(PlanningSolution)))
+					heap.Push(priorityQueue, newVertex)
+				}
+			} else {
 				heap.Push(priorityQueue, newVertex)
 			}
-		} else {
-			heap.Push(priorityQueue, newVertex)
 		}
 	}
 
@@ -285,7 +276,7 @@ func FindBestPlanningSolutions(placeClusters [][]matching.Place, topSolutionsCou
 		res = append(res, top.Object.(PlanningSolution))
 	}
 	// min-heap, res needs to be reversed to get the descending order
-	return reversePlans(res)
+	return reversePlans(res), nil
 }
 
 func reversePlans(plans []PlanningSolution) []PlanningSolution {
@@ -295,8 +286,8 @@ func reversePlans(plans []PlanningSolution) []PlanningSolution {
 	return plans
 }
 
-func generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher, respChan chan *PlanningResp) {
-	resp := &PlanningResp{}
+func generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) (PlanningResp, error) {
+	resp := PlanningResp{}
 
 	var placeClusters [][]matching.Place
 	for _, slot := range req.Slots {
@@ -320,10 +311,8 @@ func generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matchi
 			UsePreciseLocation: req.PreciseLocation,
 		})
 		if err != nil {
-			iowrappers.Logger.Error(err)
-			resp.Err = err
-			respChan <- resp
-			return
+			resp.ErrorCode = InternalError
+			return resp, err
 		}
 
 		placesByPrice, err := priceRangeMatcher.Match(ctx, matching.Request{
@@ -334,10 +323,8 @@ func generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matchi
 			UsePreciseLocation: req.PreciseLocation,
 		})
 		if err != nil {
-			iowrappers.Logger.Error(err)
-			resp.Err = err
-			respChan <- resp
-			return
+			resp.ErrorCode = InternalError
+			return resp, err
 		}
 
 		iowrappers.Logger.Infof("number of places by price matcher is %d", len(placesByPrice))
@@ -348,15 +335,18 @@ func generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matchi
 
 	mdIter := MultiDimIterator{}
 	if err := mdIter.Init(placeCategories, placeClusters); err != nil {
-		resp.Err = err
-		respChan <- resp
-		return
+		resp.ErrorCode = NoValidSolution
+		return resp, err
 	}
 
-	solutions := FindBestPlanningSolutions(placeClusters, req.NumPlans, &mdIter)
+	solutions, err := FindBestPlanningSolutions(ctx, placeClusters, req.NumPlans, &mdIter)
+	if err != nil {
+		resp.ErrorCode = RequestTimeOut
+		return resp, err
+	}
 
 	resp.Solutions = solutions
-	respChan <- resp
+	return resp, nil
 }
 
 func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningReq, solutions *[]PlanningSolution) error {

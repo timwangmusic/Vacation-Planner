@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"github.com/weihesdlegend/Vacation-planner/planner"
 	"strconv"
 	"testing"
@@ -23,15 +24,16 @@ func TestSolutionCandidateSelection(t *testing.T) {
 	clusters[0] = places
 	err := iterator.Init([]POI.PlaceCategory{POI.PlaceCategoryEatery}, clusters)
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	}
 	topSolutionsCount := 5
-	res := planner.FindBestPlanningSolutions(clusters, topSolutionsCount, iterator)
+	res, err := planner.FindBestPlanningSolutions(context.Background(), clusters, topSolutionsCount, iterator)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if len(res) != topSolutionsCount {
-		t.Errorf("expected number of solutions equals %d, got %d", topSolutionsCount, len(res))
-		return
+		t.Fatalf("expected number of solutions equals %d, got %d", topSolutionsCount, len(res))
 	}
 
 	expectation := []float64{98, 97, 96, 95, 94}
