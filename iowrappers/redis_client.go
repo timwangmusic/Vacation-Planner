@@ -423,7 +423,7 @@ func encodePlanIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeIn
 	return result, nil
 }
 
-func generateTravelPlansCacheKey(req PlanningSolutionsCacheRequest) (string, error) {
+func generateTravelPlansCacheKey(req *PlanningSolutionsCacheRequest) (string, error) {
 	country, region, city := req.Location.Country, req.Location.AdminAreaLevelOne, req.Location.City
 	planIndex, err := encodePlanIndex(req.PlaceCategories, req.Intervals)
 	if err != nil {
@@ -441,11 +441,15 @@ func generateTravelPlansCacheKey(req PlanningSolutionsCacheRequest) (string, err
 	return redisFieldKey, nil
 }
 
-func (r *RedisClient) SavePlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest, response PlanningSolutionsResponse) (string, error) {
+func (r *RedisClient) SavePlanningSolutions(context context.Context, request *PlanningSolutionsCacheRequest, response *PlanningSolutionsResponse) error {
+	// solutions with no valid solutions do not worth saving
+	if len(response.PlanningSolutionRecords) == 0 {
+		return nil
+	}
 	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
 	if keyGenerationErr != nil {
 		Logger.Errorf("failed to generate travel plans cache key, error %s", keyGenerationErr.Error())
-		return redisListKey, keyGenerationErr
+		return keyGenerationErr
 	}
 
 	var recordKeys []string
@@ -453,11 +457,11 @@ func (r *RedisClient) SavePlanningSolutions(context context.Context, request Pla
 		solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, record.ID}, ":")
 		json_, err := json.Marshal(record)
 		if err != nil {
-			return redisListKey, err
+			return err
 		}
 		_, recordSaveErr := r.client.Set(context, solutionRedisKey, json_, 0).Result()
 		if recordSaveErr != nil {
-			return redisListKey, recordSaveErr
+			return recordSaveErr
 		}
 		recordKeys = append(recordKeys, solutionRedisKey)
 	}
@@ -467,13 +471,13 @@ func (r *RedisClient) SavePlanningSolutions(context context.Context, request Pla
 		Logger.Debugf("added the %d travel plan keys to %s", numTravelPlanKeys, redisListKey)
 		r.client.Expire(context, redisListKey, PlanningSolutionsExpirationTime)
 
-		return redisListKey, listSaveErr
+		return listSaveErr
 	}
 
-	return redisListKey, nil
+	return nil
 }
 
-func (r *RedisClient) PlanningSolutions(context context.Context, request PlanningSolutionsCacheRequest) (PlanningSolutionsResponse, error) {
+func (r *RedisClient) PlanningSolutions(context context.Context, request *PlanningSolutionsCacheRequest) (PlanningSolutionsResponse, error) {
 	Logger.Debugf("->RedisClient.PlanningSolutions(%v)", request)
 	var response PlanningSolutionsResponse
 	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)

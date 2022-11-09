@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/gin-contrib/timeout"
 	"html/template"
 	"io"
 	"net/http"
@@ -31,6 +32,7 @@ import (
 
 const (
 	ServerTimeout      = time.Second * 15
+	SolverTimeout      = time.Second * 10
 	jobQueueBufferSize = 1000
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
@@ -294,9 +296,7 @@ func (planner *MyPlanner) cityStatsHandler(context *gin.Context) {
 }
 
 func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReq, user string) (resp PlanningResponse) {
-	var planningResponse PlanningResp
-
-	planner.Solver.Solve(ctx, planner.RedisClient, planningRequest, &planningResponse)
+	planningResponse := planner.Solver.Solve(ctx, planningRequest)
 
 	if planningResponse.Err != nil {
 		resp.Err = planningResponse.Err
@@ -366,8 +366,7 @@ func (planner *MyPlanner) homePageHandler(c *gin.Context) {
 	c.Redirect(http.StatusMovedPermanently, "/v1/")
 }
 
-// HTTP GET API end-point handler
-// Return top planning result to user
+// Return top planning results to user
 func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
 	var userView user.View
@@ -418,7 +417,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
 
-	planningReq := GetStandardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
+	planningReq := standardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.SearchRadius = 10000 // default to 10km
 	planningReq.PreciseLocation = preciseLocation
 	logger.Debugf("use precise location: %t", preciseLocation)
@@ -536,7 +535,7 @@ func (planner *MyPlanner) signup(c *gin.Context) {
 	c.HTML(http.StatusOK, "signup_page.html", gin.H{})
 }
 
-func (planner *MyPlanner) customizedTemplate(context *gin.Context) {
+func (planner *MyPlanner) planTemplate(context *gin.Context) {
 	context.HTML(http.StatusOK, "plan_template.html", gin.H{})
 }
 
@@ -579,6 +578,10 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
 	planningResp := planner.Planning(c, &request, "guest")
+	iowrappers.Logger.Debugf("response status code is: %d", planningResp.StatusCode)
+	if planningResp.StatusCode == RequestTimeOut {
+		ctx.JSON(http.StatusRequestTimeout, nil)
+	}
 	ctx.JSON(http.StatusOK, planningResp)
 }
 
@@ -681,7 +684,7 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	v1 := myRouter.Group("/v1")
 	{
 		v1.GET("/", planner.searchPageHandler)
-		v1.GET("/plans", planner.getPlanningApi)
+		v1.GET("/plans", timeout.New(timeout.WithTimeout(ServerTimeout), timeout.WithHandler(planner.getPlanningApi)))
 		v1.POST("/signup", planner.UserEmailVerify)
 		v1.GET("/verify", planner.userClickOnEmailVerification)
 		v1.POST("/login", planner.userLogin)
@@ -692,7 +695,7 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/plans/:id", planner.getPlanDetails)
 		v1.GET("/cities", planner.getCitiesHandler)
 		v1.POST("/customize", planner.customize)
-		v1.GET("/template", planner.customizedTemplate)
+		v1.GET("/template", planner.planTemplate)
 		v1.GET("/login-google", planner.handleLogin)
 		v1.GET("/callback-google", planner.oauthCallback)
 		migrations := v1.Group("/migrate")
@@ -719,10 +722,8 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	}
 
 	svr := &http.Server{
-		Addr:         ":" + serverPort,
-		Handler:      myRouter,
-		ReadTimeout:  ServerTimeout,
-		WriteTimeout: ServerTimeout,
+		Addr:    ":" + serverPort,
+		Handler: myRouter,
 	}
 
 	return svr

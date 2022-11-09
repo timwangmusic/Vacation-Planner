@@ -2,8 +2,12 @@ package planner
 
 import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type CityView struct {
@@ -53,4 +57,36 @@ func toPlaceCategories(slotRequests []SlotRequest) []POI.PlaceCategory {
 		categories[idx] = slotRequests[idx].Category
 	}
 	return categories
+}
+
+func toRedisRequest(req *PlanningReq) *iowrappers.PlanningSolutionsCacheRequest {
+	stayTimes := toTimeSlots(req.Slots)
+	intervals := make([]POI.TimeInterval, len(stayTimes))
+	for idx, stayTime := range stayTimes {
+		intervals[idx] = stayTime.Slot
+	}
+
+	return &iowrappers.PlanningSolutionsCacheRequest{
+		Location:        req.Location,
+		Radius:          uint64(req.SearchRadius),
+		PriceLevel:      req.PriceLevel,
+		PlaceCategories: toPlaceCategories(req.Slots),
+		Intervals:       intervals,
+		Weekday:         req.Weekday,
+	}
+}
+
+func toWeekday(date string) POI.Weekday {
+	datePattern := regexp.MustCompile(`(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})`)
+	dateFields := datePattern.FindStringSubmatch(date)
+	year, _ := strconv.Atoi(dateFields[1])
+	month, _ := strconv.Atoi(dateFields[2])
+	day, _ := strconv.Atoi(dateFields[3])
+	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	return POI.Weekday(t.Weekday())
+}
+
+func toPriceLevel(priceLevel string) POI.PriceLevel {
+	price, _ := strconv.Atoi(priceLevel)
+	return POI.PriceLevel(price)
 }
