@@ -421,6 +421,33 @@ func NearbySearchWithPlaceView(context context.Context, matcher matching.Matcher
 	return placesView, nil
 }
 
+func NearbySearchByCategories(context context.Context, matcher matching.Matcher, location POI.Location,
+	weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.Place, error) {
+	var filterParams = make(map[matching.FilterCriteria]interface{})
+	filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
+		Category:     category,
+		Day:          weekday,
+		TimeInterval: timeSlot.Slot,
+	}
+	var err error
+	places, _ := matcher.Match(context, matching.Request{
+		Radius:   radius,
+		Location: location,
+		Criteria: matching.FilterByTimePeriod,
+		Params:   filterParams,
+	})
+	//test code
+	/*	for index := range places {
+			places[index].Price = float64(10 + rand.Intn(30))
+		}
+		file, _ := json.MarshalIndent(places, "", " ")
+		_ = ioutil.WriteFile("random_gen_visiting_places_testonly.json", file, 0644)*/
+	if len(places) == 0 {
+		return nil, errors.New("no places found at current location and time")
+	}
+	return places, err
+}
+
 // selects mutual places
 func mergePlaceClusters(placesA []matching.Place, placesB []matching.Place) []matching.Place {
 	var results []matching.Place

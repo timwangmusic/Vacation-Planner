@@ -1,7 +1,6 @@
 package planner
 
 import (
-	"Vacation-Planner/solution"
 	"context"
 	"encoding/json"
 	"errors"
@@ -215,7 +214,7 @@ func (planner *MyPlanner) SingleDayTimeCostPlanHandler(ctx *gin.Context) {
 		return
 	}
 	c := context.WithValue(ctx, "request_id", requestId)
-	places, err := solution.NearbySearchByCategories(c, planner.Solver.TimeMatcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
+	places, err := NearbySearchByCategories(c, planner.Solver.TimeMatcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
 		Start: POI.Hour(startHour),
 		End:   POI.Hour(endHour),
 	}}, placeCategory)
