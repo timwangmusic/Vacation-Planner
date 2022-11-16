@@ -140,7 +140,7 @@ async function postPlanTemplate() {
     console.log(`data about to send: ${JSON.stringify(data)}`);
 
     axios.post(
-        url, JSON.stringify(data)
+        url, JSON.stringify(data), {timeout: 10000}
     ).then(
         function (response) {
             console.log(response.data);

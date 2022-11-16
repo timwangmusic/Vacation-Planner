@@ -42,12 +42,12 @@ func Score(places []Place, distNorm int) float64 {
 
 func singlePlaceScore(place Place) float64 {
 	var ratingPricingRatio float64
-	if place.GetPrice() == 0 {
+	if place.PlacePrice() == 0 {
 		ratingPricingRatio = AvgRating / AvgPricing // set to average single Place rating-price ratio
 	} else {
-		ratingPricingRatio = float64(place.GetRating()) / place.GetPrice()
+		ratingPricingRatio = float64(place.Rating()) / place.PlacePrice()
 	}
-	return math.Log10(float64(1+place.GetUserRatingsCount())) * ratingPricingRatio
+	return math.Log10(float64(1+place.UserRatingsCount())) * ratingPricingRatio
 }
 
 // calculate Haversine distances between places
@@ -55,8 +55,8 @@ func calDistances(places []Place) []float64 {
 	distances := make([]float64, len(places)-1)
 
 	for i := 0; i < len(distances); i++ {
-		locationX := places[i].GetLocation()
-		locationY := places[i+1].GetLocation()
+		locationX := places[i].Location()
+		locationY := places[i+1].Location()
 		distances[i] = utils.HaversineDist([]float64{locationX.Latitude, locationX.Longitude}, []float64{locationY.Latitude, locationY.Longitude})
 	}
 	return distances

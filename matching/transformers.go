@@ -3,13 +3,13 @@ package matching
 // ToPlaceView transforms Place to PlaceView
 func ToPlaceView(place Place) PlaceView {
 	placeView := PlaceView{
-		ID:           place.GetPlaceId(),
-		Name:         place.GetPlaceName(),
-		URL:          place.GetURL(),
-		Rating:       place.GetRating(),
-		RatingsCount: place.GetUserRatingsCount(),
-		AveragePrice: place.GetPrice(),
-		Hours:        place.GetHours(),
+		ID:           place.Id(),
+		Name:         place.Name(),
+		URL:          place.Url(),
+		Rating:       place.Rating(),
+		RatingsCount: place.UserRatingsCount(),
+		AveragePrice: place.PlacePrice(),
+		Hours:        place.Hours(),
 	}
 	return placeView
 }

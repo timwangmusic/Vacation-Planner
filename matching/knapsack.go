@@ -59,7 +59,7 @@ func (recordTable *knapsackRecordTable) update() {
 KnapsackV1 v2 uses sparse matrix like storage for step values and saves memory
 KnapsackV1 v1 is migrated to knapsack_old_test_only.go
 */
-func Knapsack(places []Place, interval QueryTimeInterval, budget uint) (results []Place, totalCost uint, totalTimeSpent uint8) {
+func Knapsack(places []Place, interval TimeInterval, budget uint) (results []Place, totalCost uint, totalTimeSpent uint8) {
 	//Initialize knapsack data structures
 	var recordTable knapsackRecordTable
 	timeLimit := interval.EndHour - interval.StartHour
@@ -70,7 +70,7 @@ func Knapsack(places []Place, interval QueryTimeInterval, budget uint) (results 
 	var stayTime POI.StayingTime
 	for _, place := range places {
 		rt.update()
-		stayTime = POI.GetStayingTimeForLocationType(place.GetPlaceType())
+		stayTime = POI.GetStayingTimeForLocationType(place.Type())
 		for key, record := range rt.SavedRecord {
 			currentTimeSpent, curCost := rt.getTimeLimitAndCost(key)
 			currentQueryStartTime, _ := interval.AddOffsetHours(currentTimeSpent)

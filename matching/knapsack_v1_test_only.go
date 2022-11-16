@@ -30,7 +30,7 @@ func KnapsackMatrixCopy(dst [][]knapsackNode, src [][]knapsackNode) {
 	}
 }
 
-func KnapsackV1(places []Place, interval QueryTimeInterval, budget uint) (results []Place) {
+func KnapsackV1(places []Place, interval TimeInterval, budget uint) (results []Place) {
 	timeLimit := interval.EndHour - interval.StartHour
 	//INIT KNAPSACK MATRIX
 	current := make([][]knapsackNode, timeLimit+1)
@@ -57,14 +57,14 @@ func KnapsackV1(places []Place, interval QueryTimeInterval, budget uint) (result
 	var staytime POI.StayingTime
 	for k := 0; k < len(places); k++ {
 		KnapsackMatrixCopy(current, next)
-		staytime = POI.GetStayingTimeForLocationType(places[k].GetPlaceType())
+		staytime = POI.GetStayingTimeForLocationType(places[k].Type())
 		//INITIALIZE 0,0
 		if uint8(staytime) <= timeLimit && int(math.Ceil(places[k].Price)) <= int(budget) && places[k].IsOpenBetween(interval, uint8(staytime)) {
 			tempPlaces = append(current[0][0].solution, places[k])
 			tempScore = ScoreOld(tempPlaces)
-			if tempScore > next[staytime][int(math.Ceil(places[k].GetPrice()))].score {
-				next[staytime][int(math.Round(places[k].GetPrice()))].score = tempScore
-				next[staytime][int(math.Round(places[k].GetPrice()))].solution = append(make([]Place, 0, len(tempPlaces)), tempPlaces...)
+			if tempScore > next[staytime][int(math.Ceil(places[k].PlacePrice()))].score {
+				next[staytime][int(math.Round(places[k].PlacePrice()))].score = tempScore
+				next[staytime][int(math.Round(places[k].PlacePrice()))].solution = append(make([]Place, 0, len(tempPlaces)), tempPlaces...)
 			}
 			if tempScore > optimalNode.score {
 				optimalNode.score = tempScore
@@ -78,7 +78,7 @@ func KnapsackV1(places []Place, interval QueryTimeInterval, budget uint) (result
 					currentQueryStart, _ := interval.AddOffsetHours(uint8(i))
 					if i+int(staytime) <= int(timeLimit) && j+int(math.Ceil(places[k].Price)) <= int(budget) && places[k].IsOpenBetween(currentQueryStart, uint8(staytime)) {
 						tempi = i + int(staytime)
-						tempj = j + int(math.Ceil(places[k].GetPrice()))
+						tempj = j + int(math.Ceil(places[k].PlacePrice()))
 						tempPlaces = append(current[i][j].solution, places[k])
 						tempScore = ScoreOld(tempPlaces)
 						if tempScore > next[tempi][tempj].score {

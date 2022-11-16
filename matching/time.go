@@ -9,7 +9,7 @@ type TimeSlot struct {
 	Slot POI.TimeInterval `json:"slot"`
 }
 
-type QueryTimeInterval struct {
+type TimeInterval struct {
 	Day       POI.Weekday
 	StartHour uint8
 	EndHour   uint8
@@ -20,7 +20,7 @@ type PlacesClusterForTime struct {
 	Slot   TimeSlot `json:"time slot"`
 }
 
-func (interval *QueryTimeInterval) AddOffsetHours(offsetHour uint8) (intervalOut QueryTimeInterval, valid bool) {
+func (interval *TimeInterval) AddOffsetHours(offsetHour uint8) (intervalOut TimeInterval, valid bool) {
 	//If a stay time after the start time exceeds the end of day, return false
 	if intervalOut.StartHour+offsetHour > interval.EndHour {
 		valid = false

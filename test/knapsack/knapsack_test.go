@@ -22,7 +22,7 @@ func TestKnapsack(t *testing.T) {
 		places[idx] = matching.CreatePlace(p, POI.PlaceCategoryVisit)
 	}
 	budget := uint(80)
-	querystart := matching.QueryTimeInterval{StartHour: 8, Day: POI.DateMonday, EndHour: 16}
+	querystart := matching.TimeInterval{StartHour: 8, Day: POI.DateMonday, EndHour: 16}
 	timeLimit := querystart.EndHour - querystart.StartHour
 	result := matching.KnapsackV1(places, querystart, budget)
 	if len(result) == 0 {
@@ -39,20 +39,20 @@ func TestKnapsack(t *testing.T) {
 		t.Error("No result is returned by v2")
 	}
 	for _, p := range result {
-		t.Logf("Placename: %s, ID: %s", p.GetPlaceName(), p.GetPlaceId())
+		t.Logf("Placename: %s, ID: %s", p.Name(), p.Id())
 	}
 	t.Logf("Knapsack V1 result size: %d", len(result))
 	for _, p := range result2 {
-		t.Logf("Placename: %s, ID: %s", p.GetPlaceName(), p.GetPlaceId())
+		t.Logf("Placename: %s, ID: %s", p.Name(), p.Id())
 	}
 	t.Logf("Knapsack V2 result size: %d", len(result2))
 	if len(result) != len(result2) {
 		t.Error("v2 result doesn't match")
 	}
 	for i := range result {
-		if result[i].GetPlaceId() != result2[i].GetPlaceId() {
+		if result[i].Id() != result2[i].Id() {
 			t.Error("v2 result is not the same")
 		}
 	}
-	assert.Equal(t, "ChIJ36yUcg3xNIgRtvNioeVfK7E", result2[0].GetPlaceId())
+	assert.Equal(t, "ChIJ36yUcg3xNIgRtvNioeVfK7E", result2[0].Id())
 }

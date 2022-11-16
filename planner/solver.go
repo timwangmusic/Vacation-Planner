@@ -208,21 +208,21 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 		var place = placesByCategory[placeIdx]
 
 		// if the same place appears in two indexes, return incomplete result
-		if _, exist := record[place.GetPlaceId()]; exist {
+		if _, exist := record[place.Id()]; exist {
 			return res, errors.New(ErrMsgRepeatedPlaceInSameTrip)
 		}
 
-		record[place.GetPlaceId()] = true
+		record[place.Id()] = true
 		places[idx] = place
-		res.PlaceIDS = append(res.PlaceIDS, place.GetPlaceId())
-		res.PlaceNames = append(res.PlaceNames, place.GetPlaceName())
-		res.PlaceLocations = append(res.PlaceLocations, [2]float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
-		res.PlaceAddresses = append(res.PlaceAddresses, place.GetPlaceFormattedAddress())
-		res.PlaceCategories = append(res.PlaceCategories, place.GetPlaceCategory())
-		if len(strings.TrimSpace(place.GetURL())) == 0 {
+		res.PlaceIDS = append(res.PlaceIDS, place.Id())
+		res.PlaceNames = append(res.PlaceNames, place.Name())
+		res.PlaceLocations = append(res.PlaceLocations, [2]float64{place.Location().Latitude, place.Location().Longitude})
+		res.PlaceAddresses = append(res.PlaceAddresses, place.PlaceAddress())
+		res.PlaceCategories = append(res.PlaceCategories, place.PlaceCategory())
+		if len(strings.TrimSpace(place.Url())) == 0 {
 			place.SetURL(iowrappers.GoogleSearchHomePageURL)
 		}
-		res.PlaceURLs = append(res.PlaceURLs, place.GetURL())
+		res.PlaceURLs = append(res.PlaceURLs, place.Url())
 	}
 	// TODO: replace default search radius with user search input
 	res.Score = matching.Score(places, DefaultPlaceSearchRadius)
@@ -426,11 +426,11 @@ func mergePlaceClusters(placesA []matching.Place, placesB []matching.Place) []ma
 	var results []matching.Place
 	placeMap := make(map[string]bool)
 	for _, place := range placesA {
-		placeMap[place.GetPlaceId()] = true
+		placeMap[place.Id()] = true
 	}
 
 	for _, place := range placesB {
-		if _, ok := placeMap[place.GetPlaceId()]; ok {
+		if _, ok := placeMap[place.Id()]; ok {
 			results = append(results, place)
 		}
 	}

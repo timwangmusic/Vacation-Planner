@@ -11,55 +11,59 @@ type Place struct {
 	Price    float64           `json:"price"`
 }
 
-func (place Place) GetHours() [7]string {
+func (place *Place) Hours() [7]string {
 	return place.Place.Hours
 }
 
-func (place Place) GetPlaceId() string {
+func (place *Place) Id() string {
 	return place.Place.GetID()
 }
 
-func (place Place) GetPlaceName() string {
+func (place *Place) Name() string {
 	return place.Place.GetName()
 }
 
-func (place Place) GetPlaceType() POI.LocationType {
+func (place *Place) Type() POI.LocationType {
 	return place.Place.GetType()
 }
 
-func (place Place) GetPlaceCategory() POI.PlaceCategory {
+func (place *Place) PlaceCategory() POI.PlaceCategory {
 	return place.Category
 }
 
-func (place Place) GetPlaceFormattedAddress() string {
+func (place *Place) PlaceAddress() string {
 	return place.Address
 }
 
-func (place Place) GetPrice() float64 {
+func (place *Place) PlacePrice() float64 {
 	return place.Price
 }
 
-func (place Place) GetRating() float32 {
+func (place *Place) Rating() float32 {
 	return place.Place.GetRating()
 }
 
-func (place Place) GetLocation() POI.Location {
+func (place *Place) Location() POI.Location {
 	return place.Place.Location
 }
 
-func (place Place) GetURL() string {
+func (place *Place) Url() string {
 	return place.Place.GetURL()
 }
 
-func (place Place) GetUserRatingsCount() int {
+func (place *Place) UserRatingsCount() int {
 	return place.Place.GetUserRatingsTotal()
 }
 
-func (place Place) SetURL(url string) {
+func (place *Place) SetURL(url string) {
 	place.Place.SetURL(url)
 }
 
-func (place Place) IsOpenBetween(interval QueryTimeInterval, stayingDurationInHour uint8) bool {
+func (place *Place) SetCategory(category POI.PlaceCategory) {
+	place.Category = category
+}
+
+func (place *Place) IsOpenBetween(interval TimeInterval, stayingDurationInHour uint8) bool {
 	//TODO: Query whither this place is open at this period in the future after POI.PLACE contains open hour.
 	//Dummy implementation, only checks if the time period is valid
 
