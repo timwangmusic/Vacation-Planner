@@ -131,7 +131,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
 			cancel()
 		}()
 
-		if resp, err = generateSolutions(ctxTimeout, req, s.TimeMatcher, s.PriceRangeMatcher); err != nil {
+		if resp, err = s.generateSolutions(ctxTimeout, req, s.TimeMatcher, s.PriceRangeMatcher); err != nil {
 			resp.Err = err
 		} else if err = saveSolutions(ctx, redisClient, req, &resp.Solutions); err != nil {
 			logger.Error(err)
@@ -286,7 +286,7 @@ func reversePlans(plans []PlanningSolution) []PlanningSolution {
 	return plans
 }
 
-func generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) (PlanningResp, error) {
+func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) (PlanningResp, error) {
 	resp := PlanningResp{}
 
 	var placeClusters [][]matching.Place
@@ -303,24 +303,27 @@ func generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matchi
 			PriceLevel: req.PriceLevel,
 		}
 
-		placesByTime, err := timeMatcher.Match(ctx, matching.Request{
+		places, err := matching.NearbySearchForCategory(ctx, s.Searcher, &matching.Request{
 			Radius:             DefaultPlaceSearchRadius,
 			Location:           req.Location,
-			Criteria:           matching.FilterByTimePeriod,
-			Params:             filterParams,
+			Category:           slot.Category,
 			UsePreciseLocation: req.PreciseLocation,
+		})
+
+		placesByTime, err := timeMatcher.Match(&matching.FilterRequest{
+			Places:   places,
+			Criteria: matching.FilterByTimePeriod,
+			Params:   filterParams,
 		})
 		if err != nil {
 			resp.ErrorCode = InternalError
 			return resp, err
 		}
 
-		placesByPrice, err := priceRangeMatcher.Match(ctx, matching.Request{
-			Radius:             DefaultPlaceSearchRadius,
-			Location:           req.Location,
-			Criteria:           matching.FilterByPriceRange,
-			Params:             filterParams,
-			UsePreciseLocation: req.PreciseLocation,
+		placesByPrice, err := priceRangeMatcher.Match(&matching.FilterRequest{
+			Places:   placesByTime,
+			Criteria: matching.FilterByPriceRange,
+			Params:   filterParams,
 		})
 		if err != nil {
 			resp.ErrorCode = InternalError
@@ -328,7 +331,7 @@ func generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matchi
 		}
 
 		iowrappers.Logger.Infof("number of places by price matcher is %d", len(placesByPrice))
-		placeClusters = append(placeClusters, mergePlaceClusters(placesByTime, placesByPrice))
+		placeClusters = append(placeClusters, placesByPrice)
 	}
 
 	placeCategories := toPlaceCategories(req.Slots)
@@ -392,47 +395,4 @@ func jointPlaceIdsForPlan(newPlan PlanningSolution) string {
 	radix.Sort(placeIDs)
 	jointPlaceIDs := strings.Join(placeIDs, "_")
 	return jointPlaceIDs
-}
-
-func NearbySearchWithPlaceView(context context.Context, matcher matching.Matcher, location POI.Location, weekday POI.Weekday, radius uint, timeSlot matching.TimeSlot, category POI.PlaceCategory) ([]matching.PlaceView, error) {
-	var filterParams = make(map[matching.FilterCriteria]interface{})
-	filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
-		Category:     category,
-		Day:          weekday,
-		TimeInterval: timeSlot.Slot,
-	}
-
-	var placesView []matching.PlaceView
-
-	places, err := matcher.Match(context, matching.Request{
-		Radius:   radius,
-		Location: location,
-		Criteria: matching.FilterByTimePeriod,
-		Params:   filterParams,
-	})
-
-	if err != nil {
-		return placesView, err
-	}
-
-	for _, place := range places {
-		placesView = append(placesView, matching.ToPlaceView(place))
-	}
-	return placesView, nil
-}
-
-// selects mutual places
-func mergePlaceClusters(placesA []matching.Place, placesB []matching.Place) []matching.Place {
-	var results []matching.Place
-	placeMap := make(map[string]bool)
-	for _, place := range placesA {
-		placeMap[place.Id()] = true
-	}
-
-	for _, place := range placesB {
-		if _, ok := placeMap[place.Id()]; ok {
-			results = append(results, place)
-		}
-	}
-	return results
 }
