@@ -309,6 +309,10 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 			Category:           slot.Category,
 			UsePreciseLocation: req.PreciseLocation,
 		})
+		if err != nil {
+			resp.ErrorCode = InternalError
+			return resp, err
+		}
 
 		placesByTime, err := timeMatcher.Match(&matching.FilterRequest{
 			Places:   places,
