@@ -99,18 +99,18 @@ func ParseTimeInterval(openingHour string) (interval TimeInterval, err error) {
 		interval.End = 255
 		return
 	}
-	hour_re := regexp.MustCompile(`[\d]{1,2}:[\d]{2}`)
-	hours := hour_re.FindAll([]byte(openingHour), -1)
+	hourRegex := regexp.MustCompile(`[\d]{1,2}:[\d]{2}`)
+	hours := hourRegex.FindAll([]byte(openingHour), -1)
 
-	am_pm_re := regexp.MustCompile(`[apAP][mM]`)
-	am_pm := am_pm_re.FindAll([]byte(openingHour), -1)
+	amPmRe := regexp.MustCompile(`[apAP][mM]`)
+	amPm := amPmRe.FindAll([]byte(openingHour), -1)
 
-	if len(hours) < 2 || len(am_pm) < 2 {
+	if len(hours) < 2 || len(amPm) < 2 {
 		return TimeInterval{}, errors.New("cannot parse opening hour")
 	}
 
-	interval.Start = Hour(calculateHour(string(hours[0]), string(am_pm[0])))
-	interval.End = Hour(calculateHour(string(hours[1]), string(am_pm[1])))
+	interval.Start = Hour(calculateHour(string(hours[0]), string(amPm[0])))
+	interval.End = Hour(calculateHour(string(hours[1]), string(amPm[1])))
 
 	if interval.Start > interval.End { // late night hours
 		interval.End = 24

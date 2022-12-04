@@ -24,7 +24,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/oauth2"
@@ -146,40 +145,6 @@ func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redis
 	if err = planner.Mailer.Init(planner.RedisClient); err != nil {
 		log.Fatalf("planner failed to create a Mailer: %s", err.Error())
 	}
-}
-
-func (planner *MyPlanner) singleDayNearbySearchHandler(context *gin.Context) {
-	country := context.DefaultQuery("country", "USA")
-	city := context.DefaultQuery("city", "San Diego")
-	radius := context.DefaultQuery("radius", "10000")
-	weekday := context.DefaultQuery("weekday", "5") // Saturday
-	category := strings.ToLower(context.DefaultQuery("category", "visit"))
-
-	weekdayUint, weekdayParsingErr := strconv.ParseUint(weekday, 10, 8)
-	if weekdayParsingErr != nil || weekdayUint > 6 {
-		context.String(http.StatusBadRequest, "invalid weekday of %d", weekdayUint)
-		return
-	}
-	searchRadius_, _ := strconv.ParseUint(radius, 10, 32)
-
-	var placeCategory POI.PlaceCategory
-	switch category {
-	case "visit":
-		placeCategory = POI.PlaceCategoryVisit
-	case "eatery":
-		placeCategory = POI.PlaceCategoryEatery
-	}
-
-	location := POI.Location{City: city, Country: country}
-	places, err := NearbySearchWithPlaceView(context, planner.Solver.TimeMatcher, location, POI.Weekday(weekdayUint), uint(searchRadius_), matching.TimeSlot{Slot: POI.TimeInterval{
-		Start: 8,
-		End:   21,
-	}}, placeCategory)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, "sorry please try later")
-		return
-	}
-	context.JSON(http.StatusOK, gin.H{"places": places})
 }
 
 func (planner *MyPlanner) Destroy() {
@@ -689,7 +654,6 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/verify", planner.userClickOnEmailVerification)
 		v1.POST("/login", planner.userLogin)
 		v1.GET("/reverse-geocoding", planner.reverseGeocodingHandler)
-		v1.GET("/single-day-nearby-search", planner.singleDayNearbySearchHandler)
 		v1.GET("/log-in", planner.login)
 		v1.GET("/sign-up", planner.signup)
 		v1.GET("/plans/:id", planner.getPlanDetails)
