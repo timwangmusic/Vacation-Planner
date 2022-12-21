@@ -182,74 +182,52 @@ func (r *RedisClient) getPlace(context context.Context, placeId string) (place P
 	return
 }
 
-// NearbySearchNotUsed is currently NOT used
-// to be used with the StorePlacesForLocation method
-// if no geocode in Redis, then we assume no nearby place exists either
-func (r *RedisClient) NearbySearchNotUsed(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
-	lat, lng, err := r.Geocode(context, &GeocodeQuery{
-		City:    request.Location.City,
-		Country: request.Location.Country,
-	})
-	if err != nil {
-		return nil, err
-	}
-	latLng := strings.Join([]string{fmt.Sprintf("%f", lat), fmt.Sprintf("%f", lng)}, ",")
-	sortedSetKey := strings.Join([]string{latLng, string(request.PlaceCat)}, "_")
-
-	placeIds, _ := r.client.ZRangeByScore(context, sortedSetKey, &redis.ZRangeBy{
-		Min: "0",
-		Max: fmt.Sprintf("%d", request.Radius),
-	}).Result()
-
-	res := make([]POI.Place, len(placeIds))
-
-	for idx, placeId := range placeIds {
-		res[idx], _ = r.getPlace(context, placeId)
-	}
-	return res, nil
-}
-
-func (r *RedisClient) NearbySearch(context context.Context, request *PlaceSearchRequest) (places []POI.Place, err error) {
-	requestCategory := strings.ToLower(string(request.PlaceCat))
+func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
+	requestCategory := strings.ToLower(string(req.PlaceCat))
 	redisKey := "placeIDs:" + requestCategory
 
-	requestLat, requestLng := request.Location.Latitude, request.Location.Longitude
+	requestLat, requestLng := req.Location.Latitude, req.Location.Longitude
 
-	searchRadius := request.Radius
+	searchRadius := req.Radius
 
 	if searchRadius > MaxSearchRadius {
 		searchRadius = MaxSearchRadius
 	}
 
-	Logger.Debugf("[request_id: %s] Redis geo radius is using search radius of %d meters", context.Value(ContextRequestIdKey), searchRadius)
-	geoQuery := redis.GeoRadiusQuery{
-		Radius: float64(searchRadius),
-		Unit:   "m",
-		Sort:   "ASC", // sort ascending
-	}
 	var cachedQualifiedPlaces []redis.GeoLocation
-	cachedQualifiedPlaces, err = r.client.GeoRadius(context, redisKey, requestLng, requestLat, &geoQuery).Result()
-	if err != nil {
-		Logger.Error(err)
-		return
+	for searchRadius <= MaxSearchRadius {
+		Logger.Debugf("[request_id: %s] Redis geo radius is using search radius of %d meters", ctx.Value(ContextRequestIdKey), searchRadius)
+		geoQuery := &redis.GeoRadiusQuery{
+			Radius: float64(searchRadius),
+			Unit:   "m",
+			Sort:   "ASC", // sort ascending
+		}
+
+		var err error
+		if cachedQualifiedPlaces, err = r.client.GeoRadius(ctx, redisKey, requestLng, requestLat, geoQuery).Result(); err != nil {
+			return nil, err
+		}
+		if len(cachedQualifiedPlaces) >= int(req.MinNumResults) {
+			break
+		}
+		searchRadius *= 2
 	}
 
-	request.Radius = searchRadius
+	req.Radius = searchRadius
 
-	places = make([]POI.Place, 0)
+	places := make([]POI.Place, 0)
 	for _, placeInfo := range cachedQualifiedPlaces {
-		place, err := r.getPlace(context, placeInfo.Name)
-		if err == nil {
+		if place, err := r.getPlace(ctx, placeInfo.Name); err == nil {
 			places = append(places, place)
 		}
 	}
 
-	if request.BusinessStatus == POI.Operational {
+	if req.BusinessStatus == POI.Operational {
 		totalPlacesCount := len(places)
 		places = filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
 		Logger.Debugf("(RedisClient) NearbySearch -> %d places out of %d left after business status filtering", len(places), totalPlacesCount)
 	}
-	return
+	return places, nil
 }
 
 // CacheLocationAlias caches the mapping from user input location name to geo-coding-corrected location name
