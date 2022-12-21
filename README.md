@@ -6,14 +6,18 @@
 
 ## Motivation
 * Planning for travel is essential for having a most enjoyable trip.
-Meanwhile, travel planning is time-consuming, and the results are sometimes frustrating.
+Meanwhile, travel planning is time-consuming, and the results are sometimes unsatisfactory.
 People typically rely on electronic maps and online resources to plan their trips.
 Querying for different routes are tedious at best, and often times it is hard to remember which sources and destinations have been researched.
 When taking in time and financial constraints, this manual planning process quickly becomes mind-boggling.
-* Our goal is to provide a service for travellers to plan for their ideal vacations under financial budget or time constraint.
-* The initial version (V1) APIs let users to enter travel destination (POI), date and how they would like to divide the day into slots, and the service provides travel plans for the user.
-* The initial version only plans for one-day trips, and it ranks places with only POI information without personal preferences.
+* Our goal is to provide a service for travellers to plan for their ideal vacations under financial or time budget.
+* The planning APIs let users to enter travel destination (POI), date and how they would like to divide the day into slots, and the service provides travel plans for the user.
+* The initial version only plans for single-day trips, and it ranks results without personal preferences.
 
+## Features
+* Save your favorite plans in your profile
+* View trip details
+* Make a plan yourself by creating a template
 
 ## Installation (Mac)
 * git clone the repository
@@ -35,7 +39,6 @@ Particularly we have configured the code base and been deploying the service to 
 
 
 ## Future Development Plans
-* Personalization
 * Multi-city, multi-day planning
 
 
@@ -46,4 +49,4 @@ Particularly we have configured the code base and been deploying the service to 
 
 ## Techstack
 * Backend: Golang
-* Frontend: Javascript
+* Frontend: Bootstrap and Javascript
