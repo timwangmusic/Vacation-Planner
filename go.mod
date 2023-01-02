@@ -22,6 +22,7 @@ require (
 	github.com/sendgrid/sendgrid-go v3.11.1+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.6.1
+	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/yourbasic/radix v0.0.0-20180308122924-cbe1cc82e907
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/zap v1.13.0

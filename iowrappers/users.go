@@ -8,6 +8,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
+	"github.com/modern-go/reflect2"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/crypto/bcrypt"
@@ -54,6 +55,56 @@ const (
 	FindUserByEmail FindUserBy = "FindUserByEmail"
 )
 
+func (r *RedisClient) UpdateSearchHistory(ctx context.Context, location string, userView *user.View) error {
+	if userView.ID == "" {
+		if view, err := r.FindUser(ctx, FindUserByName, *userView); err != nil {
+			return err
+		} else {
+			userView.ID = view.ID
+		}
+	}
+
+	if reflect2.IsNil(userView.Favorites) {
+		userView.Favorites = &user.PersonalFavorites{SearchHistory: make(map[string]user.LastSearchRecord)}
+	}
+
+	if _, exists := userView.Favorites.SearchHistory[location]; !exists {
+		userView.Favorites.SearchHistory[location] = user.LastSearchRecord{
+			Location:            location,
+			Count:               0,
+			LastSearchTimestamp: time.Now().Format(time.RFC3339),
+		}
+	}
+
+	data := userView.Favorites.SearchHistory[location]
+	data.Count++
+	data.LastSearchTimestamp = time.Now().Format(time.RFC3339)
+	userView.Favorites.SearchHistory[location] = data
+
+	Logger.Debugf("updating user favorite for user %s: %+v", userView.ID, data)
+	return r.UpdateUser(ctx, userView)
+}
+
+func (r *RedisClient) UpdateUser(ctx context.Context, view *user.View) error {
+	redisUserKey := strings.Join([]string{UserKeyPrefix, view.ID}, ":")
+
+	// username is required
+	if _, err := r.Get().HSet(ctx, UserNamesKey, view.Username, view.ID).Result(); err != nil {
+		return err
+	}
+
+	if view.Email != "" {
+		if _, err := r.Get().HSet(ctx, UserEmailsKey, view.Email, view.ID).Result(); err != nil {
+			return err
+		}
+	}
+
+	if _, err := r.Get().HMSet(ctx, redisUserKey, toRedisUserData(view)).Result(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, userView user.View) (user.View, error) {
 	client := r.client
 	redisKey := ""
@@ -84,6 +135,11 @@ func (r *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, u
 	userView.Password = u["password"]
 	userView.Email = u["email"]
 	userView.UserLevel = u["user_level"]
+	userView.Favorites = &user.PersonalFavorites{}
+	err := userView.Favorites.UnmarshalBinary([]byte(u["favorites"]))
+	if err != nil {
+		return user.View{}, err
+	}
 
 	return userView, nil
 }
@@ -118,6 +174,7 @@ func (r *RedisClient) CreateUser(context context.Context, userView user.View, sk
 		"user_level": userView.UserLevel,
 		"password":   string(passwordEncrypted),
 		"email":      userView.Email,
+		"favorites":  userView.Favorites,
 	}
 
 	// username is required
@@ -131,8 +188,8 @@ func (r *RedisClient) CreateUser(context context.Context, userView user.View, sk
 		}
 	}
 
-	redisKeyUserID := strings.Join([]string{UserKeyPrefix, userID}, ":")
-	_, err := client.HMSet(context, redisKeyUserID, userData).Result()
+	redisUserKey := strings.Join([]string{UserKeyPrefix, userID}, ":")
+	_, err := client.HMSet(context, redisUserKey, userData).Result()
 	userView.ID = userID
 	return userView, err
 }

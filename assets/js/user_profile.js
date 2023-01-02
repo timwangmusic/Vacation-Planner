@@ -21,7 +21,7 @@ async function deleteUserPlan() {
 
 function renderCard(plan) {
     const cards = $('#cards');
-    let card = $('<div>').addClass('card shadow-sm border rounded mb-2 w-75').css('max-width', '350px');
+    let card = $('<div>').addClass('card rounded mb-2').css('max-width', '350px');
     let cardBody = $('<div>').addClass('card-body');
     cardBody.append($('<h5>').addClass('card-title').text(plan.destination));
     cardBody.append($('<h6>').addClass('card-subtitle').text(plan.travel_date));
@@ -47,6 +47,19 @@ function renderCard(plan) {
     cards.append(card);
 }
 
+function renderFavorites(favorites) {
+    const mostSearchedPlace = document.querySelector('#most-searched-place .card-body .card-text');
+    let result = '';
+    let count = 0;
+    for (const location in favorites) {
+        if (favorites[location].count > count) {
+            result = favorites[location].location;
+            count = favorites[location].count;
+        }
+    }
+    mostSearchedPlace.innerText = result;
+}
+
 async function getUserPlans() {
     const url = `/v1/users/${username}/plans`;
     await axios.get(
@@ -55,7 +68,6 @@ async function getUserPlans() {
         response => {
             const data = response.data;
             const plans = data['travel_plans']
-            console.log('user plans: ' + plans);
             if (plans.length > 0) {
                 for (let i = 0; i < plans.length; i++) {
                     renderCard(plans[i]);
@@ -67,4 +79,24 @@ async function getUserPlans() {
     );
 }
 
-window.onload = getUserPlans;
+async function getUserFavorites() {
+    const favoritesUrl = `/v1/users/${username}/favorites`;
+    await axios.get(
+        favoritesUrl
+    ).then(
+        response => {
+            const data = response.data;
+            const favorites = data['searchHistory'];
+            if (Object.keys(favorites).length > 0) {
+                renderFavorites(favorites);
+            }
+        }
+    ).catch(
+        err => console.error(err)
+    );
+}
+
+window.onload = function() {
+    getUserPlans();
+    getUserFavorites();
+};

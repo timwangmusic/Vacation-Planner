@@ -334,6 +334,7 @@ func (planner *MyPlanner) homePageHandler(c *gin.Context) {
 // Return top planning results to user
 func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
+
 	var userView user.View
 	if strings.ToLower(planner.Environment) == "production" {
 		var authenticationErr error
@@ -345,6 +346,7 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		}
 	}
 
+	iowrappers.Logger.Debugf("->getPlanningApi: user view: %+v", userView)
 	requestId := requestid.Get(ctx)
 
 	var err error
@@ -404,6 +406,9 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
 	planningResp := planner.Planning(c, &planningReq, userView.Username)
+	if err = planner.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
+		iowrappers.Logger.Debug(err)
+	}
 
 	if planningResp.Err != nil {
 		if planningResp.StatusCode == InvalidRequestLocation {
@@ -672,6 +677,7 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/profile", planner.userProfile)
 		users := v1.Group("/users")
 		{
+			users.GET("/:username/favorites", planner.userFavoritesHandler)
 			users.POST("/:username/plans", planner.userSavedPlansPostHandler)
 			users.GET("/:username/plans", planner.userSavedPlansGetHandler)
 			users.DELETE("/:username/plan/:id", planner.userPlanDeleteHandler)

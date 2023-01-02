@@ -233,3 +233,15 @@ func (planner *MyPlanner) userPlanDeleteHandler(context *gin.Context) {
 		return
 	}
 }
+
+func (planner *MyPlanner) userFavoritesHandler(ctx *gin.Context) {
+	userView, authErr := planner.UserAuthentication(ctx, user.LevelRegular)
+
+	if authErr != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		return
+	}
+
+	iowrappers.Logger.Debugf("->userFavoritesHandler: user favorites %+v", *userView.Favorites)
+	ctx.JSON(http.StatusOK, userView.Favorites)
+}
