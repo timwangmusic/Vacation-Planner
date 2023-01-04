@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/vmihailenco/msgpack"
 	"time"
 )
 
@@ -23,11 +24,12 @@ type User struct {
 }
 
 type View struct {
-	ID        string `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	UserLevel string `json:"user_level"`
+	ID        string             `json:"id"`
+	Username  string             `json:"username"`
+	Email     string             `json:"email"`
+	Password  string             `json:"password"`
+	UserLevel string             `json:"user_level"`
+	Favorites *PersonalFavorites `json:"favorites"`
 }
 
 type Credential struct {
@@ -35,6 +37,24 @@ type Credential struct {
 	Password  string
 	Email     string
 	WithOAuth bool
+}
+
+type PersonalFavorites struct {
+	SearchHistory map[string]LastSearchRecord `json:"searchHistory"`
+}
+
+type LastSearchRecord struct {
+	Location            string `json:"location"`
+	Count               int    `json:"count"`
+	LastSearchTimestamp string `json:"lastSearchTimestamp"`
+}
+
+func (p *PersonalFavorites) MarshalBinary() ([]byte, error) {
+	return msgpack.Marshal(p)
+}
+
+func (p *PersonalFavorites) UnmarshalBinary(data []byte) error {
+	return msgpack.Unmarshal(data, p)
 }
 
 type Profile struct {

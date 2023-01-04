@@ -11,7 +11,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/user"
 )
 
-func TestUserAuthentication(t *testing.T) {
+func TestUserAuthentication_shouldPass_forAuthenticatedUser(t *testing.T) {
 	// create a user
 	username := "johnny_depp"
 	password := "33521"
@@ -31,7 +31,7 @@ func TestUserAuthentication(t *testing.T) {
 	}
 }
 
-func TestUserFind(t *testing.T) {
+func TestUserFind_ShouldReturnNotFound_whenUserDoesNotExist(t *testing.T) {
 	userView := user.View{Username: "Jenny"}
 
 	var err error
@@ -40,6 +40,31 @@ func TestUserFind(t *testing.T) {
 
 	if assert.Error(t, err, "an error was expected") {
 		assert.Equal(t, expectedErr, err)
+	}
+}
+
+func TestUpdateUser(t *testing.T) {
+	view := user.View{Username: "Teddy Bear", Email: "teddy@hotmail.com"}
+
+	var createdView user.View
+	var err error
+	if createdView, err = RedisClient.CreateUser(RedisContext, view, false); err != nil {
+		t.Fatalf("failed to update user %v", err)
+	}
+
+	createdView.Username = "Teddy"
+	err = RedisClient.UpdateUser(RedisContext, &createdView)
+	if err != nil {
+		t.Fatalf("failed to update user %v", err)
+	}
+
+	updatedView, err := RedisClient.FindUser(RedisContext, iowrappers.FindUserByName, createdView)
+	if err != nil {
+		t.Fatalf("failed to find user %v", err)
+	}
+
+	if updatedView.Username != "Teddy" {
+		t.Errorf("username failed to update")
 	}
 }
 
@@ -54,6 +79,7 @@ func TestUserCreation(t *testing.T) {
 		Email:     userEmail,
 		Password:  "",
 		UserLevel: userLevel,
+		Favorites: &user.PersonalFavorites{},
 	}
 
 	var err error

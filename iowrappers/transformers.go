@@ -1,6 +1,9 @@
 package iowrappers
 
-import "googlemaps.github.io/maps"
+import (
+	"github.com/weihesdlegend/Vacation-planner/user"
+	"googlemaps.github.io/maps"
+)
 
 func geocodingResultsToGeocodeQuery(query *GeocodeQuery, results []maps.GeocodingResult) {
 	// take the most specific result
@@ -16,5 +19,16 @@ func geocodingResultsToGeocodeQuery(query *GeocodeQuery, results []maps.Geocodin
 				query.Country = component.LongName
 			}
 		}
+	}
+}
+
+func toRedisUserData(view *user.View) map[string]interface{} {
+	return map[string]interface{}{
+		"id":         view.ID,
+		"username":   view.Username,
+		"user_level": view.UserLevel,
+		"password":   view.Password,
+		"email":      view.Email,
+		"favorites":  view.Favorites,
 	}
 }
