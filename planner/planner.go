@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/gin-contrib/timeout"
 	"html/template"
 	"io"
 	"net/http"
@@ -30,7 +29,6 @@ import (
 )
 
 const (
-	ServerTimeout      = time.Second * 15
 	SolverTimeout      = time.Second * 10
 	jobQueueBufferSize = 1000
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
@@ -336,14 +334,12 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
 
 	var userView user.View
-	if strings.ToLower(planner.Environment) == "production" {
-		var authenticationErr error
-		userView, authenticationErr = planner.UserAuthentication(ctx, user.LevelRegular)
-		if authenticationErr != nil {
-			logger.Debug(authenticationErr)
-			planner.login(ctx)
-			return
-		}
+	var authenticationErr error
+	userView, authenticationErr = planner.UserAuthentication(ctx, user.LevelRegular)
+	if authenticationErr != nil {
+		logger.Debug(authenticationErr)
+		planner.login(ctx)
+		return
 	}
 
 	iowrappers.Logger.Debugf("->getPlanningApi: user view: %+v", userView)
@@ -654,7 +650,7 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	v1 := myRouter.Group("/v1")
 	{
 		v1.GET("/", planner.searchPageHandler)
-		v1.GET("/plans", timeout.New(timeout.WithTimeout(ServerTimeout), timeout.WithHandler(planner.getPlanningApi)))
+		v1.GET("/plans", planner.getPlanningApi)
 		v1.POST("/signup", planner.UserEmailVerify)
 		v1.GET("/verify", planner.userClickOnEmailVerification)
 		v1.POST("/login", planner.userLogin)
