@@ -64,7 +64,7 @@ func (r *RedisClient) UpdateSearchHistory(ctx context.Context, location string, 
 		}
 	}
 
-	if reflect2.IsNil(userView.Favorites) {
+	if reflect2.IsNil(userView.Favorites.SearchHistory) {
 		userView.Favorites = &user.PersonalFavorites{SearchHistory: make(map[string]user.LastSearchRecord)}
 	}
 
@@ -135,10 +135,11 @@ func (r *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, u
 	userView.Password = u["password"]
 	userView.Email = u["email"]
 	userView.UserLevel = u["user_level"]
-	userView.Favorites = &user.PersonalFavorites{}
-	err := userView.Favorites.UnmarshalBinary([]byte(u["favorites"]))
-	if err != nil {
-		return user.View{}, err
+	userView.Favorites = &user.PersonalFavorites{SearchHistory: make(map[string]user.LastSearchRecord)}
+	if u["favorites"] != "" {
+		if err := userView.Favorites.UnmarshalBinary([]byte(u["favorites"])); err != nil {
+			return user.View{}, err
+		}
 	}
 
 	return userView, nil

@@ -41,6 +41,13 @@ func (planner *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 		}
 	}
 	userView.UserLevel = userLevel
+	// skip email verifications on non-prod environments
+	if strings.ToLower(planner.Environment) != "production" {
+		if _, err := planner.RedisClient.CreateUser(ctx, userView, false); err != nil {
+			iowrappers.Logger.Debugf("failed to create user: %v", err)
+		}
+		return
+	}
 	if err := planner.Mailer.Send(iowrappers.EmailVerification, userView); err != nil {
 		iowrappers.Logger.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
