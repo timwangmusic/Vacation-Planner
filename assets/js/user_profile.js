@@ -48,6 +48,7 @@ function renderCard(plan) {
 }
 
 function renderFavorites(favorites) {
+    document.getElementById("most-searched-place").style.maxWidth = "350px";
     const mostSearchedPlace = document.querySelector('#most-searched-place .card-body .card-text');
     let result = '';
     let count = 0;
@@ -96,7 +97,7 @@ async function getUserFavorites() {
     );
 }
 
-window.onload = function() {
+window.onload = function () {
     getUserPlans();
     getUserFavorites();
 };
