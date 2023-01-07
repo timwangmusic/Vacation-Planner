@@ -140,7 +140,7 @@ async function postPlanTemplate() {
     console.log(`data about to send: ${JSON.stringify(data)}`);
 
     axios.post(
-        url, JSON.stringify(data), {timeout: 10000}
+        url, JSON.stringify(data), { timeout: 10000 }
     ).then(
         function (response) {
             console.log(response.data);
@@ -150,12 +150,17 @@ async function postPlanTemplate() {
         }
     ).catch(
         err => {
-            console.error(err)
             $('#searchSpinner').addClass("visually-hidden");
             $('#no-valid-plan-error-msg').addClass('d-none');
+            // displays the timeout banner when request times out or when the response has timed out status
             if (err.response?.status === 408) {
+                console.log(err.response.headers);
+                $('#request-timeout-error-msg').removeClass('d-none');
+            } else if (err.request) {
+                console.log(err.request);
                 $('#request-timeout-error-msg').removeClass('d-none');
             }
+            console.error(err.message)
         }
     )
 }
