@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/oauth2/google"
@@ -450,13 +451,16 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 	var tripResp = TripDetailResp{
 		LatLongs:          cachePlanSolution.PlaceLocations,
 		PlaceCategories:   cachePlanSolution.PlaceCategories,
-		PlaceDetails:      make([]PlaceDetailsResp, 0),
+		PlaceDetails:      make([]PlaceDetailsResp, len(cachePlanSolution.PlaceIDs)),
 		ShownActive:       make([]bool, 0),
 		TravelDestination: destination,
 		TravelDate:        travelDate,
 		Score:             cachePlanSolution.Score,
 		ScoreOld:          cachePlanSolution.ScoreOld,
 	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(cachePlanSolution.PlaceIDs))
 	for idx, placeId := range cachePlanSolution.PlaceIDs {
 		placeKey = fixedPlaceKeyPrefix + placeId
 		cacheErr := planner.RedisClient.FetchSingleRecord(c, placeKey, &cachePlaceDetails)
@@ -465,14 +469,13 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 			return
 		}
 
-		placeDetails := planner.getTripFromPlace(cachePlaceDetails)
-		tripResp.PlaceDetails = append(tripResp.PlaceDetails, placeDetails)
-		var isActive = false
-		if idx == 0 {
-			isActive = true
-		}
-		tripResp.ShownActive = append(tripResp.ShownActive, isActive)
+		// Show the first place by default
+		tripResp.ShownActive = append(tripResp.ShownActive, (idx == 0))
+
+		// Run Goroutines to retrieve place details
+		go planner.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], cachePlaceDetails)
 	}
+	wg.Wait()
 	iowrappers.Logger.Debugf("Trip Details:\n%v\n", tripResp.PlaceDetails)
 
 	jsonOnly := strings.ToLower(c.DefaultQuery("json_only", "false"))
@@ -482,6 +485,11 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 	}
 	// send data
 	utils.LogErrorWithLevel(planner.TripHTMLTemplate.Execute(c.Writer, tripResp), utils.LogError)
+}
+
+func (planner *MyPlanner) asyncGetTripRespPlaceDetails(wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
+	*resp = planner.getTripFromPlace(place)
+	wg.Done()
 }
 
 func (planner *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
