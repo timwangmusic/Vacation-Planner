@@ -305,6 +305,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 		})
 		if err != nil {
 			resp.ErrorCode = InternalError
+			resp.Err = err
 			return resp
 		}
 
@@ -315,6 +316,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 		})
 		if err != nil {
 			resp.ErrorCode = InternalError
+			resp.Err = err
 			return resp
 		}
 
@@ -325,6 +327,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 		})
 		if err != nil {
 			resp.ErrorCode = InternalError
+			resp.Err = err
 			return resp
 		}
 
@@ -337,6 +340,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 	mdIter := &MultiDimIterator{}
 	if err := mdIter.Init(placeCategories, placeClusters); err != nil {
 		resp.ErrorCode = NoValidSolution
+		resp.Err = err
 		return resp
 	}
 
