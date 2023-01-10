@@ -27,17 +27,18 @@ func TestSolutionCandidateSelection(t *testing.T) {
 		t.Fatal(err)
 	}
 	topSolutionsCount := 5
-	res, err := planner.FindBestPlanningSolutions(context.Background(), clusters, topSolutionsCount, iterator)
+	res := planner.FindBestPlanningSolutions(context.Background(), clusters, topSolutionsCount, iterator)
+	resp := <-res
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(res) != topSolutionsCount {
+	if len(resp.Solutions) != topSolutionsCount {
 		t.Fatalf("expected number of solutions equals %d, got %d", topSolutionsCount, len(res))
 	}
 
 	expectation := []float64{98, 97, 96, 95, 94}
-	for idx, r := range res {
+	for idx, r := range resp.Solutions {
 		if r.Score != expectation[idx] {
 			t.Errorf("expected %f, got %f", expectation[idx], r.Score)
 		}
