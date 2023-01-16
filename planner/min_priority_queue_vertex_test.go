@@ -8,16 +8,11 @@ import (
 func TestMinPriorityQueue(t *testing.T) {
 	pq := &MinPriorityQueue{}
 
-	nyc := Vertex{Location: Point{Lat: 40.712776, Lng: -74.005974}, Name: "New York"}
-	la := Vertex{Location: Point{Lat: 34.052235, Lng: -118.243683}, Name: "Los Angeles"}
-	lv := Vertex{Location: Point{Lat: 36.169941, Lng: -115.139832}, Name: "Las Vegas"}
-	pitt := Vertex{Location: Point{Lat: 40.440624, Lng: -79.995888}, Name: "Pittsburgh"}
-	boston := Vertex{Location: Point{Lat: 42.360081, Lng: -71.058884}, Name: "Boston"}
-
-	lv.Key = lv.Dist(pitt)
-	nyc.Key = nyc.Dist(pitt)
-	boston.Key = boston.Dist(pitt)
-	la.Key = la.Dist(pitt)
+	nyc := Vertex{Key: 5.5, Name: "New York"}
+	la := Vertex{Key: 4.4, Name: "Los Angeles"}
+	lv := Vertex{Key: 3.3, Name: "Las Vegas"}
+	pitt := Vertex{Key: 2.2, Name: "Pittsburgh"}
+	boston := Vertex{Key: 1.1, Name: "Boston"}
 
 	cities := []Vertex{pitt, lv, nyc, boston, la}
 
@@ -28,18 +23,18 @@ func TestMinPriorityQueue(t *testing.T) {
 	heap.Init(pq)
 
 	expected := []string{
-		pitt.Name,
-		nyc.Name,
 		boston.Name,
+		pitt.Name,
 		lv.Name,
 		la.Name,
+		nyc.Name,
 	}
 
 	var idx = 0
 	for pq.Len() > 0 {
 		cur := heap.Pop(pq).(Vertex).Name
 		if cur != expected[idx] {
-			t.Errorf("Priority sequence error. At index: %d, expected: %s, got: %s", idx, expected[idx], cur)
+			t.Errorf("priority sequence error: at index: %d, expected: %s, got: %s", idx, expected[idx], cur)
 		}
 		idx++
 	}
