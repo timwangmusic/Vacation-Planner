@@ -1,4 +1,4 @@
-package graph
+package planner
 
 import (
 	"github.com/weihesdlegend/Vacation-planner/utils"

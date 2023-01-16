@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/graph"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/yourbasic/radix"
@@ -229,7 +228,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 		topSolutionsCount = TopSolutionsCountDefault
 	}
 
-	priorityQueue := &graph.MinPriorityQueueVertex{}
+	priorityQueue := &MinPriorityQueue{}
 	deduplicatedPlans := make(map[string]bool)
 	resp = make(chan PlanningResp, 1)
 
@@ -250,7 +249,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 			if !isDuplicatedPlan(deduplicatedPlans, candidate) {
 				continue
 			}
-			newVertex := graph.Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
+			newVertex := Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
 			if priorityQueue.Len() == topSolutionsCount {
 				topVertex := (*priorityQueue)[0]
 				if topVertex.Key < newVertex.Key {
@@ -267,7 +266,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 	res := make([]PlanningSolution, 0)
 
 	for priorityQueue.Len() > 0 {
-		top := heap.Pop(priorityQueue).(graph.Vertex)
+		top := heap.Pop(priorityQueue).(Vertex)
 		res = append(res, top.Object.(PlanningSolution))
 	}
 	// min-heap, res needs to be reversed to get the descending order

@@ -2,25 +2,25 @@ package test
 
 import (
 	"container/heap"
-	"github.com/weihesdlegend/Vacation-planner/graph"
+	"github.com/weihesdlegend/Vacation-planner/planner"
 	"testing"
 )
 
 func TestMinPriorityQueueVertex(t *testing.T) {
-	pq := &graph.MinPriorityQueueVertex{}
+	pq := &planner.MinPriorityQueue{}
 
-	nyc := graph.Vertex{Location: graph.Point{Lat: 40.712776, Lng: -74.005974}, Name: "New York"}
-	la := graph.Vertex{Location: graph.Point{Lat: 34.052235, Lng: -118.243683}, Name: "Los Angeles"}
-	lv := graph.Vertex{Location: graph.Point{Lat: 36.169941, Lng: -115.139832}, Name: "Las Vegas"}
-	pitt := graph.Vertex{Location: graph.Point{Lat: 40.440624, Lng: -79.995888}, Name: "Pittsburgh"}
-	boston := graph.Vertex{Location: graph.Point{Lat: 42.360081, Lng: -71.058884}, Name: "Boston"}
+	nyc := planner.Vertex{Location: planner.Point{Lat: 40.712776, Lng: -74.005974}, Name: "New York"}
+	la := planner.Vertex{Location: planner.Point{Lat: 34.052235, Lng: -118.243683}, Name: "Los Angeles"}
+	lv := planner.Vertex{Location: planner.Point{Lat: 36.169941, Lng: -115.139832}, Name: "Las Vegas"}
+	pitt := planner.Vertex{Location: planner.Point{Lat: 40.440624, Lng: -79.995888}, Name: "Pittsburgh"}
+	boston := planner.Vertex{Location: planner.Point{Lat: 42.360081, Lng: -71.058884}, Name: "Boston"}
 
 	lv.Key = lv.Dist(pitt)
 	nyc.Key = nyc.Dist(pitt)
 	boston.Key = boston.Dist(pitt)
 	la.Key = la.Dist(pitt)
 
-	cities := []graph.Vertex{pitt, lv, nyc, boston, la}
+	cities := []planner.Vertex{pitt, lv, nyc, boston, la}
 
 	for _, city := range cities {
 		heap.Push(pq, city)
@@ -38,7 +38,7 @@ func TestMinPriorityQueueVertex(t *testing.T) {
 
 	var idx = 0
 	for pq.Len() > 0 {
-		cur := heap.Pop(pq).(graph.Vertex).Name
+		cur := heap.Pop(pq).(planner.Vertex).Name
 		if cur != expected[idx] {
 			t.Errorf("Priority sequence error. At index: %d, expected: %s, got: %s", idx, expected[idx], cur)
 		}
