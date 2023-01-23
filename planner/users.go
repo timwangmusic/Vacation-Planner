@@ -99,7 +99,11 @@ func (planner *MyPlanner) userLogin(context *gin.Context) {
 func (planner *MyPlanner) loginHelper(context *gin.Context, c user.Credential, frontEndLogin bool) (loggedIn bool) {
 	logger := iowrappers.Logger
 
-	_, token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(context, c)
+	user, token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(context, c)
+	err := planner.RedisClient.UpdateUser(context, &user)
+	if err != nil {
+		iowrappers.Logger.Errorf("failed to update user %s: %v", user.Username, err)
+	}
 	if loginErr != nil {
 		logger.Debug(loginErr)
 
