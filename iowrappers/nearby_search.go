@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	GoogleNearbySearchDelay = time.Second
-	GoogleMapsSearchTimeout = time.Second * 10
+	GoogleNearbySearchDelay      = time.Second
+	GoogleMapsSearchTimeout      = time.Second * 10
+	GoogleMapsSearchCallMaxCount = 5
 )
 
 type PlaceSearchRequest struct {
@@ -33,7 +34,7 @@ type PlaceSearchRequest struct {
 	UsePreciseLocation bool
 }
 
-func GoogleMapsNearbySearchWrapper(mapsClient MapsClient, location POI.Location, placeType string, radius uint, pageToken string) (resp maps.PlacesSearchResponse, err error) {
+func (c *MapsClient) GoogleMapsNearbySearchWrapper(ctx context.Context, location POI.Location, placeType string, radius uint, pageToken string) (resp maps.PlacesSearchResponse, err error) {
 	mapsReq := maps.NearbySearchRequest{
 		Type: maps.PlaceType(placeType),
 		Location: &maps.LatLng{
@@ -44,19 +45,18 @@ func GoogleMapsNearbySearchWrapper(mapsClient MapsClient, location POI.Location,
 		PageToken: pageToken,
 		RankBy:    maps.RankBy("prominence"),
 	}
-	resp, err = mapsClient.client.NearbySearch(context.Background(), &mapsReq)
+	resp, err = c.client.NearbySearch(ctx, &mapsReq)
 	logErr(err, utils.LogError)
 	return
 }
 
 func (c *MapsClient) NearbySearch(ctx context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
-	var maxReqTimes uint = 5
 	var places = make([]POI.Place, 0)
 	var searchDone = make(chan bool)
 	ctx, cancelFunc := context.WithTimeout(ctx, GoogleMapsSearchTimeout)
 	defer cancelFunc()
 
-	go c.extensiveNearbySearch(ctx, maxReqTimes, request, &places, searchDone)
+	go c.extensiveNearbySearch(ctx, GoogleMapsSearchCallMaxCount, request, &places, searchDone)
 
 	select {
 	case <-searchDone:
@@ -87,6 +87,7 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 	for totalResult < request.MinNumResults {
 		// if error, return regardless of number of results obtained
 		if err != nil {
+			Logger.Error(err)
 			done <- true
 			return
 		}
@@ -96,12 +97,8 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 			}
 
 			nextPageToken := nextPageTokenMap[placeType]
-			searchResp, error_ := GoogleMapsNearbySearchWrapper(*c, request.Location, string(placeType), request.Radius, nextPageToken)
-			if error_ != nil {
-				err = error_
-				Logger.Error(err)
-				continue
-			}
+			var searchResp maps.PlacesSearchResponse
+			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, request.Location, string(placeType), request.Radius, nextPageToken)
 
 			placeIdMap := make(map[int]string) // maps index in search response to place ID
 			for k, res := range searchResp.Results {
