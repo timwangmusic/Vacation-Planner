@@ -15,21 +15,14 @@ const (
 	LevelAdmin         Level  = 1
 )
 
-type User struct {
-	ID        string `json:"id"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	Email     string `json:"email"`
-	UserLevel string `json:"user_level"`
-}
-
 type View struct {
-	ID        string             `json:"id"`
-	Username  string             `json:"username"`
-	Email     string             `json:"email"`
-	Password  string             `json:"password"`
-	UserLevel string             `json:"user_level"`
-	Favorites *PersonalFavorites `json:"favorites"`
+	ID            string             `json:"id"`
+	Username      string             `json:"username"`
+	Email         string             `json:"email"`
+	Password      string             `json:"password"`
+	UserLevel     string             `json:"user_level"`
+	Favorites     *PersonalFavorites `json:"favorites"`
+	LastLoginTime string             `json:"lastLoginTime"`
 }
 
 type Credential struct {
@@ -55,12 +48,6 @@ func (p *PersonalFavorites) MarshalBinary() ([]byte, error) {
 
 func (p *PersonalFavorites) UnmarshalBinary(data []byte) error {
 	return msgpack.Unmarshal(data, p)
-}
-
-type Profile struct {
-	ID               string   `json:"id"`
-	UserID           string   `json:"user_id"`
-	SavedTravelPlans []string `json:"saved_travel_plans"`
 }
 
 // TravelPlaceView reflect what users see on Front-end result tables
