@@ -229,6 +229,7 @@ func (r *RedisClient) Authenticate(context context.Context, credential user.Cred
 	}
 
 	lastLoginTime := time.Now()
+	u.LastLoginTime = lastLoginTime.Format(time.RFC3339)
 	tokenExpirationTime := lastLoginTime.Add(user.JWTExpirationTime)
 	expiresAt := tokenExpirationTime.Unix() // expires after 10 days
 	jwtSigningSecret := os.Getenv("JWT_SIGNING_SECRET")
