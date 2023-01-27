@@ -10,21 +10,21 @@ import (
 	"golang.org/x/text/language"
 )
 
-func (planner *MyPlanner) planningEventLogging(event iowrappers.PlanningEvent) {
+func (p *MyPlanner) planningEventLogging(event iowrappers.PlanningEvent) {
 	eventData := map[string]string{
 		"user":      event.User,
 		"city":      event.City,
 		"country":   event.Country,
 		"timestamp": event.Timestamp,
 	}
-	planner.RedisClient.StreamsLogging(planner.RedisStreamName, eventData)
+	p.RedisClient.StreamsLogging(p.RedisStreamName, eventData)
 }
 
-func (planner *MyPlanner) ProcessPlanningEvent(worker int, wg *sync.WaitGroup) {
-	for event := range planner.PlanningEvents {
+func (p *MyPlanner) ProcessPlanningEvent(worker int, wg *sync.WaitGroup) {
+	for event := range p.PlanningEvents {
 		c := cases.Title(language.English)
 		log.Debugf("worker %d processing event for %s", worker, c.String(event.City)+", "+strings.ToUpper(event.Country))
-		planner.RedisClient.CollectPlanningAPIStats(event)
+		p.RedisClient.CollectPlanningAPIStats(event)
 	}
 	wg.Done()
 }

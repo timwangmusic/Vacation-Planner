@@ -108,117 +108,117 @@ type PlaceDetailsResp struct {
 
 type RequestIdKey string
 
-func (planner *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string) {
-	planner.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
-	planner.RedisClient = iowrappers.CreateRedisClient(redisURL)
-	planner.RedisStreamName = redisStreamName
+func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string) {
+	p.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
+	p.RedisClient = iowrappers.CreateRedisClient(redisURL)
+	p.RedisStreamName = redisStreamName
 	if redisStreamName == "" {
-		planner.RedisStreamName = "stream:planning_api_usage"
+		p.RedisStreamName = "stream:planning_api_usage"
 	}
-	planner.PhotoClient = iowrappers.CreatePhotoHttpClient(mapsClientApiKey, PhotoApiBaseURL)
+	p.PhotoClient = iowrappers.CreatePhotoHttpClient(mapsClientApiKey, PhotoApiBaseURL)
 
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 
-	planner.Solver.Init(PoiSearcher)
+	p.Solver.Init(PoiSearcher)
 
-	planner.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
-	planner.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
-	planner.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
-	planner.Configs = configs
-	if v, exists := planner.Configs["server:google_maps:detailed_search_fields"]; exists {
-		planner.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
+	p.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
+	p.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
+	p.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
+	p.Configs = configs
+	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
+		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
 	}
 	var err error
-	geocodes, err = planner.RedisClient.GetCities(context.Background())
+	geocodes, err = p.RedisClient.GetCities(context.Background())
 	if err != nil {
 		log.Errorf("failed to load city geocodes: %v", err.Error())
 	}
-	planner.OAuth2Config = &oauth2.Config{
+	p.OAuth2Config = &oauth2.Config{
 		ClientID:     oauthClientID,
 		ClientSecret: oauthClientSecret,
 		RedirectURL:  domain + "/v1/callback-google",
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint:     google.Endpoint,
 	}
-	planner.Mailer = &iowrappers.Mailer{}
-	if err = planner.Mailer.Init(planner.RedisClient); err != nil {
-		log.Fatalf("planner failed to create a Mailer: %s", err.Error())
+	p.Mailer = &iowrappers.Mailer{}
+	if err = p.Mailer.Init(p.RedisClient); err != nil {
+		log.Fatalf("p failed to create a Mailer: %s", err.Error())
 	}
 }
 
-func (planner *MyPlanner) Destroy() {
+func (p *MyPlanner) Destroy() {
 	iowrappers.DestroyLogger()
-	planner.RedisClient.Destroy()
+	p.RedisClient.Destroy()
 }
 
-func (planner *MyPlanner) reverseGeocodingHandler(context *gin.Context) {
-	latitude, _ := strconv.ParseFloat(context.Query("lat"), 64)
-	longitude, _ := strconv.ParseFloat(context.Query("lng"), 64)
-	result, err := planner.Solver.Searcher.GetMapsClient().ReverseGeocode(context, latitude, longitude)
+func (p *MyPlanner) reverseGeocodingHandler(ctx *gin.Context) {
+	latitude, _ := strconv.ParseFloat(ctx.Query("lat"), 64)
+	longitude, _ := strconv.ParseFloat(ctx.Query("lng"), 64)
+	result, err := p.Solver.Searcher.GetMapsClient().ReverseGeocode(ctx, latitude, longitude)
 	if err != nil {
 		log.Error(err)
-		context.JSON(http.StatusInternalServerError, err.Error())
+		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"results": result,
 	})
 }
 
-func (planner *MyPlanner) UserRatingsTotalMigrationHandler(context *gin.Context) {
-	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
+func (p *MyPlanner) UserRatingsTotalMigrationHandler(ctx *gin.Context) {
+	_, authenticationErr := p.UserAuthentication(ctx, user.LevelAdmin)
 	if authenticationErr != nil {
-		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
 	}
-	if err := planner.Solver.Searcher.AddUserRatingsTotal(context.Request.Context()); err != nil {
+	if err := p.Solver.Searcher.AddUserRatingsTotal(ctx.Request.Context()); err != nil {
 		log.Error(err)
 	}
 }
 
-func (planner *MyPlanner) UrlMigrationHandler(context *gin.Context) {
-	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
+func (p *MyPlanner) UrlMigrationHandler(ctx *gin.Context) {
+	_, authenticationErr := p.UserAuthentication(ctx, user.LevelAdmin)
 	if authenticationErr != nil {
-		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
 	}
-	if err := planner.Solver.Searcher.AddUrl(context.Request.Context()); err != nil {
+	if err := p.Solver.Searcher.AddUrl(ctx.Request.Context()); err != nil {
 		log.Error(err)
 	}
 }
 
-func (planner *MyPlanner) removePlacesMigrationHandler(context *gin.Context) {
-	_, authenticationErr := planner.UserAuthentication(context, user.LevelAdmin)
+func (p *MyPlanner) removePlacesMigrationHandler(ctx *gin.Context) {
+	_, authenticationErr := p.UserAuthentication(ctx, user.LevelAdmin)
 	if authenticationErr != nil {
-		context.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
 	}
-	if err := planner.Solver.Searcher.RemovePlaces(context, []iowrappers.PlaceDetailsFields{iowrappers.PlaceDetailsFieldURL, iowrappers.PlaceDetailsFieldPhoto}); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := p.Solver.Searcher.RemovePlaces(ctx, []iowrappers.PlaceDetailsFields{iowrappers.PlaceDetailsFieldURL, iowrappers.PlaceDetailsFieldPhoto}); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 }
 
-func (planner *MyPlanner) placeStatsHandler(context *gin.Context) {
+func (p *MyPlanner) placeStatsHandler(ctx *gin.Context) {
 	var placeCount int
 	var err error
-	if _, placeCount, err = planner.RedisClient.GetPlaceCountInRedis(context); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if _, placeCount, err = p.RedisClient.GetPlaceCountInRedis(ctx); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	var eateryCount int64
-	if eateryCount, err = planner.RedisClient.GetPlaceCountByCategory(context, POI.PlaceCategoryEatery); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if eateryCount, err = p.RedisClient.GetPlaceCountByCategory(ctx, POI.PlaceCategoryEatery); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	var visitCount int64
-	if visitCount, err = planner.RedisClient.GetPlaceCountByCategory(context, POI.PlaceCategoryVisit); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if visitCount, err = p.RedisClient.GetPlaceCountByCategory(ctx, POI.PlaceCategoryVisit); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"place count":  placeCount,
 		"eatery count": eateryCount,
 		"visit count":  visitCount,
@@ -230,9 +230,9 @@ type GeocodeCityView struct {
 	Cities map[string]string
 }
 
-func (planner *MyPlanner) getCitiesHandler(context *gin.Context) {
+func (p *MyPlanner) getCitiesHandler(ctx *gin.Context) {
 	views := toCityViews(geocodes)
-	term := context.DefaultQuery("term", "")
+	term := ctx.DefaultQuery("term", "")
 	term = strings.ToLower(term)
 	iowrappers.Logger.Debugf("Reveived the prefix of %s", term)
 	var results []CityView
@@ -247,10 +247,10 @@ func (planner *MyPlanner) getCitiesHandler(context *gin.Context) {
 			results = append(results, view)
 		}
 	}
-	context.JSON(http.StatusOK, gin.H{"results": results})
+	ctx.JSON(http.StatusOK, gin.H{"results": results})
 }
 
-func (planner *MyPlanner) cityStatsHandler(context *gin.Context) {
+func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 	cityCount := len(geocodes)
 	view := GeocodeCityView{
 		Count:  cityCount,
@@ -259,8 +259,8 @@ func (planner *MyPlanner) cityStatsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, view)
 }
 
-func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReq, user string) (resp PlanningResponse) {
-	planningResponse := planner.Solver.Solve(ctx, planningRequest)
+func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReq, user string) (resp PlanningResponse) {
+	planningResponse := p.Solver.Solve(ctx, planningRequest)
 
 	if planningResponse.Err != nil {
 		resp.Err = planningResponse.Err
@@ -275,8 +275,8 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *Plannin
 		City:      planningRequest.Location.City,
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
-	planner.PlanningEvents <- event
-	planner.planningEventLogging(event)
+	p.PlanningEvents <- event
+	p.planningEventLogging(event)
 
 	if len(planningResponse.Solutions) == 0 {
 		resp.Err = errors.New("cannot find a valid solution")
@@ -312,7 +312,7 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *Plannin
 		c := cases.Title(language.English)
 		resp.TravelDestination = c.String(planningRequest.Location.City)
 	} else {
-		geocodes, err := planner.Solver.Searcher.ReverseGeocode(ctx, planningRequest.Location.Latitude, planningRequest.Location.Longitude)
+		geocodes, err := p.Solver.Searcher.ReverseGeocode(ctx, planningRequest.Location.Latitude, planningRequest.Location.Longitude)
 		if err != nil {
 			resp.TravelDestination = "Dream Vacation Destination"
 			return
@@ -322,24 +322,24 @@ func (planner *MyPlanner) Planning(ctx context.Context, planningRequest *Plannin
 	return
 }
 
-func (planner *MyPlanner) searchPageHandler(c *gin.Context) {
-	c.HTML(http.StatusOK, "search_page.html", gin.H{})
+func (p *MyPlanner) searchPageHandler(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "search_page.html", gin.H{})
 }
 
-func (planner *MyPlanner) homePageHandler(c *gin.Context) {
-	c.Redirect(http.StatusMovedPermanently, "/v1/")
+func (p *MyPlanner) homePageHandler(ctx *gin.Context) {
+	ctx.Redirect(http.StatusMovedPermanently, "/v1/")
 }
 
 // Return top planning results to user
-func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
+func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
 
 	var userView user.View
 	var authenticationErr error
-	userView, authenticationErr = planner.UserAuthentication(ctx, user.LevelRegular)
+	userView, authenticationErr = p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
 		logger.Debug(authenticationErr)
-		planner.login(ctx)
+		p.login(ctx)
 		return
 	}
 
@@ -402,8 +402,8 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
-	planningResp := planner.Planning(c, &planningReq, userView.Username)
-	if err = planner.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
+	planningResp := p.Planning(c, &planningReq, userView.Username)
+	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
 		iowrappers.Logger.Debug(err)
 	}
 
@@ -422,19 +422,19 @@ func (planner *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
 		return
 	}
-	utils.LogErrorWithLevel(planner.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
+	utils.LogErrorWithLevel(p.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
 }
 
-func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
-	id := c.Param("id")
+func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
+	id := ctx.Param("id")
 	iowrappers.Logger.Debugf("GET Route /plans/%s", id)
 
 	var cachePlanSolution iowrappers.PlanningSolutionRecord
 	var planRecordRedisKey = strings.Join([]string{iowrappers.TravelPlanRedisCacheKeyPrefix, id}, ":")
-	cacheErr := planner.RedisClient.FetchSingleRecord(c, planRecordRedisKey, &cachePlanSolution)
+	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planRecordRedisKey, &cachePlanSolution)
 	if cacheErr != nil {
 		iowrappers.Logger.Debugf("Error occurs in fetching plan with key %s\n", planRecordRedisKey)
-		c.String(http.StatusBadRequest, cacheErr.Error())
+		ctx.String(http.StatusBadRequest, cacheErr.Error())
 		return
 	}
 
@@ -447,7 +447,7 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 		c := cases.Title(language.English)
 		destination = c.String(cachePlanSolution.Destination.City) + ", " + c.String(cachePlanSolution.Destination.Country)
 	}
-	travelDate := c.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
+	travelDate := ctx.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
 		LatLongs:          cachePlanSolution.PlaceLocations,
 		PlaceCategories:   cachePlanSolution.PlaceCategories,
@@ -463,9 +463,9 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 	wg.Add(len(cachePlanSolution.PlaceIDs))
 	for idx, placeId := range cachePlanSolution.PlaceIDs {
 		placeKey = fixedPlaceKeyPrefix + placeId
-		cacheErr := planner.RedisClient.FetchSingleRecord(c, placeKey, &cachePlaceDetails)
+		cacheErr := p.RedisClient.FetchSingleRecord(ctx, placeKey, &cachePlaceDetails)
 		if cacheErr != nil {
-			c.String(http.StatusBadRequest, cacheErr.Error())
+			ctx.String(http.StatusBadRequest, cacheErr.Error())
 			return
 		}
 
@@ -473,52 +473,52 @@ func (planner *MyPlanner) getPlanDetails(c *gin.Context) {
 		tripResp.ShownActive = append(tripResp.ShownActive, (idx == 0))
 
 		// Run Goroutines to retrieve place details
-		go planner.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], cachePlaceDetails)
+		go p.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], cachePlaceDetails)
 	}
 	wg.Wait()
 	iowrappers.Logger.Debugf("Trip Details:\n%v\n", tripResp.PlaceDetails)
 
-	jsonOnly := strings.ToLower(c.DefaultQuery("json_only", "false"))
+	jsonOnly := strings.ToLower(ctx.DefaultQuery("json_only", "false"))
 	if jsonOnly != "false" {
-		c.JSON(http.StatusOK, tripResp)
+		ctx.JSON(http.StatusOK, tripResp)
 		return
 	}
 	// send data
-	utils.LogErrorWithLevel(planner.TripHTMLTemplate.Execute(c.Writer, tripResp), utils.LogError)
+	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, tripResp), utils.LogError)
 }
 
-func (planner *MyPlanner) asyncGetTripRespPlaceDetails(wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
-	*resp = planner.getTripFromPlace(place)
+func (p *MyPlanner) asyncGetTripRespPlaceDetails(wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
+	*resp = p.getTripFromPlace(place)
 	wg.Done()
 }
 
-func (planner *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
+func (p *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
 	return PlaceDetailsResp{
 		Name:             place.Name,
 		URL:              place.URL,
 		FormattedAddress: place.FormattedAddress,
-		PhotoURL:         string(planner.PhotoClient.GetPhotoURL(place.Photo.Reference)),
+		PhotoURL:         string(p.PhotoClient.GetPhotoURL(place.Photo.Reference)),
 	}
 }
 
-func (planner *MyPlanner) login(c *gin.Context) {
-	c.HTML(http.StatusOK, "login_page.html", gin.H{})
+func (p *MyPlanner) login(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "login_page.html", gin.H{})
 }
 
-func (planner *MyPlanner) signup(c *gin.Context) {
-	c.HTML(http.StatusOK, "signup_page.html", gin.H{})
+func (p *MyPlanner) signup(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "signup_page.html", gin.H{})
 }
 
-func (planner *MyPlanner) planTemplate(context *gin.Context) {
-	context.HTML(http.StatusOK, "plan_template.html", gin.H{})
+func (p *MyPlanner) planTemplate(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "plan_template.html", gin.H{})
 }
 
-func (planner *MyPlanner) userProfile(context *gin.Context) {
-	context.HTML(http.StatusOK, "user_profile.html", gin.H{})
+func (p *MyPlanner) userProfile(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "user_profile.html", gin.H{})
 }
 
 // travel plan customization handler
-func (planner *MyPlanner) customize(ctx *gin.Context) {
+func (p *MyPlanner) customize(ctx *gin.Context) {
 	logger := iowrappers.Logger
 	// date is in the format of yyyy-mm-dd
 	date := ctx.DefaultQuery("date", "")
@@ -551,7 +551,7 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
-	planningResp := planner.Planning(c, &request, "guest")
+	planningResp := p.Planning(c, &request, "guest")
 	iowrappers.Logger.Debugf("response status code is: %d", planningResp.StatusCode)
 	if planningResp.StatusCode == RequestTimeOut {
 		ctx.JSON(http.StatusRequestTimeout, nil)
@@ -559,8 +559,8 @@ func (planner *MyPlanner) customize(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, planningResp)
 }
 
-func (planner *MyPlanner) handleLogin(ctx *gin.Context) {
-	oauthConfig := planner.OAuth2Config
+func (p *MyPlanner) handleLogin(ctx *gin.Context) {
+	oauthConfig := p.OAuth2Config
 	logger := iowrappers.Logger
 	URL, err := url.Parse(oauthConfig.Endpoint.AuthURL)
 	if err != nil {
@@ -582,7 +582,7 @@ func (planner *MyPlanner) handleLogin(ctx *gin.Context) {
 	ctx.Redirect(http.StatusTemporaryRedirect, URL.String())
 }
 
-func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
+func (p *MyPlanner) oauthCallback(ctx *gin.Context) {
 	logger := iowrappers.Logger
 	r := ctx.Request
 	code := r.FormValue("code")
@@ -592,7 +592,7 @@ func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "OAuth code not found")
 		return
 	} else {
-		token, err := planner.OAuth2Config.Exchange(ctx, code)
+		token, err := p.OAuth2Config.Exchange(ctx, code)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
@@ -620,7 +620,7 @@ func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
 		}
 
 		u := user.Credential{Email: userCredentials.Email, WithOAuth: true}
-		if planner.loginHelper(ctx, u, false) {
+		if p.loginHelper(ctx, u, false) {
 			ctx.Redirect(http.StatusPermanentRedirect, "/v1")
 		} else {
 			ctx.Redirect(http.StatusPermanentRedirect, "/v1/log-in")
@@ -628,17 +628,17 @@ func (planner *MyPlanner) oauthCallback(ctx *gin.Context) {
 	}
 }
 
-func (planner *MyPlanner) userClickOnEmailVerification(ctx *gin.Context) {
+func (p *MyPlanner) userClickOnEmailVerification(ctx *gin.Context) {
 	code := ctx.DefaultQuery("code", "")
-	if err := planner.RedisClient.CreateUserOnEmailVerified(ctx, code); err != nil {
+	if err := p.RedisClient.CreateUserOnEmailVerified(ctx, code); err != nil {
 		ctx.String(http.StatusBadRequest, "failed to verify user email, please contact Vacation Planner")
 	}
 	ctx.Redirect(http.StatusMovedPermanently, "/v1/log-in")
 }
 
-func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
+func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
-	if planner.Environment == "debug" {
+	if p.Environment == "debug" {
 		gin.SetMode(gin.DebugMode)
 	}
 	gin.DefaultWriter = io.Discard
@@ -653,46 +653,46 @@ func (planner *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	// TODO: change to front-end domain once front-end server is deployed
 	myRouter.Use(cors.Default())
 
-	myRouter.GET("/", planner.homePageHandler)
+	myRouter.GET("/", p.homePageHandler)
 
 	v1 := myRouter.Group("/v1")
 	{
-		v1.GET("/", planner.searchPageHandler)
-		v1.GET("/plans", planner.getPlanningApi)
-		v1.POST("/signup", planner.UserEmailVerify)
-		v1.GET("/verify", planner.userClickOnEmailVerification)
-		v1.POST("/login", planner.userLogin)
-		v1.GET("/reverse-geocoding", planner.reverseGeocodingHandler)
-		v1.GET("/log-in", planner.login)
-		v1.GET("/sign-up", planner.signup)
-		v1.GET("/plans/:id", planner.getPlanDetails)
-		v1.GET("/cities", planner.getCitiesHandler)
-		v1.POST("/customize", planner.customize)
-		v1.GET("/template", planner.planTemplate)
-		v1.GET("/login-google", planner.handleLogin)
-		v1.GET("/callback-google", planner.oauthCallback)
+		v1.GET("/", p.searchPageHandler)
+		v1.GET("/plans", p.getPlanningApi)
+		v1.POST("/signup", p.UserEmailVerify)
+		v1.GET("/verify", p.userClickOnEmailVerification)
+		v1.POST("/login", p.userLogin)
+		v1.GET("/reverse-geocoding", p.reverseGeocodingHandler)
+		v1.GET("/log-in", p.login)
+		v1.GET("/sign-up", p.signup)
+		v1.GET("/plans/:id", p.getPlanDetails)
+		v1.GET("/cities", p.getCitiesHandler)
+		v1.POST("/customize", p.customize)
+		v1.GET("/template", p.planTemplate)
+		v1.GET("/login-google", p.handleLogin)
+		v1.GET("/callback-google", p.oauthCallback)
 		migrations := v1.Group("/migrate")
 		{
-			migrations.GET("/user-ratings-total", planner.UserRatingsTotalMigrationHandler)
-			migrations.GET("/url", planner.UrlMigrationHandler)
-			migrations.GET("/remove-places", planner.removePlacesMigrationHandler)
+			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)
+			migrations.GET("/url", p.UrlMigrationHandler)
+			migrations.GET("/remove-places", p.removePlacesMigrationHandler)
 		}
 
-		v1.GET("/profile", planner.userProfile)
+		v1.GET("/profile", p.userProfile)
 		users := v1.Group("/users")
 		{
-			users.GET("/:username/favorites", planner.userFavoritesHandler)
-			users.POST("/:username/plans", planner.userSavedPlansPostHandler)
-			users.GET("/:username/plans", planner.userSavedPlansGetHandler)
-			users.DELETE("/:username/plan/:id", planner.userPlanDeleteHandler)
+			users.GET("/:username/favorites", p.userFavoritesHandler)
+			users.POST("/:username/plans", p.userSavedPlansPostHandler)
+			users.GET("/:username/plans", p.userSavedPlansGetHandler)
+			users.DELETE("/:username/plan/:id", p.userPlanDeleteHandler)
 		}
 	}
 
 	// API endpoints for collecting database statistics
 	stats := myRouter.Group("/stats")
 	{
-		stats.GET("places", planner.placeStatsHandler)
-		stats.GET("cities", planner.cityStatsHandler)
+		stats.GET("places", p.placeStatsHandler)
+		stats.GET("cities", p.cityStatsHandler)
 	}
 
 	svr := &http.Server{
