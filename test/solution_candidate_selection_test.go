@@ -2,9 +2,10 @@ package test
 
 import (
 	"context"
-	"github.com/weihesdlegend/Vacation-planner/planner"
 	"strconv"
 	"testing"
+
+	"github.com/weihesdlegend/Vacation-planner/planner"
 
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
@@ -14,6 +15,7 @@ import (
 func TestSolutionCandidateSelection(t *testing.T) {
 	places := make([]matching.Place, 0)
 
+	// top five ratings are 99, 98, 97, 96, 95
 	for i := 0; i < 100; i++ {
 		places = append(places, matching.Place{Place: &POI.Place{ID: strconv.Itoa(i), Rating: float32(i), UserRatingsTotal: 9}, Price: 1})
 	}
@@ -37,7 +39,8 @@ func TestSolutionCandidateSelection(t *testing.T) {
 		t.Fatalf("expected number of solutions equals %d, got %d", topSolutionsCount, len(res))
 	}
 
-	expectation := []float64{98, 97, 96, 95, 94}
+	// Suggested top five plan scores should match top five ratings
+	expectation := []float64{99, 98, 97, 96, 95}
 	for idx, r := range resp.Solutions {
 		if r.Score != expectation[idx] {
 			t.Errorf("expected %f, got %f", expectation[idx], r.Score)

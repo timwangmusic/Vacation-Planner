@@ -2,6 +2,7 @@ package planner
 
 import (
 	"errors"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
@@ -10,6 +11,7 @@ import (
 type MultiDimIterator struct {
 	Categories []POI.PlaceCategory
 	Status     []int
+	Stop       bool  // indicate iterator is stopped
 	Size       []int // number of items in each category
 }
 
@@ -25,6 +27,7 @@ func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClu
 	mdTagIter.Status = make([]int, len(mdTagIter.Categories))
 	mdTagIter.Size = make([]int, len(mdTagIter.Categories))
 	for pos, category := range mdTagIter.Categories {
+		// Status is initialized as an all-zero vector
 		mdTagIter.Status[pos] = 0
 		mdTagIter.Size[pos] = len(placeClusters[pos])
 
@@ -37,12 +40,18 @@ func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClu
 }
 
 func (mdTagIter *MultiDimIterator) HasNext() bool {
+	var hasNext = !mdTagIter.Stop
+	mdTagIter.updateStop()
+	return hasNext
+}
+
+func (mdTagIter *MultiDimIterator) updateStop() {
+	// stop if every dim in status[] has reached its last point
+	var stop = true
 	for i := range mdTagIter.Categories {
-		if mdTagIter.Status[i] < mdTagIter.Size[i]-1 {
-			return true
-		}
+		stop = stop && (mdTagIter.Status[i] == mdTagIter.Size[i]-1)
 	}
-	return false
+	mdTagIter.Stop = stop
 }
 
 func (mdTagIter *MultiDimIterator) Next() bool {
