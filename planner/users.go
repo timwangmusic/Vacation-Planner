@@ -24,7 +24,7 @@ type ProfileView struct {
 	TravelPlans []user.TravelPlanView
 }
 
-func (planner *MyPlanner) UserEmailVerify(ctx *gin.Context) {
+func (p *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 	userView := user.View{}
 
 	decodeErr := ctx.ShouldBindJSON(&userView)
@@ -42,13 +42,13 @@ func (planner *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 	}
 	userView.UserLevel = userLevel
 	// skip email verifications on non-prod environments
-	if strings.ToLower(planner.Environment) != "production" {
-		if _, err := planner.RedisClient.CreateUser(ctx, userView, false); err != nil {
+	if strings.ToLower(p.Environment) != "production" {
+		if _, err := p.RedisClient.CreateUser(ctx, userView, false); err != nil {
 			iowrappers.Logger.Debugf("failed to create user: %v", err)
 		}
 		return
 	}
-	if err := planner.Mailer.Send(iowrappers.EmailVerification, userView); err != nil {
+	if err := p.Mailer.Send(iowrappers.EmailVerification, userView); err != nil {
 		iowrappers.Logger.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -56,12 +56,12 @@ func (planner *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Email sent. Please check the inbox to verify your email address."})
 }
 
-func (planner *MyPlanner) UserSignup(context *gin.Context) {
+func (p *MyPlanner) UserSignup(ctx *gin.Context) {
 	userView := user.View{}
 
-	decodeErr := context.ShouldBindJSON(&userView)
+	decodeErr := ctx.ShouldBindJSON(&userView)
 	if decodeErr != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
 		return
 	}
 
@@ -75,36 +75,40 @@ func (planner *MyPlanner) UserSignup(context *gin.Context) {
 
 	userView.UserLevel = userLevel
 
-	view, createErr := planner.RedisClient.CreateUser(context, userView, false)
+	view, createErr := p.RedisClient.CreateUser(ctx, userView, false)
 	if createErr != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": createErr.Error()})
 		return
 	}
 	log.Debugf("created user with ID %s", view.ID)
-	context.JSON(http.StatusCreated, gin.H{"user creation success": view.Username})
+	ctx.JSON(http.StatusCreated, gin.H{"user creation success": view.Username})
 }
 
-func (planner *MyPlanner) userLogin(context *gin.Context) {
+func (p *MyPlanner) userLogin(ctx *gin.Context) {
 	c := user.Credential{}
 
-	decodeErr := context.ShouldBindJSON(&c)
+	decodeErr := ctx.ShouldBindJSON(&c)
 	if decodeErr != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": decodeErr.Error()})
 		return
 	}
 
-	planner.loginHelper(context, c, true)
+	p.loginHelper(ctx, c, true)
 }
 
-func (planner *MyPlanner) loginHelper(context *gin.Context, c user.Credential, frontEndLogin bool) (loggedIn bool) {
+func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLogin bool) (loggedIn bool) {
 	logger := iowrappers.Logger
 
-	_, token, tokenExpirationTime, loginErr := planner.RedisClient.Authenticate(context, c)
+	user, token, tokenExpirationTime, loginErr := p.RedisClient.Authenticate(ctx, c)
+	err := p.RedisClient.UpdateUser(ctx, &user)
+	if err != nil {
+		iowrappers.Logger.Errorf("failed to update user %s: %v", user.Username, err)
+	}
 	if loginErr != nil {
 		logger.Debug(loginErr)
 
 		if frontEndLogin {
-			context.JSON(http.StatusUnauthorized, UserLoginResponse{
+			ctx.JSON(http.StatusUnauthorized, UserLoginResponse{
 				Username: c.Username,
 				Jwt:      "",
 				Status:   "Unauthorized",
@@ -113,7 +117,7 @@ func (planner *MyPlanner) loginHelper(context *gin.Context, c user.Credential, f
 		return false
 	}
 
-	http.SetCookie(context.Writer, &http.Cookie{
+	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:    "JWT",
 		Value:   token,
 		Expires: tokenExpirationTime,
@@ -121,8 +125,8 @@ func (planner *MyPlanner) loginHelper(context *gin.Context, c user.Credential, f
 	return true
 }
 
-func (planner *MyPlanner) UserAuthentication(context *gin.Context, minimumUserLevel user.Level) (user.View, error) {
-	request := context.Request
+func (p *MyPlanner) UserAuthentication(ctx *gin.Context, minimumUserLevel user.Level) (user.View, error) {
+	request := ctx.Request
 
 	var userView user.View
 	cookie, cookieErr := request.Cookie("JWT")
@@ -152,7 +156,7 @@ func (planner *MyPlanner) UserAuthentication(context *gin.Context, minimumUserLe
 
 	iowrappers.Logger.Debugf("the current logged-in user is %s", username)
 
-	userView, findUserErr := planner.RedisClient.FindUser(context, iowrappers.FindUserByName, user.View{Username: username})
+	userView, findUserErr := p.RedisClient.FindUser(ctx, iowrappers.FindUserByName, user.View{Username: username})
 	if findUserErr != nil {
 		return userView, findUserErr
 	}
@@ -171,35 +175,35 @@ func (planner *MyPlanner) UserAuthentication(context *gin.Context, minimumUserLe
 	return userView, nil
 }
 
-func (planner *MyPlanner) userSavedPlansPostHandler(context *gin.Context) {
+func (p *MyPlanner) userSavedPlansPostHandler(ctx *gin.Context) {
 	var planView user.TravelPlanView
-	bindErr := context.ShouldBindJSON(&planView)
+	bindErr := ctx.ShouldBindJSON(&planView)
 	if bindErr != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": bindErr.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": bindErr.Error()})
 		return
 	}
 
-	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
-	if userView.Username != context.Param("username") {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
+	userView, authErr := p.UserAuthentication(ctx, user.LevelRegular)
+	if userView.Username != ctx.Param("username") {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
 		return
 	}
 
 	if authErr != nil {
-		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
 		return
 	}
 
 	// TODO: differentiate between internal plan saving errors against duplicated plan saving requests errors
-	if err := planner.RedisClient.SaveUserPlan(context, userView, &planView); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := p.RedisClient.SaveUserPlan(ctx, userView, &planView); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"results": "save user plan succeeded."})
+	ctx.JSON(http.StatusOK, gin.H{"results": "save user plan succeeded."})
 }
 
-func (planner *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
-	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
+func (p *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
+	userView, authErr := p.UserAuthentication(context, user.LevelRegular)
 	if userView.Username != context.Param("username") {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
 		return
@@ -211,7 +215,7 @@ func (planner *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
 	}
 
 	iowrappers.Logger.Debugf("current USER ID: %s", userView.ID)
-	plans, err := planner.RedisClient.FindUserPlans(context.Request.Context(), userView)
+	plans, err := p.RedisClient.FindUserPlans(context.Request.Context(), userView)
 	if err != nil {
 		context.Status(http.StatusInternalServerError)
 		iowrappers.Logger.Error(err)
@@ -222,27 +226,27 @@ func (planner *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})
 }
 
-func (planner *MyPlanner) userPlanDeleteHandler(context *gin.Context) {
-	userView, authErr := planner.UserAuthentication(context, user.LevelRegular)
-	if userView.Username != context.Param("username") {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "only authorized users can delete plans"})
+func (p *MyPlanner) userPlanDeleteHandler(ctx *gin.Context) {
+	userView, authErr := p.UserAuthentication(ctx, user.LevelRegular)
+	if userView.Username != ctx.Param("username") {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "only authorized users can delete plans"})
 		return
 	}
 
 	if authErr != nil {
-		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
 		return
 	}
 
-	err := planner.RedisClient.DeleteUserPlan(context, userView, user.TravelPlanView{ID: context.Param("id")})
+	err := p.RedisClient.DeleteUserPlan(ctx, userView, user.TravelPlanView{ID: ctx.Param("id")})
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 }
 
-func (planner *MyPlanner) userFavoritesHandler(ctx *gin.Context) {
-	userView, authErr := planner.UserAuthentication(ctx, user.LevelRegular)
+func (p *MyPlanner) userFavoritesHandler(ctx *gin.Context) {
+	userView, authErr := p.UserAuthentication(ctx, user.LevelRegular)
 
 	if authErr != nil {
 		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})

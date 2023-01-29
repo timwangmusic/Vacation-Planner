@@ -79,13 +79,13 @@ func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
 	s.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
 }
 
-func (s *Solver) ValidateLocation(context context.Context, location *POI.Location) bool {
+func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) bool {
 	geoQuery := iowrappers.GeocodeQuery{
 		City:              location.City,
 		AdminAreaLevelOne: location.AdminAreaLevelOne,
 		Country:           location.Country,
 	}
-	_, _, err := s.Searcher.Geocode(context, &geoQuery)
+	_, _, err := s.Searcher.Geocode(ctx, &geoQuery)
 	if err != nil {
 		return false
 	}
