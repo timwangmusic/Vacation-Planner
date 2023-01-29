@@ -26,7 +26,6 @@ func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClu
 	mdTagIter.Categories = categories
 	mdTagIter.Status = make([]int, len(mdTagIter.Categories))
 	mdTagIter.Size = make([]int, len(mdTagIter.Categories))
-	mdTagIter.Stop = false
 	for pos, category := range mdTagIter.Categories {
 		// Status is initialized as an all-zero vector
 		mdTagIter.Status[pos] = 0
