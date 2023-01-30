@@ -102,10 +102,10 @@ func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLog
 	user, token, tokenExpirationTime, loginErr := p.RedisClient.Authenticate(ctx, c)
 	err := p.RedisClient.UpdateUser(ctx, &user)
 	if err != nil {
-		iowrappers.Logger.Errorf("failed to update user %s: %v", user.Username, err)
+		logger.Errorf("failed to update user %s: %v", user.Username, err)
 	}
 	if loginErr != nil {
-		logger.Debug(loginErr)
+		logger.Error(loginErr)
 
 		if frontEndLogin {
 			ctx.JSON(http.StatusUnauthorized, UserLoginResponse{
@@ -115,6 +115,8 @@ func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLog
 			})
 		}
 		return false
+	} else {
+		logger.Infof("user is logged in: %+v", user)
 	}
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
