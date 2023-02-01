@@ -30,6 +30,13 @@ $(document).ready(() => {
         console.log(`Set the Location based on PageLoad...` + val);
         LOCATION_INPUT.value = val;
     }
+
+    // FIXME: not a clean solution, improve this after we use front-end rendering
+    const url = new URL(document.referrer);
+    if (url.pathname == "/v1/") {
+        console.debug("no planning solution is found");
+        $('#no-plan-error-alert').removeClass('d-none');
+    }
 });
 
 FORM.addEventListener('submit', () => {
