@@ -411,8 +411,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		if planningResp.StatusCode == InvalidRequestLocation {
 			ctx.String(http.StatusBadRequest, planningResp.Err.Error())
 		} else if planningResp.StatusCode == NoValidSolution {
-			errString := "No valid travel solution is found.\nPlease try searching with a larger radius or a different price level."
-			ctx.String(http.StatusBadRequest, errString)
+			ctx.Redirect(http.StatusPermanentRedirect, "/v1/")
 		}
 		return
 	}
