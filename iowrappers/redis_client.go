@@ -128,7 +128,7 @@ func (r *RedisClient) SetMapsLastSearchTime(context context.Context, location PO
 	return
 }
 
-// StorePlacesForLocation is currently not used, but it is still a primitive implementation that might have faster search time compared
+// StorePlacesForLocation is deprecated, but it is still a primitive implementation that might have faster search time compared
 // with all places stored under one key
 // store places obtained from database or external API in Redis
 // places for a location are stored in separate sorted sets based on category
@@ -151,24 +151,33 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	return nil
 }
 
-func (r *RedisClient) SetPlacesOnCategory(context context.Context, places []POI.Place) {
+// SetPlacesAddGeoLocations() is actively being used
+// It stores two types of information in redis
+// 1. key-value pair, {placeID: POI.place}
+// 2. add place to the correct bucket in geohashing for nearbysearch()
+func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.Place) {
 	wg := &sync.WaitGroup{}
-	wg.Add(len(places))
+	wg.Add(2 * len(places)) // start two threads for each place
 	for _, place := range places {
-		placeCategory := POI.GetPlaceCategory(place.LocationType)
-		geolocation := &redis.GeoLocation{
-			Name:      place.ID,
-			Latitude:  place.GetLocation().Latitude,
-			Longitude: place.GetLocation().Longitude,
-		}
-		redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
-		_, cmdErr := r.client.GeoAdd(context, redisKey, geolocation).Result()
-
-		utils.LogErrorWithLevel(cmdErr, utils.LogError)
-
-		r.setPlace(context, place, wg)
+		go r.GeoAddWorkerByCategory(c, place, wg)
+		go r.setPlace(c, place, wg)
 	}
 	wg.Wait()
+}
+
+// GeoAddWorkerByCategory adds geo-location of the place,
+// keys are identified with different place categories
+func (r *RedisClient) GeoAddWorkerByCategory(c context.Context, place POI.Place, wg *sync.WaitGroup) {
+	defer wg.Done()
+	placeCategory := POI.GetPlaceCategory(place.LocationType)
+	geoLocation := &redis.GeoLocation{
+		Name:      place.ID,
+		Latitude:  place.GetLocation().Latitude,
+		Longitude: place.GetLocation().Longitude,
+	}
+	redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
+	_, cmdErr := r.client.GeoAdd(c, redisKey, geoLocation).Result()
+	utils.LogErrorWithLevel(cmdErr, utils.LogError)
 }
 
 // obtain place info from Redis based with key place_details:place_ID:placeID

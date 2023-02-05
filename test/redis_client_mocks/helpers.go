@@ -2,9 +2,10 @@ package redis_client_mocks
 
 import (
 	"context"
+	"net/url"
+
 	"github.com/alicebob/miniredis/v2"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"net/url"
 )
 
 var RedisClient *iowrappers.RedisClient
