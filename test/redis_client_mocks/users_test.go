@@ -200,8 +200,7 @@ func TestDeleteUserPlan(t *testing.T) {
 		return
 	}
 
-	var plans []user.TravelPlanView
-	plans = RedisClient.FindUserPlans(RedisContext, userView)
+	plans := RedisClient.FindUserPlans(RedisContext, userView)
 
 	if len(plans) != 0 {
 		t.Errorf("expected no plan remains after deletion, got %d plans remained", len(plans))
