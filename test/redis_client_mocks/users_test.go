@@ -3,8 +3,6 @@ package redis_client_mocks
 import (
 	"testing"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
@@ -154,11 +152,7 @@ func TestSaveUserPlan(t *testing.T) {
 		return
 	}
 
-	plans, err := RedisClient.FindUserPlans(RedisContext, userView)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	plans := RedisClient.FindUserPlans(RedisContext, userView)
 
 	expectedNumberOfPlans := 2
 	if len(plans) != expectedNumberOfPlans {
@@ -166,7 +160,7 @@ func TestSaveUserPlan(t *testing.T) {
 		return
 	}
 
-	log.Debugf("plan details: %+v", plans)
+	t.Logf("plan details: %+v", plans)
 }
 
 func TestDeleteUserPlan(t *testing.T) {
@@ -207,11 +201,7 @@ func TestDeleteUserPlan(t *testing.T) {
 	}
 
 	var plans []user.TravelPlanView
-	plans, err = RedisClient.FindUserPlans(RedisContext, userView)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	plans = RedisClient.FindUserPlans(RedisContext, userView)
 
 	if len(plans) != 0 {
 		t.Errorf("expected no plan remains after deletion, got %d plans remained", len(plans))

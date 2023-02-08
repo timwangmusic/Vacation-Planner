@@ -19,7 +19,10 @@ import (
 	"time"
 )
 
-const UserKeyPrefix = "user"
+const (
+	UserKeyPrefix       = "user"
+	UserPlanWorkerCount = 5
+)
 
 type GoogleOAuthResponse struct {
 	ID            string `json:"id"`
@@ -307,35 +310,87 @@ func (r *RedisClient) DeleteUserPlan(context context.Context, userView user.View
 	return r.RemoveKeys(context, []string{redisKey})
 }
 
-func (r *RedisClient) FindUserPlans(context context.Context, userView user.View) ([]user.TravelPlanView, error) {
+func (r *RedisClient) userPlanKeysFinder(ctx context.Context, view user.View) chan string {
+	out := make(chan string)
 	var cursor uint64 = 0
-	travelPlanKeys := make([]string, 0)
+	redisKeysPrefix := strings.Join([]string{UserSavedTravelPlanPrefix, "user", view.ID, "plan"}, ":")
+	go func() {
+		for {
+			var err error
+			var keys []string
+			keys, cursor, err = r.client.Scan(ctx, cursor, redisKeysPrefix+"*", 100).Result()
+			if err != nil {
+				break
+			}
+			for _, key := range keys {
+				out <- key
+			}
+			if cursor == 0 {
+				break
+			}
+		}
+		close(out)
+	}()
+	return out
+}
 
-	redisKeysPrefix := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan"}, ":")
-	for {
-		var err error
-		var keys []string
-		keys, cursor, err = r.client.Scan(context, cursor, redisKeysPrefix+"*", 100).Result()
-		if err != nil {
-			break
+func (r *RedisClient) userPlanFinder(ctx context.Context, in chan string) chan user.TravelPlanView {
+	out := make(chan user.TravelPlanView)
+	go func() {
+		for key := range in {
+			plan, err := r.Get().Get(ctx, key).Result()
+			if err != nil {
+				Logger.Debug(err)
+				continue
+			}
+			view := user.TravelPlanView{}
+			if err = json.Unmarshal([]byte(plan), &view); err != nil {
+				Logger.Debug(err)
+				continue
+			}
+			out <- view
 		}
-		travelPlanKeys = append(travelPlanKeys, keys...)
-		if cursor == 0 {
-			break
+		close(out)
+	}()
+	return out
+}
+
+func merge(cs ...chan user.TravelPlanView) chan user.TravelPlanView {
+	var wg sync.WaitGroup
+	out := make(chan user.TravelPlanView)
+
+	output := func(c <-chan user.TravelPlanView) {
+		for view := range c {
+			out <- view
 		}
+		wg.Done()
+	}
+	wg.Add(len(cs))
+	for _, c := range cs {
+		go output(c)
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(travelPlanKeys))
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
+}
 
-	result := make([]user.TravelPlanView, len(travelPlanKeys))
+func (r *RedisClient) FindUserPlans(ctx context.Context, userView user.View) []user.TravelPlanView {
+	in := r.userPlanKeysFinder(ctx, userView)
 
-	for idx, key := range travelPlanKeys {
-		go r.findUserPlan(context, key, &result[idx], &wg)
+	var workers [UserPlanWorkerCount]chan user.TravelPlanView
+	for idx := range workers {
+		workers[idx] = make(chan user.TravelPlanView)
+		workers[idx] = r.userPlanFinder(ctx, in)
 	}
-	wg.Wait()
 
-	return result, nil
+	var result []user.TravelPlanView
+	for view := range merge(workers[:]...) {
+		result = append(result, view)
+	}
+	return result
 }
 
 func (r *RedisClient) findUserPlan(context context.Context, redisKey string, view *user.TravelPlanView, wg *sync.WaitGroup) {
