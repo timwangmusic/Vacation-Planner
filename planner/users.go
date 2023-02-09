@@ -217,12 +217,7 @@ func (p *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
 	}
 
 	iowrappers.Logger.Debugf("current USER ID: %s", userView.ID)
-	plans, err := p.RedisClient.FindUserPlans(context.Request.Context(), userView)
-	if err != nil {
-		context.Status(http.StatusInternalServerError)
-		iowrappers.Logger.Error(err)
-		return
-	}
+	plans := p.RedisClient.FindUserPlans(context.Request.Context(), userView)
 
 	sort.Sort(user.ByCreatedAt(plans))
 	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})
