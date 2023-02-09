@@ -355,28 +355,6 @@ func (r *RedisClient) userPlanFinder(ctx context.Context, in chan string) chan u
 	return out
 }
 
-func merge(cs ...chan user.TravelPlanView) chan user.TravelPlanView {
-	var wg sync.WaitGroup
-	out := make(chan user.TravelPlanView)
-
-	output := func(c <-chan user.TravelPlanView) {
-		for view := range c {
-			out <- view
-		}
-		wg.Done()
-	}
-	wg.Add(len(cs))
-	for _, c := range cs {
-		go output(c)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-	return out
-}
-
 func (r *RedisClient) FindUserPlans(ctx context.Context, userView user.View) []user.TravelPlanView {
 	in := r.userPlanKeysFinder(ctx, userView)
 
