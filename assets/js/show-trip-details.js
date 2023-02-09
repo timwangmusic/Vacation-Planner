@@ -54,7 +54,7 @@ function planToView(plan) {
         const {
             Name: placeName,
             FormattedAddress: address,
-            TimePeriod: timePeriod = '10 - 12', // TODO: use actual time period for each place
+            TimePeriod: timePeriod = '10 - 13', // TODO: use actual time period for each place
             URL: mapURL
         } = pDetail
         const place = new Place(timePeriod, placeName, address, mapURL)
