@@ -7,7 +7,7 @@ require (
 	github.com/braintree/manners v0.0.0-20160418043613-82a8879fc5fd
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/requestid v0.0.1
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.7
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-redis/redis/v8 v8.2.3
 	github.com/golang-jwt/jwt v3.2.1+incompatible

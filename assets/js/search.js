@@ -33,7 +33,7 @@ $(document).ready(() => {
 
     // FIXME: not a clean solution, improve this after we use front-end rendering
     const url = new URL(document.referrer);
-    if (url.pathname == "/v1/") {
+    if (url.pathname === "/v1/" && pageIsNavigated()) {
         console.debug("no planning solution is found");
         $('#no-plan-error-alert').removeClass('d-none');
     }
@@ -44,7 +44,22 @@ FORM.addEventListener('submit', () => {
         sessionStorage.setItem(STORAGE_ITEM, LOCATION_INPUT.value);
         console.log(`The location is ${LOCATION_INPUT.value}`);
     }
-})
+});
+
+function pageIsNavigated() {
+    const entries = performance.getEntriesByType("navigation");
+    let result = false;
+    entries.forEach(
+        (entry) => {
+            if (entry.type === "navigate") {
+                console.log("page is navigated");
+                result = true;
+            }
+            console.log(`page is ${entry.type}`);
+        }
+    )
+    return result;
+}
 
 document.querySelector('#autofill').addEventListener('click', locateMe);
 
