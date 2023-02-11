@@ -3,6 +3,7 @@
 // get current location of the user
 function locateMe() {
     async function success(location) {
+        document.getElementById("precise-location-flag").value = "false";
         const latitude = location.coords.latitude;
         const longitude = location.coords.longitude;
 
