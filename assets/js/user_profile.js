@@ -35,13 +35,21 @@ function renderCard(plan) {
     )
     cardBody.append(placeList);
     let deleteButton = $('<button>')
-        .addClass('btn btn-outline-warning float-end')
+        .addClass('btn btn-outline-warning m-1 float-end')
         .attr('type', 'button')
-        .attr('data-planId', `${plan.id}`)
+        .attr('data-planid', `${plan.id}`)
         .attr('data-user', `${username}`)
         .text('delete');
     deleteButton.click(deleteUserPlan);
     cardBody.append(deleteButton);
+
+    let showDetailsButton = $('<button>')
+        .addClass('btn btn-outline-info float-end m-1')
+        .attr('type', 'button')
+        .attr('data-planid', `${plan.original_plan_id}`)
+        .text('details');
+    showDetailsButton.click(showPlanDetails);
+    cardBody.append(showDetailsButton);
 
     card.append(cardBody);
     cards.append(card);
@@ -59,6 +67,11 @@ function renderFavorites(favorites) {
         }
     }
     mostSearchedPlace.innerText = result;
+}
+
+function showPlanDetails() {
+    const planID = this.dataset.planid;
+    window.location = `plans/${planID}`;
 }
 
 async function getUserPlans() {
