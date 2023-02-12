@@ -97,7 +97,9 @@ async function getUserFavorites() {
     );
 }
 
-window.onload = function () {
-    getUserPlans();
-    getUserFavorites();
-};
+async function renderUserProfile() {
+    await getUserPlans();
+    await getUserFavorites();
+}
+
+window.onload = renderUserProfile();
