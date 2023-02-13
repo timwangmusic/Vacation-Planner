@@ -2,10 +2,11 @@ package iowrappers
 
 import (
 	"context"
-	"github.com/alicebob/miniredis/v2"
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"net/url"
 	"testing"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 func TestRemovePlaces(t *testing.T) {
@@ -52,7 +53,7 @@ func TestRemovePlaces(t *testing.T) {
 
 	var places []POI.Place
 	var err error
-	redisClient.SetPlacesOnCategory(ctx, []POI.Place{placeA, placeB})
+	redisClient.SetPlacesAddGeoLocations(ctx, []POI.Place{placeA, placeB})
 	places, _ = redisClient.NearbySearch(ctx, &PlaceSearchRequest{
 		PlaceCat: POI.PlaceCategoryVisit,
 		Location: POI.Location{

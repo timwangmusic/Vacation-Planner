@@ -186,7 +186,7 @@ func (s *PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearch
 }
 
 func (s *PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
-	s.redisClient.SetPlacesOnCategory(context, places)
+	s.redisClient.SetPlacesAddGeoLocations(context, places)
 	requestId := context.Value(ContextRequestIdKey)
 	Logger.Debugf("[request_id: %s]Redis update complete", requestId)
 }

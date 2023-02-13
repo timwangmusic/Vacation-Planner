@@ -1,10 +1,11 @@
 package redis_client_mocks
 
 import (
+	"testing"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"testing"
 )
 
 var places = []POI.Place{
@@ -60,7 +61,7 @@ var places = []POI.Place{
 
 func init() {
 	// cache places
-	RedisClient.SetPlacesOnCategory(RedisContext, places)
+	RedisClient.SetPlacesAddGeoLocations(RedisContext, places)
 
 	// if place are not cached, it is possibly because of GeoAdd failure
 	for _, place := range places {
