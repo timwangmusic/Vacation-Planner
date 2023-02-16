@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+var closedRe = regexp.MustCompile(`.*\s+Closed$`)
+var hourRegex = regexp.MustCompile(`\d{1,2}:\d{2}`)
+
 type Hour uint8
 
 func (h Hour) ToString() string {
@@ -37,7 +40,6 @@ func (interval *TimeInterval) Serialize() string {
 	return strconv.FormatUint(uint64(interval.Start), 10) + "_" + strconv.FormatUint(uint64(interval.End), 10)
 }
 
-// returns true if two time intervals intersect
 func (interval *TimeInterval) Intersect(newInterval *TimeInterval) bool {
 	if interval.End <= newInterval.Start || interval.Start >= newInterval.End {
 		return false
@@ -45,61 +47,18 @@ func (interval *TimeInterval) Intersect(newInterval *TimeInterval) bool {
 	return true
 }
 
-// returns true if the current interval includes the new interval in the parameter
 func (interval *TimeInterval) Inclusive(newInterval *TimeInterval) bool {
 	return newInterval.Start >= interval.Start && newInterval.End <= interval.End
 }
 
-// given a open hours data from Google, we only use the Thursday data to fill GoogleMapsTimeIntervals struct
-type GoogleMapsTimeIntervals struct {
-	numIntervals int
-	Intervals    []TimeInterval
-}
-
-func (timeIntervals *GoogleMapsTimeIntervals) GetAllIntervals() *[]TimeInterval {
-	return &timeIntervals.Intervals
-}
-
-func (timeIntervals *GoogleMapsTimeIntervals) GetInterval(idx int) (error, TimeInterval) {
-	if idx < 0 || idx >= timeIntervals.numIntervals {
-		return errors.New("index out of bound"), TimeInterval{}
-	}
-	return nil, timeIntervals.Intervals[idx]
-}
-
-// assume input having non-overlapping time intervals
-// maintain intervals sorted
-func (timeIntervals *GoogleMapsTimeIntervals) InsertTimeInterval(interval TimeInterval) {
-	if timeIntervals.numIntervals == 0 {
-		timeIntervals.Intervals = append(timeIntervals.Intervals, interval)
-	} else {
-		for idx, itv := range timeIntervals.Intervals {
-			if itv.Start >= interval.End {
-				timeIntervals.Intervals = append(timeIntervals.Intervals[:idx],
-					append([]TimeInterval{interval}, timeIntervals.Intervals[idx:]...)...)
-				break
-			}
-		}
-		if interval.Start >= timeIntervals.Intervals[timeIntervals.numIntervals-1].End {
-			timeIntervals.Intervals = append(timeIntervals.Intervals, interval)
-		}
-	}
-	timeIntervals.numIntervals++
-}
-
-func (timeIntervals *GoogleMapsTimeIntervals) NumIntervals() int {
-	return timeIntervals.numIntervals
-}
-
-// given a string of form "Monday: 10:45 PM - 11:78 AM", return a TimeInterval with start and end hour in [0-24]
+// ParseTimeInterval returns a TimeInterval with start and end hour in [0-24], given a string of form "Monday: 9:30AM - 8:00PM",
 func ParseTimeInterval(openingHour string) (interval TimeInterval, err error) {
-	closed, _ := regexp.Match(`Closed`, []byte(openingHour))
+	closed := closedRe.MatchString(openingHour)
 	if closed {
 		interval.Start = 255
 		interval.End = 255
 		return
 	}
-	hourRegex := regexp.MustCompile(`[\d]{1,2}:[\d]{2}`)
 	hours := hourRegex.FindAll([]byte(openingHour), -1)
 
 	amPmRe := regexp.MustCompile(`[apAP][mM]`)
@@ -112,21 +71,27 @@ func ParseTimeInterval(openingHour string) (interval TimeInterval, err error) {
 	interval.Start = Hour(calculateHour(string(hours[0]), string(amPm[0])))
 	interval.End = Hour(calculateHour(string(hours[1]), string(amPm[1])))
 
-	if interval.Start > interval.End { // late night hours
+	if interval.Start > interval.End { // set end time the last hour of the day
 		interval.End = 24
 	}
 
 	return
 }
 
-func calculateHour(time string, am_pm string) uint8 {
+func calculateHour(time string, amPm string) uint8 {
 	t := strings.Split(time, ":")
 	hour, err := strconv.ParseUint(t[0], 10, 8)
 	utils.LogErrorWithLevel(err, utils.LogError)
 
-	if am_pm == "AM" || am_pm == "am" {
+	if amPm == "AM" || amPm == "am" {
+		if hour == 12 {
+			return 24
+		}
 		return uint8(hour)
-	} else if am_pm == "PM" || am_pm == "pm" {
+	} else if amPm == "PM" || amPm == "pm" {
+		if hour == 12 {
+			return 12
+		}
 		return uint8(hour) + 12
 	}
 	return 255 // err
