@@ -3,19 +3,23 @@ package iowrappers
 import (
 	"context"
 	"errors"
-	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/utils"
-	"googlemaps.github.io/maps"
+	"fmt"
+	"math"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
+	"googlemaps.github.io/maps"
 )
 
 const (
-	GoogleNearbySearchDelay      = time.Second
-	GoogleMapsSearchTimeout      = time.Second * 10
-	GoogleMapsSearchCallMaxCount = 5
+	GoogleNearbySearchDelay           = time.Second
+	GoogleMapsSearchTimeout           = time.Second * 10
+	GoogleMapsSearchCallMaxCount      = 5
+	GoogleNearbySearchMaxRadiusMeters = 50000
 )
 
 type PlaceSearchRequest struct {
@@ -32,19 +36,36 @@ type PlaceSearchRequest struct {
 	BusinessStatus POI.BusinessStatus
 	// true if using precise geolocation instead of using a grander administrative area
 	UsePreciseLocation bool
+
+	PriceLevel POI.PriceLevel
 }
 
-func (c *MapsClient) GoogleMapsNearbySearchWrapper(ctx context.Context, location POI.Location, placeType string, radius uint, pageToken string) (resp maps.PlacesSearchResponse, err error) {
-	mapsReq := maps.NearbySearchRequest{
-		Type: maps.PlaceType(placeType),
+// Create NearbySearchRequest for maps NearbySearch, adjust key settings such as radius and price levels
+func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationType, token string) (reqOut maps.NearbySearchRequest) {
+	// Adjust radius, minPrice and maxPrice settings in search request
+	var radius uint = reqIn.Radius
+	var minPrice maps.PriceLevel
+	if POI.IsPricyEatery(reqIn.PlaceCat, reqIn.PriceLevel) {
+		// increase search radius
+		radius = uint(math.Min(float64(reqIn.Radius*4), GoogleNearbySearchMaxRadiusMeters))
+		// set price filter
+		minPrice = maps.PriceLevel(fmt.Sprint(reqIn.PriceLevel))
+	}
+
+	return maps.NearbySearchRequest{
+		Type: maps.PlaceType(string(placeType)),
 		Location: &maps.LatLng{
-			Lat: location.Latitude,
-			Lng: location.Longitude,
+			Lat: reqIn.Location.Latitude,
+			Lng: reqIn.Location.Longitude,
 		},
 		Radius:    radius,
-		PageToken: pageToken,
+		PageToken: token,
 		RankBy:    maps.RankBy("prominence"),
+		MinPrice:  minPrice, // filter places with price >= minPrice
 	}
+}
+
+func (c *MapsClient) GoogleMapsNearbySearchWrapper(ctx context.Context, mapsReq maps.NearbySearchRequest) (resp maps.PlacesSearchResponse, err error) {
 	resp, err = c.client.NearbySearch(ctx, &mapsReq)
 	logErr(err, utils.LogError)
 	return
@@ -97,8 +118,9 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 			}
 
 			nextPageToken := nextPageTokenMap[placeType]
+			var searchReq = CreateMapSearchRequest(request, placeType, nextPageToken)
 			var searchResp maps.PlacesSearchResponse
-			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, request.Location, string(placeType), request.Radius, nextPageToken)
+			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, searchReq)
 
 			placeIdMap := make(map[int]string) // maps index in search response to place ID
 			for k, res := range searchResp.Results {

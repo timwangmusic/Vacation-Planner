@@ -175,7 +175,8 @@ func (r *RedisClient) GeoAddWorkerByCategory(c context.Context, place POI.Place,
 		Latitude:  place.GetLocation().Latitude,
 		Longitude: place.GetLocation().Longitude,
 	}
-	redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
+
+	redisKey := POI.EncodeNearbySearchRedisKey(placeCategory, place.PriceLevel)
 	_, cmdErr := r.client.GeoAdd(c, redisKey, geoLocation).Result()
 	utils.LogErrorWithLevel(cmdErr, utils.LogError)
 }
@@ -192,11 +193,8 @@ func (r *RedisClient) getPlace(context context.Context, placeId string) (place P
 }
 
 func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
-	requestCategory := strings.ToLower(string(req.PlaceCat))
-	redisKey := "placeIDs:" + requestCategory
-
+	redisKey := POI.EncodeNearbySearchRedisKey(req.PlaceCat, req.PriceLevel)
 	requestLat, requestLng := req.Location.Latitude, req.Location.Longitude
-
 	searchRadius := req.Radius
 
 	if searchRadius > MaxSearchRadius {

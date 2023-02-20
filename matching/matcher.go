@@ -3,6 +3,7 @@ package matching
 import (
 	"context"
 	"errors"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
@@ -25,6 +26,7 @@ type Request struct {
 	Location           POI.Location
 	Category           POI.PlaceCategory
 	UsePreciseLocation bool
+	PriceLevel         POI.PriceLevel
 }
 
 type FilterRequest struct {
@@ -79,6 +81,7 @@ func NearbySearchForCategory(ctx context.Context, searcher iowrappers.SearchClie
 		MinNumResults:      MinResultsForTimePeriodMatching,
 		BusinessStatus:     POI.Operational,
 		UsePreciseLocation: req.UsePreciseLocation,
+		PriceLevel:         req.PriceLevel,
 	}
 	basicPlaces, err := searcher.NearbySearch(ctx, placeSearchRequest)
 	if err != nil {

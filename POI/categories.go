@@ -1,5 +1,10 @@
 package POI
 
+import (
+	"fmt"
+	"strings"
+)
+
 type PlaceCategory string
 
 const (
@@ -49,6 +54,22 @@ func GetPlaceTypes(placeCat PlaceCategory) (placeTypes []LocationType) {
 			[]LocationType{LocationTypeCafe, LocationTypeRestaurant}...)
 	}
 	return
+}
+
+// Returns whether the eatory place is pricy based on its price level
+func IsPricyEatery(placeCategory PlaceCategory, priceLevel PriceLevel) bool {
+	return (placeCategory == PlaceCategoryEatery) && (priceLevel >= PriceLevelThree)
+}
+
+// Generete Redis Key for Redis nearby search with place category and price info
+// The key includes the price level info for eatery and no price info for visit
+func EncodeNearbySearchRedisKey(placeCategory PlaceCategory, level PriceLevel) string {
+	keys := []string{"placeIDs", strings.ToLower(string(placeCategory))}
+	// add price levels for eatory category
+	if placeCategory == PlaceCategoryEatery {
+		keys = append(keys, fmt.Sprintf("level%d", level))
+	}
+	return strings.Join(keys, ":")
 }
 
 type StayingTime uint8
