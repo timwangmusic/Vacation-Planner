@@ -26,10 +26,16 @@ type View struct {
 }
 
 type Credential struct {
-	Username  string
-	Password  string
-	Email     string
-	WithOAuth bool
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	Email     string `json:"email"`
+	WithOAuth bool   `json:"withOAuth"`
+}
+
+type PasswordResetRequest struct {
+	Email       string `json:"email"`
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
 }
 
 type PersonalFavorites struct {

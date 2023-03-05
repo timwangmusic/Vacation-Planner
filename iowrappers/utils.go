@@ -44,6 +44,23 @@ func filter(places []POI.Place, condition func(place POI.Place) bool) []POI.Plac
 	return results
 }
 
+func toUserView(userData map[string]string) (user.View, error) {
+	var view user.View
+	view.ID = userData["id"]
+	view.Username = userData["username"]
+	view.Email = userData["email"]
+	view.Password = userData["password"]
+	view.UserLevel = userData["user_level"]
+	view.Favorites = &user.PersonalFavorites{SearchHistory: make(map[string]user.LastSearchRecord)}
+	if userData["favorites"] != "" {
+		if err := view.Favorites.UnmarshalBinary([]byte(userData["favorites"])); err != nil {
+			return user.View{}, err
+		}
+	}
+	view.LastLoginTime = userData["lastLoginTime"]
+	return view, nil
+}
+
 type View interface {
 	user.View | user.TravelPlanView
 }

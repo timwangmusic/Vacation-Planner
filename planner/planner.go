@@ -635,6 +635,17 @@ func (p *MyPlanner) userClickOnEmailVerification(ctx *gin.Context) {
 	ctx.Redirect(http.StatusMovedPermanently, "/v1/log-in")
 }
 
+func (p *MyPlanner) userResetPassword(ctx *gin.Context) {
+	r := &user.PasswordResetRequest{}
+	if err := ctx.ShouldBindJSON(r); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	if err := p.RedisClient.SetPassword(ctx, r); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+}
+
 func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if p.Environment == "debug" {
@@ -661,6 +672,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/signup", p.UserEmailVerify)
 		v1.GET("/verify", p.userClickOnEmailVerification)
 		v1.POST("/login", p.userLogin)
+		v1.POST("/reset-password", p.userResetPassword)
 		v1.GET("/reverse-geocoding", p.reverseGeocodingHandler)
 		v1.GET("/log-in", p.login)
 		v1.GET("/sign-up", p.signup)
