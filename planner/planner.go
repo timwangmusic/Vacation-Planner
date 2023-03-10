@@ -36,6 +36,15 @@ const (
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
 
+type Environment string
+
+const (
+	ProductionEnvironment  Environment = "production"
+	StagingEnvironment     Environment = "staging"
+	TestingEnvironment     Environment = "testing"
+	DevelopmentEnvironment Environment = "development"
+)
+
 var geocodes map[string]string
 
 var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
@@ -51,7 +60,7 @@ type MyPlanner struct {
 	ResultHTMLTemplate *template.Template
 	TripHTMLTemplate   *template.Template
 	PlanningEvents     chan iowrappers.PlanningEvent
-	Environment        string
+	Environment        Environment
 	Configs            map[string]interface{}
 	OAuth2Config       *oauth2.Config
 	Mailer             *iowrappers.Mailer
@@ -124,7 +133,16 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 
 	p.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
 	p.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
-	p.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
+	switch strings.ToLower(os.Getenv("ENVIRONMENT")) {
+	case "production":
+		p.Environment = ProductionEnvironment
+	case "staging":
+		p.Environment = StagingEnvironment
+	case "testing":
+		p.Environment = TestingEnvironment
+	case "development":
+		p.Environment = DevelopmentEnvironment
+	}
 	p.Configs = configs
 	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
 		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
@@ -668,7 +686,7 @@ func (p *MyPlanner) resetPasswordHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("no user is found with email %s", email)})
 	}
 
-	if err = p.Mailer.Send(ctx, iowrappers.PasswordReset, view); err != nil {
+	if err = p.Mailer.Send(ctx, iowrappers.PasswordReset, view, string(p.Environment)); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 }
