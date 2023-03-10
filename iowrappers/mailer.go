@@ -67,9 +67,9 @@ func (m *Mailer) Send(ctx context.Context, t EmailType, recipient user.View, env
 		if err != nil {
 			return err
 		}
-		htmlContent := fmt.Sprintf("<p>please follow the <a href=https://www.unwind.dev/v1/%s/reset-password?code=%s>link</a> to reset your password. </p>", recipient.ID, code)
+		htmlContent := fmt.Sprintf("<p>please follow the <a href=https://www.unwind.dev/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", recipient.Email, code)
 		if environment == "testing" {
-			htmlContent = fmt.Sprintf("<p>please follow the <a href=https://testing-vp.herokuapp.com/v1/%s/reset-password?code=%s>link</a> to reset your password. </p>", recipient.ID, code)
+			htmlContent = fmt.Sprintf("<p>please follow the <a href=https://testing-vp.herokuapp.com/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", recipient.Email, code)
 		}
 		message := mail.NewSingleEmail(from, subject, to, "", htmlContent)
 		resp, err := m.client.Send(message)
