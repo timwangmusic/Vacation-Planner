@@ -48,7 +48,7 @@ func (p *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 		}
 		return
 	}
-	if err := p.Mailer.Send(iowrappers.EmailVerification, userView); err != nil {
+	if err := p.Mailer.Send(ctx, iowrappers.EmailVerification, userView); err != nil {
 		iowrappers.Logger.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

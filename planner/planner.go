@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -646,6 +647,37 @@ func (p *MyPlanner) userResetPassword(ctx *gin.Context) {
 	}
 }
 
+func (p *MyPlanner) forgotPasswordPage(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "forgot_password_page.html", gin.H{})
+}
+
+func (p *MyPlanner) resetPasswordPage(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "reset_password_page.html", gin.H{})
+}
+
+// when users click on the reset password button this handler requests mailer to send password reset emails
+func (p *MyPlanner) resetPasswordHandler(ctx *gin.Context) {
+	logger := iowrappers.Logger
+	email := ctx.DefaultQuery("email", "")
+	if email != "" {
+		logger.Infof("resetting password for view email %s", email)
+	}
+	var view user.View
+	var err error
+	if view, err = p.RedisClient.FindUser(ctx, iowrappers.FindUserByEmail, user.View{Email: email}); err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("no user is found with email %s", email)})
+	}
+
+	if err = p.Mailer.Send(ctx, iowrappers.PasswordReset, view); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+}
+
+// FIXME: implement this method
+// uses email verification code to find user ID and update its password from request payload
+func (p *MyPlanner) updateUserPassword(ctx *gin.Context) {
+}
+
 func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if p.Environment == "debug" {
@@ -682,6 +714,9 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/template", p.planTemplate)
 		v1.GET("/login-google", p.handleLogin)
 		v1.GET("/callback-google", p.oauthCallback)
+		v1.GET("/forgot-password", p.forgotPasswordPage)
+		v1.GET("/reset-password", p.resetPasswordPage)
+		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)
@@ -692,6 +727,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/profile", p.userProfile)
 		users := v1.Group("/users")
 		{
+			users.PUT("/:id/password", p.updateUserPassword)
 			users.GET("/:username/favorites", p.userFavoritesHandler)
 			users.POST("/:username/plans", p.userSavedPlansPostHandler)
 			users.GET("/:username/plans", p.userSavedPlansGetHandler)

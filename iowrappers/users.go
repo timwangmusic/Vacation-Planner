@@ -394,6 +394,18 @@ func (r *RedisClient) findUserPlan(context context.Context, redisKey string, vie
 	utils.LogErrorWithLevel(json.Unmarshal([]byte(cachedPlan), view), utils.LogError)
 }
 
+// generates a code for backend to find user ID when user clicks on the link
+func (r *RedisClient) saveEmailPasswordResetCode(ctx context.Context, view user.View) (string, error) {
+	code := uuid.NewString()
+	key := "password_reset:" + code
+	if _, err := r.client.HSet(ctx, key, "user_id", view.ID).Result(); err != nil {
+		return "", err
+	}
+	// set 2 hour expiration time
+	r.client.Expire(ctx, key, 2*time.Hour)
+	return code, nil
+}
+
 func (r *RedisClient) saveUserEmailVerificationCode(ctx context.Context, view user.View) (string, error) {
 	if len(view.Email) == 0 {
 		return "", errors.New("email address cannot be empty")
