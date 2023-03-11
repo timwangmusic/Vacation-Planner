@@ -10,3 +10,23 @@ $('#password-reset-form').submit(async () => {
     );
     return false;
 })
+
+$('#set-new-password-form').submit(async () => {
+    const url = new URL(document.URL);
+    const email = url.searchParams.get('email');
+    const oldPassword = document.querySelector('#old-password').value;
+    const newPassword = document.querySelector('#new-password').value;
+    const backendUrl = '/v1/reset-password-backend'
+    const data = {
+        'email': email,
+        'old_password': oldPassword,
+        'new_password': newPassword,
+    }
+    console.log(data);
+    await axios.put(
+        backendUrl, JSON.stringify(data), { timeout: 10000 }
+    ).catch(
+        err => console.error(err)
+    );
+    return false;
+})

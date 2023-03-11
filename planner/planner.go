@@ -140,7 +140,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		p.Environment = StagingEnvironment
 	case "testing":
 		p.Environment = TestingEnvironment
-	case "development":
+	default:
 		p.Environment = DevelopmentEnvironment
 	}
 	p.Configs = configs
@@ -691,11 +691,6 @@ func (p *MyPlanner) resetPasswordHandler(ctx *gin.Context) {
 	}
 }
 
-// FIXME: implement this method
-// uses email verification code to find user ID and update its password from request payload
-func (p *MyPlanner) updateUserPassword(ctx *gin.Context) {
-}
-
 func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if p.Environment == "debug" {
@@ -722,7 +717,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/signup", p.UserEmailVerify)
 		v1.GET("/verify", p.userClickOnEmailVerification)
 		v1.POST("/login", p.userLogin)
-		v1.POST("/reset-password", p.userResetPassword)
+		v1.PUT("/reset-password-backend", p.userResetPassword)
 		v1.GET("/reverse-geocoding", p.reverseGeocodingHandler)
 		v1.GET("/log-in", p.login)
 		v1.GET("/sign-up", p.signup)
@@ -745,7 +740,6 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/profile", p.userProfile)
 		users := v1.Group("/users")
 		{
-			users.PUT("/:id/password", p.updateUserPassword)
 			users.GET("/:username/favorites", p.userFavoritesHandler)
 			users.POST("/:username/plans", p.userSavedPlansPostHandler)
 			users.GET("/:username/plans", p.userSavedPlansGetHandler)
