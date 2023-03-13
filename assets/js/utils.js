@@ -94,4 +94,13 @@ function locationAutocomplete($) {
     )
 }
 
-export { locateMe, setDateToday, preciseLocation, capitalizeFirstChar, locationAutocomplete }
+// send XMLHttp requests
+function sendDataXHR(url, httpMethod, formObject, XHR) {
+    XHR.open(httpMethod, url, true);
+
+    XHR.setRequestHeader("Content-Type", "application/json");
+
+    XHR.send(JSON.stringify(formObject));
+}
+
+export { locateMe, setDateToday, preciseLocation, capitalizeFirstChar, locationAutocomplete, sendDataXHR }
