@@ -99,6 +99,7 @@ function sendDataXHR(url, httpMethod, formObject, XHR) {
     XHR.open(httpMethod, url, true);
 
     XHR.setRequestHeader("Content-Type", "application/json");
+    XHR.responseType = 'json';
 
     XHR.send(JSON.stringify(formObject));
 }
