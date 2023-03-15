@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -35,6 +36,15 @@ const (
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
 )
 
+type Environment string
+
+const (
+	ProductionEnvironment  Environment = "production"
+	StagingEnvironment     Environment = "staging"
+	TestingEnvironment     Environment = "testing"
+	DevelopmentEnvironment Environment = "development"
+)
+
 var geocodes map[string]string
 
 var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
@@ -50,7 +60,7 @@ type MyPlanner struct {
 	ResultHTMLTemplate *template.Template
 	TripHTMLTemplate   *template.Template
 	PlanningEvents     chan iowrappers.PlanningEvent
-	Environment        string
+	Environment        Environment
 	Configs            map[string]interface{}
 	OAuth2Config       *oauth2.Config
 	Mailer             *iowrappers.Mailer
@@ -123,7 +133,16 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 
 	p.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
 	p.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
-	p.Environment = strings.ToLower(os.Getenv("ENVIRONMENT"))
+	switch strings.ToLower(os.Getenv("ENVIRONMENT")) {
+	case "production":
+		p.Environment = ProductionEnvironment
+	case "staging":
+		p.Environment = StagingEnvironment
+	case "testing":
+		p.Environment = TestingEnvironment
+	default:
+		p.Environment = DevelopmentEnvironment
+	}
 	p.Configs = configs
 	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
 		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
@@ -635,6 +654,43 @@ func (p *MyPlanner) userClickOnEmailVerification(ctx *gin.Context) {
 	ctx.Redirect(http.StatusMovedPermanently, "/v1/log-in")
 }
 
+func (p *MyPlanner) userResetPassword(ctx *gin.Context) {
+	r := &user.PasswordResetRequest{}
+	if err := ctx.ShouldBindJSON(r); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	if err := p.RedisClient.SetPassword(ctx, r); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+}
+
+func (p *MyPlanner) forgotPasswordPage(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "forgot_password_page.html", gin.H{})
+}
+
+func (p *MyPlanner) resetPasswordPage(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "reset_password_page.html", gin.H{})
+}
+
+// when users click on the reset password button this handler requests mailer to send password reset emails
+func (p *MyPlanner) resetPasswordHandler(ctx *gin.Context) {
+	logger := iowrappers.Logger
+	email := ctx.DefaultQuery("email", "")
+	if email != "" {
+		logger.Infof("resetting password for view email %s", email)
+	}
+	var view user.View
+	var err error
+	if view, err = p.RedisClient.FindUser(ctx, iowrappers.FindUserByEmail, user.View{Email: email}); err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("no user is found with email %s", email)})
+	}
+
+	if err = p.Mailer.Send(ctx, iowrappers.PasswordReset, view, string(p.Environment)); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+}
+
 func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if p.Environment == "debug" {
@@ -661,6 +717,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/signup", p.UserEmailVerify)
 		v1.GET("/verify", p.userClickOnEmailVerification)
 		v1.POST("/login", p.userLogin)
+		v1.PUT("/reset-password-backend", p.userResetPassword)
 		v1.GET("/reverse-geocoding", p.reverseGeocodingHandler)
 		v1.GET("/log-in", p.login)
 		v1.GET("/sign-up", p.signup)
@@ -670,6 +727,9 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/template", p.planTemplate)
 		v1.GET("/login-google", p.handleLogin)
 		v1.GET("/callback-google", p.oauthCallback)
+		v1.GET("/forgot-password", p.forgotPasswordPage)
+		v1.GET("/reset-password", p.resetPasswordPage)
+		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)

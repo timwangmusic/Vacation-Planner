@@ -88,6 +88,25 @@ func (r *RedisClient) UpdateSearchHistory(ctx context.Context, location string, 
 	return r.UpdateUser(ctx, userView)
 }
 
+// SetPassword finds users by their emails, users submit a form with their emails, old passwords and new passwords.
+// Only authenticated users can reset their passwords.
+func (r *RedisClient) SetPassword(ctx context.Context, req *user.PasswordResetRequest) error {
+	view, _, _, err := r.Authenticate(ctx, user.Credential{Email: req.Email, Password: req.OldPassword, WithOAuth: false})
+	if err != nil {
+		return err
+	}
+
+	if req.NewPassword == req.OldPassword {
+		return errors.New("new password cannot be the same as the old one")
+	}
+
+	passwordEncrypted, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	view.Password = string(passwordEncrypted)
+	Logger.Debugf("->SetPassword: resetting password for user %s", view.ID)
+	return r.UpdateUser(ctx, &view)
+}
+
+// UpdateUser should only accept a complete view of the user so that no user information is lost after update.
 func (r *RedisClient) UpdateUser(ctx context.Context, view *user.View) error {
 	redisUserKey := strings.Join([]string{UserKeyPrefix, view.ID}, ":")
 
@@ -117,13 +136,13 @@ func (r *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, u
 	case FindUserByName:
 		userId, err := client.HGet(context, UserNamesKey, userView.Username).Result()
 		if err != nil {
-			return user.View{}, err
+			return user.View{}, fmt.Errorf("cannot find user name %s", userView.Username)
 		}
 		redisKey = strings.Join([]string{UserKeyPrefix, userId}, ":")
 	case FindUserByEmail:
 		userId, err := client.HGet(context, UserEmailsKey, userView.Email).Result()
 		if err != nil {
-			return user.View{}, err
+			return user.View{}, fmt.Errorf("cannot find user email %s", userView.Email)
 		}
 		redisKey = strings.Join([]string{UserKeyPrefix, userId}, ":")
 	}
@@ -133,19 +152,13 @@ func (r *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, u
 	}
 
 	u := client.HGetAll(context, redisKey).Val()
-	userView.ID = u["id"]
-	userView.Username = u["username"]
-	userView.Password = u["password"]
-	userView.Email = u["email"]
-	userView.UserLevel = u["user_level"]
-	userView.Favorites = &user.PersonalFavorites{SearchHistory: make(map[string]user.LastSearchRecord)}
-	if u["favorites"] != "" {
-		if err := userView.Favorites.UnmarshalBinary([]byte(u["favorites"])); err != nil {
-			return user.View{}, err
-		}
+	var view user.View
+	var err error
+	if view, err = toUserView(u); err != nil {
+		return view, err
 	}
 
-	return userView, nil
+	return view, nil
 }
 
 func (r *RedisClient) CreateUser(context context.Context, userView user.View, skipPasswordGeneration bool) (user.View, error) {
@@ -381,6 +394,18 @@ func (r *RedisClient) findUserPlan(context context.Context, redisKey string, vie
 	utils.LogErrorWithLevel(json.Unmarshal([]byte(cachedPlan), view), utils.LogError)
 }
 
+// generates a code for backend to find user ID when user clicks on the link
+func (r *RedisClient) saveEmailPasswordResetCode(ctx context.Context, view user.View) (string, error) {
+	code := uuid.NewString()
+	key := "password_reset:" + code
+	if _, err := r.client.HSet(ctx, key, "user_id", view.ID).Result(); err != nil {
+		return "", err
+	}
+	// set 2 hour expiration time
+	r.client.Expire(ctx, key, 2*time.Hour)
+	return code, nil
+}
+
 func (r *RedisClient) saveUserEmailVerificationCode(ctx context.Context, view user.View) (string, error) {
 	if len(view.Email) == 0 {
 		return "", errors.New("email address cannot be empty")
@@ -408,11 +433,10 @@ func (r *RedisClient) CreateUserOnEmailVerified(ctx context.Context, tmpUserID s
 	if tmpUserData, err = c.HGetAll(ctx, "temp_user:"+tmpUserID).Result(); err != nil {
 		return err
 	}
-	view := user.View{
-		Username:  tmpUserData["username"],
-		Email:     tmpUserData["email"],
-		Password:  tmpUserData["password"],
-		UserLevel: tmpUserData["user_level"],
+	var view user.View
+	view, err = toUserView(tmpUserData)
+	if err != nil {
+		Logger.Errorf("error converting temp user data to view %s", err.Error())
 	}
 	if _, err = r.CreateUser(ctx, view, true); err != nil {
 		return err

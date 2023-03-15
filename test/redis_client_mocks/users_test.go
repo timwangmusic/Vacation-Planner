@@ -1,9 +1,9 @@
 package redis_client_mocks
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
@@ -34,7 +34,7 @@ func TestUserFind_ShouldReturnNotFound_whenUserDoesNotExist(t *testing.T) {
 
 	var err error
 	_, err = RedisClient.FindUser(RedisContext, iowrappers.FindUserByName, userView)
-	expectedErr := redis.Nil
+	expectedErr := errors.New("cannot find user name Jenny")
 
 	if assert.Error(t, err, "an error was expected") {
 		assert.Equal(t, expectedErr, err)

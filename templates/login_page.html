@@ -64,9 +64,18 @@
                     required="required">
             </div>
 
-            <button type="submit" class="btn btn-primary login-btn btn-block">Sign in</button>
+            <div class="row justify-content-between">
+                <div class="col-sm-2">
+                    <button type="submit" class="btn btn-primary login-btn btn-block">Sign in</button>
+                </div>
+                <div class="col-sm-2">
+                    <p><a href="/v1/forgot-password" class="link-secondary">forgot password?</a></p>
+                </div>
+            </div>
             <!-- TODO: Add Login buttons for Social media (FB, G, TWT) as a separate PR -->
         </form>
+        <div class="mt-1">
+        </div>
         <div class="mt-2">
             <a class="btn btn-outline-info darken-4 white black-text" href="/v1/login-google"
                 style="text-transform:none">
@@ -83,43 +92,7 @@
         </div>
     </div>
 
-    <script>
-        window.addEventListener("load", function () {
-            function sendData() {
-                const XHR = new XMLHttpRequest();
-
-                const username = document.getElementById("username").value;
-                const password = document.getElementById("password").value;
-
-                XHR.onload = function () {
-                    if (XHR.readyState === XHR.DONE) {
-                        if (XHR.status === 200) {
-                            window.location = "/";
-                        } else if (XHR.status === 401) {
-                            document.getElementById("log-in-error-alert").classList.remove("d-none");
-                        }
-                    }
-                }
-
-                XHR.open("POST", "/v1/login", true);
-
-                XHR.setRequestHeader("Content-Type", "application/json");
-
-                XHR.send(JSON.stringify({
-                    username: username,
-                    password: password,
-                }));
-            }
-
-            const form = document.getElementById("login-form");
-
-            form.addEventListener("submit", function (event) {
-                event.preventDefault();
-
-                sendData();
-            });
-        });
-    </script>
+    <script src="assets/js/login.js" type="module"></script>
 </body>
 
 </html>
