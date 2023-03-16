@@ -12,8 +12,10 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/crypto/bcrypt"
+	"net/http"
 	"net/mail"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -36,6 +38,11 @@ type PlanningEvent struct {
 	City      string `json:"city"`
 	Country   string `json:"country"`
 	Timestamp string `json:"timestamp"`
+}
+
+type VerificationResult struct {
+	Message    error
+	HttpStatus int
 }
 
 type FindUserBy string
@@ -86,6 +93,55 @@ func (r *RedisClient) UpdateSearchHistory(ctx context.Context, location string, 
 
 	Logger.Debugf("updating user favorite for user %s: %+v", userView.ID, data)
 	return r.UpdateUser(ctx, userView)
+}
+
+func (r *RedisClient) VerifyPasswordResetRequest(ctx context.Context, req *user.PasswordResetRequest) VerificationResult {
+	if strings.TrimSpace(req.VerificationCode) == "" {
+		return VerificationResult{
+			Message:    errors.New("password reset verification code should not be empty"),
+			HttpStatus: http.StatusBadRequest,
+		}
+	}
+	key := "password_reset:" + req.VerificationCode
+	if claimed, err := r.Get().HGet(ctx, key, "claimed").Result(); err != nil {
+		return VerificationResult{
+			Message:    errors.New("cannot determine if the verification code is claimed"),
+			HttpStatus: http.StatusInternalServerError,
+		}
+	} else if parsedClaimed, claimedParsingErr := strconv.ParseBool(claimed); claimedParsingErr != nil {
+		return VerificationResult{
+			Message:    errors.New("cannot determine if the verification code is claimed"),
+			HttpStatus: http.StatusInternalServerError,
+		}
+	} else if parsedClaimed {
+		return VerificationResult{
+			Message:    errors.New("the verification code is already claimed"),
+			HttpStatus: http.StatusBadRequest,
+		}
+	}
+
+	if err := r.Get().HSet(ctx, key, "claimed", true).Err(); err != nil {
+		return VerificationResult{
+			Message:    errors.New("fails to claim password reset verification code"),
+			HttpStatus: http.StatusInternalServerError,
+		}
+	}
+
+	if email, err := r.Get().HGet(ctx, key, "user_email").Result(); err != nil {
+		return VerificationResult{
+			Message:    errors.New("fails to fetch user email with verification code"),
+			HttpStatus: http.StatusInternalServerError,
+		}
+	} else if email != req.Email {
+		return VerificationResult{
+			Message:    errors.New("email address and verification code do not match"),
+			HttpStatus: http.StatusForbidden,
+		}
+	}
+	return VerificationResult{
+		Message:    nil,
+		HttpStatus: http.StatusOK,
+	}
 }
 
 // SetPassword finds users by their emails, users submit a form with their emails, old passwords and new passwords.
@@ -398,7 +454,7 @@ func (r *RedisClient) findUserPlan(context context.Context, redisKey string, vie
 func (r *RedisClient) saveEmailPasswordResetCode(ctx context.Context, view user.View) (string, error) {
 	code := uuid.NewString()
 	key := "password_reset:" + code
-	if _, err := r.client.HSet(ctx, key, "user_id", view.ID).Result(); err != nil {
+	if _, err := r.client.HSet(ctx, key, "user_email", view.Email, "claimed", false).Result(); err != nil {
 		return "", err
 	}
 	// set 2 hour expiration time

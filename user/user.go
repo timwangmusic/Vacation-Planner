@@ -33,9 +33,10 @@ type Credential struct {
 }
 
 type PasswordResetRequest struct {
-	Email       string `json:"email"`
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
+	Email            string `json:"email"`
+	VerificationCode string `json:"verification_code"`
+	OldPassword      string `json:"old_password"`
+	NewPassword      string `json:"new_password"`
 }
 
 type PersonalFavorites struct {
