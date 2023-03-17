@@ -660,6 +660,10 @@ func (p *MyPlanner) userResetPassword(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
+	if verificationErr := p.RedisClient.VerifyPasswordResetRequest(ctx, r); verificationErr.HttpStatus != http.StatusOK {
+		ctx.JSON(verificationErr.HttpStatus, gin.H{"error": verificationErr.Message.Error()})
+	}
+
 	if err := p.RedisClient.SetPassword(ctx, r); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
