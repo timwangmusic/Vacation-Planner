@@ -8,13 +8,11 @@ form.addEventListener('submit', (event) => {
     const url = new URL(document.URL);
     const email = url.searchParams.get('email');
     const code = url.searchParams.get('code');
-    const oldPassword = document.querySelector('#old-password').value;
     const newPassword = document.querySelector('#new-password').value;
 
     const data = {
         'email': email,
         'code': code,
-        'old_password': oldPassword,
         'new_password': newPassword,
     }
 

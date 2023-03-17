@@ -144,18 +144,12 @@ func (r *RedisClient) VerifyPasswordResetRequest(ctx context.Context, req *user.
 	}
 }
 
-// SetPassword finds users by their emails, users submit a form with their emails, old passwords and new passwords.
-// Only authenticated users can reset their passwords.
 func (r *RedisClient) SetPassword(ctx context.Context, req *user.PasswordResetRequest) error {
-	view, _, _, err := r.Authenticate(ctx, user.Credential{Email: req.Email, Password: req.OldPassword, WithOAuth: false})
+	view, err := r.FindUser(ctx, FindUserByEmail, user.View{Email: req.Email})
 	if err != nil {
 		return err
 	}
-
-	if req.NewPassword == req.OldPassword {
-		return errors.New("new password cannot be the same as the old one")
-	}
-
+	Logger.Debugf("->SetPassword: user view %+v", view)
 	passwordEncrypted, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	view.Password = string(passwordEncrypted)
 	Logger.Debugf("->SetPassword: resetting password for user %s", view.ID)
