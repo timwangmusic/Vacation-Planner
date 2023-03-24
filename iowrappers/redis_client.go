@@ -151,10 +151,10 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	return nil
 }
 
-// SetPlacesAddGeoLocations() is actively being used
+// SetPlacesAddGeoLocations is actively being used
 // It stores two types of information in redis
 // 1. key-value pair, {placeID: POI.place}
-// 2. add place to the correct bucket in geohashing for nearbysearch()
+// 2. add place to the correct bucket in geohashing for nearby search
 func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.Place) {
 	wg := &sync.WaitGroup{}
 	wg.Add(2 * len(places)) // start two threads for each place
@@ -165,8 +165,7 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 	wg.Wait()
 }
 
-// GeoAddWorkerByCategory adds geo-location of the place,
-// keys are identified with different place categories
+// GeoAddWorkerByCategory adds geolocation of the place, with keys identifying different place categories and price levels
 func (r *RedisClient) GeoAddWorkerByCategory(c context.Context, place POI.Place, wg *sync.WaitGroup) {
 	defer wg.Done()
 	placeCategory := POI.GetPlaceCategory(place.LocationType)

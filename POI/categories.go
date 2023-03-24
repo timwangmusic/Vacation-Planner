@@ -56,8 +56,8 @@ func GetPlaceTypes(placeCat PlaceCategory) (placeTypes []LocationType) {
 	return
 }
 
-// Returns whether the eatory place is pricy based on its price level
-func IsPricyEatery(placeCategory PlaceCategory, priceLevel PriceLevel) bool {
+// Returns whether the eatory place is expensive based on its price level
+func PriceyEatery(placeCategory PlaceCategory, priceLevel PriceLevel) bool {
 	return (placeCategory == PlaceCategoryEatery) && (priceLevel >= PriceLevelThree)
 }
 
@@ -65,7 +65,7 @@ func IsPricyEatery(placeCategory PlaceCategory, priceLevel PriceLevel) bool {
 // The key includes the price level info for eatery and no price info for visit
 func EncodeNearbySearchRedisKey(placeCategory PlaceCategory, level PriceLevel) string {
 	keys := []string{"placeIDs", strings.ToLower(string(placeCategory))}
-	// add price levels for eatory category
+	// add price levels for eatery category
 	if placeCategory == PlaceCategoryEatery {
 		keys = append(keys, fmt.Sprintf("level%d", level))
 	}
