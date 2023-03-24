@@ -302,6 +302,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 			Location:           req.Location,
 			Category:           slot.Category,
 			UsePreciseLocation: req.PreciseLocation,
+			PriceLevel:         req.PriceLevel,
 		})
 		if err != nil {
 			resp.ErrorCode = InternalError
@@ -331,7 +332,9 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 			return resp
 		}
 
-		iowrappers.Logger.Infof("number of places by price matcher is %d", len(placesByPrice))
+		iowrappers.Logger.Infof("Before filtering, the number of places is %d", len(places))
+		iowrappers.Logger.Infof("Filtering by time, the number of places is %d", len(placesByTime))
+		iowrappers.Logger.Infof("Filtering by price, the number of places is %d", len(placesByPrice))
 		placeClusters = append(placeClusters, placesByPrice)
 	}
 
