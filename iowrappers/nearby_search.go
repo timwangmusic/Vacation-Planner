@@ -45,7 +45,7 @@ func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationTyp
 	// Adjust radius, minPrice and maxPrice settings in search request
 	var radius uint = reqIn.Radius
 	var minPrice maps.PriceLevel
-	if POI.IsPricyEatery(reqIn.PlaceCat, reqIn.PriceLevel) {
+	if POI.PriceyEatery(reqIn.PlaceCat, reqIn.PriceLevel) {
 		// increase search radius
 		radius = uint(math.Min(float64(reqIn.Radius*4), GoogleNearbySearchMaxRadiusMeters))
 		// set price filter

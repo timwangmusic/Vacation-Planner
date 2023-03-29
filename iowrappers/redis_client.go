@@ -151,34 +151,37 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	return nil
 }
 
-// SetPlacesAddGeoLocations() is actively being used
+// SetPlacesAddGeoLocations is actively being used
 // It stores two types of information in redis
 // 1. key-value pair, {placeID: POI.place}
-// 2. add place to the correct bucket in geohashing for nearbysearch()
+// 2. add place to the correct bucket in geohashing for nearby search
 func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.Place) {
 	wg := &sync.WaitGroup{}
-	wg.Add(2 * len(places)) // start two threads for each place
+	wg.Add(len(places))
 	for _, place := range places {
-		go r.GeoAddWorkerByCategory(c, place, wg)
-		go r.setPlace(c, place, wg)
+		go func(place POI.Place) {
+			defer wg.Done()
+			_, err := r.Get().Pipelined(c, func(pipe redis.Pipeliner) error {
+				placeCategory := POI.GetPlaceCategory(place.LocationType)
+				geoLocation := &redis.GeoLocation{
+					Name:      place.ID,
+					Latitude:  place.GetLocation().Latitude,
+					Longitude: place.GetLocation().Longitude,
+				}
+
+				redisKey := POI.EncodeNearbySearchRedisKey(placeCategory, place.PriceLevel)
+				pipe.GeoAdd(c, redisKey, geoLocation)
+
+				json_, err := json.Marshal(place)
+				pipe.Set(c, "place_details:place_ID:"+place.ID, json_, 0)
+				return err
+			})
+			if err != nil {
+				Logger.Error(err)
+			}
+		}(place)
 	}
 	wg.Wait()
-}
-
-// GeoAddWorkerByCategory adds geo-location of the place,
-// keys are identified with different place categories
-func (r *RedisClient) GeoAddWorkerByCategory(c context.Context, place POI.Place, wg *sync.WaitGroup) {
-	defer wg.Done()
-	placeCategory := POI.GetPlaceCategory(place.LocationType)
-	geoLocation := &redis.GeoLocation{
-		Name:      place.ID,
-		Latitude:  place.GetLocation().Latitude,
-		Longitude: place.GetLocation().Longitude,
-	}
-
-	redisKey := POI.EncodeNearbySearchRedisKey(placeCategory, place.PriceLevel)
-	_, cmdErr := r.client.GeoAdd(c, redisKey, geoLocation).Result()
-	utils.LogErrorWithLevel(cmdErr, utils.LogError)
 }
 
 // obtain place info from Redis based with key place_details:place_ID:placeID
