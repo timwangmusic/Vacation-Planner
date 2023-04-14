@@ -24,11 +24,22 @@ document.getElementById("logout-confirm-btn").addEventListener(
 const FORM = document.getElementById("main-form");
 const STORAGE_ITEM = "location";
 const LOCATION_INPUT = document.getElementById("location");
+
+// resets flag value whenever user manually modifies input
+LOCATION_INPUT.addEventListener('change', () => {
+    document.querySelector('#precise-location-flag').value = 'false';
+})
+
 $(document).ready(() => {
     const val = sessionStorage.getItem(STORAGE_ITEM);
     if (val) {
         console.log(`Set the Location based on PageLoad...` + val);
         LOCATION_INPUT.value = val;
+    }
+
+    const usePreciseLocation = sessionStorage.getItem('use-precise-location');
+    if (usePreciseLocation) {
+        document.querySelector('#precise-location-flag').value = usePreciseLocation;
     }
 
     // FIXME: not a clean solution, improve this after we use front-end rendering
@@ -43,6 +54,9 @@ FORM.addEventListener('submit', () => {
     if (LOCATION_INPUT.value) {
         sessionStorage.setItem(STORAGE_ITEM, LOCATION_INPUT.value);
         console.log(`The location is ${LOCATION_INPUT.value}`);
+
+        // updates stored precise location flag value upon search form submission
+        sessionStorage.setItem('use-precise-location', document.querySelector('#precise-location-flag').value);
     }
 });
 

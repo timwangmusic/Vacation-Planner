@@ -488,7 +488,7 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		}
 
 		// Show the first place by default
-		tripResp.ShownActive = append(tripResp.ShownActive, (idx == 0))
+		tripResp.ShownActive = append(tripResp.ShownActive, idx == 0)
 
 		// Run Goroutines to retrieve place details
 		go p.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], cachePlaceDetails)
