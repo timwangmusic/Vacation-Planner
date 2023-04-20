@@ -1,6 +1,6 @@
 module github.com/weihesdlegend/Vacation-planner
 
-go 1.18
+go 1.19
 
 require (
 	github.com/alicebob/miniredis/v2 v2.13.3
@@ -17,6 +17,7 @@ require (
 	github.com/sendgrid/sendgrid-go v3.11.1+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.6.1
+	github.com/timwangmusic/go-geonames v0.1.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/yourbasic/radix v0.0.0-20180308122924-cbe1cc82e907
 	go.uber.org/zap v1.13.0
