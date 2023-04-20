@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -141,7 +141,7 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	for _, place := range places {
 		sortedSetKey := strings.Join([]string{geocodeInString, string(POI.GetPlaceCategory(place.LocationType))}, "_")
 		dist := utils.HaversineDist([]float64{lat, lng}, []float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
-		_, err := client.ZAdd(context, sortedSetKey, &redis.Z{Score: dist, Member: place.ID}).Result()
+		_, err := client.ZAdd(context, sortedSetKey, redis.Z{Score: dist, Member: place.ID}).Result()
 		if err != nil {
 			return err
 		}
@@ -151,8 +151,7 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	return nil
 }
 
-// SetPlacesAddGeoLocations is actively being used
-// It stores two types of information in redis
+// SetPlacesAddGeoLocations stores two types of information in redis
 // 1. key-value pair, {placeID: POI.place}
 // 2. add place to the correct bucket in geohashing for nearby search
 func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.Place) {
