@@ -40,7 +40,7 @@ type NearbyCityRequest struct {
 }
 
 type NearbyCityResponse struct {
-	Cities []gogeonames.City `json:"cities"`
+	Cities []City `json:"cities"`
 }
 
 var Logger *zap.SugaredLogger
@@ -67,6 +67,13 @@ func DestroyLogger() {
 
 func (s *PoiSearcher) NearbyCities(ctx context.Context, req *NearbyCityRequest) (NearbyCityResponse, error) {
 	Logger.Debugf("->NearbyCities: processing request %+v", *req)
+	knownCities, err := s.redisClient.NearbyCities(ctx, req.Location.Latitude, req.Location.Longitude, req.Radius)
+	if err != nil {
+		Logger.Error(err)
+	} else if len(knownCities) > 0 {
+		return NearbyCityResponse{Cities: knownCities}, nil
+	}
+
 	c := gogeonames.Client{Username: req.ApiKey}
 
 	cities, err := c.GetNearbyCities(&gogeonames.SearchRequest{
@@ -78,7 +85,21 @@ func (s *PoiSearcher) NearbyCities(ctx context.Context, req *NearbyCityRequest) 
 		return NearbyCityResponse{}, err
 	}
 
-	return NearbyCityResponse{Cities: cities}, err
+	citiesToSave := make([]City, 0)
+	for _, city := range cities {
+		var c City
+		if c, err = toCity(city); err != nil {
+			Logger.Error(err)
+		} else {
+			citiesToSave = append(citiesToSave, c)
+		}
+	}
+
+	if err = s.redisClient.AddCities(ctx, citiesToSave); err != nil {
+		Logger.Error(err)
+	}
+
+	return NearbyCityResponse{Cities: citiesToSave}, err
 }
 
 // Geocode performs geocoding, mapping city and country to latitude and longitude
