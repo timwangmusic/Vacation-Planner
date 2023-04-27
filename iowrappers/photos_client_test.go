@@ -27,14 +27,14 @@ func TestCreatePhotoClient(t *testing.T) {
 }
 
 func TestDfsParseHtmlForUrl(t *testing.T) {
-	var htmlOneLink string = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
+	var htmlOneLink = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<TITLE>302 Moved</TITLE></HEAD><BODY>
 	<H1>302 Moved</H1>
 	The document has moved
 	<A HREF="https://lh3.googleusercontent.com/places/AAcXr">here</A>.
 	</BODY></HTML>`
 
-	var htmlTwoLinks string = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
+	var htmlTwoLinks = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<TITLE>Document</TITLE></HEAD><BODY>
 	<H1>Document</H1>
 	Test Data
@@ -60,14 +60,14 @@ func TestDfsParseHtmlForUrl(t *testing.T) {
 }
 
 func TestDfsParseHtmlWithErr(t *testing.T) {
-	var htmlOneLink string = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
+	var htmlOneLink = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<TITLE>302 Moved</TITLE></HEAD><BODY>
 	<H1>302 Moved</H1>
 	The document has moved
 	<A HREF="https://www.foos.com">here</A>.
 	</BODY></HTML>`
 
-	var htmlNoLink string = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
+	var htmlNoLink = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<TITLE>Document</TITLE></HEAD><BODY>
 	<H1>Document</H1>
 	Test Data

@@ -93,10 +93,10 @@ func (p *MyPlanner) userLogin(ctx *gin.Context) {
 func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLogin bool) (loggedIn bool) {
 	logger := iowrappers.Logger
 
-	user, token, tokenExpirationTime, loginErr := p.RedisClient.Authenticate(ctx, c)
-	err := p.RedisClient.UpdateUser(ctx, &user)
+	u, token, tokenExpirationTime, loginErr := p.RedisClient.Authenticate(ctx, c)
+	err := p.RedisClient.UpdateUser(ctx, &u)
 	if err != nil {
-		logger.Errorf("failed to update user %s: %v", user.Username, err)
+		logger.Errorf("failed to update u %s: %v", u.Username, err)
 	}
 	if loginErr != nil {
 		logger.Error(loginErr)
@@ -110,7 +110,7 @@ func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLog
 		}
 		return false
 	} else {
-		logger.Infof("user is logged in: %+v", user)
+		logger.Infof("u is logged in: %+v", u)
 	}
 
 	http.SetCookie(ctx.Writer, &http.Cookie{

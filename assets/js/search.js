@@ -85,7 +85,7 @@ const locationSearchInput = document.getElementById('location');
 const spinner = document.getElementById("searchSpinner");
 const searchBtn = document.getElementById("searchBtn");
 
-// Show the wasearch spinner in two cases
+// Renders the search spinner in two cases
 // 1. Enter key is pressed in the location search box
 // 2. Search button is clicked
 locationSearchInput.addEventListener(

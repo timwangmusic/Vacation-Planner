@@ -11,7 +11,7 @@ form.addEventListener('submit', (event) => {
     const XHR = new XMLHttpRequest();
     XHR.onload = () => {
         if (XHR.readyState === XHR.DONE) {
-            if (XHR.status == 200) {
+            if (XHR.status === 200) {
                 $('#reset-password-email-success').removeClass('d-none');
             }
             if (XHR.status > 299) {
