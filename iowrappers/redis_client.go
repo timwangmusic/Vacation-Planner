@@ -186,14 +186,14 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 	wg.Wait()
 }
 
-func (r *RedisClient) updateCity(ctx context.Context, city *City) error {
+func updateCity(ctx context.Context, pipe redis.Pipeliner, city *City) error {
 	key := strings.Join([]string{CityRedisKeyPrefix, city.ID}, ":")
 	json_, err := json.Marshal(city)
 	if err != nil {
 		return err
 	}
 
-	if err = r.Get().Set(ctx, key, json_, 0).Err(); err != nil {
+	if err = pipe.Set(ctx, key, json_, 0).Err(); err != nil {
 		return err
 	}
 
@@ -213,7 +213,7 @@ func (r *RedisClient) AddCities(ctx context.Context, cities []City) error {
 				existedCityId, err = r.Get().HGet(ctx, KnownCitiesHashMapRedisKey, hashKey).Result()
 				if err == nil && existedCityId != "" {
 					city.ID = existedCityId
-					return r.updateCity(ctx, &city)
+					return updateCity(ctx, pipe, &city)
 				}
 
 				err = pipe.HSet(ctx, KnownCitiesHashMapRedisKey, hashKey, city.ID).Err()
