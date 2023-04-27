@@ -30,6 +30,9 @@ const (
 	NumVisitorsPrefix              = "visitor_count"
 	TravelPlansRedisCacheKeyPrefix = "travel_plans"
 	TravelPlanRedisCacheKeyPrefix  = "travel_plan"
+	CityRedisKeyPrefix             = "city"
+	CitiesRedisKey                 = "known_cities_ids"
+	KnownCitiesHashMapRedisKey     = "known_cities_name_to_id"
 )
 
 var RedisClientDefaultBlankContext context.Context
@@ -181,6 +184,107 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 		}(place)
 	}
 	wg.Wait()
+}
+
+func updateCity(ctx context.Context, pipe redis.Pipeliner, city *City) error {
+	key := strings.Join([]string{CityRedisKeyPrefix, city.ID}, ":")
+	json_, err := json.Marshal(city)
+	if err != nil {
+		return err
+	}
+
+	if err = pipe.Set(ctx, key, json_, 0).Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *RedisClient) AddCities(ctx context.Context, cities []City) error {
+	wg := sync.WaitGroup{}
+	wg.Add(len(cities))
+	var err error
+	for _, city := range cities {
+		go func(city City) {
+			defer wg.Done()
+			_, err = r.Get().Pipelined(ctx, func(pipe redis.Pipeliner) error {
+				hashKey := strings.Join([]string{city.Name, city.AdminArea1, city.Country}, "_")
+				var existedCityId string
+				existedCityId, err = r.Get().HGet(ctx, KnownCitiesHashMapRedisKey, hashKey).Result()
+				if err == nil && existedCityId != "" {
+					city.ID = existedCityId
+					return updateCity(ctx, pipe, &city)
+				}
+
+				err = pipe.HSet(ctx, KnownCitiesHashMapRedisKey, hashKey, city.ID).Err()
+				if err != nil {
+					Logger.Debugf("error adding city %s to %s: %v", city.Name, KnownCitiesHashMapRedisKey, err)
+				}
+
+				key := strings.Join([]string{CityRedisKeyPrefix, city.ID}, ":")
+				var json_ []byte
+				json_, err = json.Marshal(city)
+				if err != nil {
+					return err
+				}
+				if err = pipe.Set(ctx, key, json_, 0).Err(); err != nil {
+					return err
+				}
+
+				if err = pipe.GeoAdd(ctx, CitiesRedisKey, &redis.GeoLocation{
+					Name:      city.ID,
+					Longitude: city.Longitude,
+					Latitude:  city.Latitude,
+				}).Err(); err != nil {
+					return err
+				}
+				Logger.Debugf("added city %s to Redis with key: %s", city.Name, key)
+				return nil
+			})
+			if err != nil {
+				Logger.Error(err)
+			}
+		}(city)
+	}
+	wg.Wait()
+	return err
+}
+
+func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64) ([]City, error) {
+	cities, err := r.Get().GeoRadius(ctx, CitiesRedisKey, lng, lat, &redis.GeoRadiusQuery{
+		Radius: radius,
+		Unit:   "km",
+		Sort:   "ASC",
+	}).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(cities))
+	// pre-allocate memory for concurrency safety
+	nearbyCities := make([]City, len(cities))
+	for idx, city := range cities {
+		go func(city redis.GeoLocation, idx int) {
+			defer wg.Done()
+
+			cityKey := strings.Join([]string{CityRedisKeyPrefix, city.Name}, ":")
+			cityString, cityQueryErr := r.Get().Get(ctx, cityKey).Result()
+			if cityQueryErr != nil {
+				Logger.Error(cityQueryErr)
+				return
+			}
+
+			unmarshallErr := json.Unmarshal([]byte(cityString), &nearbyCities[idx])
+			if unmarshallErr != nil {
+				Logger.Error(unmarshallErr)
+				return
+			}
+			Logger.Debugf("retrieved city %+v from Redis", nearbyCities[idx])
+		}(city, idx)
+	}
+	wg.Wait()
+	return nearbyCities, nil
 }
 
 // obtain place info from Redis based with key place_details:place_ID:placeID

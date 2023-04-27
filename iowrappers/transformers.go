@@ -1,8 +1,11 @@
 package iowrappers
 
 import (
+	"github.com/google/uuid"
+	go_geonames "github.com/timwangmusic/go-geonames"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"googlemaps.github.io/maps"
+	"strconv"
 )
 
 func geocodingResultsToGeocodeQuery(query *GeocodeQuery, results []maps.GeocodingResult) {
@@ -32,4 +35,27 @@ func toRedisUserData(view *user.View) map[string]interface{} {
 		"favorites":     view.Favorites,
 		"lastLoginTime": view.LastLoginTime,
 	}
+}
+
+func toCity(city go_geonames.City) (City, error) {
+	lat, err := strconv.ParseFloat(city.Latitude, 64)
+	if err != nil {
+		return City{}, err
+	}
+
+	lng, err := strconv.ParseFloat(city.Longitude, 64)
+	if err != nil {
+		return City{}, err
+	}
+
+	return City{
+		ID:         uuid.New().String(),
+		Name:       city.Name,
+		GeonameID:  city.ID,
+		Latitude:   lat,
+		Longitude:  lng,
+		Population: city.Population,
+		AdminArea1: city.AdminArea1,
+		Country:    city.Country,
+	}, nil
 }

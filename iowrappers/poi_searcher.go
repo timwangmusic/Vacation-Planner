@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"time"
 
+	gogeonames "github.com/timwangmusic/go-geonames"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"go.uber.org/zap"
@@ -31,6 +32,17 @@ type GeocodeQuery struct {
 	Country           string `json:"country"`
 }
 
+type NearbyCityRequest struct {
+	ApiKey   string                  `json:"apiKey"`
+	Location POI.Location            `json:"location"`
+	Radius   float64                 `json:"radius"`
+	Filter   gogeonames.SearchFilter `json:"filter"`
+}
+
+type NearbyCityResponse struct {
+	Cities []City `json:"cities"`
+}
+
 var Logger *zap.SugaredLogger
 
 func CreatePoiSearcher(mapsApiKey string, redisUrl *url.URL) *PoiSearcher {
@@ -51,6 +63,43 @@ func (s *PoiSearcher) GetRedisClient() *RedisClient {
 
 func DestroyLogger() {
 	_ = Logger.Sync()
+}
+
+func (s *PoiSearcher) NearbyCities(ctx context.Context, req *NearbyCityRequest) (NearbyCityResponse, error) {
+	Logger.Debugf("->NearbyCities: processing request %+v", *req)
+	knownCities, err := s.redisClient.NearbyCities(ctx, req.Location.Latitude, req.Location.Longitude, req.Radius)
+	if err != nil {
+		Logger.Error(err)
+	} else if len(knownCities) > 0 {
+		return NearbyCityResponse{Cities: knownCities}, nil
+	}
+
+	c := gogeonames.Client{Username: req.ApiKey}
+
+	cities, err := c.GetNearbyCities(&gogeonames.SearchRequest{
+		Latitude:  req.Location.Latitude,
+		Longitude: req.Location.Longitude,
+		Radius:    req.Radius,
+	}, req.Filter)
+	if err != nil {
+		return NearbyCityResponse{}, err
+	}
+
+	citiesToSave := make([]City, 0)
+	for _, city := range cities {
+		var c City
+		if c, err = toCity(city); err != nil {
+			Logger.Error(err)
+		} else {
+			citiesToSave = append(citiesToSave, c)
+		}
+	}
+
+	if err = s.redisClient.AddCities(ctx, citiesToSave); err != nil {
+		Logger.Error(err)
+	}
+
+	return NearbyCityResponse{Cities: citiesToSave}, err
 }
 
 // Geocode performs geocoding, mapping city and country to latitude and longitude

@@ -695,6 +695,18 @@ func (p *MyPlanner) resetPasswordHandler(ctx *gin.Context) {
 	}
 }
 
+func (p *MyPlanner) getNearbyCities(ctx *gin.Context) {
+	req := &iowrappers.NearbyCityRequest{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	resp, err := p.Solver.Searcher.NearbyCities(ctx, req)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	ctx.JSON(http.StatusOK, gin.H{"cities": resp.Cities})
+}
+
 func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if p.Environment == "debug" {
@@ -734,6 +746,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/forgot-password", p.forgotPasswordPage)
 		v1.GET("/reset-password", p.resetPasswordPage)
 		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
+		v1.POST("/nearby-cities", p.getNearbyCities)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)
