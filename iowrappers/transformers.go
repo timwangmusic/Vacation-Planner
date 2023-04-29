@@ -2,7 +2,7 @@ package iowrappers
 
 import (
 	"github.com/google/uuid"
-	go_geonames "github.com/timwangmusic/go-geonames"
+	gogeonames "github.com/timwangmusic/go-geonames"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"googlemaps.github.io/maps"
 	"strconv"
@@ -37,7 +37,7 @@ func toRedisUserData(view *user.View) map[string]interface{} {
 	}
 }
 
-func toCity(city go_geonames.City) (City, error) {
+func toCity(city gogeonames.City) (City, error) {
 	lat, err := strconv.ParseFloat(city.Latitude, 64)
 	if err != nil {
 		return City{}, err

@@ -47,6 +47,6 @@ Particularly we have configured the code base and been deploying the service to 
 * Google Maps API
 
 
-## Techstack
+## Tech Stack
 * Backend: Golang
 * Frontend: Bootstrap and Javascript

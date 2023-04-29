@@ -19,12 +19,13 @@ form.addEventListener('submit', (event) => {
     const XHR = new XMLHttpRequest();
     XHR.onload = () => {
         if (XHR.readyState === XHR.DONE) {
-            if (XHR.status == 200) {
+            if (XHR.status === 200) {
                 window.location = "/v1/log-in";
             }
             if (XHR.status > 299) {
-                $('#reset-password-error-alert').text(`Password reset failed! ${XHR.response.error}`);
-                $('#reset-password-error-alert').removeClass('d-none');
+                const errorAlert = $('#reset-password-error-alert');
+                errorAlert.text(`Password reset failed! ${XHR.response.error}`);
+                errorAlert.removeClass('d-none');
             }
             if (XHR.status > 499) {
                 console.log(XHR.response.error);

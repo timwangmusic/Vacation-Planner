@@ -40,10 +40,10 @@ type PlaceSearchRequest struct {
 	PriceLevel POI.PriceLevel
 }
 
-// Create NearbySearchRequest for maps NearbySearch, adjust key settings such as radius and price levels
+// CreateMapSearchRequest creates a NearbySearchRequest for maps NearbySearch, adjust key settings such as radius and price levels
 func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationType, token string) (reqOut maps.NearbySearchRequest) {
 	// Adjust radius, minPrice and maxPrice settings in search request
-	var radius uint = reqIn.Radius
+	var radius = reqIn.Radius
 	var minPrice maps.PriceLevel
 	if POI.PriceyEatery(reqIn.PlaceCat, reqIn.PriceLevel) {
 		// increase search radius
@@ -53,7 +53,7 @@ func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationTyp
 	}
 
 	return maps.NearbySearchRequest{
-		Type: maps.PlaceType(string(placeType)),
+		Type: maps.PlaceType(placeType),
 		Location: &maps.LatLng{
 			Lat: reqIn.Location.Latitude,
 			Lng: reqIn.Location.Longitude,

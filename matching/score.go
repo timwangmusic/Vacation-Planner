@@ -28,7 +28,7 @@ func ScoreOld(places []Place) float64 {
 	return avgScore - avgDistance
 }
 
-// Plan scoring method, use constant distance normalisation factor
+// Score uses constant distance normalisation factor
 func Score(places []Place, distNorm int) float64 {
 	if len(places) == 1 {
 		return singlePlaceScore(places[0])
