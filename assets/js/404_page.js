@@ -1,4 +1,4 @@
-import { gsap } from "gsap";
+import { gsap } from "/gsap-member/src";
 
 gsap.set("svg", { visibility: "visible" });
 gsap.to("#headStripe", {
