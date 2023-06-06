@@ -13,6 +13,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/modern-go/reflect2 v1.0.2
+	github.com/oddg/hungarian-algorithm v0.0.0-20170809162819-9567cbc363de
 	github.com/redis/go-redis/v9 v9.0.3
 	github.com/sendgrid/sendgrid-go v3.11.1+incompatible
 	github.com/sirupsen/logrus v1.4.2
@@ -22,6 +23,7 @@ require (
 	github.com/yourbasic/radix v0.0.0-20180308122924-cbe1cc82e907
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.9.0
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/text v0.9.0
