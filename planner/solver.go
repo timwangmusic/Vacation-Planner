@@ -57,11 +57,11 @@ const (
 type PlanningReq struct {
 	Location        POI.Location  `json:"location"`
 	Slots           []SlotRequest `json:"slots"`
-	Weekday         POI.Weekday
+	Weekday         POI.Weekday   `json:"weekday"`
 	TravelDate      string
 	NumPlans        int
-	SearchRadius    uint
-	PriceLevel      POI.PriceLevel
+	SearchRadius    uint           `json:"radius"`
+	PriceLevel      POI.PriceLevel `json:"price_level"`
 	PreciseLocation bool
 }
 
@@ -104,11 +104,21 @@ func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningReq) ([
 		return nil, err
 	}
 
-	plan, err := s.FindOptimalPlan(clusters)
+	placeIDs, err := s.FindOptimalPlan(clusters)
 	if err != nil {
 		return nil, err
 	}
-	return plan, nil
+
+	places := make([]matching.Place, len(placeIDs))
+	results := make([]string, len(placeIDs))
+	for idx, id := range placeIDs {
+		err := s.Searcher.GetRedisClient().FetchSingleRecord(ctx, "place_details:place_ID:"+id, &places[idx].Place)
+		if err != nil {
+			return nil, err
+		}
+		results[idx] = places[idx].Place.Name
+	}
+	return results, nil
 }
 
 func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
@@ -308,9 +318,8 @@ func (s *Solver) FindOptimalPlan(placeClusters [][]matching.Place) ([]string, er
 	if err != nil {
 		return nil, err
 	}
-
 	var result []string
-	for _, idx := range solve {
+	for _, idx := range solve[:len(placeClusters)] {
 		result = append(result, placeIds[idx])
 	}
 	return result, nil
