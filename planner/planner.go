@@ -349,6 +349,20 @@ func (p *MyPlanner) homePageHandler(ctx *gin.Context) {
 	ctx.Redirect(http.StatusMovedPermanently, "/v1/")
 }
 
+func (p *MyPlanner) getOptimalPlan(ctx *gin.Context) {
+	req := &PlanningReq{}
+
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+	}
+
+	if plan, err := p.Solver.SolveHungarianOptimal(ctx, req); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"plan": plan})
+	}
+}
+
 // Return top planning results to user
 func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
@@ -747,6 +761,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/reset-password", p.resetPasswordPage)
 		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
 		v1.POST("/nearby-cities", p.getNearbyCities)
+		v1.POST("/optimal-plan", p.getOptimalPlan)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)

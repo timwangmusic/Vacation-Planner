@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"errors"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -12,6 +13,9 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/yourbasic/radix"
+
+	hungarianAlgorithm "github.com/oddg/hungarian-algorithm"
+	"golang.org/x/exp/maps"
 )
 
 const (
@@ -50,14 +54,21 @@ const (
 	InternalError          = 500
 )
 
+type PlacePlanningDetails struct {
+	Name     string            `json:"name"`
+	URL      string            `json:"url"`
+	Category string            `json:"category"`
+	TimeSlot matching.TimeSlot `json:"time_slot"`
+}
+
 type PlanningReq struct {
 	Location        POI.Location  `json:"location"`
 	Slots           []SlotRequest `json:"slots"`
-	Weekday         POI.Weekday
+	Weekday         POI.Weekday   `json:"weekday"`
 	TravelDate      string
 	NumPlans        int
-	SearchRadius    uint
-	PriceLevel      POI.PriceLevel
+	SearchRadius    uint           `json:"radius"`
+	PriceLevel      POI.PriceLevel `json:"price_level"`
 	PreciseLocation bool
 }
 
@@ -92,6 +103,29 @@ func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) b
 	location.City = geoQuery.City
 	location.Country = geoQuery.Country
 	return true
+}
+
+func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningReq) ([]PlacePlanningDetails, error) {
+	clusters, err := s.generatePlacesForSlots(ctx, req, s.TimeMatcher, s.PriceRangeMatcher)
+	if err != nil {
+		return nil, err
+	}
+
+	placeIDs, err := s.FindOptimalPlan(clusters)
+	if err != nil {
+		return nil, err
+	}
+
+	places := make([]matching.Place, len(placeIDs))
+	results := make([]PlacePlanningDetails, len(placeIDs))
+	for idx, id := range placeIDs {
+		err := s.Searcher.GetRedisClient().FetchSingleRecord(ctx, "place_details:place_ID:"+id, &places[idx].Place)
+		if err != nil {
+			return nil, err
+		}
+		results[idx] = toPlacePlanningDetails(places[idx].Place.Name, req.Slots[idx], places[idx].Place.URL)
+	}
+	return results, nil
 }
 
 func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
@@ -282,7 +316,84 @@ func reversePlans(plans []PlanningSolution) []PlanningSolution {
 	return plans
 }
 
-func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) (resp PlanningResp) {
+func (s *Solver) FindOptimalPlan(placeClusters [][]matching.Place) ([]string, error) {
+	placeIds, weights, err := s.weightMatrix(placeClusters)
+	if err != nil {
+		return nil, err
+	}
+	solve, err := hungarianAlgorithm.Solve(fixWeights(weights))
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+	for _, idx := range solve[:len(placeClusters)] {
+		result = append(result, placeIds[idx])
+	}
+	return result, nil
+}
+
+// We are solving a maximization problem instead of the default minimization problem Hungarian algorithm is designed for.
+// Therefore, needs to use the maximum value to minus all the values in the matrix.
+func fixWeights(weights [][]int) [][]int {
+	if len(weights) == 0 {
+		return nil
+	}
+	fixedWeights := make([][]int, len(weights))
+	for idx := range fixedWeights {
+		fixedWeights[idx] = make([]int, len(weights[0]))
+	}
+	// assume the values are non-negative
+	var maxValue int
+	for _, ws := range weights {
+		for _, val := range ws {
+			if val > maxValue {
+				maxValue = val
+			}
+		}
+	}
+
+	for i, ws := range weights {
+		for j, val := range ws {
+			fixedWeights[i][j] = maxValue - val
+		}
+	}
+	return fixedWeights
+}
+
+func (s *Solver) weightMatrix(placeClusters [][]matching.Place) ([]string, [][]int, error) {
+	uniquePlaces := make(map[string]bool)
+	for _, places := range placeClusters {
+		for _, place := range places {
+			uniquePlaces[place.Id()] = true
+		}
+	}
+
+	placeIds := maps.Keys(uniquePlaces)
+	sort.Strings(placeIds)
+
+	// maps place ID to index
+	placeIdsMap := make(map[string]int)
+	for idx, id := range placeIds {
+		placeIdsMap[id] = idx
+	}
+
+	weights := make([][]int, len(placeIds))
+
+	// initialize weights to zero
+	for idx := range weights {
+		weights[idx] = make([]int, len(placeIds))
+	}
+
+	for idx, places := range placeClusters {
+		for _, place := range places {
+			weights[idx][placeIdsMap[place.Id()]] = int(100 * matching.Score([]matching.Place{place}, 1))
+		}
+	}
+
+	return placeIds, weights, nil
+}
+
+func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) ([][]matching.Place, error) {
 	var placeClusters [][]matching.Place
 	for _, slot := range req.Slots {
 		var filterParams = make(map[matching.FilterCriteria]interface{})
@@ -305,9 +416,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 			PriceLevel:         req.PriceLevel,
 		})
 		if err != nil {
-			resp.ErrorCode = InternalError
-			resp.Err = err
-			return resp
+			return nil, err
 		}
 
 		placesByTime, err := timeMatcher.Match(&matching.FilterRequest{
@@ -316,9 +425,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 			Params:   filterParams,
 		})
 		if err != nil {
-			resp.ErrorCode = InternalError
-			resp.Err = err
-			return resp
+			return nil, err
 		}
 
 		placesByPrice, err := priceRangeMatcher.Match(&matching.FilterRequest{
@@ -327,21 +434,29 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 			Params:   filterParams,
 		})
 		if err != nil {
-			resp.ErrorCode = InternalError
-			resp.Err = err
-			return resp
+			return nil, err
 		}
 
-		iowrappers.Logger.Infof("Before filtering, the number of places is %d", len(places))
-		iowrappers.Logger.Infof("Filtering by time, the number of places is %d", len(placesByTime))
-		iowrappers.Logger.Infof("Filtering by price, the number of places is %d", len(placesByPrice))
+		iowrappers.Logger.Debugf("Before filtering, the number of places is %d", len(places))
+		iowrappers.Logger.Debugf("Filtering by time, the number of places is %d", len(placesByTime))
+		iowrappers.Logger.Debugf("Filtering by price, the number of places is %d", len(placesByPrice))
 		placeClusters = append(placeClusters, placesByPrice)
+	}
+	return placeClusters, nil
+}
+
+func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) (resp PlanningResp) {
+	placeClusters, err := s.generatePlacesForSlots(ctx, req, timeMatcher, priceRangeMatcher)
+	if err != nil {
+		resp.ErrorCode = InternalError
+		resp.Err = err
+		return
 	}
 
 	placeCategories := toPlaceCategories(req.Slots)
 
 	mdIter := &MultiDimIterator{}
-	if err := mdIter.Init(placeCategories, placeClusters); err != nil {
+	if err = mdIter.Init(placeCategories, placeClusters); err != nil {
 		resp.ErrorCode = NoValidSolution
 		resp.Err = err
 		return resp
