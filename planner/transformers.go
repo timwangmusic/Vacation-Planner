@@ -90,3 +90,12 @@ func toPriceLevel(priceLevel string) POI.PriceLevel {
 	price, _ := strconv.Atoi(priceLevel)
 	return POI.PriceLevel(price)
 }
+
+func toPlacePlanningDetails(name string, slot SlotRequest, url string) PlacePlanningDetails {
+	return PlacePlanningDetails{
+		Name:     name,
+		Category: string(slot.Category),
+		TimeSlot: slot.TimeSlot,
+		URL:      url,
+	}
+}

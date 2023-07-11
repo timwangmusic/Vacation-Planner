@@ -54,6 +54,13 @@ const (
 	InternalError          = 500
 )
 
+type PlacePlanningDetails struct {
+	Name     string            `json:"name"`
+	URL      string            `json:"url"`
+	Category string            `json:"category"`
+	TimeSlot matching.TimeSlot `json:"time_slot"`
+}
+
 type PlanningReq struct {
 	Location        POI.Location  `json:"location"`
 	Slots           []SlotRequest `json:"slots"`
@@ -98,7 +105,7 @@ func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) b
 	return true
 }
 
-func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningReq) ([]string, error) {
+func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningReq) ([]PlacePlanningDetails, error) {
 	clusters, err := s.generatePlacesForSlots(ctx, req, s.TimeMatcher, s.PriceRangeMatcher)
 	if err != nil {
 		return nil, err
@@ -110,13 +117,13 @@ func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningReq) ([
 	}
 
 	places := make([]matching.Place, len(placeIDs))
-	results := make([]string, len(placeIDs))
+	results := make([]PlacePlanningDetails, len(placeIDs))
 	for idx, id := range placeIDs {
 		err := s.Searcher.GetRedisClient().FetchSingleRecord(ctx, "place_details:place_ID:"+id, &places[idx].Place)
 		if err != nil {
 			return nil, err
 		}
-		results[idx] = places[idx].Place.Name
+		results[idx] = toPlacePlanningDetails(places[idx].Place.Name, req.Slots[idx], places[idx].Place.URL)
 	}
 	return results, nil
 }
