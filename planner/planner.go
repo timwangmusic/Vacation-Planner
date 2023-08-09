@@ -159,9 +159,11 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint:     google.Endpoint,
 	}
-	p.Mailer = &iowrappers.Mailer{}
-	if err = p.Mailer.Init(p.RedisClient); err != nil {
-		log.Fatalf("p failed to create a Mailer: %s", err.Error())
+	if p.Environment == ProductionEnvironment || p.Environment == TestingEnvironment {
+		p.Mailer = &iowrappers.Mailer{}
+		if err = p.Mailer.Init(p.RedisClient); err != nil {
+			log.Fatalf("p failed to create a Mailer: %s", err.Error())
+		}
 	}
 }
 
@@ -704,7 +706,7 @@ func (p *MyPlanner) resetPasswordHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("no user is found with email %s", email)})
 	}
 
-	if err = p.Mailer.Send(ctx, iowrappers.PasswordReset, view, string(p.Environment)); err != nil {
+	if err = p.Mailer.Send(ctx, iowrappers.PasswordReset, view, strings.ToLower(string(p.Environment))); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 }
