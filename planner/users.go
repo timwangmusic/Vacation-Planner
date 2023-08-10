@@ -2,6 +2,7 @@ package planner
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
@@ -42,12 +43,23 @@ func (p *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 	}
 	userView.UserLevel = userLevel
 
-	if err := p.Mailer.Send(ctx, iowrappers.EmailVerification, userView, string(p.Environment)); err != nil {
-		iowrappers.Logger.Error(err)
+	// only verifies user emails in test and production environments, consider add staging environment later
+	if p.Environment == ProductionEnvironment || p.Environment == TestingEnvironment {
+		if err := p.Mailer.Send(ctx, iowrappers.EmailVerification, userView, strings.ToLower(string(p.Environment))); err != nil {
+			iowrappers.Logger.Error(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{"message": "Email sent. Please check the inbox to verify your email address."})
+		return
+	}
+
+	createdUser, err := p.RedisClient.CreateUser(ctx, userView, false)
+	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Email sent. Please check the inbox to verify your email address."})
+	ctx.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Created user %s with ID %s", createdUser.Username, createdUser.ID)})
 }
 
 func (p *MyPlanner) UserSignup(ctx *gin.Context) {
