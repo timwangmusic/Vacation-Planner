@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/utils"
 	"reflect"
 	"strings"
 	"sync"
@@ -122,7 +121,7 @@ func (s *PoiSearcher) addDataFieldsToPlaces(context context.Context, field strin
 	}
 	Logger.Infof("[data migration] The number of places need update is %d with target field: %s", len(placesNeedUpdate), field)
 
-	placesToUpdateCount := utils.MinInt(len(placesNeedUpdate), batchSize)
+	placesToUpdateCount := min(len(placesNeedUpdate), batchSize)
 	newPlaceDetailsResults := make([]PlaceDetailSearchResult, placesToUpdateCount)
 	Logger.Infof("[data migration] Place to update count: %d, batch size is: %d", placesToUpdateCount, batchSize)
 	Logger.Infof("[data migration] Getting %d place details with target field: %s", placesToUpdateCount, field)
