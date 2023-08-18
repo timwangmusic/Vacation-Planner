@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"errors"
+	"slices"
 	"sort"
 	"strings"
 
@@ -304,16 +305,14 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 		top := heap.Pop(priorityQueue).(Vertex)
 		res = append(res, top.Object.(PlanningSolution))
 	}
-	// min-heap, res needs to be reversed to get the descending order
-	resp <- PlanningResp{Solutions: reversePlans(res)}
+	// outputs from min-heap needs to be reversed to get the descending order by score
+	reversePlans(res)
+	resp <- PlanningResp{Solutions: res}
 	return
 }
 
-func reversePlans(plans []PlanningSolution) []PlanningSolution {
-	for i, j := 0, len(plans)-1; i < j; i, j = i+1, j-1 {
-		plans[i], plans[j] = plans[j], plans[i]
-	}
-	return plans
+func reversePlans(plans []PlanningSolution) {
+	slices.Reverse(plans)
 }
 
 func (s *Solver) FindOptimalPlan(placeClusters [][]matching.Place) ([]string, error) {
