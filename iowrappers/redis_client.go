@@ -23,6 +23,7 @@ import (
 const (
 	PlanningSolutionsExpirationTime = 24 * time.Hour
 	PlanningStatExpirationTime      = 24 * time.Hour
+	CityInfoExpirationTime          = 0
 
 	MaximumNumSlotsPerPlan = 5
 
@@ -193,7 +194,7 @@ func updateCity(ctx context.Context, pipe redis.Pipeliner, city *City) error {
 		return err
 	}
 
-	if err = pipe.Set(ctx, key, json_, 0).Err(); err != nil {
+	if err = pipe.Set(ctx, key, json_, CityInfoExpirationTime).Err(); err != nil {
 		return err
 	}
 
@@ -227,7 +228,7 @@ func (r *RedisClient) AddCities(ctx context.Context, cities []City) error {
 				if err != nil {
 					return err
 				}
-				if err = pipe.Set(ctx, key, json_, 0).Err(); err != nil {
+				if err = pipe.Set(ctx, key, json_, CityInfoExpirationTime).Err(); err != nil {
 					return err
 				}
 
@@ -262,10 +263,11 @@ func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(cities))
-	// pre-allocate memory for concurrency safety
-	nearbyCities := make([]City, len(cities))
-	for idx, city := range cities {
-		go func(city redis.GeoLocation, idx int) {
+	nearbyCities := make([]City, 0)
+	retrievedCities := make(chan City)
+
+	for _, city := range cities {
+		go func(city redis.GeoLocation) {
 			defer wg.Done()
 
 			cityKey := strings.Join([]string{CityRedisKeyPrefix, city.Name}, ":")
@@ -275,15 +277,27 @@ func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64
 				return
 			}
 
-			unmarshallErr := json.Unmarshal([]byte(cityString), &nearbyCities[idx])
+			var c City
+			unmarshallErr := json.Unmarshal([]byte(cityString), &c)
 			if unmarshallErr != nil {
 				Logger.Error(unmarshallErr)
 				return
 			}
-			Logger.Debugf("retrieved city %+v from Redis", nearbyCities[idx])
-		}(city, idx)
+			Logger.Debugf("retrieved city %s, %s from Redis", c.ID, c.Name)
+
+			retrievedCities <- c
+		}(city)
 	}
-	wg.Wait()
+
+	go func() {
+		wg.Wait()
+		close(retrievedCities)
+	}()
+
+	for c := range retrievedCities {
+		nearbyCities = append(nearbyCities, c)
+	}
+
 	return nearbyCities, nil
 }
 
