@@ -99,3 +99,18 @@ func toPlacePlanningDetails(name string, slot SlotRequest, url string) PlacePlan
 		URL:      url,
 	}
 }
+
+func toPlanningSolutionRecord(solution PlanningSolution, location POI.Location) iowrappers.PlanningSolutionRecord {
+	return iowrappers.PlanningSolutionRecord{
+		ID:              solution.ID,
+		PlaceIDs:        solution.PlaceIDS,
+		Score:           solution.Score,
+		ScoreOld:        solution.ScoreOld,
+		PlaceNames:      solution.PlaceNames,
+		PlaceLocations:  solution.PlaceLocations,
+		PlaceAddresses:  solution.PlaceAddresses,
+		PlaceURLs:       solution.PlaceURLs,
+		PlaceCategories: solution.PlaceCategories,
+		Destination:     location,
+	}
+}

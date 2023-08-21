@@ -160,7 +160,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < req.NumPlans {
 		resp = s.generateSolutions(ctx, req, s.TimeMatcher, s.PriceRangeMatcher)
 		if resp.Err == nil {
-			if err := saveSolutions(ctx, redisClient, req, &resp.Solutions); err != nil {
+			if err := saveSolutions(ctx, redisClient, req, resp.Solutions); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -474,23 +474,12 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 	}
 }
 
-func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningReq, solutions *[]PlanningSolution) error {
+func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningReq, solutions []PlanningSolution) error {
 	planningSolutionsResponse := &iowrappers.PlanningSolutionsResponse{}
-	planningSolutionsResponse.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, len(*solutions))
+	planningSolutionsResponse.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, len(solutions))
 
-	for idx, candidate := range *solutions {
-		record := iowrappers.PlanningSolutionRecord{
-			ID:              candidate.ID,
-			PlaceIDs:        candidate.PlaceIDS,
-			Score:           candidate.Score,
-			ScoreOld:        candidate.ScoreOld,
-			PlaceNames:      candidate.PlaceNames,
-			PlaceLocations:  candidate.PlaceLocations,
-			PlaceAddresses:  candidate.PlaceAddresses,
-			PlaceURLs:       candidate.PlaceURLs,
-			PlaceCategories: candidate.PlaceCategories,
-			Destination:     req.Location,
-		}
+	for idx, candidate := range solutions {
+		record := toPlanningSolutionRecord(candidate, req.Location)
 		planningSolutionsResponse.PlanningSolutionRecords[idx] = record
 	}
 
