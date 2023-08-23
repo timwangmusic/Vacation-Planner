@@ -4,6 +4,7 @@ import (
 	"log"
 	"reflect"
 	"regexp"
+	"strconv"
 
 	"googlemaps.github.io/maps"
 )
@@ -21,7 +22,7 @@ const (
 )
 
 func (w Weekday) String() string {
-	return string(w)
+	return strconv.Itoa(int(w))
 }
 
 type PlacePhoto struct {
