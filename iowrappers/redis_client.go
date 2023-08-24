@@ -478,63 +478,84 @@ type PlanningSolutionsResponse struct {
 	PlanningSolutionRecords []PlanningSolutionRecord `json:"cached_planning_solutions"`
 }
 
-type PlanningSolutionsCacheRequest struct {
-	Location        POI.Location
-	Radius          uint64
-	PriceLevel      POI.PriceLevel
-	PlaceCategories []POI.PlaceCategory
-	Intervals       []POI.TimeInterval
-	Weekday         POI.Weekday
+type PlanningSolutionsSaveRequest struct {
+	Location                POI.Location
+	PriceLevel              POI.PriceLevel
+	PlaceCategories         []POI.PlaceCategory
+	Intervals               []POI.TimeInterval
+	Weekdays                []POI.Weekday
+	PlanningSolutionRecords []PlanningSolutionRecord
 }
 
-// convert time intervals and place categories of a travel plan into an unsigned integer
-// a time interval and place category has 23 * 24 * 2 = 1104 possibilities
-// treat each combination as one digit in a 1104-ary number
-// TODO: [NOTE] that the maximum number of slots it can hold is approximately 5, this encoding should be improved in the future
-func encodePlanIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeInterval) (uint64, error) {
-	var result uint64
+func timeSlotsIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeInterval, weekdays []POI.Weekday) (string, error) {
 	if len(placeCategories) != len(intervals) {
-		return 0, fmt.Errorf("the size of place category is %d, which does not match the size of intervals %d", len(placeCategories), len(intervals))
+		return "", fmt.Errorf("the number of place categories %d does not match the number of intervals %d", len(placeCategories), len(intervals))
 	}
 
-	if len(placeCategories) > MaximumNumSlotsPerPlan {
-		return 0, fmt.Errorf("the number of time slots in the plan is %d, which exceeds the limit of %d", len(placeCategories), MaximumNumSlotsPerPlan)
+	if len(placeCategories) != len(weekdays) {
+		return "", fmt.Errorf("the number of place categories %d does not match the number of weekdays %d", len(placeCategories), len(weekdays))
 	}
 
-	for idx, placeCategory := range placeCategories {
-		result *= 1104
-		interval := intervals[idx]
-		switch placeCategory {
-		case POI.PlaceCategoryEatery:
-			result += uint64(interval.Start) * uint64(interval.End)
-		case POI.PlaceCategoryVisit:
-			result += uint64(interval.Start) * uint64(interval.End) * 2
+	parts := make([]string, 0)
+	for idx := range placeCategories {
+		timeSlotIdx, err := singleTimeSlotIndex(placeCategories[idx], intervals[idx], weekdays[idx])
+		if err != nil {
+			return "", err
 		}
+		parts = append(parts, timeSlotIdx)
 	}
-	return result, nil
+
+	return strings.Join(parts, "_"), nil
 }
 
-func generateTravelPlansCacheKey(req *PlanningSolutionsCacheRequest) (string, error) {
+func singleTimeSlotIndex(category POI.PlaceCategory, interval POI.TimeInterval, weekday POI.Weekday) (string, error) {
+	parts := make([]string, 0)
+	switch category {
+	case POI.PlaceCategoryVisit:
+		parts = append(parts, "V")
+	case POI.PlaceCategoryEatery:
+		parts = append(parts, "E")
+	default:
+		return "", fmt.Errorf("unknown place category %s", category)
+	}
+
+	if int(interval.Start) >= 24 || int(interval.Start) < 0 {
+		return "", fmt.Errorf("interval start time should be between 0 and 23 inclusive, got %s", interval.Start.ToString())
+	}
+
+	if int(interval.End) >= 24 || int(interval.End) < 0 {
+		return "", fmt.Errorf("interval start time should be between 0 and 23 inclusive, got %s", interval.End.ToString())
+	}
+
+	parts = append(parts, interval.Start.ToString())
+	parts = append(parts, interval.End.ToString())
+
+	if int(weekday) > 6 || int(weekday) < 0 {
+		return "", fmt.Errorf("weekday falls between 0 and 6 inclusive, got %s", weekday.String())
+	}
+
+	parts = append(parts, weekday.String())
+	return strings.Join(parts, "-"), nil
+}
+
+func generateTravelPlansCacheKey(req *PlanningSolutionsSaveRequest) (string, error) {
 	country, region, city := req.Location.Country, req.Location.AdminAreaLevelOne, req.Location.City
-	planIndex, err := encodePlanIndex(req.PlaceCategories, req.Intervals)
+	slotsIndex, err := timeSlotsIndex(req.PlaceCategories, req.Intervals, req.Weekdays)
 	if err != nil {
 		return "", err
 	}
-
-	radius := strconv.FormatUint(req.Radius, 10)
-	planIndexStr := strconv.FormatUint(planIndex, 10)
 
 	country = strings.ReplaceAll(strings.ToLower(country), " ", "_")
 	region = strings.ReplaceAll(strings.ToLower(region), " ", "_")
 	city = strings.ReplaceAll(strings.ToLower(city), " ", "_")
 
-	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, region, city, radius, strconv.Itoa(int(req.Weekday)), strconv.Itoa(int(req.PriceLevel)), planIndexStr}, ":"))
+	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, region, city, strconv.Itoa(int(req.PriceLevel)), slotsIndex}, ":"))
 	return redisFieldKey, nil
 }
 
-func (r *RedisClient) SavePlanningSolutions(context context.Context, request *PlanningSolutionsCacheRequest, response *PlanningSolutionsResponse) error {
+func (r *RedisClient) SavePlanningSolutions(context context.Context, request *PlanningSolutionsSaveRequest) error {
 	// solutions with no valid solutions do not worth saving
-	if len(response.PlanningSolutionRecords) == 0 {
+	if len(request.PlanningSolutionRecords) == 0 {
 		return nil
 	}
 	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
@@ -544,7 +565,7 @@ func (r *RedisClient) SavePlanningSolutions(context context.Context, request *Pl
 	}
 
 	var recordKeys []string
-	for _, record := range response.PlanningSolutionRecords {
+	for _, record := range request.PlanningSolutionRecords {
 		solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, record.ID}, ":")
 		json_, err := json.Marshal(record)
 		if err != nil {
@@ -568,7 +589,7 @@ func (r *RedisClient) SavePlanningSolutions(context context.Context, request *Pl
 	return nil
 }
 
-func (r *RedisClient) PlanningSolutions(context context.Context, request *PlanningSolutionsCacheRequest) (PlanningSolutionsResponse, error) {
+func (r *RedisClient) PlanningSolutions(context context.Context, request *PlanningSolutionsSaveRequest) (PlanningSolutionsResponse, error) {
 	Logger.Debugf("->RedisClient.PlanningSolutions(%v)", request)
 	var response PlanningSolutionsResponse
 	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)

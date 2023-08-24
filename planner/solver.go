@@ -152,9 +152,9 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
 		req.NumPlans = NumPlansDefault
 	}
 
-	redisRequest := toRedisRequest(req)
+	cacheRequest := toSolutionsSaveRequest(req, nil)
 
-	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, redisRequest)
+	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, cacheRequest)
 
 	var resp PlanningResp
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < req.NumPlans {
@@ -475,15 +475,14 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 }
 
 func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningReq, solutions []PlanningSolution) error {
-	planningSolutionsResponse := &iowrappers.PlanningSolutionsResponse{}
-	planningSolutionsResponse.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, len(solutions))
+	planningSolutionRecords := make([]iowrappers.PlanningSolutionRecord, len(solutions))
 
 	for idx, candidate := range solutions {
 		record := toPlanningSolutionRecord(candidate, req.Location)
-		planningSolutionsResponse.PlanningSolutionRecords[idx] = record
+		planningSolutionRecords[idx] = record
 	}
 
-	err := c.SavePlanningSolutions(ctx, toRedisRequest(req), planningSolutionsResponse)
+	err := c.SavePlanningSolutions(ctx, toSolutionsSaveRequest(req, planningSolutionRecords))
 	if err != nil {
 		return err
 	}
