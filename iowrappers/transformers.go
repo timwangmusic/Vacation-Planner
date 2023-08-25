@@ -59,3 +59,15 @@ func toCity(city gogeonames.City) (City, error) {
 		Country:    city.Country,
 	}, nil
 }
+
+func searchFilterToPopulation(filter gogeonames.SearchFilter) int64 {
+	switch filter {
+	case gogeonames.CityWithPopulationGreaterThan1000:
+		return 1000
+	case gogeonames.CityWithPopulationGreaterThan5000:
+		return 5000
+	case gogeonames.CityWithPopulationGreaterThan15000:
+		return 15000
+	}
+	return 0
+}

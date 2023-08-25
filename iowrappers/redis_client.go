@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bobg/go-generics/slices"
+	gogeonames "github.com/timwangmusic/go-geonames"
 	"net/url"
 	"strconv"
 	"strings"
@@ -251,7 +253,7 @@ func (r *RedisClient) AddCities(ctx context.Context, cities []City) error {
 	return err
 }
 
-func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64) ([]City, error) {
+func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64, filter gogeonames.SearchFilter) ([]City, error) {
 	cities, err := r.Get().GeoRadius(ctx, CitiesRedisKey, lng, lat, &redis.GeoRadiusQuery{
 		Radius: radius,
 		Unit:   "km",
@@ -298,6 +300,8 @@ func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64
 		nearbyCities = append(nearbyCities, c)
 	}
 
+	populationThreshold := searchFilterToPopulation(filter)
+	nearbyCities, _ = slices.Filter(nearbyCities, func(city City) (bool, error) { return city.Population >= populationThreshold, nil })
 	return nearbyCities, nil
 }
 

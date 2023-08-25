@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/alicebob/miniredis/v2 v2.30.4
+	github.com/bobg/go-generics v1.7.2
 	github.com/braintree/manners v0.0.0-20160418043613-82a8879fc5fd
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/requestid v0.0.6

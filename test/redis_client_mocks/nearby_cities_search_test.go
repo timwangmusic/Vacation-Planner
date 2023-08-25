@@ -2,6 +2,7 @@ package redis_client_mocks
 
 import (
 	log "github.com/sirupsen/logrus"
+	gogeonames "github.com/timwangmusic/go-geonames"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"reflect"
 	"sort"
@@ -15,6 +16,7 @@ var expectedCities = []iowrappers.City{
 		Name:       "Union City",
 		Latitude:   37.5934,
 		Longitude:  -122.0439,
+		Population: 80700,
 		AdminArea1: "CA",
 		Country:    "United States",
 	},
@@ -51,7 +53,7 @@ func TestNearbyCitiesSearch_shouldReturnNearbyCities(t *testing.T) {
 
 	var resultCities []iowrappers.City
 	// simulates a search request from Palo Alto, CA
-	if resultCities, err = RedisClient.NearbyCities(RedisContext, 37.4223, -122.1329, 25.0); err != nil {
+	if resultCities, err = RedisClient.NearbyCities(RedisContext, 37.4223, -122.1329, 25.0, gogeonames.CityWithPopulationGreaterThan1000); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,7 +81,7 @@ func TestAddingKnownCities_shouldUpdateRedisRecords(t *testing.T) {
 			Name:       "Fremont",
 			Latitude:   37.54827,
 			Longitude:  -121.9886,
-			Population: 151490,
+			Population: 10500,
 			AdminArea1: "CA",
 			Country:    "United States",
 		},
@@ -91,7 +93,7 @@ func TestAddingKnownCities_shouldUpdateRedisRecords(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resultCities, err = RedisClient.NearbyCities(RedisContext, 37.4223, -122.1329, 25.0)
+	resultCities, err = RedisClient.NearbyCities(RedisContext, 37.4223, -122.1329, 25.0, gogeonames.CityWithPopulationGreaterThan15000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,8 +102,16 @@ func TestAddingKnownCities_shouldUpdateRedisRecords(t *testing.T) {
 		return resultCities[i].ID < resultCities[j].ID
 	})
 
-	fremont := resultCities[1]
-	if fremont.Population != newCities[0].Population {
-		t.Errorf("expected population of Fremont to be updated to %d, got %d", newCities[0].Population, fremont.Population)
+	// Fremont is removed due to population change
+	if len(resultCities) != 2 {
+		t.Fatalf("expected number of cities after filtering equals 2, got %d", len(resultCities))
+	}
+
+	if resultCities[0].ID != expectedCities[0].ID {
+		t.Errorf("expected first city ID equals %s, got %s", expectedCities[0].ID, resultCities[0].ID)
+	}
+
+	if resultCities[1].ID != expectedCities[2].ID {
+		t.Errorf("expected first city ID equals %s, got %s", expectedCities[2].ID, resultCities[1].ID)
 	}
 }
