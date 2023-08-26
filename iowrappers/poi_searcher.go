@@ -67,7 +67,7 @@ func DestroyLogger() {
 
 func (s *PoiSearcher) NearbyCities(ctx context.Context, req *NearbyCityRequest) (NearbyCityResponse, error) {
 	Logger.Debugf("->NearbyCities: processing request %+v", *req)
-	knownCities, err := s.redisClient.NearbyCities(ctx, req.Location.Latitude, req.Location.Longitude, req.Radius)
+	knownCities, err := s.redisClient.NearbyCities(ctx, req.Location.Latitude, req.Location.Longitude, req.Radius, req.Filter)
 	if err != nil {
 		Logger.Error(err)
 	} else if len(knownCities) > 0 {
