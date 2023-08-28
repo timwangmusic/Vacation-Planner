@@ -14,7 +14,7 @@ var hourRegex = regexp.MustCompile(`\d{1,2}:\d{2}`)
 type Hour uint8
 
 func (h Hour) ToString() string {
-	return string(h)
+	return strconv.Itoa(int(h))
 }
 
 type TimeInterval struct {
