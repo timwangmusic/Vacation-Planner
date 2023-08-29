@@ -92,12 +92,11 @@ func dfs(node *html.Node, judger func(*html.Node) bool, attr string) (string, bo
 			return a.Val, true
 		}
 	}
-	found := false
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		url, found := dfs(c, judger, attr)
 		if found {
 			return url, true
 		}
 	}
-	return "", found
+	return "", false
 }
