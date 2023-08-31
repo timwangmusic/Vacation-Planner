@@ -1,27 +1,29 @@
 package planner
 
-type MinPriorityQueue []Vertex
-
-func (pq *MinPriorityQueue) Len() int {
-	return len(*pq)
+type MinPriorityQueue[T PriorityQueueItem] struct {
+	items []T
 }
 
-func (pq *MinPriorityQueue) Less(i, j int) bool {
-	return (*pq)[i].Key <= (*pq)[j].Key
+func (pq *MinPriorityQueue[T]) Len() int {
+	return len(pq.items)
 }
 
-func (pq *MinPriorityQueue) Swap(i, j int) {
-	(*pq)[i], (*pq)[j] = (*pq)[j], (*pq)[i]
+func (pq *MinPriorityQueue[T]) Less(i, j int) bool {
+	return pq.items[i].Key() <= pq.items[j].Key()
 }
 
-func (pq *MinPriorityQueue) Push(item interface{}) {
-	*pq = append(*pq, item.(Vertex))
+func (pq *MinPriorityQueue[T]) Swap(i, j int) {
+	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
 }
 
-func (pq *MinPriorityQueue) Pop() interface{} {
-	prev := *pq
+func (pq *MinPriorityQueue[T]) Push(item interface{}) {
+	pq.items = append(pq.items, item.(T))
+}
+
+func (pq *MinPriorityQueue[T]) Pop() interface{} {
+	prev := pq.items
 	n := len(prev)
 	res := prev[n-1]
-	*pq = prev[0 : n-1]
+	pq.items = prev[0 : n-1]
 	return res
 }
