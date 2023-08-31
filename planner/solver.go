@@ -9,13 +9,11 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	hungarianAlgorithm "github.com/oddg/hungarian-algorithm"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"github.com/yourbasic/radix"
-
-	hungarianAlgorithm "github.com/oddg/hungarian-algorithm"
 	"golang.org/x/exp/maps"
 )
 
@@ -264,8 +262,8 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 		topSolutionsCount = TopSolutionsCountDefault
 	}
 
-	priorityQueue := &MinPriorityQueue[Vertex]{}
-	deduplicatedPlans := make(map[string]bool)
+  priorityQueue := &MinPriorityQueue[Vertex]{}
+  includedPlaces := make(map[string]bool)
 	resp = make(chan PlanningResp, 1)
 
 	for iterator.HasNext() {
@@ -282,7 +280,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 				log.Debug(err)
 				continue
 			}
-			if !isDuplicatedPlan(deduplicatedPlans, candidate) {
+			if isPlanDuplicate(includedPlaces, candidate) {
 				continue
 			}
 			newVertex := Vertex{Name: candidate.ID, K: candidate.Score, Object: candidate}
@@ -290,7 +288,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 				topVertex := priorityQueue.items[0]
 				if topVertex.Key() < newVertex.Key() {
 					heap.Pop(priorityQueue)
-					delete(deduplicatedPlans, jointPlaceIdsForPlan(topVertex.Object.(PlanningSolution)))
+					removePlaces(includedPlaces, topVertex.Object.(PlanningSolution))
 					heap.Push(priorityQueue, newVertex)
 				}
 			} else {
@@ -489,20 +487,27 @@ func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *Planning
 	return nil
 }
 
-// returns true if the new travel plan can be added to priority queue
-func isDuplicatedPlan(plans map[string]bool, newPlan PlanningSolution) bool {
-	jointPlaceIDs := jointPlaceIdsForPlan(newPlan)
-	if _, exists := plans[jointPlaceIDs]; !exists {
-		plans[jointPlaceIDs] = true
-		return true
+// isPlanDuplicate checks if ANY place in the plan is seen in previous results.
+func isPlanDuplicate(seenPlaces map[string]bool, newPlan PlanningSolution) bool {
+	for _, placeID := range newPlan.PlaceIDS {
+		if _, exists := seenPlaces[placeID]; exists {
+			return true
+		}
+	}
+	// mark all places in the plan as seen
+	for _, placeID := range newPlan.PlaceIDS {
+		seenPlaces[placeID] = true
 	}
 	return false
 }
 
-func jointPlaceIdsForPlan(newPlan PlanningSolution) string {
-	placeIDs := make([]string, len(newPlan.PlaceIDS))
-	copy(placeIDs, newPlan.PlaceIDS)
-	radix.Sort(placeIDs)
-	jointPlaceIDs := strings.Join(placeIDs, "_")
-	return jointPlaceIDs
+// removePlaces deletes all places of the input plan potentially stored in the input hashMap.
+// This function can allow the main algorithm to re-introduce new plans into top candidates.
+func removePlaces(seenPlaces map[string]bool, plan PlanningSolution) {
+	for _, placeID := range plan.PlaceIDS {
+		if _, exists := seenPlaces[placeID]; !exists {
+			continue
+		}
+		delete(seenPlaces, placeID)
+	}
 }
