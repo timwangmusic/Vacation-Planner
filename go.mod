@@ -15,7 +15,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/oddg/hungarian-algorithm v0.0.0-20170809162819-9567cbc363de
-	github.com/redis/go-redis/v9 v9.0.5
+	github.com/redis/go-redis/v9 v9.1.0
 	github.com/sendgrid/sendgrid-go v3.12.0+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
@@ -28,7 +28,7 @@ require (
 	golang.org/x/net v0.12.0
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/text v0.11.0
-	gonum.org/v1/gonum v0.0.0-20190808205415-ced62fe5104b
+	gonum.org/v1/gonum v0.14.0
 	googlemaps.github.io/maps v1.5.0
 	gopkg.in/yaml.v3 v3.0.1
 )

@@ -262,8 +262,8 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 		topSolutionsCount = TopSolutionsCountDefault
 	}
 
-	priorityQueue := &MinPriorityQueue{}
-	includedPlaces := make(map[string]bool)
+  priorityQueue := &MinPriorityQueue[Vertex]{}
+  includedPlaces := make(map[string]bool)
 	resp = make(chan PlanningResp, 1)
 
 	for iterator.HasNext() {
@@ -283,10 +283,10 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 			if isPlanDuplicate(includedPlaces, candidate) {
 				continue
 			}
-			newVertex := Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
+			newVertex := Vertex{Name: candidate.ID, K: candidate.Score, Object: candidate}
 			if priorityQueue.Len() == topSolutionsCount {
-				topVertex := (*priorityQueue)[0]
-				if topVertex.Key < newVertex.Key {
+				topVertex := priorityQueue.items[0]
+				if topVertex.Key() < newVertex.Key() {
 					heap.Pop(priorityQueue)
 					removePlaces(includedPlaces, topVertex.Object.(PlanningSolution))
 					heap.Push(priorityQueue, newVertex)
