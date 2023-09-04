@@ -107,7 +107,7 @@ func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) b
 }
 
 func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningReq) ([]PlacePlanningDetails, error) {
-	clusters, err := s.generatePlacesForSlots(ctx, req, s.TimeMatcher, s.PriceRangeMatcher)
+	clusters, err := s.generatePlacesForSlots(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
 
 	var resp PlanningResp
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < req.NumPlans {
-		resp = s.generateSolutions(ctx, req, s.TimeMatcher, s.PriceRangeMatcher)
+		resp = s.generateSolutions(ctx, req)
 		if resp.Err == nil {
 			if err := saveSolutions(ctx, redisClient, req, resp.Solutions); err != nil {
 				logger.Error(err)
@@ -265,7 +265,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 	}
 
 	priorityQueue := &MinPriorityQueue[Vertex]{}
-	// int8 is enough for a the place deduplication limit
+	// int8 is enough for place deduplication limit
 	includedPlaces := make(map[string]int8)
 	resp = make(chan PlanningResp, 1)
 
@@ -393,7 +393,7 @@ func (s *Solver) weightMatrix(placeClusters [][]matching.Place) ([]string, [][]i
 	return placeIds, weights, nil
 }
 
-func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) ([][]matching.Place, error) {
+func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq) ([][]matching.Place, error) {
 	var placeClusters [][]matching.Place
 	for _, slot := range req.Slots {
 		var filterParams = make(map[matching.FilterCriteria]interface{})
@@ -419,7 +419,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq, t
 			return nil, err
 		}
 
-		placesByTime, err := timeMatcher.Match(&matching.FilterRequest{
+		placesByTime, err := s.TimeMatcher.Match(&matching.FilterRequest{
 			Places:   places,
 			Criteria: matching.FilterByTimePeriod,
 			Params:   filterParams,
@@ -428,7 +428,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq, t
 			return nil, err
 		}
 
-		placesByPrice, err := priceRangeMatcher.Match(&matching.FilterRequest{
+		placesByPrice, err := s.PriceRangeMatcher.Match(&matching.FilterRequest{
 			Places:   placesByTime,
 			Criteria: matching.FilterByPriceRange,
 			Params:   filterParams,
@@ -449,8 +449,8 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq, t
 	return placeClusters, nil
 }
 
-func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) (resp PlanningResp) {
-	placeClusters, err := s.generatePlacesForSlots(ctx, req, timeMatcher, priceRangeMatcher)
+func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq) (resp PlanningResp) {
+	placeClusters, err := s.generatePlacesForSlots(ctx, req)
 	if err != nil {
 		resp.ErrorCode = InternalError
 		resp.Err = err
