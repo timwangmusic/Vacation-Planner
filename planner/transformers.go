@@ -66,10 +66,9 @@ func toSolutionsSaveRequest(req *PlanningReq, solutions []iowrappers.PlanningSol
 		intervals[idx] = stayTime.Slot
 	}
 
-	// TODO: update this when the planning request contains different weekdays for time slots
 	weekdays := make([]POI.Weekday, len(stayTimes))
 	for idx := range weekdays {
-		weekdays[idx] = req.Weekday
+		weekdays[idx] = req.Slots[idx].Weekday
 	}
 
 	return &iowrappers.PlanningSolutionsSaveRequest{

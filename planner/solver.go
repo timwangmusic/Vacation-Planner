@@ -65,7 +65,6 @@ type PlacePlanningDetails struct {
 type PlanningReq struct {
 	Location        POI.Location  `json:"location"`
 	Slots           []SlotRequest `json:"slots"`
-	Weekday         POI.Weekday   `json:"weekday"`
 	TravelDate      string
 	NumPlans        int
 	SearchRadius    uint           `json:"radius"`
@@ -81,6 +80,7 @@ type PlanningResp struct {
 
 // SlotRequest represents the properties of each row in the tabular travel plan, although not all of these are displayed to users
 type SlotRequest struct {
+	Weekday  POI.Weekday       `json:"weekday"`
 	TimeSlot matching.TimeSlot `json:"time_slot"`
 	Category POI.PlaceCategory `json:"category"`
 }
@@ -195,12 +195,14 @@ func standardRequest(travelDate string, weekday POI.Weekday, numResults int, pri
 	slotReq1 := SlotRequest{
 		TimeSlot: timeSlot1,
 		Category: POI.PlaceCategoryVisit,
+		Weekday:  weekday,
 	}
 
 	timeSlot2 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 12, End: 13}}
 	slotReq2 := SlotRequest{
 		TimeSlot: timeSlot2,
 		Category: POI.PlaceCategoryEatery,
+		Weekday:  weekday,
 	}
 
 	timeSlot3 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 13, End: 17}}
@@ -208,10 +210,10 @@ func standardRequest(travelDate string, weekday POI.Weekday, numResults int, pri
 	slotReq3 := SlotRequest{
 		TimeSlot: timeSlot3,
 		Category: POI.PlaceCategoryVisit,
+		Weekday:  weekday,
 	}
 
 	req.Slots = append(req.Slots, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
-	req.Weekday = weekday
 	req.TravelDate = travelDate
 	req.NumPlans = numResults
 	req.PriceLevel = priceLevel
@@ -399,7 +401,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq) (
 		var filterParams = make(map[matching.FilterCriteria]interface{})
 		filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
 			Category:     slot.Category,
-			Day:          req.Weekday,
+			Day:          slot.Weekday,
 			TimeInterval: slot.TimeSlot.Slot,
 		}
 

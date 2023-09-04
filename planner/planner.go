@@ -575,7 +575,6 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 
 	request := PlanningReq{
 		NumPlans:     pageSize,
-		Weekday:      toWeekday(date),
 		SearchRadius: 10000,
 		PriceLevel:   toPriceLevel(priceLevel),
 	}
@@ -584,6 +583,11 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 		iowrappers.Logger.Error(err)
 		ctx.Status(http.StatusBadRequest)
 		return
+	}
+
+	weekday := toWeekday(date)
+	for _, slot := range request.Slots {
+		slot.Weekday = weekday
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
