@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	go_geonames "github.com/timwangmusic/go-geonames"
 	"html/template"
 	"io"
 	"net/http"
@@ -280,8 +281,40 @@ func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, view)
 }
 
-func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReq, user string) (resp PlanningResponse) {
-	planningResponse := p.Solver.Solve(ctx, planningRequest)
+func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, user string, withNearbyCities bool) (resp PlanningResponse) {
+	logger := iowrappers.Logger
+	var planningResponse *PlanningResp
+	if withNearbyCities {
+		lat, lng, err := p.RedisClient.Geocode(ctx, &iowrappers.GeocodeQuery{
+			City:              planningRequest.Location.City,
+			AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
+			Country:           planningRequest.Location.Country,
+		})
+		if err != nil {
+			return PlanningResponse{Err: err}
+		}
+
+		logger.Debugf("lat, lng from Geocode: %.4f, %.4f", lat, lng)
+		// need to convert km to m for cities search query
+		cities, err := p.RedisClient.NearbyCities(ctx, lat, lng, float64(planningRequest.SearchRadius/1000), go_geonames.CityWithPopulationGreaterThan15000)
+		if err != nil {
+			return PlanningResponse{Err: err}
+		}
+		locations := MapSlice[iowrappers.City, POI.Location](cities, toLocation)
+
+		iowrappers.Logger.Debugf("found %d nearby cities: %+v", len(locations), locations)
+		requests, err := deepCopyAnything(&planningRequest, len(locations))
+		if err != nil {
+			return PlanningResponse{Err: err}
+		}
+
+		for idx, req := range requests {
+			req.Location = locations[idx]
+		}
+		planningResponse = p.Solver.SolveWithNearbyCities(ctx, &MultiPlanningReq{requests: requests, numPlans: planningRequest.NumPlans})
+	} else {
+		planningResponse = p.Solver.Solve(ctx, &planningRequest)
+	}
 
 	if planningResponse.Err != nil {
 		resp.Err = planningResponse.Err
@@ -437,7 +470,8 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
-	planningResp := p.Planning(c, &planningReq, userView.Username)
+	planningResp := p.Planning(c, planningReq, userView.Username, false)
+	logger.Debugf("planning response: %v", planningResp)
 	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
 		logger.Debug(err)
 	}
@@ -591,7 +625,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
-	planningResp := p.Planning(c, &request, "guest")
+	planningResp := p.Planning(c, request, "guest", false)
 	iowrappers.Logger.Debugf("response status code is: %d", planningResp.StatusCode)
 	if planningResp.StatusCode == RequestTimeOut {
 		ctx.JSON(http.StatusRequestTimeout, nil)

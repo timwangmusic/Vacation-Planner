@@ -119,3 +119,13 @@ func toPlanningSolutionRecord(solution PlanningSolution, location POI.Location) 
 		Destination:     location,
 	}
 }
+
+func toLocation(city iowrappers.City) POI.Location {
+	return POI.Location{
+		Latitude:          city.Latitude,
+		Longitude:         city.Longitude,
+		City:              city.Name,
+		AdminAreaLevelOne: city.AdminArea1,
+		Country:           city.Country,
+	}
+}

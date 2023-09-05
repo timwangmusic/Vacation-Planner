@@ -2,6 +2,7 @@ package planner
 
 import (
 	"errors"
+	"github.com/barkimedes/go-deepcopy"
 	"regexp"
 )
 
@@ -41,4 +42,16 @@ func MapSlice[T, V any](ts []T, fn func(t T) V) []V {
 		result[idx] = fn(t)
 	}
 	return result
+}
+
+func deepCopyAnything[T any](req T, numCopies int) ([]T, error) {
+	result := make([]T, numCopies)
+	for idx := range result {
+		copied, err := deepcopy.Anything(req)
+		if err != nil {
+			return nil, err
+		}
+		result[idx] = copied.(T)
+	}
+	return result, nil
 }

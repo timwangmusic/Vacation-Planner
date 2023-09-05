@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/alicebob/miniredis/v2 v2.30.4
+	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
 	github.com/bobg/go-generics v1.7.2
 	github.com/braintree/manners v0.0.0-20160418043613-82a8879fc5fd
 	github.com/gin-contrib/cors v1.4.0
