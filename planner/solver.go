@@ -8,6 +8,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 	hungarianAlgorithm "github.com/oddg/hungarian-algorithm"
@@ -41,6 +42,10 @@ type PlanningSolution struct {
 	ScoreOld        float64             `json:"score_old"`
 }
 
+func (ps PlanningSolution) Key() float64 {
+	return ps.Score
+}
+
 type Solver struct {
 	Searcher          *iowrappers.PoiSearcher
 	TimeMatcher       matching.Matcher
@@ -60,6 +65,12 @@ type PlacePlanningDetails struct {
 	URL      string            `json:"url"`
 	Category string            `json:"category"`
 	TimeSlot matching.TimeSlot `json:"time_slot"`
+}
+
+// MultiPlanningReq can be used to represent a multi-day planning request for a single location or a group of requests for different locations
+type MultiPlanningReq struct {
+	requests []*PlanningReq
+	numPlans int
 }
 
 type PlanningReq struct {
@@ -127,6 +138,38 @@ func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningReq) ([
 		results[idx] = toPlacePlanningDetails(places[idx].Place.Name, req.Slots[idx], places[idx].Place.URL)
 	}
 	return results, nil
+}
+
+func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningReq) *PlanningResp {
+	wg := sync.WaitGroup{}
+	wg.Add(len(req.requests))
+	responses := make(chan *PlanningResp)
+
+	for _, request := range req.requests {
+		go func(r *PlanningReq) {
+			defer wg.Done()
+			responses <- s.Solve(ctx, r)
+		}(request)
+	}
+
+	go func() {
+		wg.Wait()
+		close(responses)
+	}()
+
+	pq := MinPriorityQueue[PlanningSolution]{}
+	for resp := range responses {
+		for _, solution := range resp.Solutions {
+			if pq.Len() == req.numPlans {
+				if solution.Score > pq.items[0].Key() {
+					pq.Pop()
+				}
+			}
+			pq.Push(solution)
+		}
+	}
+
+	return &PlanningResp{Solutions: pq.items}
 }
 
 func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
