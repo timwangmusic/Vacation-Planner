@@ -33,3 +33,12 @@ func validateLocation(location string, precise bool) error {
 	}
 	return nil
 }
+
+// MapSlice is a generic function for mapping a slice to another
+func MapSlice[T, V any](ts []T, fn func(t T) V) []V {
+	result := make([]V, len(ts))
+	for idx, t := range ts {
+		result[idx] = fn(t)
+	}
+	return result
+}
