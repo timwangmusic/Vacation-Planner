@@ -65,6 +65,7 @@ type MyPlanner struct {
 	Configs            map[string]interface{}
 	OAuth2Config       *oauth2.Config
 	Mailer             *iowrappers.Mailer
+	GeonamesApiKey     string
 }
 
 type TimeSectionPlace struct {
@@ -119,7 +120,7 @@ type PlaceDetailsResp struct {
 
 type RequestIdKey string
 
-func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string) {
+func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string, geonamesApiKey string) {
 	p.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	p.RedisClient = iowrappers.CreateRedisClient(redisURL)
 	p.RedisStreamName = redisStreamName
@@ -148,6 +149,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
 		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
 	}
+	p.GeonamesApiKey = geonamesApiKey
 	var err error
 	geocodes, err = p.RedisClient.GetCities(context.Background())
 	if err != nil {
@@ -285,7 +287,7 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, u
 	logger := iowrappers.Logger
 	var planningResponse *PlanningResp
 	if withNearbyCities {
-		lat, lng, err := p.RedisClient.Geocode(ctx, &iowrappers.GeocodeQuery{
+		lat, lng, err := p.Solver.Searcher.Geocode(ctx, &iowrappers.GeocodeQuery{
 			City:              planningRequest.Location.City,
 			AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
 			Country:           planningRequest.Location.Country,
@@ -293,16 +295,28 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, u
 		if err != nil {
 			return PlanningResponse{Err: err}
 		}
+		logger.Debugf("->Planning: lat, lng from Geocode: %.4f, %.4f", lat, lng)
 
-		logger.Debugf("lat, lng from Geocode: %.4f, %.4f", lat, lng)
-		// need to convert km to m for cities search query
-		cities, err := p.RedisClient.NearbyCities(ctx, lat, lng, float64(planningRequest.SearchRadius/1000), go_geonames.CityWithPopulationGreaterThan15000)
+		// convert km to m for nearbyCityResponse search query
+		nearbyCityResponse, err := p.Solver.Searcher.NearbyCities(ctx,
+			&iowrappers.NearbyCityRequest{
+				ApiKey: p.GeonamesApiKey,
+				Location: POI.Location{
+					Latitude:          lat,
+					Longitude:         lng,
+					City:              planningRequest.Location.City,
+					AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
+					Country:           planningRequest.Location.Country,
+				},
+				Radius: float64(planningRequest.SearchRadius / 1000),
+				Filter: go_geonames.CityWithPopulationGreaterThan15000,
+			})
 		if err != nil {
 			return PlanningResponse{Err: err}
 		}
-		locations := MapSlice[iowrappers.City, POI.Location](cities, toLocation)
+		locations := MapSlice[iowrappers.City, POI.Location](nearbyCityResponse.Cities, toLocation)
 
-		iowrappers.Logger.Debugf("found %d nearby cities: %+v", len(locations), locations)
+		logger.Debugf("->Planning: found %d nearby nearbyCityResponse: %+v", len(locations), locations)
 		requests, err := deepCopyAnything(&planningRequest, len(locations))
 		if err != nil {
 			return PlanningResponse{Err: err}

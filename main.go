@@ -28,6 +28,7 @@ type Config struct {
 	MapsClientApiKey        string `default:"YOUR_GOOGLE_API_KEY" split_words:"true"`
 	GoogleOAuthClientID     string `envconfig:"GOOGLE_OAUTH_CLIENT_ID"`
 	GoogleOAuthClientSecret string `envconfig:"GOOGLE_OAUTH_CLIENT_SECRET"`
+	GeonamesApiKey          string `envconfig:"GEONAMES_API_KEY"`
 }
 
 type Configurations struct {
@@ -70,7 +71,7 @@ func RunServer() {
 
 	myPlanner := planner.MyPlanner{}
 
-	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs), conf.GoogleOAuthClientID, conf.GoogleOAuthClientSecret, conf.Server.Domain)
+	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs), conf.GoogleOAuthClientID, conf.GoogleOAuthClientSecret, conf.Server.Domain, conf.GeonamesApiKey)
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
 	c := make(chan os.Signal, 1)
