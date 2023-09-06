@@ -21,7 +21,6 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/timwangmusic/go-geonames v0.1.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
-	github.com/yourbasic/radix v0.0.0-20180308122924-cbe1cc82e907
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.11.0
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
