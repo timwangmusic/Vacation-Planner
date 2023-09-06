@@ -141,7 +141,7 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 		Logger.Error(placesErr)
 	}
 
-	Logger.Debugf("[request_id: %s] number of results from redis is %d", context.Value(ContextRequestIdKey), len(savedPlaces))
+	Logger.Debugf("(PoiSearcher)NearbySearch: [request_id: %s] the number of results from redis is %d", context.Value(ContextRequestIdKey), len(savedPlaces))
 
 	// update last search time for the city
 	lastSearchTime, lastSearchTimeMiss := s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel)
@@ -235,9 +235,8 @@ func (s *PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearch
 			len(places), req.PlaceCat, req.MinNumResults)
 	}
 	if len(places) == 0 {
-		Logger.Debugf("No qualified POI result found in the given location %v, radius %d, and place type: %s",
+		Logger.Debugf("No qualified POI result found in the given location %v, radius %d, and place type: %s. The location may be invalid",
 			req.Location, req.Radius, req.PlaceCat)
-		Logger.Debug("location may be invalid")
 	}
 	return places, nil
 }

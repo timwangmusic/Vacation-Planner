@@ -453,6 +453,7 @@ func (s *Solver) weightMatrix(placeClusters [][]matching.Place) ([]string, [][]i
 }
 
 func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq) ([][]matching.Place, error) {
+	logger := iowrappers.Logger
 	var placeClusters [][]matching.Place
 	for _, slot := range req.Slots {
 		var filterParams = make(map[matching.FilterCriteria]interface{})
@@ -477,6 +478,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq) (
 		if err != nil {
 			return nil, err
 		}
+		logger.Debugf("Before filtering, the number of places for category %s is %d", slot.Category, len(places))
 
 		placesByTime, err := s.TimeMatcher.Match(&matching.FilterRequest{
 			Places:   places,
@@ -486,6 +488,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq) (
 		if err != nil {
 			return nil, err
 		}
+		logger.Debugf("Filtered by time, the number of places for category %s is %d", slot.Category, len(placesByTime))
 
 		placesByPrice, err := s.PriceRangeMatcher.Match(&matching.FilterRequest{
 			Places:   placesByTime,
@@ -495,10 +498,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq) (
 		if err != nil {
 			return nil, err
 		}
-
-		iowrappers.Logger.Debugf("Before filtering, the number of places is %d", len(places))
-		iowrappers.Logger.Debugf("Filtering by time, the number of places is %d", len(placesByTime))
-		iowrappers.Logger.Debugf("Filtering by price, the number of places is %d", len(placesByPrice))
+		logger.Debugf("Filtered by price, the number of places for category %s is %d", slot.Category, len(placesByPrice))
 
 		if len(placesByPrice) == 0 {
 			return nil, fmt.Errorf("failed to find any place for category %s at slot %s for location %+v", slot.Category, slot.TimeSlot.ToString(), req.Location)

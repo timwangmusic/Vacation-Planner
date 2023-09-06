@@ -362,7 +362,7 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 	if req.BusinessStatus == POI.Operational {
 		totalPlacesCount := len(places)
 		places = filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
-		Logger.Debugf("(RedisClient) NearbySearch -> %d places out of %d left after business status filtering", len(places), totalPlacesCount)
+		Logger.Debugf("(RedisClient)NearbySearch -> %d places out of %d left after business status filtering", len(places), totalPlacesCount)
 	}
 	return places, nil
 }

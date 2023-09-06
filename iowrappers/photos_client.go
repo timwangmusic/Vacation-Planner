@@ -74,8 +74,6 @@ func parseHTML(htmlBody []byte, judger func(*html.Node) bool, attr string) (Phot
 	}
 	url, found := dfs(doc, judger, attr)
 	if !found {
-		// Logger.Warn("No URL is found in HTML body!\n")
-		Logger.Debugf("%s\n", htmlBody)
 		return photoURL, errors.New("no URL is found in HTML body")
 	}
 	photoURL = PhotoURL(url)
