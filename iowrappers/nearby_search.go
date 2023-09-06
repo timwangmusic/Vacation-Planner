@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 	"strings"
 	"sync"
@@ -16,10 +15,10 @@ import (
 )
 
 const (
-	GoogleNearbySearchDelay           = time.Second
-	GoogleMapsSearchTimeout           = time.Second * 10
-	GoogleMapsSearchCallMaxCount      = 5
-	GoogleNearbySearchMaxRadiusMeters = 50000
+	GoogleNearbySearchDelay             = time.Second
+	GoogleMapsSearchTimeout             = time.Second * 10
+	GoogleMapsSearchCallMaxCount        = 5
+	GoogleNearbySearchMaxRadiusInMeters = 50000
 )
 
 type PlaceSearchRequest struct {
@@ -44,12 +43,12 @@ type PlaceSearchRequest struct {
 func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationType, token string) (reqOut maps.NearbySearchRequest) {
 	// Adjust radius, minPrice and maxPrice settings in search request
 	var radius = reqIn.Radius
-	var minPrice maps.PriceLevel
+	var exactPriceLevel maps.PriceLevel
 	if POI.PriceyEatery(reqIn.PlaceCat, reqIn.PriceLevel) {
 		// increase search radius
-		radius = uint(math.Min(float64(reqIn.Radius*4), GoogleNearbySearchMaxRadiusMeters))
+		radius = min(reqIn.Radius*4, GoogleNearbySearchMaxRadiusInMeters)
 		// set price filter
-		minPrice = maps.PriceLevel(fmt.Sprint(reqIn.PriceLevel))
+		exactPriceLevel = maps.PriceLevel(fmt.Sprint(reqIn.PriceLevel))
 	}
 
 	return maps.NearbySearchRequest{
@@ -61,7 +60,8 @@ func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationTyp
 		Radius:    radius,
 		PageToken: token,
 		RankBy:    maps.RankBy("prominence"),
-		MinPrice:  minPrice, // filter places with price >= minPrice
+		MinPrice:  exactPriceLevel,
+		MaxPrice:  exactPriceLevel,
 	}
 }
 
