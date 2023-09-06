@@ -380,12 +380,12 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, u
 		c := cases.Title(language.English)
 		resp.TravelDestination = c.String(planningRequest.Location.City)
 	} else {
-		geocodes, err := p.Solver.Searcher.ReverseGeocode(ctx, planningRequest.Location.Latitude, planningRequest.Location.Longitude)
+		geocodeResp, err := p.Solver.Searcher.ReverseGeocode(ctx, planningRequest.Location.Latitude, planningRequest.Location.Longitude)
 		if err != nil {
 			resp.TravelDestination = "Dream Vacation Destination"
 			return
 		}
-		resp.TravelDestination = geocodes.City
+		resp.TravelDestination = geocodeResp.City
 	}
 	return
 }
