@@ -463,6 +463,12 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
 
+	searchWithNearbyCities := ctx.DefaultQuery("nearby", "false")
+	var enableNearbyCities bool
+	if enableNearbyCities, err = strconv.ParseBool(searchWithNearbyCities); err != nil {
+		logger.Errorf("failed to parse search with nearby cities flag")
+	}
+
 	planningReq := standardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.SearchRadius = 10000 // default to 10km
 	planningReq.PreciseLocation = preciseLocation
@@ -484,8 +490,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
-	planningResp := p.Planning(c, planningReq, userView.Username, false)
-	logger.Debugf("planning response: %v", planningResp)
+	planningResp := p.Planning(c, planningReq, userView.Username, enableNearbyCities)
 	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
 		logger.Debug(err)
 	}
