@@ -262,8 +262,8 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 		topSolutionsCount = TopSolutionsCountDefault
 	}
 
-  priorityQueue := &MinPriorityQueue[Vertex]{}
-  includedPlaces := make(map[string]bool)
+	priorityQueue := &MinPriorityQueue[Vertex]{}
+	includedPlaces := make(map[string]bool)
 	resp = make(chan PlanningResp, 1)
 
 	for iterator.HasNext() {

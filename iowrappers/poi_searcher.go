@@ -144,17 +144,21 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 	Logger.Debugf("[request_id: %s] number of results from redis is %d", context.Value(ContextRequestIdKey), len(cachedPlaces))
 
 	// update last search time for the city
-	lastSearchTime, cacheMiss := s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
+	lastSearchTime, lastSearchTimeMiss := s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel)
 
 	currentTime := time.Now()
-	// use place data from database if the location is known and the data is fresh, and we have sufficient data
-	if cacheMiss == nil && (currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && uint(len(cachedPlaces)) >= request.MinNumResults) {
-		Logger.Infof("[request_id: %s] Using Redis to fulfill request. Place Type: %s", context.Value(ContextRequestIdKey), request.PlaceCat)
+	// use place data from the database if the data is fresh, and we have at least one known place satisfying the request
+	if currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && lastSearchTimeMiss == nil && len(cachedPlaces) > 0 {
+		Logger.Infof("(PoiSearcher)NearbySearch: [request_id: %s] Using Redis to fulfill request for location %+v with category %s and price level %d",
+			context.Value(ContextRequestIdKey),
+			request.Location,
+			request.PlaceCat,
+			request.PriceLevel)
 		places = append(places, cachedPlaces...)
 		return places, nil
 	}
 
-	utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339)), utils.LogError)
+	utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel, currentTime.Format(time.RFC3339)), utils.LogError)
 
 	// initiate a new external search
 	newPlaces, searchErr := s.searchPlacesWithMaps(context, request)
