@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	SamePlaceDupCountLimit                = 2
 	NumPlansDefault                       = 5
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 10000
@@ -262,8 +263,8 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 		topSolutionsCount = TopSolutionsCountDefault
 	}
 
-  priorityQueue := &MinPriorityQueue[Vertex]{}
-  includedPlaces := make(map[string]bool)
+	priorityQueue := &MinPriorityQueue[Vertex]{}
+	includedPlaces := make(map[string]int8)
 	resp = make(chan PlanningResp, 1)
 
 	for iterator.HasNext() {
@@ -487,27 +488,28 @@ func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *Planning
 	return nil
 }
 
-// isPlanDuplicate checks if ANY place in the plan is seen in previous results.
-func isPlanDuplicate(seenPlaces map[string]bool, newPlan PlanningSolution) bool {
+// isPlanDuplicate checks if ANY place in the plan is included in previous results.
+func isPlanDuplicate(includedPlaces map[string]int8, newPlan PlanningSolution) bool {
 	for _, placeID := range newPlan.PlaceIDS {
-		if _, exists := seenPlaces[placeID]; exists {
+		if count, exists := includedPlaces[placeID]; exists && (count >= SamePlaceDupCountLimit) {
 			return true
 		}
 	}
 	// mark all places in the plan as seen
 	for _, placeID := range newPlan.PlaceIDS {
-		seenPlaces[placeID] = true
+		includedPlaces[placeID]++
 	}
 	return false
 }
 
-// removePlaces deletes all places of the input plan potentially stored in the input hashMap.
+// removePlaces reduces counts of places of the input plan potentially stored in the input hashMap.
 // This function can allow the main algorithm to re-introduce new plans into top candidates.
-func removePlaces(seenPlaces map[string]bool, plan PlanningSolution) {
+func removePlaces(includedPlaces map[string]int8, plan PlanningSolution) {
 	for _, placeID := range plan.PlaceIDS {
-		if _, exists := seenPlaces[placeID]; !exists {
+		count, exists := includedPlaces[placeID]
+		if !exists || (count == 0) {
 			continue
 		}
-		delete(seenPlaces, placeID)
+		includedPlaces[placeID]--
 	}
 }
