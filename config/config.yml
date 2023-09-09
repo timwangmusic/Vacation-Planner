@@ -6,5 +6,6 @@ server:
       - formatted_address
       - adr_address
       - url
+      - user_ratings_total
   plan_solver:
     SamePlaceDupCountLimit: 2
