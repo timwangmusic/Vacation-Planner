@@ -264,6 +264,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 	}
 
 	priorityQueue := &MinPriorityQueue[Vertex]{}
+	// int8 is enough for a the place deduplication limit
 	includedPlaces := make(map[string]int8)
 	resp = make(chan PlanningResp, 1)
 
