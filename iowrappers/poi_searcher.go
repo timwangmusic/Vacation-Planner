@@ -134,27 +134,31 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 	}
 	location := request.Location
 
-	var cachedPlaces, places []POI.Place
-	var err error
-	cachedPlaces, err = s.redisClient.NearbySearch(context, request)
-	if err != nil {
-		Logger.Error(err)
+	var savedPlaces, places []POI.Place
+	var placesErr error
+	savedPlaces, placesErr = s.redisClient.NearbySearch(context, request)
+	if placesErr != nil {
+		Logger.Error(placesErr)
 	}
 
-	Logger.Debugf("[request_id: %s] number of results from redis is %d", context.Value(ContextRequestIdKey), len(cachedPlaces))
+	Logger.Debugf("[request_id: %s] number of results from redis is %d", context.Value(ContextRequestIdKey), len(savedPlaces))
 
 	// update last search time for the city
 	lastSearchTime, lastSearchTimeMiss := s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel)
 
 	currentTime := time.Now()
-	// use place data from the database if the data is fresh, and we have at least one known place satisfying the request
-	if currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && lastSearchTimeMiss == nil && len(cachedPlaces) > 0 {
+
+	isSavedPlacesFresh := func() bool {
+		return currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && lastSearchTimeMiss == nil
+	}
+	// use place data from the database if it is fresh and at least one saved place satisfies the request
+	if isSavedPlacesFresh() && placesErr == nil && len(savedPlaces) > 0 {
 		Logger.Infof("(PoiSearcher)NearbySearch: [request_id: %s] Using Redis to fulfill request for location %+v with category %s and price level %d",
 			context.Value(ContextRequestIdKey),
 			request.Location,
 			request.PlaceCat,
 			request.PriceLevel)
-		places = append(places, cachedPlaces...)
+		places = append(places, savedPlaces...)
 		return places, nil
 	}
 
