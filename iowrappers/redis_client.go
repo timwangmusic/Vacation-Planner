@@ -36,6 +36,7 @@ const (
 	CityRedisKeyPrefix             = "city"
 	CitiesRedisKey                 = "known_cities_ids"
 	KnownCitiesHashMapRedisKey     = "known_cities_name_to_id"
+	MapsLastSearchTimeRedisKey     = "MapsLastSearchTime"
 )
 
 var RedisClientDefaultBlankContext context.Context
@@ -109,11 +110,9 @@ func (r *RedisClient) setPlace(context context.Context, place POI.Place, wg *syn
 	}
 }
 
-func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory) (lastSearchTime time.Time, err error) {
-	redisKey := "MapsLastSearchTime"
-
-	redisField := strings.ToLower(strings.Join([]string{location.Country, location.City, string(category)}, ":"))
-	lst, cacheErr := r.client.HGet(context, redisKey, redisField).Result()
+func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel) (lastSearchTime time.Time, err error) {
+	redisField := strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category), strconv.Itoa(int(priceLevel))}, ":"))
+	lst, cacheErr := r.client.HGet(context, MapsLastSearchTimeRedisKey, redisField).Result()
 	if cacheErr != nil {
 		err = cacheErr
 		return
@@ -127,10 +126,9 @@ func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location PO
 	return
 }
 
-func (r *RedisClient) SetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, requestTime string) (err error) {
-	redisKey := "MapsLastSearchTime"
-	redisField := strings.ToLower(strings.Join([]string{location.Country, location.City, string(category)}, ":"))
-	_, err = r.client.HSet(context, redisKey, redisField, requestTime).Result()
+func (r *RedisClient) SetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel, requestTime string) (err error) {
+	redisField := strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category), strconv.Itoa(int(priceLevel))}, ":"))
+	_, err = r.client.HSet(context, MapsLastSearchTimeRedisKey, redisField, requestTime).Result()
 	return
 }
 

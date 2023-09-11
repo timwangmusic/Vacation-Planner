@@ -164,6 +164,7 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 		"Maps API call time", searchDuration,
 		"center location (lat,lng)", request.Location,
 		"place category", request.PlaceCat,
+		"price level", request.PriceLevel,
 		"total results", totalResult,
 	)
 	done <- true
