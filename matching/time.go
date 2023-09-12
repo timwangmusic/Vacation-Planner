@@ -2,11 +2,16 @@
 package matching
 
 import (
+	"fmt"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 type TimeSlot struct {
 	Slot POI.TimeInterval `json:"slot"`
+}
+
+func (t *TimeSlot) ToString() string {
+	return fmt.Sprintf("from %d to %d", t.Slot.Start, t.Slot.End)
 }
 
 type TimeInterval struct {

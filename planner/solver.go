@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"sort"
 	"strings"
@@ -439,6 +440,10 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq, t
 		iowrappers.Logger.Debugf("Before filtering, the number of places is %d", len(places))
 		iowrappers.Logger.Debugf("Filtering by time, the number of places is %d", len(placesByTime))
 		iowrappers.Logger.Debugf("Filtering by price, the number of places is %d", len(placesByPrice))
+
+		if len(placesByPrice) == 0 {
+			return nil, fmt.Errorf("failed to find any place for category %s at slot %s for location %+v", slot.Category, slot.TimeSlot.ToString(), req.Location)
+		}
 		placeClusters = append(placeClusters, placesByPrice)
 	}
 	return placeClusters, nil
