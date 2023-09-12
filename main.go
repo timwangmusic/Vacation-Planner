@@ -85,7 +85,7 @@ func RunServer() {
 		log.Fatal(err)
 	}
 
-	log.Info("Server gracefully shut down")
+	log.Info("Server gracefully shut down.")
 }
 
 func main() {
@@ -93,6 +93,9 @@ func main() {
 }
 
 func listenForShutDownServer(ch <-chan os.Signal, svr *manners.GracefulServer, myPlanner *planner.MyPlanner) {
+	// destroy zap logger
+	defer myPlanner.Destroy()
+
 	wg := &sync.WaitGroup{}
 	wg.Add(numWorkers)
 	// dispatch workers
@@ -100,14 +103,14 @@ func listenForShutDownServer(ch <-chan os.Signal, svr *manners.GracefulServer, m
 		go myPlanner.ProcessPlanningEvent(worker, wg)
 	}
 
-	// block and wait for shut-down signal
-	<-ch
+	go func() {
+		// wait for shut-down signal
+		<-ch
 
-	// destroy zap logger
-	defer myPlanner.Destroy()
-	// close worker channels
-	close(myPlanner.PlanningEvents)
+		// close worker channels
+		close(myPlanner.PlanningEvents)
+	}()
+
 	wg.Wait()
-
 	svr.Close()
 }
