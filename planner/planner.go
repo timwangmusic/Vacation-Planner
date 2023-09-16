@@ -378,7 +378,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	iowrappers.Logger.Debugf("->getPlanningApi: user view: %+v", userView)
+	logger.Debugf("->getPlanningApi: user view: %+v", userView)
 	requestId := requestid.Get(ctx)
 
 	var err error
@@ -439,14 +439,16 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
 	planningResp := p.Planning(c, &planningReq, userView.Username)
 	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
-		iowrappers.Logger.Debug(err)
+		logger.Debug(err)
 	}
 
 	if planningResp.Err != nil {
 		if planningResp.StatusCode == InvalidRequestLocation {
 			ctx.String(http.StatusBadRequest, planningResp.Err.Error())
 		} else if planningResp.StatusCode == NoValidSolution {
-			ctx.Redirect(http.StatusPermanentRedirect, "/v1/")
+			ctx.Redirect(http.StatusPermanentRedirect, "/v1")
+		} else if planningResp.StatusCode == InternalError {
+			ctx.Redirect(http.StatusPermanentRedirect, "/v1")
 		}
 		return
 	}
