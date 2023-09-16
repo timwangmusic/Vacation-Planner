@@ -157,6 +157,9 @@ func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningRe
 		close(responses)
 	}()
 
+	// int8 is enough for place deduplication limit
+	includedPlaces := make(map[string]int8)
+
 	pq := MinPriorityQueue[PlanningSolution]{}
 	errCodes := make([]int, 0)
 	for resp := range responses {
@@ -166,10 +169,17 @@ func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningRe
 			continue
 		}
 		for _, solution := range resp.Solutions {
+			if isPlanDuplicate(includedPlaces, solution) {
+				continue
+			}
+
 			if pq.Len() >= req.numPlans {
 				if pq.items[0].Key() < solution.Key() {
-					pq.Pop()
+					top := pq.Pop().(PlanningSolution)
+					removePlaces(includedPlaces, top)
 					pq.Push(solution)
+				} else {
+					removePlaces(includedPlaces, solution)
 				}
 			} else {
 				pq.Push(solution)
@@ -553,7 +563,7 @@ func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *Planning
 	return nil
 }
 
-// isPlanDuplicate checks if ANY place in the plan is included in previous results.
+// isPlanDuplicate checks if ANY place in the plan appears in previous results more than SamePlaceDupCountLimit times.
 func isPlanDuplicate(includedPlaces map[string]int8, newPlan PlanningSolution) bool {
 	for _, placeID := range newPlan.PlaceIDS {
 		if count, exists := includedPlaces[placeID]; exists && (count >= SamePlaceDupCountLimit) {
