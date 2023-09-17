@@ -74,13 +74,14 @@ type MultiPlanningReq struct {
 }
 
 type PlanningReq struct {
-	Location        POI.Location  `json:"location"`
-	Slots           []SlotRequest `json:"slots"`
-	TravelDate      string
-	NumPlans        int
-	SearchRadius    uint           `json:"radius"`
-	PriceLevel      POI.PriceLevel `json:"price_level"`
-	PreciseLocation bool
+	Location         POI.Location  `json:"location"`
+	Slots            []SlotRequest `json:"slots"`
+	TravelDate       string
+	NumPlans         int
+	SearchRadius     uint           `json:"radius"`
+	PriceLevel       POI.PriceLevel `json:"price_level"`
+	PreciseLocation  bool
+	WithNearbyCities bool
 }
 
 type PlanningResp struct {

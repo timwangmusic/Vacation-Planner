@@ -283,10 +283,10 @@ func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, view)
 }
 
-func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, user string, withNearbyCities bool) (resp PlanningResponse) {
+func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, user string) (resp PlanningResponse) {
 	logger := iowrappers.Logger
 	var planningResponse *PlanningResp
-	if withNearbyCities {
+	if planningRequest.WithNearbyCities {
 		lat, lng, err := p.Solver.Searcher.Geocode(ctx, &iowrappers.GeocodeQuery{
 			City:              planningRequest.Location.City,
 			AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
@@ -470,6 +470,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	planningReq := standardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
+	planningReq.WithNearbyCities = enableNearbyCities
 	planningReq.SearchRadius = 10000 // default to 10km
 	planningReq.PreciseLocation = preciseLocation
 	logger.Debugf("use precise location: %t", preciseLocation)
@@ -490,7 +491,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
-	planningResp := p.Planning(c, planningReq, userView.Username, enableNearbyCities)
+	planningResp := p.Planning(c, planningReq, userView.Username)
 	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
 		logger.Debug(err)
 	}
@@ -644,7 +645,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
-	planningResp := p.Planning(c, request, "guest", false)
+	planningResp := p.Planning(c, request, "guest")
 	iowrappers.Logger.Debugf("response status code is: %d", planningResp.StatusCode)
 	if planningResp.StatusCode == RequestTimeOut {
 		ctx.JSON(http.StatusRequestTimeout, nil)
