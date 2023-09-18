@@ -287,15 +287,20 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, u
 	logger := iowrappers.Logger
 	var planningResponse *PlanningResp
 	if planningRequest.WithNearbyCities {
-		lat, lng, err := p.Solver.Searcher.Geocode(ctx, &iowrappers.GeocodeQuery{
-			City:              planningRequest.Location.City,
-			AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
-			Country:           planningRequest.Location.Country,
-		})
-		if err != nil {
-			return PlanningResponse{Err: err}
+		var lat, lng float64
+		var err error
+		lat, lng = planningRequest.Location.Latitude, planningRequest.Location.Longitude
+		if !planningRequest.PreciseLocation {
+			lat, lng, err = p.Solver.Searcher.Geocode(ctx, &iowrappers.GeocodeQuery{
+				City:              planningRequest.Location.City,
+				AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
+				Country:           planningRequest.Location.Country,
+			})
+			if err != nil {
+				return PlanningResponse{Err: err}
+			}
+			logger.Debugf("->Planning: lat, lng from Geocode: %.4f, %.4f", lat, lng)
 		}
-		logger.Debugf("->Planning: lat, lng from Geocode: %.4f, %.4f", lat, lng)
 
 		// convert km to m for nearbyCityResponse search query
 		nearbyCityResponse, err := p.Solver.Searcher.NearbyCities(ctx,
