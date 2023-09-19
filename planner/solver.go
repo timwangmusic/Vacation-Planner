@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	SamePlaceDupCountLimit                = 2
 	NumPlansDefault                       = 5
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 10000
@@ -47,9 +46,10 @@ func (ps PlanningSolution) Key() float64 {
 }
 
 type Solver struct {
-	Searcher          *iowrappers.PoiSearcher
-	TimeMatcher       matching.Matcher
-	PriceRangeMatcher matching.Matcher
+	Searcher              *iowrappers.PoiSearcher
+	TimeMatcher           matching.Matcher
+	PriceRangeMatcher     matching.Matcher
+	placeDedupeCountLimit int
 }
 
 const (
@@ -97,10 +97,11 @@ type SlotRequest struct {
 	Category POI.PlaceCategory `json:"category"`
 }
 
-func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
+func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int) {
 	s.Searcher = poiSearcher
 	s.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
 	s.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
+	s.placeDedupeCountLimit = placeDedupeCountLimit
 }
 
 func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) bool {
@@ -170,7 +171,7 @@ func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningRe
 			continue
 		}
 		for _, solution := range resp.Solutions {
-			if isPlanDuplicate(includedPlaces, solution) {
+			if s.isPlanDuplicate(includedPlaces, solution) {
 				continue
 			}
 
@@ -188,7 +189,7 @@ func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningRe
 		}
 	}
 
-	for code := range errCodes {
+	for _, code := range errCodes {
 		iowrappers.Logger.Debugf("->SolveWithNearbyCities: encountered error with status: %d", code)
 	}
 	if pq.Len() > 0 {
@@ -329,7 +330,7 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 	return res, nil
 }
 
-func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) (resp chan PlanningResp) {
+func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) (resp chan PlanningResp) {
 	if topSolutionsCount <= 0 {
 		topSolutionsCount = TopSolutionsCountDefault
 	}
@@ -353,7 +354,7 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 				log.Debug(err)
 				continue
 			}
-			if isPlanDuplicate(includedPlaces, candidate) {
+			if s.isPlanDuplicate(includedPlaces, candidate) {
 				continue
 			}
 			newVertex := Vertex{Name: candidate.ID, K: candidate.Score, Object: candidate}
@@ -544,7 +545,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq) (resp 
 		resp.Err = errors.New("cannot complete computation in time")
 		resp.ErrorCode = RequestTimeOut
 		return
-	case r := <-FindBestPlanningSolutions(ctxWithTimeout, placeClusters, req.NumPlans, mdIter):
+	case r := <-s.FindBestPlanningSolutions(ctxWithTimeout, placeClusters, req.NumPlans, mdIter):
 		return r
 	}
 }
@@ -564,10 +565,10 @@ func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *Planning
 	return nil
 }
 
-// isPlanDuplicate checks if ANY place in the plan appears in previous results more than SamePlaceDupCountLimit times.
-func isPlanDuplicate(includedPlaces map[string]int8, newPlan PlanningSolution) bool {
+// isPlanDuplicate checks if ANY place in the plan appears in previous results more than Solver.placeDedupeCountLimit times.
+func (s *Solver) isPlanDuplicate(includedPlaces map[string]int8, newPlan PlanningSolution) bool {
 	for _, placeID := range newPlan.PlaceIDS {
-		if count, exists := includedPlaces[placeID]; exists && (count >= SamePlaceDupCountLimit) {
+		if count, exists := includedPlaces[placeID]; exists && (int(count) >= s.placeDedupeCountLimit) {
 			return true
 		}
 	}

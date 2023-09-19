@@ -36,6 +36,11 @@ type Configurations struct {
 		GoogleMaps struct {
 			DetailedSearchFields []string `yaml:"detailed_search_fields"`
 		} `yaml:"google_maps"`
+
+		PlanSolver struct {
+			SamePlaceDedupeCountLimit int `yaml:"same_place_dedupe_count_limit"`
+			NearbyCitiesCountLimit    int `yaml:"nearby_cities_count_limit"`
+		} `yaml:"plan_solver"`
 	} `yaml:"server"`
 }
 
@@ -43,6 +48,7 @@ type Configurations struct {
 func flattenConfig(configs *Configurations) map[string]interface{} {
 	flattenedConfigs := make(map[string]interface{})
 	flattenedConfigs["server:google_maps:detailed_search_fields"] = configs.Server.GoogleMaps.DetailedSearchFields
+	flattenedConfigs["server:plan_solver:same_place_dedupe_count_limit"] = configs.Server.PlanSolver.SamePlaceDedupeCountLimit
 	return flattenedConfigs
 }
 

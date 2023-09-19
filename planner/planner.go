@@ -129,10 +129,6 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	}
 	p.PhotoClient = iowrappers.CreatePhotoHttpClient(mapsClientApiKey, PhotoApiBaseURL)
 
-	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
-
-	p.Solver.Init(PoiSearcher)
-
 	p.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
 	p.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
 	switch strings.ToLower(os.Getenv("ENVIRONMENT")) {
@@ -146,6 +142,14 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		p.Environment = DevelopmentEnvironment
 	}
 	p.Configs = configs
+
+	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
+	if v, exists := p.Configs["server:plan_solver:same_place_dedupe_count_limit"]; exists {
+		p.Solver.Init(PoiSearcher, v.(int))
+	} else {
+		log.Fatalf("failed to initialize the plan solver.")
+	}
+
 	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
 		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
 	}
