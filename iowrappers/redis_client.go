@@ -112,6 +112,10 @@ func (r *RedisClient) setPlace(context context.Context, place POI.Place, wg *syn
 
 func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel) (lastSearchTime time.Time, err error) {
 	redisField := strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category), strconv.Itoa(int(priceLevel))}, ":"))
+	// for places in Visit category Google Maps do not provide pricing info, this is subject to change in the future
+	if category == POI.PlaceCategoryVisit {
+		redisField = strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category)}, ":"))
+	}
 	lst, cacheErr := r.client.HGet(context, MapsLastSearchTimeRedisKey, redisField).Result()
 	if cacheErr != nil {
 		err = cacheErr
@@ -128,6 +132,10 @@ func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location PO
 
 func (r *RedisClient) SetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel, requestTime string) (err error) {
 	redisField := strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category), strconv.Itoa(int(priceLevel))}, ":"))
+	// for places in Visit category Google Maps do not provide pricing info, this is subject to change in the future
+	if category == POI.PlaceCategoryVisit {
+		redisField = strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category)}, ":"))
+	}
 	_, err = r.client.HSet(context, MapsLastSearchTimeRedisKey, redisField, requestTime).Result()
 	return
 }
