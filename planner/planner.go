@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -145,9 +147,11 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 	if v, exists := p.Configs["server:plan_solver:same_place_dedupe_count_limit"]; exists {
-		p.Solver.Init(PoiSearcher, v.(int))
+		if c, exists := p.Configs["server:plan_solver:nearby_cities_count_limit"]; exists {
+			p.Solver.Init(PoiSearcher, v.(int), c.(int))
+		}
 	} else {
-		log.Fatalf("failed to initialize the plan solver.")
+		log.Fatal("failed to initialize the plan solver.")
 	}
 
 	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
@@ -323,7 +327,10 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, u
 		if err != nil {
 			return PlanningResponse{Err: err}
 		}
-		locations := MapSlice[iowrappers.City, POI.Location](nearbyCityResponse.Cities, toLocation)
+
+		// sort cities by population ascending
+		slices.SortFunc(nearbyCityResponse.Cities, func(a, b iowrappers.City) int { return cmp.Compare(b.Population, a.Population) })
+		locations := MapSlice[iowrappers.City, POI.Location](nearbyCityResponse.Cities[:min(p.Solver.nearbyCitiesCountLimit, len(nearbyCityResponse.Cities))], toLocation)
 
 		logger.Debugf("->Planning: found %d nearby nearbyCityResponse: %+v", len(locations), locations)
 		requests, err := deepCopyAnything(&planningRequest, len(locations))

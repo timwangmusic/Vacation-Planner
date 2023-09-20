@@ -49,6 +49,7 @@ func flattenConfig(configs *Configurations) map[string]interface{} {
 	flattenedConfigs := make(map[string]interface{})
 	flattenedConfigs["server:google_maps:detailed_search_fields"] = configs.Server.GoogleMaps.DetailedSearchFields
 	flattenedConfigs["server:plan_solver:same_place_dedupe_count_limit"] = configs.Server.PlanSolver.SamePlaceDedupeCountLimit
+	flattenedConfigs["server:plan_solver:nearby_cities_count_limit"] = configs.Server.PlanSolver.NearbyCitiesCountLimit
 	return flattenedConfigs
 }
 

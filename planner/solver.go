@@ -46,10 +46,11 @@ func (ps PlanningSolution) Key() float64 {
 }
 
 type Solver struct {
-	Searcher              *iowrappers.PoiSearcher
-	TimeMatcher           matching.Matcher
-	PriceRangeMatcher     matching.Matcher
-	placeDedupeCountLimit int
+	Searcher               *iowrappers.PoiSearcher
+	TimeMatcher            matching.Matcher
+	PriceRangeMatcher      matching.Matcher
+	placeDedupeCountLimit  int
+	nearbyCitiesCountLimit int
 }
 
 const (
@@ -97,11 +98,12 @@ type SlotRequest struct {
 	Category POI.PlaceCategory `json:"category"`
 }
 
-func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int) {
+func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int, nearbyCitiesCountLimit int) {
 	s.Searcher = poiSearcher
 	s.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
 	s.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
 	s.placeDedupeCountLimit = placeDedupeCountLimit
+	s.nearbyCitiesCountLimit = nearbyCitiesCountLimit
 }
 
 func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) bool {
