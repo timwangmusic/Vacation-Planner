@@ -291,119 +291,129 @@ func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, view)
 }
 
-func (p *MyPlanner) Planning(ctx context.Context, planningRequest PlanningReq, user string) (resp PlanningResponse) {
+func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningRequest, user string) (resp PlanningResponse) {
 	logger := iowrappers.Logger
 	var planningResponse *PlanningResp
-	if planningRequest.WithNearbyCities {
-		var lat, lng float64
-		var err error
-		lat, lng = planningRequest.Location.Latitude, planningRequest.Location.Longitude
-		if !planningRequest.PreciseLocation {
-			lat, lng, err = p.Solver.Searcher.Geocode(ctx, &iowrappers.GeocodeQuery{
+	planningResponse = p.Solver.Solve(ctx, planningRequest)
+	resp = p.processPlanningResp(ctx, planningRequest, planningResponse, user)
+	if !planningRequest.WithNearbyCities {
+		return resp
+	}
+
+	if resp.Err == nil && len(resp.TravelPlans) >= planningRequest.NumPlans {
+		return resp
+	}
+
+	var lat, lng float64
+	var err error
+	lat, lng = planningRequest.Location.Latitude, planningRequest.Location.Longitude
+	if !planningRequest.PreciseLocation {
+		lat, lng, err = p.Solver.Searcher.Geocode(ctx, &iowrappers.GeocodeQuery{
+			City:              planningRequest.Location.City,
+			AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
+			Country:           planningRequest.Location.Country,
+		})
+		if err != nil {
+			return PlanningResponse{Err: err}
+		}
+		logger.Debugf("->Planning: lat, lng from Geocode: %.4f, %.4f", lat, lng)
+	}
+
+	// convert km to m for nearbyCityResponse search query
+	nearbyCityResponse, err := p.Solver.Searcher.NearbyCities(ctx,
+		&iowrappers.NearbyCityRequest{
+			ApiKey: p.GeonamesApiKey,
+			Location: POI.Location{
+				Latitude:          lat,
+				Longitude:         lng,
 				City:              planningRequest.Location.City,
 				AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
 				Country:           planningRequest.Location.Country,
-			})
-			if err != nil {
-				return PlanningResponse{Err: err}
-			}
-			logger.Debugf("->Planning: lat, lng from Geocode: %.4f, %.4f", lat, lng)
-		}
-
-		// convert km to m for nearbyCityResponse search query
-		nearbyCityResponse, err := p.Solver.Searcher.NearbyCities(ctx,
-			&iowrappers.NearbyCityRequest{
-				ApiKey: p.GeonamesApiKey,
-				Location: POI.Location{
-					Latitude:          lat,
-					Longitude:         lng,
-					City:              planningRequest.Location.City,
-					AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
-					Country:           planningRequest.Location.Country,
-				},
-				Radius: float64(planningRequest.SearchRadius / 1000),
-				Filter: go_geonames.CityWithPopulationGreaterThan15000,
-			})
-		if err != nil {
-			return PlanningResponse{Err: err}
-		}
-
-		// sort cities by population ascending
-		slices.SortFunc(nearbyCityResponse.Cities, func(a, b iowrappers.City) int { return cmp.Compare(b.Population, a.Population) })
-		locations := MapSlice[iowrappers.City, POI.Location](nearbyCityResponse.Cities[:min(p.Solver.nearbyCitiesCountLimit, len(nearbyCityResponse.Cities))], toLocation)
-
-		logger.Debugf("->Planning: found %d nearby nearbyCityResponse: %+v", len(locations), locations)
-		requests, err := deepCopyAnything(&planningRequest, len(locations))
-		if err != nil {
-			return PlanningResponse{Err: err}
-		}
-
-		for idx, req := range requests {
-			req.Location = locations[idx]
-		}
-		planningResponse = p.Solver.SolveWithNearbyCities(ctx, &MultiPlanningReq{requests: requests, numPlans: planningRequest.NumPlans})
-	} else {
-		planningResponse = p.Solver.Solve(ctx, &planningRequest)
+			},
+			Radius: float64(planningRequest.SearchRadius / 1000),
+			Filter: go_geonames.CityWithPopulationGreaterThan15000,
+		})
+	if err != nil {
+		return PlanningResponse{Err: err}
 	}
 
-	if planningResponse.Err != nil {
-		resp.Err = planningResponse.Err
-		resp.StatusCode = planningResponse.ErrorCode
-		return
+	// sort cities by population ascending
+	slices.SortFunc(nearbyCityResponse.Cities, func(a, b iowrappers.City) int { return cmp.Compare(b.Population, a.Population) })
+	locations := MapSlice[iowrappers.City, POI.Location](nearbyCityResponse.Cities[:min(p.Solver.nearbyCitiesCountLimit, len(nearbyCityResponse.Cities))], toLocation)
+
+	logger.Debugf("->Planning: found %d nearby nearbyCityResponse: %+v", len(locations), locations)
+	requests, err := deepCopyAnything(planningRequest, len(locations))
+	if err != nil {
+		return PlanningResponse{Err: err}
+	}
+
+	for idx, req := range requests {
+		req.Location = locations[idx]
+	}
+	planningResponse = p.Solver.SolveWithNearbyCities(ctx, &MultiPlanningReq{requests: requests, numPlans: planningRequest.NumPlans})
+	return p.processPlanningResp(ctx, planningRequest, planningResponse, user)
+}
+
+func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRequest, resp *PlanningResp, user string) PlanningResponse {
+	response := PlanningResponse{}
+	if resp.Err != nil {
+		response.Err = resp.Err
+		response.StatusCode = resp.ErrorCode
+		return response
 	}
 
 	// logging planning API usage for valid requests
 	event := iowrappers.PlanningEvent{
 		User:      user,
-		Country:   planningRequest.Location.Country,
-		City:      planningRequest.Location.City,
+		Country:   request.Location.Country,
+		City:      request.Location.City,
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
 	p.PlanningEvents <- event
 	p.planningEventLogging(event)
 
-	if len(planningResponse.Solutions) == 0 {
-		resp.Err = errors.New("cannot find a valid solution")
-		resp.StatusCode = NoValidSolution
-		return
+	if len(resp.Solutions) == 0 {
+		response.Err = errors.New("cannot find a valid solution")
+		response.StatusCode = NoValidSolution
+		return response
 	}
 
-	topSolutions := planningResponse.Solutions
-	resp.TravelPlans = make([]TravelPlan, len(topSolutions))
-	resp.TripDetailsURL = make([]string, len(topSolutions))
+	solutions := resp.Solutions
+	response.TravelPlans = make([]TravelPlan, len(solutions))
+	response.TripDetailsURL = make([]string, len(solutions))
 
-	for sIdx, topSolution := range topSolutions {
+	for sIdx, topSolution := range solutions {
 		travelPlan := TravelPlan{
 			Places: make([]TimeSectionPlace, 0),
 		}
 		for pIdx, placeName := range topSolution.PlaceNames {
 			travelPlan.Places = append(travelPlan.Places, TimeSectionPlace{
 				PlaceName: placeName,
-				StartTime: planningRequest.Slots[pIdx].TimeSlot.Slot.Start,
-				EndTime:   planningRequest.Slots[pIdx].TimeSlot.Slot.End,
+				StartTime: request.Slots[pIdx].TimeSlot.Slot.Start,
+				EndTime:   request.Slots[pIdx].TimeSlot.Slot.End,
 				Address:   topSolution.PlaceAddresses[pIdx],
 				URL:       topSolution.PlaceURLs[pIdx],
 				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
 			})
 		}
 		travelPlan.ID = topSolution.ID
-		resp.TravelPlans[sIdx] = travelPlan
-		resp.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID + "?" + "date=" + planningRequest.TravelDate
+		response.TravelPlans[sIdx] = travelPlan
+		response.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID + "?date=" + request.TravelDate
 	}
 
-	resp.StatusCode = ValidSolutionFound
-	if len(planningRequest.Location.City) > 0 {
+	response.StatusCode = ValidSolutionFound
+	if len(request.Location.City) > 0 {
 		c := cases.Title(language.English)
-		resp.TravelDestination = c.String(planningRequest.Location.City)
+		response.TravelDestination = c.String(request.Location.City)
 	} else {
-		geocodeResp, err := p.Solver.Searcher.ReverseGeocode(ctx, planningRequest.Location.Latitude, planningRequest.Location.Longitude)
+		geocodeResp, err := p.Solver.Searcher.ReverseGeocode(ctx, request.Location.Latitude, request.Location.Longitude)
 		if err != nil {
-			resp.TravelDestination = "Dream Vacation Destination"
-			return
+			response.TravelDestination = "Dream Vacation Destination"
+			return response
 		}
-		resp.TravelDestination = geocodeResp.City
+		response.TravelDestination = geocodeResp.City
 	}
-	return
+	return response
 }
 
 func (p *MyPlanner) searchPageHandler(ctx *gin.Context) {
@@ -415,7 +425,7 @@ func (p *MyPlanner) homePageHandler(ctx *gin.Context) {
 }
 
 func (p *MyPlanner) getOptimalPlan(ctx *gin.Context) {
-	req := &PlanningReq{}
+	req := &PlanningRequest{}
 
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
@@ -507,7 +517,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
-	planningResp := p.Planning(c, planningReq, userView.Username)
+	planningResp := p.Planning(c, &planningReq, userView.Username)
 	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
 		logger.Debug(err)
 	}
@@ -643,7 +653,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 		return
 	}
 
-	request := PlanningReq{
+	request := &PlanningRequest{
 		NumPlans:     pageSize,
 		SearchRadius: 10000,
 		PriceLevel:   toPriceLevel(priceLevel),

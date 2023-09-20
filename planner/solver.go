@@ -70,11 +70,11 @@ type PlacePlanningDetails struct {
 
 // MultiPlanningReq can be used to represent a multi-day planning request for a single location or a group of requests for different locations
 type MultiPlanningReq struct {
-	requests []*PlanningReq
+	requests []*PlanningRequest
 	numPlans int
 }
 
-type PlanningReq struct {
+type PlanningRequest struct {
 	Location         POI.Location  `json:"location"`
 	Slots            []SlotRequest `json:"slots"`
 	TravelDate       string
@@ -121,7 +121,7 @@ func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) b
 	return true
 }
 
-func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningReq) ([]PlacePlanningDetails, error) {
+func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningRequest) ([]PlacePlanningDetails, error) {
 	clusters, err := s.generatePlacesForSlots(ctx, req)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningRe
 	responses := make(chan *PlanningResp)
 
 	for _, request := range req.requests {
-		go func(r *PlanningReq) {
+		go func(r *PlanningRequest) {
 			defer wg.Done()
 			responses <- s.Solve(ctx, r)
 		}(request)
@@ -200,7 +200,7 @@ func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningRe
 	return &PlanningResp{Err: fmt.Errorf("cannot find solutions"), ErrorCode: NoValidSolution}
 }
 
-func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
+func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp {
 	redisClient := s.Searcher.GetRedisClient()
 	logger := iowrappers.Logger
 	logger.Debugf("->Solve(ctx.Context, iowrappers.RedisClient, %v, *PlanningResp)", req)
@@ -261,7 +261,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
 }
 
 // generates a request for normal template used by the regular search
-func standardRequest(travelDate string, weekday POI.Weekday, numResults int, priceLevel POI.PriceLevel) (req PlanningReq) {
+func standardRequest(travelDate string, weekday POI.Weekday, numResults int, priceLevel POI.PriceLevel) (req PlanningRequest) {
 	timeSlot1 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
 	slotReq1 := SlotRequest{
 		TimeSlot: timeSlot1,
@@ -466,7 +466,7 @@ func (s *Solver) weightMatrix(placeClusters [][]matching.Place) ([]string, [][]i
 	return placeIds, weights, nil
 }
 
-func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq) ([][]matching.Place, error) {
+func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningRequest) ([][]matching.Place, error) {
 	logger := iowrappers.Logger
 	var placeClusters [][]matching.Place
 	for _, slot := range req.Slots {
@@ -522,7 +522,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReq) (
 	return placeClusters, nil
 }
 
-func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq) (resp PlanningResp) {
+func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (resp PlanningResp) {
 	placeClusters, err := s.generatePlacesForSlots(ctx, req)
 	if err != nil {
 		resp.ErrorCode = InternalError
@@ -552,7 +552,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq) (resp 
 	}
 }
 
-func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningReq, solutions []PlanningSolution) error {
+func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningRequest, solutions []PlanningSolution) error {
 	planningSolutionRecords := make([]iowrappers.PlanningSolutionRecord, len(solutions))
 
 	for idx, candidate := range solutions {

@@ -59,7 +59,7 @@ func toPlaceCategories(slotRequests []SlotRequest) []POI.PlaceCategory {
 	return categories
 }
 
-func toSolutionsSaveRequest(req *PlanningReq, solutions []iowrappers.PlanningSolutionRecord) *iowrappers.PlanningSolutionsSaveRequest {
+func toSolutionsSaveRequest(req *PlanningRequest, solutions []iowrappers.PlanningSolutionRecord) *iowrappers.PlanningSolutionsSaveRequest {
 	stayTimes := toTimeSlots(req.Slots)
 	intervals := make([]POI.TimeInterval, len(stayTimes))
 	for idx, stayTime := range stayTimes {

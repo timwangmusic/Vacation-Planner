@@ -9,19 +9,19 @@ import (
 
 func TestCopyRequests(t *testing.T) {
 	type args struct {
-		req       PlanningReq
+		req       PlanningRequest
 		numCopies int
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    []PlanningReq
+		want    []PlanningRequest
 		wantErr bool
 	}{
 		{
 			name: "regular copy request",
 			args: args{
-				req: PlanningReq{
+				req: PlanningRequest{
 					Location: POI.Location{Country: "China", City: "Beijing"},
 					Slots: []SlotRequest{
 						{
@@ -38,7 +38,7 @@ func TestCopyRequests(t *testing.T) {
 				},
 				numCopies: 2,
 			},
-			want: []PlanningReq{
+			want: []PlanningRequest{
 				{
 					Location: POI.Location{Country: "China", City: "Beijing"},
 					Slots: []SlotRequest{
