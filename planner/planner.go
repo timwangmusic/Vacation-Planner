@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	go_geonames "github.com/timwangmusic/go-geonames"
+	gogeonames "github.com/timwangmusic/go-geonames"
 	"html/template"
 	"io"
 	"net/http"
@@ -300,6 +300,7 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReque
 		return resp
 	}
 
+	// prioritize planning results from the primary location
 	if resp.Err == nil && len(resp.TravelPlans) >= planningRequest.NumPlans {
 		return resp
 	}
@@ -319,7 +320,6 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReque
 		logger.Debugf("->Planning: lat, lng from Geocode: %.4f, %.4f", lat, lng)
 	}
 
-	// convert km to m for nearbyCityResponse search query
 	nearbyCityResponse, err := p.Solver.Searcher.NearbyCities(ctx,
 		&iowrappers.NearbyCityRequest{
 			ApiKey: p.GeonamesApiKey,
@@ -330,18 +330,19 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReque
 				AdminAreaLevelOne: planningRequest.Location.AdminAreaLevelOne,
 				Country:           planningRequest.Location.Country,
 			},
+			// convert km to m for nearbyCityResponse search query
 			Radius: float64(planningRequest.SearchRadius / 1000),
-			Filter: go_geonames.CityWithPopulationGreaterThan15000,
+			Filter: gogeonames.CityWithPopulationGreaterThan15000,
 		})
 	if err != nil {
 		return PlanningResponse{Err: err}
 	}
 
-	// sort cities by population ascending
+	// sort cities by population descending
 	slices.SortFunc(nearbyCityResponse.Cities, func(a, b iowrappers.City) int { return cmp.Compare(b.Population, a.Population) })
 	locations := MapSlice[iowrappers.City, POI.Location](nearbyCityResponse.Cities[:min(p.Solver.nearbyCitiesCountLimit, len(nearbyCityResponse.Cities))], toLocation)
-
 	logger.Debugf("->Planning: found %d nearby nearbyCityResponse: %+v", len(locations), locations)
+
 	requests, err := deepCopyAnything(planningRequest, len(locations))
 	if err != nil {
 		return PlanningResponse{Err: err}

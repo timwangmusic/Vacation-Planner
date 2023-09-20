@@ -165,11 +165,10 @@ func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningRe
 	includedPlaces := make(map[string]int8)
 
 	pq := MinPriorityQueue[PlanningSolution]{}
-	errCodes := make([]int, 0)
+	errs := make([]error, 0)
 	for resp := range responses {
 		if resp.Err != nil {
-			iowrappers.Logger.Debugf("->SolveWithNearbyCities: encountered error %s", resp.Err.Error())
-			errCodes = append(errCodes, resp.ErrorCode)
+			errs = append(errs, resp.Err)
 			continue
 		}
 		for _, solution := range resp.Solutions {
@@ -191,8 +190,8 @@ func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningRe
 		}
 	}
 
-	for _, code := range errCodes {
-		iowrappers.Logger.Debugf("->SolveWithNearbyCities: encountered error with status: %d", code)
+	for _, err := range errs {
+		iowrappers.Logger.Debugf("->SolveWithNearbyCities: encountered error: %v", err)
 	}
 	if pq.Len() > 0 {
 		return &PlanningResp{Solutions: pq.items}
