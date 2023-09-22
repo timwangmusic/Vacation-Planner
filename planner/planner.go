@@ -305,9 +305,8 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReque
 		return resp
 	}
 
-	var lat, lng float64
 	var err error
-	lat, lng = planningRequest.Location.Latitude, planningRequest.Location.Longitude
+	lat, lng := planningRequest.Location.Latitude, planningRequest.Location.Longitude
 	if !planningRequest.PreciseLocation {
 		lat, lng, err = p.Solver.Searcher.Geocode(ctx, &iowrappers.GeocodeQuery{
 			City:              planningRequest.Location.City,
