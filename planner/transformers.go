@@ -59,17 +59,16 @@ func toPlaceCategories(slotRequests []SlotRequest) []POI.PlaceCategory {
 	return categories
 }
 
-func toSolutionsSaveRequest(req *PlanningReq, solutions []iowrappers.PlanningSolutionRecord) *iowrappers.PlanningSolutionsSaveRequest {
+func toSolutionsSaveRequest(req *PlanningRequest, solutions []iowrappers.PlanningSolutionRecord) *iowrappers.PlanningSolutionsSaveRequest {
 	stayTimes := toTimeSlots(req.Slots)
 	intervals := make([]POI.TimeInterval, len(stayTimes))
 	for idx, stayTime := range stayTimes {
 		intervals[idx] = stayTime.Slot
 	}
 
-	// TODO: update this when the planning request contains different weekdays for time slots
 	weekdays := make([]POI.Weekday, len(stayTimes))
 	for idx := range weekdays {
-		weekdays[idx] = req.Weekday
+		weekdays[idx] = req.Slots[idx].Weekday
 	}
 
 	return &iowrappers.PlanningSolutionsSaveRequest{
@@ -118,5 +117,15 @@ func toPlanningSolutionRecord(solution PlanningSolution, location POI.Location) 
 		PlaceURLs:       solution.PlaceURLs,
 		PlaceCategories: solution.PlaceCategories,
 		Destination:     location,
+	}
+}
+
+func toLocation(city iowrappers.City) POI.Location {
+	return POI.Location{
+		Latitude:          city.Latitude,
+		Longitude:         city.Longitude,
+		City:              city.Name,
+		AdminAreaLevelOne: city.AdminArea1,
+		Country:           city.Country,
 	}
 }

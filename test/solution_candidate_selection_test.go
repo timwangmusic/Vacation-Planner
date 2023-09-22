@@ -14,6 +14,7 @@ import (
 // test if priority queue gives top solution candidates
 func TestSolutionCandidateSelection(t *testing.T) {
 	places := make([]matching.Place, 0)
+	s := &planner.Solver{}
 
 	// top five ratings are 99, 98, 97, 96, 95
 	for i := 0; i < 100; i++ {
@@ -29,7 +30,7 @@ func TestSolutionCandidateSelection(t *testing.T) {
 		t.Fatal(err)
 	}
 	topSolutionsCount := 5
-	res := planner.FindBestPlanningSolutions(context.Background(), clusters, topSolutionsCount, iterator)
+	res := s.FindBestPlanningSolutions(context.Background(), clusters, topSolutionsCount, iterator)
 	resp := <-res
 	if err != nil {
 		t.Fatal(err)
