@@ -465,6 +465,18 @@ func (s *Solver) weightMatrix(placeClusters [][]matching.Place) ([]string, [][]i
 	return placeIds, weights, nil
 }
 
+func filterZeroRating(places []matching.Place) []matching.Place {
+	var output = make([]matching.Place, 0, len(places))
+	for _, place := range places {
+		if place.UserRatingsCount() == 0 {
+			continue
+		}
+		output = append(output, place)
+	}
+	return output
+}
+
+// TODO: add a new matcher here to filter out places without user rating
 func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningRequest) ([][]matching.Place, error) {
 	logger := iowrappers.Logger
 	var placeClusters [][]matching.Place
@@ -493,8 +505,11 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 		logger.Debugf("Before filtering, the number of places for category %s is %d", slot.Category, len(places))
 
+		placesHasRatings := filterZeroRating(places)
+		logger.Debugf("Filter out zero user rating, the number of places for category %s is %d", slot.Category, len(placesHasRatings))
+
 		placesByTime, err := s.TimeMatcher.Match(&matching.FilterRequest{
-			Places:   places,
+			Places:   placesHasRatings,
 			Criteria: matching.FilterByTimePeriod,
 			Params:   filterParams,
 		})
