@@ -135,7 +135,7 @@ func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningRequest
 	places := make([]matching.Place, len(placeIDs))
 	results := make([]PlacePlanningDetails, len(placeIDs))
 	for idx, id := range placeIDs {
-		err := s.Searcher.GetRedisClient().FetchSingleRecord(ctx, "place_details:place_ID:"+id, &places[idx].Place)
+		err = s.Searcher.GetRedisClient().FetchSingleRecord(ctx, "place_details:place_ID:"+id, &places[idx].Place)
 		if err != nil {
 			return nil, err
 		}

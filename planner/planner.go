@@ -293,9 +293,9 @@ func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 
 func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningRequest, user string) (resp PlanningResponse) {
 	logger := iowrappers.Logger
-	var planningResponse *PlanningResp
-	planningResponse = p.Solver.Solve(ctx, planningRequest)
-	resp = p.processPlanningResp(ctx, planningRequest, planningResponse, user)
+
+	primaryLocationPlanningResponse := p.Solver.Solve(ctx, planningRequest)
+	resp = p.processPlanningResp(ctx, planningRequest, primaryLocationPlanningResponse, user)
 	if !planningRequest.WithNearbyCities {
 		return resp
 	}
@@ -351,8 +351,12 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReque
 	for idx, req := range requests {
 		req.Location = locations[idx]
 	}
-	planningResponse = p.Solver.SolveWithNearbyCities(ctx, &MultiPlanningReq{requests: requests, numPlans: planningRequest.NumPlans})
-	return p.processPlanningResp(ctx, planningRequest, planningResponse, user)
+	nearbyCitiesPlanningResponse := p.Solver.SolveWithNearbyCities(ctx, &MultiPlanningReq{requests: requests, numPlans: planningRequest.NumPlans})
+	// fall back to planning results for the primary city when nearby cities results have error
+	if nearbyCitiesPlanningResponse.Err != nil {
+		return resp
+	}
+	return p.processPlanningResp(ctx, planningRequest, primaryLocationPlanningResponse, user)
 }
 
 func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRequest, resp *PlanningResp, user string) PlanningResponse {
