@@ -72,6 +72,7 @@ func (r *RedisClient) removePlace(context context.Context, placeRedisKey string,
 		return nil
 	}
 
+	Logger.Debugf("removing place %+v from Redis", place)
 	*count++
 	// remove keys from all categorized sorted lists in case a place belongs to multiple categories
 	_, _ = r.client.ZRem(context, "placeIDs:visit", placeID).Result()
@@ -102,7 +103,7 @@ func isPlaceDetailsValid(place POI.Place, nonEmptyFields []PlaceDetailsFields) b
 
 // a generic migration method
 // returns place details results for the calling function to extract and use specific fields
-func (s *PoiSearcher) addDataFieldsToPlaces(context context.Context, field string, batchSize int) (map[string]PlaceDetailSearchResult, error) {
+func (s *PoiSearcher) addDataFieldsToPlaces(context context.Context, field string, batchSize int) (map[string]PlaceDetailsSearchResult, error) {
 	mapsClient := s.GetMapsClient()
 	redisClient := s.GetRedisClient()
 	placeDetailsKeys, totalPlacesCount, err := redisClient.GetPlaceCountInRedis(context)
@@ -128,7 +129,7 @@ func (s *PoiSearcher) addDataFieldsToPlaces(context context.Context, field strin
 	Logger.Infof("[data migration] The number of places need update is %d with target field: %s", len(placesNeedUpdate), field)
 
 	placesToUpdateCount := min(len(placesNeedUpdate), batchSize)
-	newPlaceDetailsResults := make([]PlaceDetailSearchResult, placesToUpdateCount)
+	newPlaceDetailsResults := make([]PlaceDetailsSearchResult, placesToUpdateCount)
 	Logger.Infof("[data migration] Place to update count: %d, batch size is: %d", placesToUpdateCount, batchSize)
 	Logger.Infof("[data migration] Getting %d place details with target field: %s", placesToUpdateCount, field)
 
@@ -143,7 +144,7 @@ func (s *PoiSearcher) addDataFieldsToPlaces(context context.Context, field strin
 	}
 
 	wg.Wait()
-	results := make(map[string]PlaceDetailSearchResult)
+	results := make(map[string]PlaceDetailsSearchResult)
 
 	for idx, placeId := range placesNeedUpdate[:placesToUpdateCount] {
 		results[placeId] = newPlaceDetailsResults[idx]
@@ -170,10 +171,10 @@ func (s *PoiSearcher) AddUserRatingsTotal(context context.Context) error {
 			continue
 		}
 		// FIXME: figure out the reason for maps client return null pointer as result
-		if reflect.ValueOf(detailedResult.Res).IsNil() {
+		if reflect.ValueOf(detailedResult.res).IsNil() {
 			place.SetUserRatingsTotal(0)
 		} else {
-			place.SetUserRatingsTotal(detailedResult.Res.UserRatingsTotal)
+			place.SetUserRatingsTotal(detailedResult.res.UserRatingsTotal)
 		}
 		go redisClient.setPlace(context, place, &wg)
 	}
@@ -196,10 +197,10 @@ func (s *PoiSearcher) AddUrl(context context.Context) error {
 			continue
 		}
 		// FIXME: figure out the reason for maps client return null pointer as result
-		if reflect.ValueOf(detailedResult.Res).IsNil() {
+		if reflect.ValueOf(detailedResult.res).IsNil() {
 			place.SetURL("")
 		} else {
-			place.SetURL(detailedResult.Res.URL)
+			place.SetURL(detailedResult.res.URL)
 		}
 		go redisClient.setPlace(context, place, &wg)
 	}

@@ -136,23 +136,23 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 				}
 			}
 
-			detailSearchResults := make([]PlaceDetailSearchResult, len(placeIdMap))
+			detailsSearchResults := make([]PlaceDetailsSearchResult, len(placeIdMap))
 			var wg sync.WaitGroup
 			wg.Add(len(placeIdMap))
 			for idx, placeId := range placeIdMap {
-				go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailSearchResults[idx], &wg)
+				go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailsSearchResults[idx], &wg)
 			}
 			wg.Wait()
 			searchDuration := time.Since(singlePlaceTypeSearchStartTime)
 
 			// fill fields from detail search results to nearby search results
-			for _, placeDetails := range detailSearchResults {
-				searchRespIdx := placeDetails.RespIdx
-				placeId := searchResp.Results[searchRespIdx].PlaceID
-				searchResp.Results[searchRespIdx].OpeningHours = placeDetails.Res.OpeningHours
-				searchResp.Results[searchRespIdx].FormattedAddress = placeDetails.Res.FormattedAddress
-				microAddrMap[placeId] = placeDetails.Res.AdrAddress
-				urlMap[placeId] = placeDetails.Res.URL
+			for _, placeDetails := range detailsSearchResults {
+				idx := placeDetails.idx
+				placeId := searchResp.Results[idx].PlaceID
+				searchResp.Results[idx].OpeningHours = placeDetails.res.OpeningHours
+				searchResp.Results[idx].FormattedAddress = placeDetails.res.FormattedAddress
+				microAddrMap[placeId] = placeDetails.res.AdrAddress
+				urlMap[placeId] = placeDetails.res.URL
 			}
 
 			*places = append(*places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap)...)
@@ -184,19 +184,19 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 	done <- true
 }
 
-type PlaceDetailSearchResult struct {
-	Res     *maps.PlaceDetailsResult
-	RespIdx int
+type PlaceDetailsSearchResult struct {
+	res *maps.PlaceDetailsResult
+	idx int
 }
 
-func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailSearchResult, wg *sync.WaitGroup) {
+func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailsSearchResult, wg *sync.WaitGroup) {
 	defer wg.Done()
 	searchRes, err := PlaceDetailedSearch(context, mapsClient, placeId, fields)
 	if err != nil {
 		Logger.Error(err)
 		return
 	}
-	*detailSearchRes = PlaceDetailSearchResult{Res: &searchRes, RespIdx: idx}
+	*detailSearchRes = PlaceDetailsSearchResult{res: &searchRes, idx: idx}
 }
 
 func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeId string, fields []string) (maps.PlaceDetailsResult, error) {
@@ -247,6 +247,10 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.
 			photo = &res.Photos[0]
 		}
 		userRatingsTotal := res.UserRatingsTotal
+		// filter places with zero user ratings
+		if userRatingsTotal == 0 {
+			continue
+		}
 		places = append(places, POI.CreatePlace(name, addr, res.FormattedAddress, res.BusinessStatus, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal, latitude, longitude))
 	}
 	return
