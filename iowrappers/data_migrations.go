@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -16,8 +17,9 @@ const (
 type PlaceDetailsFields string
 
 const (
-	PlaceDetailsFieldURL   PlaceDetailsFields = "URL"
-	PlaceDetailsFieldPhoto PlaceDetailsFields = "photo"
+	PlaceDetailsFieldURL              PlaceDetailsFields = "URL"
+	PlaceDetailsFieldPhoto            PlaceDetailsFields = "photo"
+	PlaceDetailsFieldUserRatingsCount PlaceDetailsFields = "ratings_count"
 )
 
 func (s *PoiSearcher) RemovePlaces(context context.Context, nonEmptyFields []PlaceDetailsFields) error {
@@ -73,7 +75,7 @@ func (r *RedisClient) removePlace(context context.Context, placeRedisKey string,
 	*count++
 	// remove keys from all categorized sorted lists in case a place belongs to multiple categories
 	_, _ = r.client.ZRem(context, "placeIDs:visit", placeID).Result()
-	_, _ = r.client.ZRem(context, "placeIDs:eatery", placeID).Result()
+	_, _ = r.client.ZRem(context, "placeIDs:eatery:"+strconv.Itoa(int(place.PriceLevel)), placeID).Result()
 
 	return r.RemoveKeys(context, []string{placeRedisKey})
 }
@@ -87,6 +89,10 @@ func isPlaceDetailsValid(place POI.Place, nonEmptyFields []PlaceDetailsFields) b
 			}
 		case PlaceDetailsFieldURL:
 			if reflect.ValueOf(place.URL).IsZero() {
+				return false
+			}
+		case PlaceDetailsFieldUserRatingsCount:
+			if place.UserRatingsTotal == 0 {
 				return false
 			}
 		}

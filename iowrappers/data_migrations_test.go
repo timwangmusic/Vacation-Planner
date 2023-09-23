@@ -51,9 +51,26 @@ func TestRemovePlaces(t *testing.T) {
 		},
 	}
 
+	// a place with zero user ratings count
+	placeC := POI.Place{
+		ID:           "33513",
+		Name:         "FT Cafe",
+		LocationType: POI.LocationTypeCafe,
+		PriceLevel:   POI.PriceLevelOne,
+		Location: POI.Location{
+			Latitude:  12.5734,
+			Longitude: 14.7912,
+		},
+		URL: "www.ftcafe.net",
+		Photo: POI.PlacePhoto{
+			Reference: "www.ftcafe.net/photos",
+		},
+		UserRatingsTotal: 0,
+	}
+
 	var places []POI.Place
 	var err error
-	redisClient.SetPlacesAddGeoLocations(ctx, []POI.Place{placeA, placeB})
+	redisClient.SetPlacesAddGeoLocations(ctx, []POI.Place{placeA, placeB, placeC})
 	places, _ = redisClient.NearbySearch(ctx, &PlaceSearchRequest{
 		PlaceCat: POI.PlaceCategoryVisit,
 		Location: POI.Location{
@@ -68,7 +85,7 @@ func TestRemovePlaces(t *testing.T) {
 		return
 	}
 
-	err = redisClient.RemovePlaces(ctx, []PlaceDetailsFields{PlaceDetailsFieldURL, PlaceDetailsFieldPhoto})
+	err = redisClient.RemovePlaces(ctx, []PlaceDetailsFields{PlaceDetailsFieldURL, PlaceDetailsFieldPhoto, PlaceDetailsFieldUserRatingsCount})
 	if err != nil {
 		t.Error(err)
 		return
@@ -84,7 +101,21 @@ func TestRemovePlaces(t *testing.T) {
 	})
 
 	if len(places) != 0 {
-		t.Errorf("expected number of places after removal equals 0, got %d", len(places))
+		t.Errorf("expected number of %s places after removal equals 0, got %d", POI.PlaceCategoryVisit, len(places))
+		return
+	}
+
+	places, _ = redisClient.NearbySearch(ctx, &PlaceSearchRequest{PlaceCat: POI.PlaceCategoryEatery,
+		Location: POI.Location{
+			Latitude:  12.5636,
+			Longitude: 14.7813,
+		},
+		Radius: 10000,
+	},
+	)
+
+	if len(places) != 0 {
+		t.Errorf("expected number of %s places after removal equals 0, got %d", POI.PlaceCategoryEatery, len(places))
 		return
 	}
 }

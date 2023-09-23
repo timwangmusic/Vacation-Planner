@@ -225,7 +225,7 @@ func (p *MyPlanner) removePlacesMigrationHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
 		return
 	}
-	if err := p.Solver.Searcher.RemovePlaces(ctx, []iowrappers.PlaceDetailsFields{iowrappers.PlaceDetailsFieldURL, iowrappers.PlaceDetailsFieldPhoto}); err != nil {
+	if err := p.Solver.Searcher.RemovePlaces(ctx, []iowrappers.PlaceDetailsFields{iowrappers.PlaceDetailsFieldURL, iowrappers.PlaceDetailsFieldPhoto, iowrappers.PlaceDetailsFieldUserRatingsCount}); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
