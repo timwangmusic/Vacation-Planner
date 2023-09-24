@@ -19,6 +19,7 @@ const (
 	MinResultsForTimePeriodMatching                = 20
 	FilterByTimePeriod              FilterCriteria = "filterByTimePeriod"
 	FilterByPriceRange              FilterCriteria = "filterByPriceRange"
+	FilterByUserRating              FilterCriteria = "filterByUserRating"
 )
 
 type Request struct {
@@ -130,4 +131,36 @@ func filterPlacesOnPriceLevel(places []Place, level POI.PriceLevel) []Place {
 		}
 	}
 	return results
+}
+
+// Filter parameters related with user rating
+type UserRatingFilterParams struct {
+	MinUserRatings int
+}
+
+// Filter to remove low user rating
+type FilterLowUserRating struct {
+}
+
+// Implement Match from the `Matcher` interface
+func (m FilterLowUserRating) Match(req *FilterRequest) ([]Place, error) {
+	var results []Place
+	filterParams := req.Params[req.Criteria]
+
+	if _, ok := filterParams.(UserRatingFilterParams); !ok {
+		return results, errors.New("user rating matcher received wrong filter params")
+	}
+	params := filterParams.(UserRatingFilterParams)
+	return filterUserRating(req.Places, params.MinUserRatings), nil
+}
+
+func filterUserRating(places []Place, minUserRating int) []Place {
+	var output = make([]Place, 0, len(places))
+	for _, place := range places {
+		if place.UserRatingsCount() < minUserRating {
+			continue
+		}
+		output = append(output, place)
+	}
+	return output
 }

@@ -47,6 +47,7 @@ func (ps PlanningSolution) Key() float64 {
 
 type Solver struct {
 	Searcher               *iowrappers.PoiSearcher
+	UserRatingMatcher      matching.Matcher
 	TimeMatcher            matching.Matcher
 	PriceRangeMatcher      matching.Matcher
 	placeDedupeCountLimit  int
@@ -100,6 +101,7 @@ type SlotRequest struct {
 
 func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int, nearbyCitiesCountLimit int) {
 	s.Searcher = poiSearcher
+	s.UserRatingMatcher = matching.FilterLowUserRating{}
 	s.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
 	s.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
 	s.placeDedupeCountLimit = placeDedupeCountLimit
@@ -465,23 +467,15 @@ func (s *Solver) weightMatrix(placeClusters [][]matching.Place) ([]string, [][]i
 	return placeIds, weights, nil
 }
 
-func filterZeroRating(places []matching.Place) []matching.Place {
-	var output = make([]matching.Place, 0, len(places))
-	for _, place := range places {
-		if place.UserRatingsCount() == 0 {
-			continue
-		}
-		output = append(output, place)
-	}
-	return output
-}
-
-// TODO: add a new matcher here to filter out places without user rating
 func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningRequest) ([][]matching.Place, error) {
 	logger := iowrappers.Logger
 	var placeClusters [][]matching.Place
 	for _, slot := range req.Slots {
 		var filterParams = make(map[matching.FilterCriteria]interface{})
+		filterParams[matching.FilterByUserRating] = matching.UserRatingFilterParams{
+			MinUserRatings: 1,
+		}
+
 		filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
 			Category:     slot.Category,
 			Day:          slot.Weekday,
@@ -505,11 +499,18 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 		logger.Debugf("Before filtering, the number of places for category %s is %d", slot.Category, len(places))
 
-		placesHasRatings := filterZeroRating(places)
-		logger.Debugf("Filter out zero user rating, the number of places for category %s is %d", slot.Category, len(placesHasRatings))
+		placesByRating, err := s.UserRatingMatcher.Match(&matching.FilterRequest{
+			Places:   places,
+			Criteria: matching.FilterByUserRating,
+			Params:   filterParams,
+		})
+		if err != nil {
+			return nil, err
+		}
+		logger.Debugf("Filter out zero user rating, the number of places for category %s is %d", slot.Category, len(placesByRating))
 
 		placesByTime, err := s.TimeMatcher.Match(&matching.FilterRequest{
-			Places:   placesHasRatings,
+			Places:   placesByRating,
 			Criteria: matching.FilterByTimePeriod,
 			Params:   filterParams,
 		})
