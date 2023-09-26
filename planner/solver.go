@@ -46,12 +46,12 @@ func (ps PlanningSolution) Key() float64 {
 }
 
 type Solver struct {
-	Searcher               *iowrappers.PoiSearcher
-	UserRatingMatcher      matching.Matcher
-	TimeMatcher            matching.Matcher
-	PriceRangeMatcher      matching.Matcher
-	placeDedupeCountLimit  int
-	nearbyCitiesCountLimit int
+	Searcher                *iowrappers.PoiSearcher
+	UserRatingsCountMatcher matching.Matcher
+	TimeMatcher             matching.Matcher
+	PriceRangeMatcher       matching.Matcher
+	placeDedupeCountLimit   int
+	nearbyCitiesCountLimit  int
 }
 
 const (
@@ -101,7 +101,7 @@ type SlotRequest struct {
 
 func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int, nearbyCitiesCountLimit int) {
 	s.Searcher = poiSearcher
-	s.UserRatingMatcher = matching.FilterLowUserRating{}
+	s.UserRatingsCountMatcher = matching.MatcherForUserRatings{}
 	s.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
 	s.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
 	s.placeDedupeCountLimit = placeDedupeCountLimit
@@ -499,7 +499,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 		logger.Debugf("Before filtering, the number of places for category %s is %d", slot.Category, len(places))
 
-		placesByRating, err := s.UserRatingMatcher.Match(&matching.FilterRequest{
+		placesByRating, err := s.UserRatingsCountMatcher.Match(&matching.FilterRequest{
 			Places:   places,
 			Criteria: matching.FilterByUserRating,
 			Params:   filterParams,

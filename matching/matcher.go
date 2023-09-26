@@ -138,12 +138,10 @@ type UserRatingFilterParams struct {
 	MinUserRatings int
 }
 
-// Filter to remove low user rating
-type FilterLowUserRating struct {
+type MatcherForUserRatings struct {
 }
 
-// Implement Match from the `Matcher` interface
-func (m FilterLowUserRating) Match(req *FilterRequest) ([]Place, error) {
+func (m MatcherForUserRatings) Match(req *FilterRequest) ([]Place, error) {
 	var results []Place
 	filterParams := req.Params[req.Criteria]
 
@@ -151,16 +149,11 @@ func (m FilterLowUserRating) Match(req *FilterRequest) ([]Place, error) {
 		return results, errors.New("user rating matcher received wrong filter params")
 	}
 	params := filterParams.(UserRatingFilterParams)
-	return filterUserRating(req.Places, params.MinUserRatings), nil
-}
 
-func filterUserRating(places []Place, minUserRating int) []Place {
-	var output = make([]Place, 0, len(places))
-	for _, place := range places {
-		if place.UserRatingsCount() < minUserRating {
-			continue
+	userRatingCountFilter := func(minRating int) func(place Place) bool {
+		return func(place Place) bool {
+			return place.UserRatingsCount() >= minRating
 		}
-		output = append(output, place)
 	}
-	return output
+	return iowrappers.Filter(req.Places, userRatingCountFilter(params.MinUserRatings)), nil
 }
