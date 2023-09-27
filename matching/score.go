@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	AvgRating  = 3.0
-	AvgPricing = PriceDefaultMean
+	MaxPlaceRating = 5.0
 )
 
 // OLD plan scoring method, use maxDist as the normalisation factor
@@ -43,7 +42,7 @@ func Score(places []Place, distNorm int) float64 {
 func singlePlaceScore(place Place) float64 {
 	var ratingPricingRatio float64
 	if place.PlacePrice() == 0 {
-		ratingPricingRatio = AvgRating / AvgPricing // set to average single Place rating-price ratio
+		ratingPricingRatio = float64(place.Rating()) / MaxPlaceRating
 	} else {
 		ratingPricingRatio = float64(place.Rating()) / place.PlacePrice()
 	}
