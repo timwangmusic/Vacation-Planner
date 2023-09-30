@@ -3,10 +3,10 @@ package iowrappers
 import (
 	"context"
 	"errors"
-	"github.com/modern-go/reflect2"
-	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/user"
 	"sync"
+
+	"github.com/modern-go/reflect2"
+	"github.com/weihesdlegend/Vacation-planner/user"
 )
 
 func scanRedisKeys(context context.Context, redisClient *RedisClient, redisKeyPrefix string) ([]string, error) {
@@ -33,9 +33,9 @@ func scanRedisKeys(context context.Context, redisClient *RedisClient, redisKeyPr
 	return redisKeys, nil
 }
 
-// a generic filtering function for places
-func filter(places []POI.Place, condition func(place POI.Place) bool) []POI.Place {
-	var results []POI.Place
+// Filter places that meet certain condition
+func Filter[T any](places []T, condition func(place T) bool) []T {
+	var results []T
 	for _, place := range places {
 		if condition(place) {
 			results = append(results, place)

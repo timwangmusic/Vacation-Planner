@@ -8,13 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bobg/go-generics/slices"
-	gogeonames "github.com/timwangmusic/go-geonames"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/bobg/go-generics/slices"
+	gogeonames "github.com/timwangmusic/go-geonames"
 
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
@@ -361,7 +362,7 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 
 	if req.BusinessStatus == POI.Operational {
 		totalPlacesCount := len(places)
-		places = filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
+		places = Filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
 		Logger.Debugf("(RedisClient)NearbySearch -> %d places out of %d left after business status filtering", len(places), totalPlacesCount)
 	}
 	return places, nil

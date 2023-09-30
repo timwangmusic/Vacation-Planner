@@ -226,7 +226,7 @@ func (s *PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearch
 
 	if req.BusinessStatus == POI.Operational {
 		totalPlacesCount := len(places)
-		places = filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
+		places = Filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
 		Logger.Debugf("%d places out of %d left after business status filtering", len(places), totalPlacesCount)
 	}
 

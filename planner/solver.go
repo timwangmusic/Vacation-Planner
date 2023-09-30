@@ -46,11 +46,12 @@ func (ps PlanningSolution) Key() float64 {
 }
 
 type Solver struct {
-	Searcher               *iowrappers.PoiSearcher
-	TimeMatcher            matching.Matcher
-	PriceRangeMatcher      matching.Matcher
-	placeDedupeCountLimit  int
-	nearbyCitiesCountLimit int
+	Searcher                *iowrappers.PoiSearcher
+	UserRatingsCountMatcher matching.Matcher
+	TimeMatcher             matching.Matcher
+	PriceRangeMatcher       matching.Matcher
+	placeDedupeCountLimit   int
+	nearbyCitiesCountLimit  int
 }
 
 const (
@@ -100,6 +101,7 @@ type SlotRequest struct {
 
 func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int, nearbyCitiesCountLimit int) {
 	s.Searcher = poiSearcher
+	s.UserRatingsCountMatcher = matching.MatcherForUserRatings{}
 	s.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
 	s.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
 	s.placeDedupeCountLimit = placeDedupeCountLimit
@@ -470,6 +472,10 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 	var placeClusters [][]matching.Place
 	for _, slot := range req.Slots {
 		var filterParams = make(map[matching.FilterCriteria]interface{})
+		filterParams[matching.FilterByUserRating] = matching.UserRatingFilterParams{
+			MinUserRatings: 1,
+		}
+
 		filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
 			Category:     slot.Category,
 			Day:          slot.Weekday,
@@ -493,8 +499,18 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 		logger.Debugf("Before filtering, the number of places for category %s is %d", slot.Category, len(places))
 
-		placesByTime, err := s.TimeMatcher.Match(&matching.FilterRequest{
+		placesByRating, err := s.UserRatingsCountMatcher.Match(&matching.FilterRequest{
 			Places:   places,
+			Criteria: matching.FilterByUserRating,
+			Params:   filterParams,
+		})
+		if err != nil {
+			return nil, err
+		}
+		logger.Debugf("Filter out zero user rating, the number of places for category %s is %d", slot.Category, len(placesByRating))
+
+		placesByTime, err := s.TimeMatcher.Match(&matching.FilterRequest{
+			Places:   placesByRating,
 			Criteria: matching.FilterByTimePeriod,
 			Params:   filterParams,
 		})
