@@ -2,6 +2,7 @@ package planner
 
 import (
 	"errors"
+	"github.com/barkimedes/go-deepcopy"
 	"regexp"
 )
 
@@ -32,4 +33,25 @@ func validateLocation(location string, precise bool) error {
 		return errors.New("location format must be city, region, country or city, country")
 	}
 	return nil
+}
+
+// MapSlice is a generic function for mapping a slice to another
+func MapSlice[T, V any](ts []T, fn func(t T) V) []V {
+	result := make([]V, len(ts))
+	for idx, t := range ts {
+		result[idx] = fn(t)
+	}
+	return result
+}
+
+func deepCopyAnything[T any](req T, numCopies int) ([]T, error) {
+	result := make([]T, numCopies)
+	for idx := range result {
+		copied, err := deepcopy.Anything(req)
+		if err != nil {
+			return nil, err
+		}
+		result[idx] = copied.(T)
+	}
+	return result, nil
 }

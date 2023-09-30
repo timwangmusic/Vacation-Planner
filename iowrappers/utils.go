@@ -3,8 +3,10 @@ package iowrappers
 import (
 	"context"
 	"errors"
+	"sync"
+
 	"github.com/modern-go/reflect2"
-	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/user"
 )
 
 func scanRedisKeys(context context.Context, redisClient *RedisClient, redisKeyPrefix string) ([]string, error) {
@@ -31,13 +33,56 @@ func scanRedisKeys(context context.Context, redisClient *RedisClient, redisKeyPr
 	return redisKeys, nil
 }
 
-// a generic filtering function for places
-func filter(places []POI.Place, condition func(place POI.Place) bool) []POI.Place {
-	var results []POI.Place
+// Filter places that meet certain condition
+func Filter[T any](places []T, condition func(place T) bool) []T {
+	var results []T
 	for _, place := range places {
 		if condition(place) {
 			results = append(results, place)
 		}
 	}
 	return results
+}
+
+func toUserView(userData map[string]string) (user.View, error) {
+	var view user.View
+	view.ID = userData["id"]
+	view.Username = userData["username"]
+	view.Email = userData["email"]
+	view.Password = userData["password"]
+	view.UserLevel = userData["user_level"]
+	view.Favorites = &user.PersonalFavorites{SearchHistory: make(map[string]user.LastSearchRecord)}
+	if userData["favorites"] != "" {
+		if err := view.Favorites.UnmarshalBinary([]byte(userData["favorites"])); err != nil {
+			return user.View{}, err
+		}
+	}
+	view.LastLoginTime = userData["lastLoginTime"]
+	return view, nil
+}
+
+type View interface {
+	user.View | user.TravelPlanView
+}
+
+func merge[V View](cs ...chan V) chan V {
+	var wg sync.WaitGroup
+	out := make(chan V)
+
+	output := func(c <-chan V) {
+		for view := range c {
+			out <- view
+		}
+		wg.Done()
+	}
+	wg.Add(len(cs))
+	for _, c := range cs {
+		go output(c)
+	}
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
 }

@@ -2,6 +2,7 @@ package planner
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
@@ -41,19 +42,24 @@ func (p *MyPlanner) UserEmailVerify(ctx *gin.Context) {
 		}
 	}
 	userView.UserLevel = userLevel
-	// skip email verifications on non-prod environments
-	if strings.ToLower(p.Environment) != "production" {
-		if _, err := p.RedisClient.CreateUser(ctx, userView, false); err != nil {
-			iowrappers.Logger.Debugf("failed to create user: %v", err)
+
+	// only verifies user emails in test and production environments, consider add staging environment later
+	if p.Environment == ProductionEnvironment || p.Environment == TestingEnvironment {
+		if err := p.Mailer.Send(ctx, iowrappers.EmailVerification, userView, strings.ToLower(string(p.Environment))); err != nil {
+			iowrappers.Logger.Error(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
+		ctx.JSON(http.StatusOK, gin.H{"message": "Email sent. Please check the inbox to verify your email address."})
 		return
 	}
-	if err := p.Mailer.Send(iowrappers.EmailVerification, userView); err != nil {
-		iowrappers.Logger.Error(err)
+
+	createdUser, err := p.RedisClient.CreateUser(ctx, userView, false)
+	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Email sent. Please check the inbox to verify your email address."})
+	ctx.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Created user %s with ID %s", createdUser.Username, createdUser.ID)})
 }
 
 func (p *MyPlanner) UserSignup(ctx *gin.Context) {
@@ -99,13 +105,13 @@ func (p *MyPlanner) userLogin(ctx *gin.Context) {
 func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLogin bool) (loggedIn bool) {
 	logger := iowrappers.Logger
 
-	user, token, tokenExpirationTime, loginErr := p.RedisClient.Authenticate(ctx, c)
-	err := p.RedisClient.UpdateUser(ctx, &user)
+	u, token, tokenExpirationTime, loginErr := p.RedisClient.Authenticate(ctx, c)
+	err := p.RedisClient.UpdateUser(ctx, &u)
 	if err != nil {
-		iowrappers.Logger.Errorf("failed to update user %s: %v", user.Username, err)
+		logger.Errorf("failed to update u %s: %v", u.Username, err)
 	}
 	if loginErr != nil {
-		logger.Debug(loginErr)
+		logger.Error(loginErr)
 
 		if frontEndLogin {
 			ctx.JSON(http.StatusUnauthorized, UserLoginResponse{
@@ -115,6 +121,8 @@ func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLog
 			})
 		}
 		return false
+	} else {
+		logger.Infof("u is logged in: %+v", u)
 	}
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
@@ -215,12 +223,7 @@ func (p *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
 	}
 
 	iowrappers.Logger.Debugf("current USER ID: %s", userView.ID)
-	plans, err := p.RedisClient.FindUserPlans(context.Request.Context(), userView)
-	if err != nil {
-		context.Status(http.StatusInternalServerError)
-		iowrappers.Logger.Error(err)
-		return
-	}
+	plans := p.RedisClient.FindUserPlans(context.Request.Context(), userView)
 
 	sort.Sort(user.ByCreatedAt(plans))
 	context.JSON(http.StatusOK, gin.H{"travel_plans": plans})

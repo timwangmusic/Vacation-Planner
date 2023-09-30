@@ -5,21 +5,26 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/modern-go/reflect2"
+	"github.com/redis/go-redis/v9"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/crypto/bcrypt"
+	"net/http"
 	"net/mail"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
-const UserKeyPrefix = "user"
+const (
+	UserKeyPrefix       = "user"
+	UserPlanWorkerCount = 5
+)
 
 type GoogleOAuthResponse struct {
 	ID            string `json:"id"`
@@ -33,6 +38,11 @@ type PlanningEvent struct {
 	City      string `json:"city"`
 	Country   string `json:"country"`
 	Timestamp string `json:"timestamp"`
+}
+
+type VerificationResult struct {
+	Message    error
+	HttpStatus int
 }
 
 type FindUserBy string
@@ -85,6 +95,68 @@ func (r *RedisClient) UpdateSearchHistory(ctx context.Context, location string, 
 	return r.UpdateUser(ctx, userView)
 }
 
+func (r *RedisClient) VerifyPasswordResetRequest(ctx context.Context, req *user.PasswordResetRequest) VerificationResult {
+	if strings.TrimSpace(req.VerificationCode) == "" {
+		return VerificationResult{
+			Message:    errors.New("password reset verification code should not be empty"),
+			HttpStatus: http.StatusBadRequest,
+		}
+	}
+	key := "password_reset:" + req.VerificationCode
+	if claimed, err := r.Get().HGet(ctx, key, "claimed").Result(); err != nil {
+		return VerificationResult{
+			Message:    errors.New("cannot determine if the verification code is claimed"),
+			HttpStatus: http.StatusInternalServerError,
+		}
+	} else if parsedClaimed, claimedParsingErr := strconv.ParseBool(claimed); claimedParsingErr != nil {
+		return VerificationResult{
+			Message:    errors.New("cannot determine if the verification code is claimed"),
+			HttpStatus: http.StatusInternalServerError,
+		}
+	} else if parsedClaimed {
+		return VerificationResult{
+			Message:    errors.New("the verification code is already claimed"),
+			HttpStatus: http.StatusBadRequest,
+		}
+	}
+
+	if err := r.Get().HSet(ctx, key, "claimed", true).Err(); err != nil {
+		return VerificationResult{
+			Message:    errors.New("fails to claim password reset verification code"),
+			HttpStatus: http.StatusInternalServerError,
+		}
+	}
+
+	if email, err := r.Get().HGet(ctx, key, "user_email").Result(); err != nil {
+		return VerificationResult{
+			Message:    errors.New("fails to fetch user email with verification code"),
+			HttpStatus: http.StatusInternalServerError,
+		}
+	} else if email != req.Email {
+		return VerificationResult{
+			Message:    errors.New("email address and verification code do not match"),
+			HttpStatus: http.StatusForbidden,
+		}
+	}
+	return VerificationResult{
+		Message:    nil,
+		HttpStatus: http.StatusOK,
+	}
+}
+
+func (r *RedisClient) SetPassword(ctx context.Context, req *user.PasswordResetRequest) error {
+	view, err := r.FindUser(ctx, FindUserByEmail, user.View{Email: req.Email})
+	if err != nil {
+		return err
+	}
+	Logger.Debugf("->SetPassword: user view %+v", view)
+	passwordEncrypted, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	view.Password = string(passwordEncrypted)
+	Logger.Debugf("->SetPassword: resetting password for user %s", view.ID)
+	return r.UpdateUser(ctx, &view)
+}
+
+// UpdateUser should only accept a complete view of the user so that no user information is lost after update.
 func (r *RedisClient) UpdateUser(ctx context.Context, view *user.View) error {
 	redisUserKey := strings.Join([]string{UserKeyPrefix, view.ID}, ":")
 
@@ -114,13 +186,13 @@ func (r *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, u
 	case FindUserByName:
 		userId, err := client.HGet(context, UserNamesKey, userView.Username).Result()
 		if err != nil {
-			return user.View{}, err
+			return user.View{}, fmt.Errorf("cannot find user name %s", userView.Username)
 		}
 		redisKey = strings.Join([]string{UserKeyPrefix, userId}, ":")
 	case FindUserByEmail:
 		userId, err := client.HGet(context, UserEmailsKey, userView.Email).Result()
 		if err != nil {
-			return user.View{}, err
+			return user.View{}, fmt.Errorf("cannot find user email %s", userView.Email)
 		}
 		redisKey = strings.Join([]string{UserKeyPrefix, userId}, ":")
 	}
@@ -130,19 +202,13 @@ func (r *RedisClient) FindUser(context context.Context, findUserBy FindUserBy, u
 	}
 
 	u := client.HGetAll(context, redisKey).Val()
-	userView.ID = u["id"]
-	userView.Username = u["username"]
-	userView.Password = u["password"]
-	userView.Email = u["email"]
-	userView.UserLevel = u["user_level"]
-	userView.Favorites = &user.PersonalFavorites{SearchHistory: make(map[string]user.LastSearchRecord)}
-	if u["favorites"] != "" {
-		if err := userView.Favorites.UnmarshalBinary([]byte(u["favorites"])); err != nil {
-			return user.View{}, err
-		}
+	var view user.View
+	var err error
+	if view, err = toUserView(u); err != nil {
+		return view, err
 	}
 
-	return userView, nil
+	return view, nil
 }
 
 func (r *RedisClient) CreateUser(context context.Context, userView user.View, skipPasswordGeneration bool) (user.View, error) {
@@ -197,27 +263,32 @@ func (r *RedisClient) CreateUser(context context.Context, userView user.View, sk
 
 func (r *RedisClient) Authenticate(context context.Context, credential user.Credential) (user.View, string, time.Time, error) {
 	userView := user.View{Username: credential.Username, Email: strings.ToLower(credential.Email)}
-	Logger.Debugf("->Authenticate: user view is %v", userView)
+	Logger.Infof("->Authenticate: user view is %+v", userView)
 	var u user.View
 	var err error
-	var loggedInByEmail bool
-	u, err = r.FindUser(context, FindUserByName, userView)
-	if err != nil {
-		Logger.Debugf("cannot find user by username %s, error: %v", credential.Username, err)
-		loggedInByEmail = true
+	var authByEmail bool
+	if strings.TrimSpace(userView.Username) == "" {
+		authByEmail = true
 	}
 
-	if loggedInByEmail {
-		Logger.Debugf("->Authenticate: email from credential is %s", credential.Email)
+	if authByEmail {
+		Logger.Infof("->Authenticate: email from credential is %s", credential.Email)
 		userView.Email = credential.Email
 		if strings.TrimSpace(credential.Email) == "" {
 			userView.Email = strings.ToLower(credential.Username)
 		}
 		u, err = r.FindUser(context, FindUserByEmail, userView)
-		Logger.Debugf("cannot find user by email %s, error: %v", credential.Email, err)
 		if err != nil {
-			return u, "", time.Now(), err
+			Logger.Errorf("cannot find user by email %s, error: %v", credential.Email, err)
 		}
+	} else {
+		u, err = r.FindUser(context, FindUserByName, userView)
+		if err != nil {
+			Logger.Errorf("cannot find user by username %s, error: %v", credential.Username, err)
+		}
+	}
+	if err != nil {
+		return u, "", time.Now(), err
 	}
 
 	if !credential.WithOAuth {
@@ -302,35 +373,65 @@ func (r *RedisClient) DeleteUserPlan(context context.Context, userView user.View
 	return r.RemoveKeys(context, []string{redisKey})
 }
 
-func (r *RedisClient) FindUserPlans(context context.Context, userView user.View) ([]user.TravelPlanView, error) {
+func (r *RedisClient) userPlanKeysFinder(ctx context.Context, view user.View) chan string {
+	out := make(chan string)
 	var cursor uint64 = 0
-	travelPlanKeys := make([]string, 0)
+	redisKeysPrefix := strings.Join([]string{UserSavedTravelPlanPrefix, "user", view.ID, "plan"}, ":")
+	go func() {
+		for {
+			var err error
+			var keys []string
+			keys, cursor, err = r.client.Scan(ctx, cursor, redisKeysPrefix+"*", 100).Result()
+			if err != nil {
+				break
+			}
+			for _, key := range keys {
+				out <- key
+			}
+			if cursor == 0 {
+				break
+			}
+		}
+		close(out)
+	}()
+	return out
+}
 
-	redisKeysPrefix := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan"}, ":")
-	for {
-		var err error
-		var keys []string
-		keys, cursor, err = r.client.Scan(context, cursor, redisKeysPrefix+"*", 100).Result()
-		if err != nil {
-			break
+func (r *RedisClient) userPlanFinder(ctx context.Context, in chan string) chan user.TravelPlanView {
+	out := make(chan user.TravelPlanView)
+	go func() {
+		for key := range in {
+			plan, err := r.Get().Get(ctx, key).Result()
+			if err != nil {
+				Logger.Debug(err)
+				continue
+			}
+			view := user.TravelPlanView{}
+			if err = json.Unmarshal([]byte(plan), &view); err != nil {
+				Logger.Debug(err)
+				continue
+			}
+			out <- view
 		}
-		travelPlanKeys = append(travelPlanKeys, keys...)
-		if cursor == 0 {
-			break
-		}
+		close(out)
+	}()
+	return out
+}
+
+func (r *RedisClient) FindUserPlans(ctx context.Context, userView user.View) []user.TravelPlanView {
+	in := r.userPlanKeysFinder(ctx, userView)
+
+	var workers [UserPlanWorkerCount]chan user.TravelPlanView
+	for idx := range workers {
+		workers[idx] = make(chan user.TravelPlanView)
+		workers[idx] = r.userPlanFinder(ctx, in)
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(travelPlanKeys))
-
-	result := make([]user.TravelPlanView, len(travelPlanKeys))
-
-	for idx, key := range travelPlanKeys {
-		go r.findUserPlan(context, key, &result[idx], &wg)
+	var result []user.TravelPlanView
+	for view := range merge(workers[:]...) {
+		result = append(result, view)
 	}
-	wg.Wait()
-
-	return result, nil
+	return result
 }
 
 func (r *RedisClient) findUserPlan(context context.Context, redisKey string, view *user.TravelPlanView, wg *sync.WaitGroup) {
@@ -341,6 +442,18 @@ func (r *RedisClient) findUserPlan(context context.Context, redisKey string, vie
 		return
 	}
 	utils.LogErrorWithLevel(json.Unmarshal([]byte(cachedPlan), view), utils.LogError)
+}
+
+// generates a code for backend to find user ID when user clicks on the link
+func (r *RedisClient) saveEmailPasswordResetCode(ctx context.Context, view user.View) (string, error) {
+	code := uuid.NewString()
+	key := "password_reset:" + code
+	if _, err := r.client.HSet(ctx, key, "user_email", view.Email, "claimed", false).Result(); err != nil {
+		return "", err
+	}
+	// set 2 hour expiration time
+	r.client.Expire(ctx, key, 2*time.Hour)
+	return code, nil
 }
 
 func (r *RedisClient) saveUserEmailVerificationCode(ctx context.Context, view user.View) (string, error) {
@@ -370,11 +483,10 @@ func (r *RedisClient) CreateUserOnEmailVerified(ctx context.Context, tmpUserID s
 	if tmpUserData, err = c.HGetAll(ctx, "temp_user:"+tmpUserID).Result(); err != nil {
 		return err
 	}
-	view := user.View{
-		Username:  tmpUserData["username"],
-		Email:     tmpUserData["email"],
-		Password:  tmpUserData["password"],
-		UserLevel: tmpUserData["user_level"],
+	var view user.View
+	view, err = toUserView(tmpUserData)
+	if err != nil {
+		Logger.Errorf("error converting temp user data to view %s", err.Error())
 	}
 	if _, err = r.CreateUser(ctx, view, true); err != nil {
 		return err

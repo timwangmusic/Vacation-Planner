@@ -179,9 +179,9 @@ document.getElementById("search").addEventListener(
 
 document.addEventListener("DOMContentLoaded", () => {
     // set a default time-category template
-    insertNewRow(8, 11, 'Visit');
-    insertNewRow(11, 13, 'Eatery');
-    insertNewRow(13, 17, 'Visit');
+    insertNewRow('8', '11', 'Visit');
+    insertNewRow('11', '13', 'Eatery');
+    insertNewRow('13', '17', 'Visit');
 });
 
 function parseResponse(response) {

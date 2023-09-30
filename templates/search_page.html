@@ -40,6 +40,11 @@
         </div>
     </div>
 
+    <div class="mt-2 alert alert-danger alert-dismissible fade show d-none" role="alert" id="no-plan-error-alert">
+        No travel plan is found, please try searching with a different criteria.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <!--navigation bar-->
     <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
         <div class="container-fluid">
@@ -156,6 +161,7 @@
                 </div>
 
                 <input type="hidden" name="precise" value="false" id="precise-location-flag">
+                <input type="hidden" name="nearby" value="false" id="use-nearby-cities-flag">
 
                 <div class="col-sm-2 ps-1 pe-0 mt-1" id="priceDiv">
                     <select name="price" class="form-select border border-secondary"
@@ -170,6 +176,10 @@
                 </div>
                 <div class="d-flex flex-row-reverse ps-1 pe-0 mt-1">
                     <button class="btn btn-outline-primary" type="submit" id="searchBtn">search</button>
+                    <div class="form-check form-switch me-2 mt-2">
+                        <input class="form-check-input" type="checkbox" id="searchNearbyCities">
+                        <label class="form-check-label" for="searchNearbyCities">Include nearby cities</label>
+                    </div>
                 </div>
             </form>
         </div>

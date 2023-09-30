@@ -1,10 +1,11 @@
 package redis_client_mocks
 
 import (
+	"testing"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"testing"
 )
 
 var places = []POI.Place{
@@ -60,7 +61,7 @@ var places = []POI.Place{
 
 func init() {
 	// cache places
-	RedisClient.SetPlacesOnCategory(RedisContext, places)
+	RedisClient.SetPlacesAddGeoLocations(RedisContext, places)
 
 	// if place are not cached, it is possibly because of GeoAdd failure
 	for _, place := range places {
@@ -70,12 +71,13 @@ func init() {
 	}
 }
 
-// The setup of this test case guarantees that the Peter Luger's Steakhouse is located OUTSIDE the search radius coverage
+// The setup of this test case guarantees that the Peter Luger's Steakhouse is located OUTSIDE the search radius coverage,
 func TestGetPlaces_shouldExcludePlacesOutsideOfSearchRadius(t *testing.T) {
 	placeSearchRequest := iowrappers.PlaceSearchRequest{
-		Location: POI.Location{Longitude: -74.0060, Latitude: 40.7128},
-		PlaceCat: POI.PlaceCategoryEatery,
-		Radius:   uint(5000),
+		Location:   POI.Location{Longitude: -74.0060, Latitude: 40.7128},
+		PlaceCat:   POI.PlaceCategoryEatery,
+		Radius:     uint(5000),
+		PriceLevel: POI.PriceLevelFour,
 	}
 
 	cachedEateryPlaces, err := RedisClient.NearbySearch(RedisContext, &placeSearchRequest)
@@ -83,10 +85,37 @@ func TestGetPlaces_shouldExcludePlacesOutsideOfSearchRadius(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
+	// "Keens Steakhouse"
+	var expectedPlace = places[2]
 
-	if len(cachedEateryPlaces) != 1 || cachedEateryPlaces[0].ID != places[2].ID {
-		t.Logf("number of nearby eatery places obtained from Redis is %d", len(cachedEateryPlaces))
-		t.Error("failed to get cached Eatery place")
+	if len(cachedEateryPlaces) != 1 {
+		t.Errorf("expect to have 1 place, but got %d instead", len(cachedEateryPlaces))
+		return
+	}
+	if cachedEateryPlaces[0].ID != expectedPlace.ID {
+		t.Errorf("expect to get %s, but got %s instead", expectedPlace.Name, cachedEateryPlaces[0].Name)
+		return
+	}
+}
+
+func TestGetPlaces_resultShouldBeEmptyAfterPriceMatch(t *testing.T) {
+	// expect result should be empty, because mock data has no PriceLevelTwo places.
+	placeSearchRequest := iowrappers.PlaceSearchRequest{
+		Location:   POI.Location{Longitude: -74.0060, Latitude: 40.7128},
+		PlaceCat:   POI.PlaceCategoryEatery,
+		Radius:     uint(5000),
+		PriceLevel: POI.PriceLevelTwo,
+	}
+
+	cachedEateryPlaces, err := RedisClient.NearbySearch(RedisContext, &placeSearchRequest)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(cachedEateryPlaces) != 0 {
+		t.Errorf("Expect to have 0 place, but got %d instead", len(cachedEateryPlaces))
+		return
 	}
 }
 

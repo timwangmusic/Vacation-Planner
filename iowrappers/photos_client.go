@@ -20,7 +20,7 @@ type PhotoHttpClient struct {
 type PhotoURL string
 
 var isHtmlAnchor = func(node *html.Node) bool {
-	return (node.Type == html.ElementNode && node.Data == "a")
+	return node.Type == html.ElementNode && node.Data == "a"
 }
 
 // CreatePhotoHttpClient is a factory method for PhotoClient
@@ -74,9 +74,7 @@ func parseHTML(htmlBody []byte, judger func(*html.Node) bool, attr string) (Phot
 	}
 	url, found := dfs(doc, judger, attr)
 	if !found {
-		// Logger.Warn("No URL is found in HTML body!\n")
-		Logger.Debugf("%s\n", htmlBody)
-		return photoURL, errors.New("No URL is found in HTML body!")
+		return photoURL, errors.New("no URL is found in HTML body")
 	}
 	photoURL = PhotoURL(url)
 
@@ -89,15 +87,14 @@ func dfs(node *html.Node, judger func(*html.Node) bool, attr string) (string, bo
 			if a.Key != attr {
 				continue
 			}
-			return string(a.Val), true
+			return a.Val, true
 		}
 	}
-	found := false
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		url, found := dfs(c, judger, attr)
 		if found {
 			return url, true
 		}
 	}
-	return "", found
+	return "", false
 }

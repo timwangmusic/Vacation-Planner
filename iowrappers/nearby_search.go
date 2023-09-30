@@ -3,19 +3,22 @@ package iowrappers
 import (
 	"context"
 	"errors"
-	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/utils"
-	"googlemaps.github.io/maps"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/utils"
+	"googlemaps.github.io/maps"
 )
 
 const (
-	GoogleNearbySearchDelay      = time.Second
-	GoogleMapsSearchTimeout      = time.Second * 10
-	GoogleMapsSearchCallMaxCount = 5
+	GoogleNearbySearchDelay             = time.Second
+	GoogleMapsSearchTimeout             = time.Second * 10
+	GoogleMapsSearchCallMaxCount        = 5
+	GoogleNearbySearchMaxRadiusInMeters = 50000
 )
 
 type PlaceSearchRequest struct {
@@ -32,19 +35,37 @@ type PlaceSearchRequest struct {
 	BusinessStatus POI.BusinessStatus
 	// true if using precise geolocation instead of using a grander administrative area
 	UsePreciseLocation bool
+
+	PriceLevel POI.PriceLevel
 }
 
-func (c *MapsClient) GoogleMapsNearbySearchWrapper(ctx context.Context, location POI.Location, placeType string, radius uint, pageToken string) (resp maps.PlacesSearchResponse, err error) {
-	mapsReq := maps.NearbySearchRequest{
+// CreateMapSearchRequest creates a NearbySearchRequest for maps NearbySearch, adjust key settings such as radius and price levels
+func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationType, token string) (reqOut maps.NearbySearchRequest) {
+	// Adjust radius, minPrice and maxPrice settings in search request
+	var radius = reqIn.Radius
+	var exactPriceLevel maps.PriceLevel
+	if POI.PriceyEatery(reqIn.PlaceCat, reqIn.PriceLevel) {
+		// increase search radius
+		radius = min(reqIn.Radius*4, GoogleNearbySearchMaxRadiusInMeters)
+		// set price filter
+		exactPriceLevel = maps.PriceLevel(fmt.Sprint(reqIn.PriceLevel))
+	}
+
+	return maps.NearbySearchRequest{
 		Type: maps.PlaceType(placeType),
 		Location: &maps.LatLng{
-			Lat: location.Latitude,
-			Lng: location.Longitude,
+			Lat: reqIn.Location.Latitude,
+			Lng: reqIn.Location.Longitude,
 		},
 		Radius:    radius,
-		PageToken: pageToken,
+		PageToken: token,
 		RankBy:    maps.RankBy("prominence"),
+		MinPrice:  exactPriceLevel,
+		MaxPrice:  exactPriceLevel,
 	}
+}
+
+func (c *MapsClient) GoogleMapsNearbySearchWrapper(ctx context.Context, mapsReq maps.NearbySearchRequest) (resp maps.PlacesSearchResponse, err error) {
 	resp, err = c.client.NearbySearch(ctx, &mapsReq)
 	logErr(err, utils.LogError)
 	return
@@ -67,105 +88,120 @@ func (c *MapsClient) NearbySearch(ctx context.Context, request *PlaceSearchReque
 }
 
 func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes uint, request *PlaceSearchRequest, places *[]POI.Place, done chan bool) {
+	searchStartTime := time.Now()
 	placeTypes := POI.GetPlaceTypes(request.PlaceCat) // get place types in a category
 
 	nextPageTokenMap := make(map[POI.LocationType]string) // map for place type to search token
+	placeCountPerPlaceType := make(map[POI.LocationType]int)
 	for _, placeType := range placeTypes {
 		nextPageTokenMap[placeType] = ""
+		placeCountPerPlaceType[placeType] = 0
 	}
 
-	var reqTimes uint = 0    // number of queries for each location type
-	var totalResult uint = 0 // number of results so far, keep this number low
+	var reqTimes uint = 0        // number of queries for each location type
+	var totalPlaceCount uint = 0 // number of results so far, keep this number low
 
 	microAddrMap := make(map[string]string) // map place ID to its micro-address
 	placeMap := make(map[string]bool)       // remove duplication for place with same ID
 	urlMap := make(map[string]string)       // map place ID to url
 
-	searchStartTime := time.Now()
-
 	var err error
-	for totalResult < request.MinNumResults {
+	for totalPlaceCount < request.MinNumResults {
 		// if error, return regardless of number of results obtained
 		if err != nil {
 			Logger.Error(err)
 			done <- true
 			return
 		}
+
+		reqTimes++
 		for _, placeType := range placeTypes {
-			if reqTimes > 0 && nextPageTokenMap[placeType] == "" { // no more result for this location type
+			if reqTimes > 1 && nextPageTokenMap[placeType] == "" { // no more result for this location type
 				continue
 			}
 
+			singlePlaceTypeSearchStartTime := time.Now()
 			nextPageToken := nextPageTokenMap[placeType]
+			var searchReq = CreateMapSearchRequest(request, placeType, nextPageToken)
 			var searchResp maps.PlacesSearchResponse
-			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, request.Location, string(placeType), request.Radius, nextPageToken)
+			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, searchReq)
 
-			placeIdMap := make(map[int]string) // maps index in search response to place ID
+			// places for Google Maps place details search (https://developers.google.com/maps/documentation/places/web-service/details)
+			// the original purpose of doing a details search is getting opening hours info
+			// later on we added more fields of interest as specified in config/config.yaml file
+			placeIdMap := make(map[int]string)
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
 					placeIdMap[k] = res.PlaceID
 				}
 			}
 
-			detailSearchResults := make([]PlaceDetailSearchResult, len(placeIdMap))
+			detailsSearchResults := make([]PlaceDetailsSearchResult, len(placeIdMap))
 			var wg sync.WaitGroup
 			wg.Add(len(placeIdMap))
 			for idx, placeId := range placeIdMap {
-				go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailSearchResults[idx], &wg)
+				go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailsSearchResults[idx], &wg)
 			}
 			wg.Wait()
+			searchDuration := time.Since(singlePlaceTypeSearchStartTime)
 
 			// fill fields from detail search results to nearby search results
-			for _, placeDetails := range detailSearchResults {
-				searchRespIdx := placeDetails.RespIdx
-				placeId := searchResp.Results[searchRespIdx].PlaceID
-				searchResp.Results[searchRespIdx].OpeningHours = placeDetails.Res.OpeningHours
-				searchResp.Results[searchRespIdx].FormattedAddress = placeDetails.Res.FormattedAddress
-				microAddrMap[placeId] = placeDetails.Res.AdrAddress
-				urlMap[placeId] = placeDetails.Res.URL
+			for _, placeDetails := range detailsSearchResults {
+				idx := placeDetails.idx
+				placeId := searchResp.Results[idx].PlaceID
+				searchResp.Results[idx].OpeningHours = placeDetails.res.OpeningHours
+				searchResp.Results[idx].FormattedAddress = placeDetails.res.FormattedAddress
+				microAddrMap[placeId] = placeDetails.res.AdrAddress
+				urlMap[placeId] = placeDetails.res.URL
 			}
 
 			*places = append(*places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap)...)
-			totalResult += uint(len(searchResp.Results))
+			totalPlaceCount += uint(len(searchResp.Results))
+			placeCountPerPlaceType[placeType] += len(searchResp.Results)
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
+
+			Logger.Infow("Logging nearby search for individual place types",
+				"center location (lat,lng)", request.Location,
+				"place type:", placeType,
+				"price level", request.PriceLevel,
+				"place count so far", placeCountPerPlaceType[placeType],
+				"API call time", searchDuration,
+			)
 		}
-		reqTimes++
 		if reqTimes == maxRequestTimes {
 			break
 		}
 		time.Sleep(GoogleNearbySearchDelay) // sleep to make sure new next page token comes to effect
 	}
 
-	searchDuration := time.Since(searchStartTime)
-
-	Logger.Infow("request:", "requestId", "Logging nearby search",
-		"Maps API call time", searchDuration,
-		"center location (lat,lng)", request.Location,
+	Logger.Infow("Logging nearby search for a complete Google Maps search",
+		"center location (lat, lng)", request.Location,
 		"place category", request.PlaceCat,
-		"total results", totalResult,
+		"price level", request.PriceLevel,
+		"total place count", totalPlaceCount,
+		"total processing time", time.Since(searchStartTime),
 	)
 	done <- true
 }
 
-type PlaceDetailSearchResult struct {
-	Res     *maps.PlaceDetailsResult
-	RespIdx int
+type PlaceDetailsSearchResult struct {
+	res *maps.PlaceDetailsResult
+	idx int
 }
 
-func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailSearchResult, wg *sync.WaitGroup) {
+func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailsSearchResult, wg *sync.WaitGroup) {
 	defer wg.Done()
 	searchRes, err := PlaceDetailedSearch(context, mapsClient, placeId, fields)
 	if err != nil {
 		Logger.Error(err)
 		return
 	}
-	*detailSearchRes = PlaceDetailSearchResult{Res: &searchRes, RespIdx: idx}
+	*detailSearchRes = PlaceDetailsSearchResult{res: &searchRes, idx: idx}
 }
 
 func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeId string, fields []string) (maps.PlaceDetailsResult, error) {
 	if reflect.ValueOf(mapsClient).IsNil() {
 		err := errors.New("client does not exist")
-		Logger.Error(err)
 		return maps.PlaceDetailsResult{}, err
 	}
 	detailedSearchFields := strings.Join(fields, ",")
@@ -174,25 +210,13 @@ func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeI
 	}
 	if detailedSearchFields != "" {
 		fieldMask, err := parseFields(detailedSearchFields)
-		utils.LogErrorWithLevel(err, utils.LogError)
+		if err != nil {
+			return maps.PlaceDetailsResult{}, err
+		}
 		req.Fields = fieldMask
 	}
 
-	startSearchTime := time.Now()
 	resp, err := mapsClient.client.PlaceDetails(context, req)
-	utils.LogErrorWithLevel(err, utils.LogError)
-
-	searchDuration := time.Since(startSearchTime)
-
-	// logging
-	//requestId := context.Value(RequestIdKey).(string)
-	Logger.Debugw("request:", "requestId", "Logging place details search",
-		"Maps API call time", searchDuration,
-		"place ID", resp.PlaceID,
-		"place name", resp.Name,
-		"place formatted address", resp.FormattedAddress,
-		"place user rating total", resp.UserRatingsTotal,
-	)
 	return resp, err
 }
 
@@ -223,6 +247,10 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.
 			photo = &res.Photos[0]
 		}
 		userRatingsTotal := res.UserRatingsTotal
+		// filter places with zero user ratings
+		if userRatingsTotal == 0 {
+			continue
+		}
 		places = append(places, POI.CreatePlace(name, addr, res.FormattedAddress, res.BusinessStatus, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal, latitude, longitude))
 	}
 	return

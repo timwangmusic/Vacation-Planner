@@ -28,6 +28,7 @@ type Config struct {
 	MapsClientApiKey        string `default:"YOUR_GOOGLE_API_KEY" split_words:"true"`
 	GoogleOAuthClientID     string `envconfig:"GOOGLE_OAUTH_CLIENT_ID"`
 	GoogleOAuthClientSecret string `envconfig:"GOOGLE_OAUTH_CLIENT_SECRET"`
+	GeonamesApiKey          string `envconfig:"GEONAMES_API_KEY"`
 }
 
 type Configurations struct {
@@ -35,6 +36,11 @@ type Configurations struct {
 		GoogleMaps struct {
 			DetailedSearchFields []string `yaml:"detailed_search_fields"`
 		} `yaml:"google_maps"`
+
+		PlanSolver struct {
+			SamePlaceDedupeCountLimit int `yaml:"same_place_dedupe_count_limit"`
+			NearbyCitiesCountLimit    int `yaml:"nearby_cities_count_limit"`
+		} `yaml:"plan_solver"`
 	} `yaml:"server"`
 }
 
@@ -42,6 +48,8 @@ type Configurations struct {
 func flattenConfig(configs *Configurations) map[string]interface{} {
 	flattenedConfigs := make(map[string]interface{})
 	flattenedConfigs["server:google_maps:detailed_search_fields"] = configs.Server.GoogleMaps.DetailedSearchFields
+	flattenedConfigs["server:plan_solver:same_place_dedupe_count_limit"] = configs.Server.PlanSolver.SamePlaceDedupeCountLimit
+	flattenedConfigs["server:plan_solver:nearby_cities_count_limit"] = configs.Server.PlanSolver.NearbyCitiesCountLimit
 	return flattenedConfigs
 }
 
@@ -70,7 +78,7 @@ func RunServer() {
 
 	myPlanner := planner.MyPlanner{}
 
-	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs), conf.GoogleOAuthClientID, conf.GoogleOAuthClientSecret, conf.Server.Domain)
+	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs), conf.GoogleOAuthClientID, conf.GoogleOAuthClientSecret, conf.Server.Domain, conf.GeonamesApiKey)
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
 	c := make(chan os.Signal, 1)
@@ -85,7 +93,7 @@ func RunServer() {
 		log.Fatal(err)
 	}
 
-	log.Info("Server gracefully shut down")
+	log.Info("Server gracefully shut down.")
 }
 
 func main() {
@@ -93,6 +101,9 @@ func main() {
 }
 
 func listenForShutDownServer(ch <-chan os.Signal, svr *manners.GracefulServer, myPlanner *planner.MyPlanner) {
+	// destroy zap logger
+	defer myPlanner.Destroy()
+
 	wg := &sync.WaitGroup{}
 	wg.Add(numWorkers)
 	// dispatch workers
@@ -100,14 +111,14 @@ func listenForShutDownServer(ch <-chan os.Signal, svr *manners.GracefulServer, m
 		go myPlanner.ProcessPlanningEvent(worker, wg)
 	}
 
-	// block and wait for shut-down signal
-	<-ch
+	go func() {
+		// wait for shut-down signal
+		<-ch
 
-	// destroy zap logger
-	defer myPlanner.Destroy()
-	// close worker channels
-	close(myPlanner.PlanningEvents)
+		// close worker channels
+		close(myPlanner.PlanningEvents)
+	}()
+
 	wg.Wait()
-
 	svr.Close()
 }

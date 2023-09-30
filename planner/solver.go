@@ -4,14 +4,19 @@ import (
 	"container/heap"
 	"context"
 	"errors"
+	"fmt"
+	"slices"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
+	hungarianAlgorithm "github.com/oddg/hungarian-algorithm"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"github.com/yourbasic/radix"
+	"golang.org/x/exp/maps"
 )
 
 const (
@@ -36,10 +41,17 @@ type PlanningSolution struct {
 	ScoreOld        float64             `json:"score_old"`
 }
 
+func (ps PlanningSolution) Key() float64 {
+	return ps.Score
+}
+
 type Solver struct {
-	Searcher          *iowrappers.PoiSearcher
-	TimeMatcher       matching.Matcher
-	PriceRangeMatcher matching.Matcher
+	Searcher                *iowrappers.PoiSearcher
+	UserRatingsCountMatcher matching.Matcher
+	TimeMatcher             matching.Matcher
+	PriceRangeMatcher       matching.Matcher
+	placeDedupeCountLimit   int
+	nearbyCitiesCountLimit  int
 }
 
 const (
@@ -50,15 +62,28 @@ const (
 	InternalError          = 500
 )
 
-type PlanningReq struct {
-	Location        POI.Location  `json:"location"`
-	Slots           []SlotRequest `json:"slots"`
-	Weekday         POI.Weekday
-	TravelDate      string
-	NumPlans        int
-	SearchRadius    uint
-	PriceLevel      POI.PriceLevel
-	PreciseLocation bool
+type PlacePlanningDetails struct {
+	Name     string            `json:"name"`
+	URL      string            `json:"url"`
+	Category string            `json:"category"`
+	TimeSlot matching.TimeSlot `json:"time_slot"`
+}
+
+// MultiPlanningReq can be used to represent a multi-day planning request for a single location or a group of requests for different locations
+type MultiPlanningReq struct {
+	requests []*PlanningRequest
+	numPlans int
+}
+
+type PlanningRequest struct {
+	Location         POI.Location  `json:"location"`
+	Slots            []SlotRequest `json:"slots"`
+	TravelDate       string
+	NumPlans         int
+	SearchRadius     uint           `json:"radius"`
+	PriceLevel       POI.PriceLevel `json:"price_level"`
+	PreciseLocation  bool
+	WithNearbyCities bool
 }
 
 type PlanningResp struct {
@@ -69,14 +94,18 @@ type PlanningResp struct {
 
 // SlotRequest represents the properties of each row in the tabular travel plan, although not all of these are displayed to users
 type SlotRequest struct {
+	Weekday  POI.Weekday       `json:"weekday"`
 	TimeSlot matching.TimeSlot `json:"time_slot"`
 	Category POI.PlaceCategory `json:"category"`
 }
 
-func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher) {
+func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int, nearbyCitiesCountLimit int) {
 	s.Searcher = poiSearcher
+	s.UserRatingsCountMatcher = matching.MatcherForUserRatings{}
 	s.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
 	s.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
+	s.placeDedupeCountLimit = placeDedupeCountLimit
+	s.nearbyCitiesCountLimit = nearbyCitiesCountLimit
 }
 
 func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) bool {
@@ -94,7 +123,85 @@ func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) b
 	return true
 }
 
-func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
+func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningRequest) ([]PlacePlanningDetails, error) {
+	clusters, err := s.generatePlacesForSlots(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	placeIDs, err := s.FindOptimalPlan(clusters)
+	if err != nil {
+		return nil, err
+	}
+
+	places := make([]matching.Place, len(placeIDs))
+	results := make([]PlacePlanningDetails, len(placeIDs))
+	for idx, id := range placeIDs {
+		err = s.Searcher.GetRedisClient().FetchSingleRecord(ctx, "place_details:place_ID:"+id, &places[idx].Place)
+		if err != nil {
+			return nil, err
+		}
+		results[idx] = toPlacePlanningDetails(places[idx].Place.Name, req.Slots[idx], places[idx].Place.URL)
+	}
+	return results, nil
+}
+
+func (s *Solver) SolveWithNearbyCities(ctx context.Context, req *MultiPlanningReq) *PlanningResp {
+	wg := sync.WaitGroup{}
+	wg.Add(len(req.requests))
+	responses := make(chan *PlanningResp)
+
+	for _, request := range req.requests {
+		go func(r *PlanningRequest) {
+			defer wg.Done()
+			responses <- s.Solve(ctx, r)
+		}(request)
+	}
+
+	go func() {
+		wg.Wait()
+		close(responses)
+	}()
+
+	// int8 is enough for place deduplication limit
+	includedPlaces := make(map[string]int8)
+
+	pq := MinPriorityQueue[PlanningSolution]{}
+	errs := make([]error, 0)
+	for resp := range responses {
+		if resp.Err != nil {
+			errs = append(errs, resp.Err)
+			continue
+		}
+		for _, solution := range resp.Solutions {
+			if s.isPlanDuplicate(includedPlaces, solution) {
+				continue
+			}
+
+			if pq.Len() >= req.numPlans {
+				if pq.items[0].Key() < solution.Key() {
+					top := pq.Pop().(PlanningSolution)
+					removePlaces(includedPlaces, top)
+					pq.Push(solution)
+				} else {
+					removePlaces(includedPlaces, solution)
+				}
+			} else {
+				pq.Push(solution)
+			}
+		}
+	}
+
+	for _, err := range errs {
+		iowrappers.Logger.Debugf("->SolveWithNearbyCities: encountered error: %v", err)
+	}
+	if pq.Len() > 0 {
+		return &PlanningResp{Solutions: pq.items}
+	}
+	return &PlanningResp{Err: fmt.Errorf("cannot find solutions"), ErrorCode: NoValidSolution}
+}
+
+func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp {
 	redisClient := s.Searcher.GetRedisClient()
 	logger := iowrappers.Logger
 	logger.Debugf("->Solve(ctx.Context, iowrappers.RedisClient, %v, *PlanningResp)", req)
@@ -117,15 +224,15 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
 		req.NumPlans = NumPlansDefault
 	}
 
-	redisRequest := toRedisRequest(req)
+	cacheRequest := toSolutionsSaveRequest(req, nil)
 
-	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, redisRequest)
+	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, cacheRequest)
 
 	var resp PlanningResp
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < req.NumPlans {
-		resp = s.generateSolutions(ctx, req, s.TimeMatcher, s.PriceRangeMatcher)
+		resp = s.generateSolutions(ctx, req)
 		if resp.Err == nil {
-			if err := saveSolutions(ctx, redisClient, req, &resp.Solutions); err != nil {
+			if err := saveSolutions(ctx, redisClient, req, resp.Solutions); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -155,17 +262,19 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningReq) *PlanningResp {
 }
 
 // generates a request for normal template used by the regular search
-func standardRequest(travelDate string, weekday POI.Weekday, numResults int, priceLevel POI.PriceLevel) (req PlanningReq) {
+func standardRequest(travelDate string, weekday POI.Weekday, numResults int, priceLevel POI.PriceLevel) (req PlanningRequest) {
 	timeSlot1 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 10, End: 12}}
 	slotReq1 := SlotRequest{
 		TimeSlot: timeSlot1,
 		Category: POI.PlaceCategoryVisit,
+		Weekday:  weekday,
 	}
 
 	timeSlot2 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 12, End: 13}}
 	slotReq2 := SlotRequest{
 		TimeSlot: timeSlot2,
 		Category: POI.PlaceCategoryEatery,
+		Weekday:  weekday,
 	}
 
 	timeSlot3 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 13, End: 17}}
@@ -173,10 +282,10 @@ func standardRequest(travelDate string, weekday POI.Weekday, numResults int, pri
 	slotReq3 := SlotRequest{
 		TimeSlot: timeSlot3,
 		Category: POI.PlaceCategoryVisit,
+		Weekday:  weekday,
 	}
 
 	req.Slots = append(req.Slots, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
-	req.Weekday = weekday
 	req.TravelDate = travelDate
 	req.NumPlans = numResults
 	req.PriceLevel = priceLevel
@@ -224,13 +333,14 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 	return res, nil
 }
 
-func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) (resp chan PlanningResp) {
+func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) (resp chan PlanningResp) {
 	if topSolutionsCount <= 0 {
 		topSolutionsCount = TopSolutionsCountDefault
 	}
 
-	priorityQueue := &MinPriorityQueue{}
-	deduplicatedPlans := make(map[string]bool)
+	priorityQueue := &MinPriorityQueue[Vertex]{}
+	// int8 is enough for place deduplication limit
+	includedPlaces := make(map[string]int8)
 	resp = make(chan PlanningResp, 1)
 
 	for iterator.HasNext() {
@@ -247,15 +357,15 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 				log.Debug(err)
 				continue
 			}
-			if !isDuplicatedPlan(deduplicatedPlans, candidate) {
+			if s.isPlanDuplicate(includedPlaces, candidate) {
 				continue
 			}
-			newVertex := Vertex{Name: candidate.ID, Key: candidate.Score, Object: candidate}
+			newVertex := Vertex{Name: candidate.ID, K: candidate.Score, Object: candidate}
 			if priorityQueue.Len() == topSolutionsCount {
-				topVertex := (*priorityQueue)[0]
-				if topVertex.Key < newVertex.Key {
+				topVertex := priorityQueue.items[0]
+				if topVertex.Key() < newVertex.Key() {
 					heap.Pop(priorityQueue)
-					delete(deduplicatedPlans, jointPlaceIdsForPlan(topVertex.Object.(PlanningSolution)))
+					removePlaces(includedPlaces, topVertex.Object.(PlanningSolution))
 					heap.Push(priorityQueue, newVertex)
 				}
 			} else {
@@ -270,25 +380,105 @@ func FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.P
 		top := heap.Pop(priorityQueue).(Vertex)
 		res = append(res, top.Object.(PlanningSolution))
 	}
-	// min-heap, res needs to be reversed to get the descending order
-	resp <- PlanningResp{Solutions: reversePlans(res)}
+	// outputs from min-heap needs to be reversed to get the descending order by score
+	reversePlans(res)
+	resp <- PlanningResp{Solutions: res}
 	return
 }
 
-func reversePlans(plans []PlanningSolution) []PlanningSolution {
-	for i, j := 0, len(plans)-1; i < j; i, j = i+1, j-1 {
-		plans[i], plans[j] = plans[j], plans[i]
-	}
-	return plans
+func reversePlans(plans []PlanningSolution) {
+	slices.Reverse(plans)
 }
 
-func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMatcher matching.Matcher, priceRangeMatcher matching.Matcher) (resp PlanningResp) {
+func (s *Solver) FindOptimalPlan(placeClusters [][]matching.Place) ([]string, error) {
+	placeIds, weights, err := s.weightMatrix(placeClusters)
+	if err != nil {
+		return nil, err
+	}
+	solve, err := hungarianAlgorithm.Solve(fixWeights(weights))
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+	for _, idx := range solve[:len(placeClusters)] {
+		result = append(result, placeIds[idx])
+	}
+	return result, nil
+}
+
+// We are solving a maximization problem instead of the default minimization problem Hungarian algorithm is designed for.
+// Therefore, needs to use the maximum value to minus all the values in the matrix.
+func fixWeights(weights [][]int) [][]int {
+	if len(weights) == 0 {
+		return nil
+	}
+	fixedWeights := make([][]int, len(weights))
+	for idx := range fixedWeights {
+		fixedWeights[idx] = make([]int, len(weights[0]))
+	}
+	// assume the values are non-negative
+	var maxValue int
+	for _, ws := range weights {
+		for _, val := range ws {
+			if val > maxValue {
+				maxValue = val
+			}
+		}
+	}
+
+	for i, ws := range weights {
+		for j, val := range ws {
+			fixedWeights[i][j] = maxValue - val
+		}
+	}
+	return fixedWeights
+}
+
+func (s *Solver) weightMatrix(placeClusters [][]matching.Place) ([]string, [][]int, error) {
+	uniquePlaces := make(map[string]bool)
+	for _, places := range placeClusters {
+		for _, place := range places {
+			uniquePlaces[place.Id()] = true
+		}
+	}
+
+	placeIds := maps.Keys(uniquePlaces)
+	sort.Strings(placeIds)
+
+	// maps place ID to index
+	placeIdsMap := make(map[string]int)
+	for idx, id := range placeIds {
+		placeIdsMap[id] = idx
+	}
+
+	weights := make([][]int, len(placeIds))
+
+	// initialize weights to zero
+	for idx := range weights {
+		weights[idx] = make([]int, len(placeIds))
+	}
+
+	for idx, places := range placeClusters {
+		for _, place := range places {
+			weights[idx][placeIdsMap[place.Id()]] = int(100 * matching.Score([]matching.Place{place}, 1))
+		}
+	}
+
+	return placeIds, weights, nil
+}
+
+func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningRequest) ([][]matching.Place, error) {
+	logger := iowrappers.Logger
 	var placeClusters [][]matching.Place
 	for _, slot := range req.Slots {
 		var filterParams = make(map[matching.FilterCriteria]interface{})
+		filterParams[matching.FilterByUserRating] = matching.UserRatingFilterParams{
+			MinUserRatings: 1,
+		}
+
 		filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
 			Category:     slot.Category,
-			Day:          req.Weekday,
+			Day:          slot.Weekday,
 			TimeInterval: slot.TimeSlot.Slot,
 		}
 
@@ -302,43 +492,63 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 			Location:           req.Location,
 			Category:           slot.Category,
 			UsePreciseLocation: req.PreciseLocation,
+			PriceLevel:         req.PriceLevel,
 		})
 		if err != nil {
-			resp.ErrorCode = InternalError
-			resp.Err = err
-			return resp
+			return nil, err
 		}
+		logger.Debugf("Before filtering, the number of places for category %s is %d", slot.Category, len(places))
 
-		placesByTime, err := timeMatcher.Match(&matching.FilterRequest{
+		placesByRating, err := s.UserRatingsCountMatcher.Match(&matching.FilterRequest{
 			Places:   places,
+			Criteria: matching.FilterByUserRating,
+			Params:   filterParams,
+		})
+		if err != nil {
+			return nil, err
+		}
+		logger.Debugf("Filter out zero user rating, the number of places for category %s is %d", slot.Category, len(placesByRating))
+
+		placesByTime, err := s.TimeMatcher.Match(&matching.FilterRequest{
+			Places:   placesByRating,
 			Criteria: matching.FilterByTimePeriod,
 			Params:   filterParams,
 		})
 		if err != nil {
-			resp.ErrorCode = InternalError
-			resp.Err = err
-			return resp
+			return nil, err
 		}
+		logger.Debugf("Filtered by time, the number of places for category %s is %d", slot.Category, len(placesByTime))
 
-		placesByPrice, err := priceRangeMatcher.Match(&matching.FilterRequest{
+		placesByPrice, err := s.PriceRangeMatcher.Match(&matching.FilterRequest{
 			Places:   placesByTime,
 			Criteria: matching.FilterByPriceRange,
 			Params:   filterParams,
 		})
 		if err != nil {
-			resp.ErrorCode = InternalError
-			resp.Err = err
-			return resp
+			return nil, err
 		}
+		logger.Debugf("Filtered by price, the number of places for category %s is %d", slot.Category, len(placesByPrice))
 
-		iowrappers.Logger.Infof("number of places by price matcher is %d", len(placesByPrice))
+		if len(placesByPrice) == 0 {
+			return nil, fmt.Errorf("failed to find any place for category %s at slot %s for location %+v", slot.Category, slot.TimeSlot.ToString(), req.Location)
+		}
 		placeClusters = append(placeClusters, placesByPrice)
+	}
+	return placeClusters, nil
+}
+
+func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (resp PlanningResp) {
+	placeClusters, err := s.generatePlacesForSlots(ctx, req)
+	if err != nil {
+		resp.ErrorCode = InternalError
+		resp.Err = err
+		return
 	}
 
 	placeCategories := toPlaceCategories(req.Slots)
 
 	mdIter := &MultiDimIterator{}
-	if err := mdIter.Init(placeCategories, placeClusters); err != nil {
+	if err = mdIter.Init(placeCategories, placeClusters); err != nil {
 		resp.ErrorCode = NoValidSolution
 		resp.Err = err
 		return resp
@@ -352,52 +562,48 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningReq, timeMa
 		resp.Err = errors.New("cannot complete computation in time")
 		resp.ErrorCode = RequestTimeOut
 		return
-	case r := <-FindBestPlanningSolutions(ctxWithTimeout, placeClusters, req.NumPlans, mdIter):
+	case r := <-s.FindBestPlanningSolutions(ctxWithTimeout, placeClusters, req.NumPlans, mdIter):
 		return r
 	}
 }
 
-func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningReq, solutions *[]PlanningSolution) error {
-	planningSolutionsResponse := &iowrappers.PlanningSolutionsResponse{}
-	planningSolutionsResponse.PlanningSolutionRecords = make([]iowrappers.PlanningSolutionRecord, len(*solutions))
+func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningRequest, solutions []PlanningSolution) error {
+	planningSolutionRecords := make([]iowrappers.PlanningSolutionRecord, len(solutions))
 
-	for idx, candidate := range *solutions {
-		record := iowrappers.PlanningSolutionRecord{
-			ID:              candidate.ID,
-			PlaceIDs:        candidate.PlaceIDS,
-			Score:           candidate.Score,
-			ScoreOld:        candidate.ScoreOld,
-			PlaceNames:      candidate.PlaceNames,
-			PlaceLocations:  candidate.PlaceLocations,
-			PlaceAddresses:  candidate.PlaceAddresses,
-			PlaceURLs:       candidate.PlaceURLs,
-			PlaceCategories: candidate.PlaceCategories,
-			Destination:     req.Location,
-		}
-		planningSolutionsResponse.PlanningSolutionRecords[idx] = record
+	for idx, candidate := range solutions {
+		record := toPlanningSolutionRecord(candidate, req.Location)
+		planningSolutionRecords[idx] = record
 	}
 
-	err := c.SavePlanningSolutions(ctx, toRedisRequest(req), planningSolutionsResponse)
+	err := c.SavePlanningSolutions(ctx, toSolutionsSaveRequest(req, planningSolutionRecords))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// returns true if the new travel plan can be added to priority queue
-func isDuplicatedPlan(plans map[string]bool, newPlan PlanningSolution) bool {
-	jointPlaceIDs := jointPlaceIdsForPlan(newPlan)
-	if _, exists := plans[jointPlaceIDs]; !exists {
-		plans[jointPlaceIDs] = true
-		return true
+// isPlanDuplicate checks if ANY place in the plan appears in previous results more than Solver.placeDedupeCountLimit times.
+func (s *Solver) isPlanDuplicate(includedPlaces map[string]int8, newPlan PlanningSolution) bool {
+	for _, placeID := range newPlan.PlaceIDS {
+		if count, exists := includedPlaces[placeID]; exists && (int(count) >= s.placeDedupeCountLimit) {
+			return true
+		}
+	}
+	// mark all places in the plan as seen
+	for _, placeID := range newPlan.PlaceIDS {
+		includedPlaces[placeID]++
 	}
 	return false
 }
 
-func jointPlaceIdsForPlan(newPlan PlanningSolution) string {
-	placeIDs := make([]string, len(newPlan.PlaceIDS))
-	copy(placeIDs, newPlan.PlaceIDS)
-	radix.Sort(placeIDs)
-	jointPlaceIDs := strings.Join(placeIDs, "_")
-	return jointPlaceIDs
+// removePlaces reduces counts of places of the input plan potentially stored in the input hashMap.
+// This function can allow the main algorithm to re-introduce new plans into top candidates.
+func removePlaces(includedPlaces map[string]int8, plan PlanningSolution) {
+	for _, placeID := range plan.PlaceIDS {
+		count, exists := includedPlaces[placeID]
+		if !exists || (count == 0) {
+			continue
+		}
+		includedPlaces[placeID]--
+	}
 }

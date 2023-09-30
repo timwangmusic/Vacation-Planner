@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/weihesdlegend/Vacation-planner/user"
+	"os"
 )
 
 type Mailer struct {
@@ -21,11 +19,9 @@ type Mailer struct {
 type EmailType string
 
 const EmailVerification EmailType = "Email Verification"
+const PasswordReset EmailType = "Password Reset"
 
 func (m *Mailer) Init(redisClient *RedisClient) error {
-	if strings.ToLower(os.Getenv("ENVIRONMENT")) != "production" {
-		return nil
-	}
 	if os.Getenv("SENDGRID_API_KEY") == "" {
 		return errors.New("failed to create mailer: SENDGRID_API_KEY does not exist")
 	}
@@ -38,9 +34,8 @@ func (m *Mailer) Init(redisClient *RedisClient) error {
 	return nil
 }
 
-func (m *Mailer) Send(t EmailType, recipient user.View) error {
+func (m *Mailer) Send(ctx context.Context, t EmailType, recipient user.View, environment string) error {
 	Logger.Infof("->Mailer.Send: received request to send email for user %v", recipient)
-	ctx := context.Background()
 	switch t {
 	case EmailVerification:
 		email := recipient.Email
@@ -52,6 +47,30 @@ func (m *Mailer) Send(t EmailType, recipient user.View) error {
 			return err
 		}
 		htmlContent := fmt.Sprintf("<p>please follow the <a href=https://www.unwind.dev/v1/verify?code=%s>link</a> to verify your email address. </p>", code)
+		if environment == "testing" {
+			htmlContent = fmt.Sprintf("<p>please follow the <a href=https://testing-vp.herokuapp.com/v1/verify?code=%s>link</a> to verify your email address. </p>", code)
+		}
+		message := mail.NewSingleEmail(from, subject, to, "", htmlContent)
+		resp, err := m.client.Send(message)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode > 299 {
+			return fmt.Errorf("failed to Send email, status %d", resp.StatusCode)
+		}
+	case PasswordReset:
+		email := recipient.Email
+		subject := "Password Reset"
+		from := mail.NewEmail("Vacation Planner", m.email)
+		to := mail.NewEmail(email, email)
+		code, err := m.redisClient.saveEmailPasswordResetCode(ctx, recipient)
+		if err != nil {
+			return err
+		}
+		htmlContent := fmt.Sprintf("<p>please follow the <a href=https://www.unwind.dev/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", recipient.Email, code)
+		if environment == "testing" {
+			htmlContent = fmt.Sprintf("<p>please follow the <a href=https://testing-vp.herokuapp.com/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", recipient.Email, code)
+		}
 		message := mail.NewSingleEmail(from, subject, to, "", htmlContent)
 		resp, err := m.client.Send(message)
 		if err != nil {

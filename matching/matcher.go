@@ -3,6 +3,7 @@ package matching
 import (
 	"context"
 	"errors"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
@@ -18,6 +19,7 @@ const (
 	MinResultsForTimePeriodMatching                = 20
 	FilterByTimePeriod              FilterCriteria = "filterByTimePeriod"
 	FilterByPriceRange              FilterCriteria = "filterByPriceRange"
+	FilterByUserRating              FilterCriteria = "filterByUserRating"
 )
 
 type Request struct {
@@ -25,6 +27,7 @@ type Request struct {
 	Location           POI.Location
 	Category           POI.PlaceCategory
 	UsePreciseLocation bool
+	PriceLevel         POI.PriceLevel
 }
 
 type FilterRequest struct {
@@ -79,6 +82,7 @@ func NearbySearchForCategory(ctx context.Context, searcher iowrappers.SearchClie
 		MinNumResults:      MinResultsForTimePeriodMatching,
 		BusinessStatus:     POI.Operational,
 		UsePreciseLocation: req.UsePreciseLocation,
+		PriceLevel:         req.PriceLevel,
 	}
 	basicPlaces, err := searcher.NearbySearch(ctx, placeSearchRequest)
 	if err != nil {
@@ -127,4 +131,29 @@ func filterPlacesOnPriceLevel(places []Place, level POI.PriceLevel) []Place {
 		}
 	}
 	return results
+}
+
+// Filter parameters related with user rating
+type UserRatingFilterParams struct {
+	MinUserRatings int
+}
+
+type MatcherForUserRatings struct {
+}
+
+func (m MatcherForUserRatings) Match(req *FilterRequest) ([]Place, error) {
+	var results []Place
+	filterParams := req.Params[req.Criteria]
+
+	if _, ok := filterParams.(UserRatingFilterParams); !ok {
+		return results, errors.New("user rating matcher received wrong filter params")
+	}
+	params := filterParams.(UserRatingFilterParams)
+
+	userRatingCountFilter := func(minRating int) func(place Place) bool {
+		return func(place Place) bool {
+			return place.UserRatingsCount() >= minRating
+		}
+	}
+	return iowrappers.Filter(req.Places, userRatingCountFilter(params.MinUserRatings)), nil
 }

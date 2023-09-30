@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	AvgRating  = 3.0
-	AvgPricing = PriceDefaultMean
+	MaxPlaceRating = 5.0
 )
 
 // OLD plan scoring method, use maxDist as the normalisation factor
@@ -28,7 +27,7 @@ func ScoreOld(places []Place) float64 {
 	return avgScore - avgDistance
 }
 
-// Plan scoring method, use constant distance normalisation factor
+// Score uses constant distance normalisation factor
 func Score(places []Place, distNorm int) float64 {
 	if len(places) == 1 {
 		return singlePlaceScore(places[0])
@@ -41,13 +40,13 @@ func Score(places []Place, distNorm int) float64 {
 }
 
 func singlePlaceScore(place Place) float64 {
-	var ratingPricingRatio float64
+	var boostFactor float64
 	if place.PlacePrice() == 0 {
-		ratingPricingRatio = AvgRating / AvgPricing // set to average single Place rating-price ratio
+		boostFactor = float64(place.Rating()) / MaxPlaceRating
 	} else {
-		ratingPricingRatio = float64(place.Rating()) / place.PlacePrice()
+		boostFactor = float64(place.Rating()) / place.PlacePrice()
 	}
-	return math.Log10(float64(1+place.UserRatingsCount())) * ratingPricingRatio
+	return math.Log10(float64(1+place.UserRatingsCount())) * boostFactor
 }
 
 // calculate Haversine distances between places

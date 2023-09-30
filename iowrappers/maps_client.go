@@ -73,7 +73,6 @@ func (c *MapsClient) ReverseGeocode(context context.Context, latitude, longitude
 			Lat: latitude,
 			Lng: longitude,
 		},
-		// currently we require country, admistrative area level 1 and city info
 		ResultType: []string{"country", "administrative_area_level_1", "locality"},
 	}
 	Logger.Debugf("reverse geocoding for latitude/longitude: %.2f/%.2f", latitude, longitude)

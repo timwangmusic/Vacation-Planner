@@ -32,7 +32,7 @@ func (mdTagIter *MultiDimIterator) Init(categories []POI.PlaceCategory, placeClu
 		mdTagIter.Size[pos] = len(placeClusters[pos])
 
 		if mdTagIter.Size[pos] == 0 {
-			log.Errorf("number of places for category %s is 0, tag index is %d \n", category, pos)
+			log.Errorf("the number of places for category %s in slot index %d is 0\n", category, pos)
 			return errors.New(CategorizedPlaceIterInitFailureErrMsg)
 		}
 	}

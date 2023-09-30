@@ -14,7 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/bobg/go-generics/slices"
+	gogeonames "github.com/timwangmusic/go-geonames"
+
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -23,6 +26,7 @@ import (
 const (
 	PlanningSolutionsExpirationTime = 24 * time.Hour
 	PlanningStatExpirationTime      = 24 * time.Hour
+	CityInfoExpirationTime          = 0
 
 	MaximumNumSlotsPerPlan = 5
 
@@ -30,6 +34,10 @@ const (
 	NumVisitorsPrefix              = "visitor_count"
 	TravelPlansRedisCacheKeyPrefix = "travel_plans"
 	TravelPlanRedisCacheKeyPrefix  = "travel_plan"
+	CityRedisKeyPrefix             = "city"
+	CitiesRedisKey                 = "known_cities_ids"
+	KnownCitiesHashMapRedisKey     = "known_cities_name_to_id"
+	MapsLastSearchTimeRedisKey     = "MapsLastSearchTime"
 )
 
 var RedisClientDefaultBlankContext context.Context
@@ -103,11 +111,13 @@ func (r *RedisClient) setPlace(context context.Context, place POI.Place, wg *syn
 	}
 }
 
-func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory) (lastSearchTime time.Time, err error) {
-	redisKey := "MapsLastSearchTime"
-
-	redisField := strings.ToLower(strings.Join([]string{location.Country, location.City, string(category)}, ":"))
-	lst, cacheErr := r.client.HGet(context, redisKey, redisField).Result()
+func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel) (lastSearchTime time.Time, err error) {
+	redisField := strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category), strconv.Itoa(int(priceLevel))}, ":"))
+	// for places in Visit category Google Maps do not provide pricing info, this is subject to change in the future
+	if category == POI.PlaceCategoryVisit {
+		redisField = strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category)}, ":"))
+	}
+	lst, cacheErr := r.client.HGet(context, MapsLastSearchTimeRedisKey, redisField).Result()
 	if cacheErr != nil {
 		err = cacheErr
 		return
@@ -121,14 +131,17 @@ func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location PO
 	return
 }
 
-func (r *RedisClient) SetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, requestTime string) (err error) {
-	redisKey := "MapsLastSearchTime"
-	redisField := strings.ToLower(strings.Join([]string{location.Country, location.City, string(category)}, ":"))
-	_, err = r.client.HSet(context, redisKey, redisField, requestTime).Result()
+func (r *RedisClient) SetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel, requestTime string) (err error) {
+	redisField := strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category), strconv.Itoa(int(priceLevel))}, ":"))
+	// for places in Visit category Google Maps do not provide pricing info, this is subject to change in the future
+	if category == POI.PlaceCategoryVisit {
+		redisField = strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category)}, ":"))
+	}
+	_, err = r.client.HSet(context, MapsLastSearchTimeRedisKey, redisField, requestTime).Result()
 	return
 }
 
-// StorePlacesForLocation is currently not used, but it is still a primitive implementation that might have faster search time compared
+// StorePlacesForLocation is deprecated, but it is still a primitive implementation that might have faster search time compared
 // with all places stored under one key
 // store places obtained from database or external API in Redis
 // places for a location are stored in separate sorted sets based on category
@@ -141,7 +154,7 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	for _, place := range places {
 		sortedSetKey := strings.Join([]string{geocodeInString, string(POI.GetPlaceCategory(place.LocationType))}, "_")
 		dist := utils.HaversineDist([]float64{lat, lng}, []float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
-		_, err := client.ZAdd(context, sortedSetKey, &redis.Z{Score: dist, Member: place.ID}).Result()
+		_, err := client.ZAdd(context, sortedSetKey, redis.Z{Score: dist, Member: place.ID}).Result()
 		if err != nil {
 			return err
 		}
@@ -151,24 +164,152 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	return nil
 }
 
-func (r *RedisClient) SetPlacesOnCategory(context context.Context, places []POI.Place) {
+// SetPlacesAddGeoLocations stores two types of information in redis
+// 1. key-value pair, {placeID: POI.place}
+// 2. add place to the correct bucket in geohashing for nearby search
+func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.Place) {
 	wg := &sync.WaitGroup{}
 	wg.Add(len(places))
 	for _, place := range places {
-		placeCategory := POI.GetPlaceCategory(place.LocationType)
-		geolocation := &redis.GeoLocation{
-			Name:      place.ID,
-			Latitude:  place.GetLocation().Latitude,
-			Longitude: place.GetLocation().Longitude,
-		}
-		redisKey := "placeIDs:" + strings.ToLower(string(placeCategory))
-		_, cmdErr := r.client.GeoAdd(context, redisKey, geolocation).Result()
+		go func(place POI.Place) {
+			defer wg.Done()
+			_, err := r.Get().Pipelined(c, func(pipe redis.Pipeliner) error {
+				placeCategory := POI.GetPlaceCategory(place.LocationType)
+				geoLocation := &redis.GeoLocation{
+					Name:      place.ID,
+					Latitude:  place.GetLocation().Latitude,
+					Longitude: place.GetLocation().Longitude,
+				}
 
-		utils.LogErrorWithLevel(cmdErr, utils.LogError)
+				redisKey := POI.EncodeNearbySearchRedisKey(placeCategory, place.PriceLevel)
+				pipe.GeoAdd(c, redisKey, geoLocation)
 
-		r.setPlace(context, place, wg)
+				json_, err := json.Marshal(place)
+				pipe.Set(c, "place_details:place_ID:"+place.ID, json_, 0)
+				return err
+			})
+			if err != nil {
+				Logger.Error(err)
+			}
+		}(place)
 	}
 	wg.Wait()
+}
+
+func updateCity(ctx context.Context, pipe redis.Pipeliner, city *City) error {
+	key := strings.Join([]string{CityRedisKeyPrefix, city.ID}, ":")
+	json_, err := json.Marshal(city)
+	if err != nil {
+		return err
+	}
+
+	if err = pipe.Set(ctx, key, json_, CityInfoExpirationTime).Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *RedisClient) AddCities(ctx context.Context, cities []City) error {
+	wg := sync.WaitGroup{}
+	wg.Add(len(cities))
+	var err error
+	for _, city := range cities {
+		go func(city City) {
+			defer wg.Done()
+			_, err = r.Get().Pipelined(ctx, func(pipe redis.Pipeliner) error {
+				hashKey := strings.Join([]string{city.Name, city.AdminArea1, city.Country}, "_")
+				var existedCityId string
+				existedCityId, err = r.Get().HGet(ctx, KnownCitiesHashMapRedisKey, hashKey).Result()
+				if err == nil && existedCityId != "" {
+					city.ID = existedCityId
+					return updateCity(ctx, pipe, &city)
+				}
+
+				err = pipe.HSet(ctx, KnownCitiesHashMapRedisKey, hashKey, city.ID).Err()
+				if err != nil {
+					Logger.Debugf("error adding city %s to %s: %v", city.Name, KnownCitiesHashMapRedisKey, err)
+				}
+
+				key := strings.Join([]string{CityRedisKeyPrefix, city.ID}, ":")
+				var json_ []byte
+				json_, err = json.Marshal(city)
+				if err != nil {
+					return err
+				}
+				if err = pipe.Set(ctx, key, json_, CityInfoExpirationTime).Err(); err != nil {
+					return err
+				}
+
+				if err = pipe.GeoAdd(ctx, CitiesRedisKey, &redis.GeoLocation{
+					Name:      city.ID,
+					Longitude: city.Longitude,
+					Latitude:  city.Latitude,
+				}).Err(); err != nil {
+					return err
+				}
+				Logger.Debugf("added city %s to Redis with key: %s", city.Name, key)
+				return nil
+			})
+			if err != nil {
+				Logger.Error(err)
+			}
+		}(city)
+	}
+	wg.Wait()
+	return err
+}
+
+func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64, filter gogeonames.SearchFilter) ([]City, error) {
+	cities, err := r.Get().GeoRadius(ctx, CitiesRedisKey, lng, lat, &redis.GeoRadiusQuery{
+		Radius: radius,
+		Unit:   "km",
+		Sort:   "ASC",
+	}).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(cities))
+	nearbyCities := make([]City, 0)
+	retrievedCities := make(chan City)
+
+	for _, city := range cities {
+		go func(city redis.GeoLocation) {
+			defer wg.Done()
+
+			cityKey := strings.Join([]string{CityRedisKeyPrefix, city.Name}, ":")
+			cityString, cityQueryErr := r.Get().Get(ctx, cityKey).Result()
+			if cityQueryErr != nil {
+				Logger.Error(cityQueryErr)
+				return
+			}
+
+			var c City
+			unmarshallErr := json.Unmarshal([]byte(cityString), &c)
+			if unmarshallErr != nil {
+				Logger.Error(unmarshallErr)
+				return
+			}
+			Logger.Debugf("retrieved city %s, %s from Redis", c.ID, c.Name)
+
+			retrievedCities <- c
+		}(city)
+	}
+
+	go func() {
+		wg.Wait()
+		close(retrievedCities)
+	}()
+
+	for c := range retrievedCities {
+		nearbyCities = append(nearbyCities, c)
+	}
+
+	populationThreshold := searchFilterToPopulation(filter)
+	nearbyCities, _ = slices.Filter(nearbyCities, func(city City) (bool, error) { return city.Population >= populationThreshold, nil })
+	return nearbyCities, nil
 }
 
 // obtain place info from Redis based with key place_details:place_ID:placeID
@@ -183,11 +324,8 @@ func (r *RedisClient) getPlace(context context.Context, placeId string) (place P
 }
 
 func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
-	requestCategory := strings.ToLower(string(req.PlaceCat))
-	redisKey := "placeIDs:" + requestCategory
-
+	redisKey := POI.EncodeNearbySearchRedisKey(req.PlaceCat, req.PriceLevel)
 	requestLat, requestLng := req.Location.Latitude, req.Location.Longitude
-
 	searchRadius := req.Radius
 
 	if searchRadius > MaxSearchRadius {
@@ -224,8 +362,8 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 
 	if req.BusinessStatus == POI.Operational {
 		totalPlacesCount := len(places)
-		places = filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
-		Logger.Debugf("(RedisClient) NearbySearch -> %d places out of %d left after business status filtering", len(places), totalPlacesCount)
+		places = Filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
+		Logger.Debugf("(RedisClient)NearbySearch -> %d places out of %d left after business status filtering", len(places), totalPlacesCount)
 	}
 	return places, nil
 }
@@ -365,63 +503,84 @@ type PlanningSolutionsResponse struct {
 	PlanningSolutionRecords []PlanningSolutionRecord `json:"cached_planning_solutions"`
 }
 
-type PlanningSolutionsCacheRequest struct {
-	Location        POI.Location
-	Radius          uint64
-	PriceLevel      POI.PriceLevel
-	PlaceCategories []POI.PlaceCategory
-	Intervals       []POI.TimeInterval
-	Weekday         POI.Weekday
+type PlanningSolutionsSaveRequest struct {
+	Location                POI.Location
+	PriceLevel              POI.PriceLevel
+	PlaceCategories         []POI.PlaceCategory
+	Intervals               []POI.TimeInterval
+	Weekdays                []POI.Weekday
+	PlanningSolutionRecords []PlanningSolutionRecord
 }
 
-// convert time intervals and place categories of a travel plan into an unsigned integer
-// a time interval and place category has 23 * 24 * 2 = 1104 possibilities
-// treat each combination as one digit in a 1104-ary number
-// TODO: [NOTE] that the maximum number of slots it can hold is approximately 5, this encoding should be improved in the future
-func encodePlanIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeInterval) (uint64, error) {
-	var result uint64
+func timeSlotsIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeInterval, weekdays []POI.Weekday) (string, error) {
 	if len(placeCategories) != len(intervals) {
-		return 0, fmt.Errorf("the size of place category is %d, which does not match the size of intervals %d", len(placeCategories), len(intervals))
+		return "", fmt.Errorf("the number of place categories %d does not match the number of intervals %d", len(placeCategories), len(intervals))
 	}
 
-	if len(placeCategories) > MaximumNumSlotsPerPlan {
-		return 0, fmt.Errorf("the number of time slots in the plan is %d, which exceeds the limit of %d", len(placeCategories), MaximumNumSlotsPerPlan)
+	if len(placeCategories) != len(weekdays) {
+		return "", fmt.Errorf("the number of place categories %d does not match the number of weekdays %d", len(placeCategories), len(weekdays))
 	}
 
-	for idx, placeCategory := range placeCategories {
-		result *= 1104
-		interval := intervals[idx]
-		switch placeCategory {
-		case POI.PlaceCategoryEatery:
-			result += uint64(interval.Start) * uint64(interval.End)
-		case POI.PlaceCategoryVisit:
-			result += uint64(interval.Start) * uint64(interval.End) * 2
+	parts := make([]string, 0)
+	for idx := range placeCategories {
+		timeSlotIdx, err := singleTimeSlotIndex(placeCategories[idx], intervals[idx], weekdays[idx])
+		if err != nil {
+			return "", err
 		}
+		parts = append(parts, timeSlotIdx)
 	}
-	return result, nil
+
+	return strings.Join(parts, "_"), nil
 }
 
-func generateTravelPlansCacheKey(req *PlanningSolutionsCacheRequest) (string, error) {
+func singleTimeSlotIndex(category POI.PlaceCategory, interval POI.TimeInterval, weekday POI.Weekday) (string, error) {
+	parts := make([]string, 0)
+	switch category {
+	case POI.PlaceCategoryVisit:
+		parts = append(parts, "V")
+	case POI.PlaceCategoryEatery:
+		parts = append(parts, "E")
+	default:
+		return "", fmt.Errorf("unknown place category %s", category)
+	}
+
+	if int(interval.Start) >= 24 || int(interval.Start) < 0 {
+		return "", fmt.Errorf("interval start time should be between 0 and 23 inclusive, got %s", interval.Start.ToString())
+	}
+
+	if int(interval.End) >= 24 || int(interval.End) < 0 {
+		return "", fmt.Errorf("interval start time should be between 0 and 23 inclusive, got %s", interval.End.ToString())
+	}
+
+	parts = append(parts, interval.Start.ToString())
+	parts = append(parts, interval.End.ToString())
+
+	if int(weekday) > 6 || int(weekday) < 0 {
+		return "", fmt.Errorf("weekday falls between 0 and 6 inclusive, got %s", weekday.String())
+	}
+
+	parts = append(parts, weekday.String())
+	return strings.Join(parts, "-"), nil
+}
+
+func generateTravelPlansCacheKey(req *PlanningSolutionsSaveRequest) (string, error) {
 	country, region, city := req.Location.Country, req.Location.AdminAreaLevelOne, req.Location.City
-	planIndex, err := encodePlanIndex(req.PlaceCategories, req.Intervals)
+	slotsIndex, err := timeSlotsIndex(req.PlaceCategories, req.Intervals, req.Weekdays)
 	if err != nil {
 		return "", err
 	}
-
-	radius := strconv.FormatUint(req.Radius, 10)
-	planIndexStr := strconv.FormatUint(planIndex, 10)
 
 	country = strings.ReplaceAll(strings.ToLower(country), " ", "_")
 	region = strings.ReplaceAll(strings.ToLower(region), " ", "_")
 	city = strings.ReplaceAll(strings.ToLower(city), " ", "_")
 
-	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, region, city, radius, strconv.Itoa(int(req.Weekday)), strconv.Itoa(int(req.PriceLevel)), planIndexStr}, ":"))
+	redisFieldKey := strings.ToLower(strings.Join([]string{TravelPlansRedisCacheKeyPrefix, country, region, city, strconv.Itoa(int(req.PriceLevel)), slotsIndex}, ":"))
 	return redisFieldKey, nil
 }
 
-func (r *RedisClient) SavePlanningSolutions(context context.Context, request *PlanningSolutionsCacheRequest, response *PlanningSolutionsResponse) error {
+func (r *RedisClient) SavePlanningSolutions(context context.Context, request *PlanningSolutionsSaveRequest) error {
 	// solutions with no valid solutions do not worth saving
-	if len(response.PlanningSolutionRecords) == 0 {
+	if len(request.PlanningSolutionRecords) == 0 {
 		return nil
 	}
 	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
@@ -431,7 +590,7 @@ func (r *RedisClient) SavePlanningSolutions(context context.Context, request *Pl
 	}
 
 	var recordKeys []string
-	for _, record := range response.PlanningSolutionRecords {
+	for _, record := range request.PlanningSolutionRecords {
 		solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, record.ID}, ":")
 		json_, err := json.Marshal(record)
 		if err != nil {
@@ -455,7 +614,7 @@ func (r *RedisClient) SavePlanningSolutions(context context.Context, request *Pl
 	return nil
 }
 
-func (r *RedisClient) PlanningSolutions(context context.Context, request *PlanningSolutionsCacheRequest) (PlanningSolutionsResponse, error) {
+func (r *RedisClient) PlanningSolutions(context context.Context, request *PlanningSolutionsSaveRequest) (PlanningSolutionsResponse, error) {
 	Logger.Debugf("->RedisClient.PlanningSolutions(%v)", request)
 	var response PlanningSolutionsResponse
 	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)

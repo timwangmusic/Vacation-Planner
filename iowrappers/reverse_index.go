@@ -3,7 +3,7 @@ package iowrappers
 import (
 	"context"
 	"errors"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"strings"
 )
@@ -33,7 +33,7 @@ func (r *RedisClient) CreateReverseIndex(ctx context.Context, index *ReverseInde
 	}
 	redisKey := reverseIndexKey(index.Metadata)
 	for idx, id := range index.PlaceIDs {
-		err := r.Get().ZAdd(ctx, redisKey, &redis.Z{Score: index.Scores[idx], Member: id}).Err()
+		err := r.Get().ZAdd(ctx, redisKey, redis.Z{Score: index.Scores[idx], Member: id}).Err()
 		if err != nil {
 			return err
 		}

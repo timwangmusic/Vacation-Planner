@@ -11,7 +11,7 @@ People typically rely on electronic maps and online resources to plan their trip
 Querying for different routes are tedious at best, and often times it is hard to remember which sources and destinations have been researched.
 When taking in time and financial constraints, this manual planning process quickly becomes mind-boggling.
 * Our goal is to provide a service for travellers to plan for their ideal vacations under financial or time budget.
-* The planning APIs let users to enter travel destination (POI), date and how they would like to divide the day into slots, and the service provides travel plans for the user.
+* The planning APIs let users enter travel destination (POI), date and how they would like to divide the day into slots, and the service provides travel plans for the user.
 * The initial version only plans for single-day trips, and it ranks results without personal preferences.
 
 ## Features
@@ -28,6 +28,7 @@ When taking in time and financial constraints, this manual planning process quic
 ## Development
 * Obtain Google Maps API key and set the `MAPS_CLIENT_API_KEY=YOUR_GCP_API_KEY`,
 `REDISCLOUD_URL=redis://localhost:6379` environment variables
+* Set environment variable `ENVIRONMENT=DEVELOPMENT,SENDGRID_API_KEY=NO_KEY` as we do not create mailers in development environment.
 * Start (in background) Redis service with `brew services start redis`
 * Execute `go run main/main.go` to start the server
 
@@ -47,6 +48,6 @@ Particularly we have configured the code base and been deploying the service to 
 * Google Maps API
 
 
-## Techstack
+## Tech Stack
 * Backend: Golang
 * Frontend: Bootstrap and Javascript

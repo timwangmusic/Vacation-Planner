@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"time"
 
+	gogeonames "github.com/timwangmusic/go-geonames"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"go.uber.org/zap"
@@ -31,6 +32,17 @@ type GeocodeQuery struct {
 	Country           string `json:"country"`
 }
 
+type NearbyCityRequest struct {
+	ApiKey   string                  `json:"apiKey"`
+	Location POI.Location            `json:"location"`
+	Radius   float64                 `json:"radius"`
+	Filter   gogeonames.SearchFilter `json:"filter"`
+}
+
+type NearbyCityResponse struct {
+	Cities []City `json:"cities"`
+}
+
 var Logger *zap.SugaredLogger
 
 func CreatePoiSearcher(mapsApiKey string, redisUrl *url.URL) *PoiSearcher {
@@ -51,6 +63,43 @@ func (s *PoiSearcher) GetRedisClient() *RedisClient {
 
 func DestroyLogger() {
 	_ = Logger.Sync()
+}
+
+func (s *PoiSearcher) NearbyCities(ctx context.Context, req *NearbyCityRequest) (NearbyCityResponse, error) {
+	Logger.Debugf("->NearbyCities: processing request %+v", *req)
+	knownCities, err := s.redisClient.NearbyCities(ctx, req.Location.Latitude, req.Location.Longitude, req.Radius, req.Filter)
+	if err != nil {
+		Logger.Error(err)
+	} else if len(knownCities) > 0 {
+		return NearbyCityResponse{Cities: knownCities}, nil
+	}
+
+	c := gogeonames.Client{Username: req.ApiKey}
+
+	cities, err := c.GetNearbyCities(&gogeonames.SearchRequest{
+		Latitude:  req.Location.Latitude,
+		Longitude: req.Location.Longitude,
+		Radius:    req.Radius,
+	}, req.Filter)
+	if err != nil {
+		return NearbyCityResponse{}, err
+	}
+
+	citiesToSave := make([]City, 0)
+	for _, city := range cities {
+		var c City
+		if c, err = toCity(city); err != nil {
+			Logger.Error(err)
+		} else {
+			citiesToSave = append(citiesToSave, c)
+		}
+	}
+
+	if err = s.redisClient.AddCities(ctx, citiesToSave); err != nil {
+		Logger.Error(err)
+	}
+
+	return NearbyCityResponse{Cities: citiesToSave}, err
 }
 
 // Geocode performs geocoding, mapping city and country to latitude and longitude
@@ -85,27 +134,35 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 	}
 	location := request.Location
 
-	var cachedPlaces, places []POI.Place
-	var err error
-	cachedPlaces, err = s.redisClient.NearbySearch(context, request)
-	if err != nil {
-		Logger.Error(err)
+	var savedPlaces, places []POI.Place
+	var placesErr error
+	savedPlaces, placesErr = s.redisClient.NearbySearch(context, request)
+	if placesErr != nil {
+		Logger.Error(placesErr)
 	}
 
-	Logger.Debugf("[request_id: %s] number of results from redis is %d", context.Value(ContextRequestIdKey), len(cachedPlaces))
+	Logger.Debugf("(PoiSearcher)NearbySearch: [request_id: %s] the number of results from redis is %d", context.Value(ContextRequestIdKey), len(savedPlaces))
 
 	// update last search time for the city
-	lastSearchTime, cacheMiss := s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat)
+	lastSearchTime, lastSearchTimeMiss := s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel)
 
 	currentTime := time.Now()
-	// use place data from database if the location is known and the data is fresh, and we have sufficient data
-	if cacheMiss == nil && (currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && uint(len(cachedPlaces)) >= request.MinNumResults) {
-		Logger.Infof("[request_id: %s] Using Redis to fulfill request. Place Type: %s", context.Value(ContextRequestIdKey), request.PlaceCat)
-		places = append(places, cachedPlaces...)
+
+	isSavedPlacesFresh := func() bool {
+		return currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && lastSearchTimeMiss == nil
+	}
+	// use place data from the database if it is fresh and at least one saved place satisfies the request
+	if isSavedPlacesFresh() && placesErr == nil && len(savedPlaces) > 0 {
+		Logger.Infof("(PoiSearcher)NearbySearch: [request_id: %s] Using Redis to fulfill request for location %+v with category %s and price level %d",
+			context.Value(ContextRequestIdKey),
+			request.Location,
+			request.PlaceCat,
+			request.PriceLevel)
+		places = append(places, savedPlaces...)
 		return places, nil
 	}
 
-	utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, currentTime.Format(time.RFC3339)), utils.LogError)
+	utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel, currentTime.Format(time.RFC3339)), utils.LogError)
 
 	// initiate a new external search
 	newPlaces, searchErr := s.searchPlacesWithMaps(context, request)
@@ -169,7 +226,7 @@ func (s *PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearch
 
 	if req.BusinessStatus == POI.Operational {
 		totalPlacesCount := len(places)
-		places = filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
+		places = Filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
 		Logger.Debugf("%d places out of %d left after business status filtering", len(places), totalPlacesCount)
 	}
 
@@ -178,15 +235,14 @@ func (s *PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearch
 			len(places), req.PlaceCat, req.MinNumResults)
 	}
 	if len(places) == 0 {
-		Logger.Debugf("No qualified POI result found in the given location %v, radius %d, and place type: %s",
+		Logger.Debugf("No qualified POI result found in the given location %v, radius %d, and place type: %s. The location may be invalid",
 			req.Location, req.Radius, req.PlaceCat)
-		Logger.Debug("location may be invalid")
 	}
 	return places, nil
 }
 
 func (s *PoiSearcher) UpdateRedis(context context.Context, places []POI.Place) {
-	s.redisClient.SetPlacesOnCategory(context, places)
+	s.redisClient.SetPlacesAddGeoLocations(context, places)
 	requestId := context.Value(ContextRequestIdKey)
 	Logger.Debugf("[request_id: %s]Redis update complete", requestId)
 }

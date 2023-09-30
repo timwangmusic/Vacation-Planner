@@ -59,20 +59,25 @@ func toPlaceCategories(slotRequests []SlotRequest) []POI.PlaceCategory {
 	return categories
 }
 
-func toRedisRequest(req *PlanningReq) *iowrappers.PlanningSolutionsCacheRequest {
+func toSolutionsSaveRequest(req *PlanningRequest, solutions []iowrappers.PlanningSolutionRecord) *iowrappers.PlanningSolutionsSaveRequest {
 	stayTimes := toTimeSlots(req.Slots)
 	intervals := make([]POI.TimeInterval, len(stayTimes))
 	for idx, stayTime := range stayTimes {
 		intervals[idx] = stayTime.Slot
 	}
 
-	return &iowrappers.PlanningSolutionsCacheRequest{
-		Location:        req.Location,
-		Radius:          uint64(req.SearchRadius),
-		PriceLevel:      req.PriceLevel,
-		PlaceCategories: toPlaceCategories(req.Slots),
-		Intervals:       intervals,
-		Weekday:         req.Weekday,
+	weekdays := make([]POI.Weekday, len(stayTimes))
+	for idx := range weekdays {
+		weekdays[idx] = req.Slots[idx].Weekday
+	}
+
+	return &iowrappers.PlanningSolutionsSaveRequest{
+		Location:                req.Location,
+		PriceLevel:              req.PriceLevel,
+		PlaceCategories:         toPlaceCategories(req.Slots),
+		Intervals:               intervals,
+		Weekdays:                weekdays,
+		PlanningSolutionRecords: solutions,
 	}
 }
 
@@ -89,4 +94,38 @@ func toWeekday(date string) POI.Weekday {
 func toPriceLevel(priceLevel string) POI.PriceLevel {
 	price, _ := strconv.Atoi(priceLevel)
 	return POI.PriceLevel(price)
+}
+
+func toPlacePlanningDetails(name string, slot SlotRequest, url string) PlacePlanningDetails {
+	return PlacePlanningDetails{
+		Name:     name,
+		Category: string(slot.Category),
+		TimeSlot: slot.TimeSlot,
+		URL:      url,
+	}
+}
+
+func toPlanningSolutionRecord(solution PlanningSolution, location POI.Location) iowrappers.PlanningSolutionRecord {
+	return iowrappers.PlanningSolutionRecord{
+		ID:              solution.ID,
+		PlaceIDs:        solution.PlaceIDS,
+		Score:           solution.Score,
+		ScoreOld:        solution.ScoreOld,
+		PlaceNames:      solution.PlaceNames,
+		PlaceLocations:  solution.PlaceLocations,
+		PlaceAddresses:  solution.PlaceAddresses,
+		PlaceURLs:       solution.PlaceURLs,
+		PlaceCategories: solution.PlaceCategories,
+		Destination:     location,
+	}
+}
+
+func toLocation(city iowrappers.City) POI.Location {
+	return POI.Location{
+		Latitude:          city.Latitude,
+		Longitude:         city.Longitude,
+		City:              city.Name,
+		AdminAreaLevelOne: city.AdminArea1,
+		Country:           city.Country,
+	}
 }

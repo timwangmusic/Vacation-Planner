@@ -1,11 +1,9 @@
 package redis_client_mocks
 
 import (
+	"errors"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
-
-	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
@@ -36,7 +34,7 @@ func TestUserFind_ShouldReturnNotFound_whenUserDoesNotExist(t *testing.T) {
 
 	var err error
 	_, err = RedisClient.FindUser(RedisContext, iowrappers.FindUserByName, userView)
-	expectedErr := redis.Nil
+	expectedErr := errors.New("cannot find user name Jenny")
 
 	if assert.Error(t, err, "an error was expected") {
 		assert.Equal(t, expectedErr, err)
@@ -154,11 +152,7 @@ func TestSaveUserPlan(t *testing.T) {
 		return
 	}
 
-	plans, err := RedisClient.FindUserPlans(RedisContext, userView)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	plans := RedisClient.FindUserPlans(RedisContext, userView)
 
 	expectedNumberOfPlans := 2
 	if len(plans) != expectedNumberOfPlans {
@@ -166,7 +160,7 @@ func TestSaveUserPlan(t *testing.T) {
 		return
 	}
 
-	log.Debugf("plan details: %+v", plans)
+	t.Logf("plan details: %+v", plans)
 }
 
 func TestDeleteUserPlan(t *testing.T) {
@@ -206,12 +200,7 @@ func TestDeleteUserPlan(t *testing.T) {
 		return
 	}
 
-	var plans []user.TravelPlanView
-	plans, err = RedisClient.FindUserPlans(RedisContext, userView)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	plans := RedisClient.FindUserPlans(RedisContext, userView)
 
 	if len(plans) != 0 {
 		t.Errorf("expected no plan remains after deletion, got %d plans remained", len(plans))
