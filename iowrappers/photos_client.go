@@ -23,6 +23,10 @@ var isHtmlAnchor = func(node *html.Node) bool {
 	return node.Type == html.ElementNode && node.Data == "a"
 }
 
+var isValidPhotoUrl = func(url string) bool {
+	return strings.HasPrefix(url, "https://lh3.googleusercontent.com/places/")
+}
+
 // CreatePhotoHttpClient is a factory method for PhotoClient
 func CreatePhotoHttpClient(apiKey string, baseURL string) PhotoHttpClient {
 	// turn off auto-direct
@@ -52,7 +56,7 @@ func (photoClient *PhotoHttpClient) GetPhotoURL(photoRef string) PhotoURL {
 		return photoURL
 	}
 
-	photoURL, err = parseHTML(body, isHtmlAnchor, "href")
+	photoURL, err = parseHTML(body, isHtmlAnchor, isValidPhotoUrl)
 	if err != nil {
 		Logger.Warn("Err Msg: ", err.Error())
 	}
@@ -60,7 +64,7 @@ func (photoClient *PhotoHttpClient) GetPhotoURL(photoRef string) PhotoURL {
 
 }
 
-func parseHTML(htmlBody []byte, judger func(*html.Node) bool, attr string) (PhotoURL, error) {
+func parseHTML(htmlBody []byte, judger func(*html.Node) bool, validator func(string) bool) (PhotoURL, error) {
 	// Use http package parse htmlBody
 	var photoURL PhotoURL
 	if len(htmlBody) == 0 {
@@ -72,7 +76,7 @@ func parseHTML(htmlBody []byte, judger func(*html.Node) bool, attr string) (Phot
 		Logger.Fatal(err)
 		return photoURL, err
 	}
-	url, found := dfs(doc, judger, attr)
+	url, found := dfs(doc, judger, validator)
 	if !found {
 		return photoURL, errors.New("no URL is found in HTML body")
 	}
@@ -81,17 +85,17 @@ func parseHTML(htmlBody []byte, judger func(*html.Node) bool, attr string) (Phot
 	return photoURL, nil
 }
 
-func dfs(node *html.Node, judger func(*html.Node) bool, attr string) (string, bool) {
+func dfs(node *html.Node, judger func(*html.Node) bool, validator func(string) bool) (string, bool) {
 	if judger(node) {
 		for _, a := range node.Attr {
-			if a.Key != attr {
+			if (a.Key != "href") || (!validator(a.Val)) {
 				continue
 			}
 			return a.Val, true
 		}
 	}
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		url, found := dfs(c, judger, attr)
+		url, found := dfs(c, judger, validator)
 		if found {
 			return url, true
 		}
