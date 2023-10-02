@@ -131,8 +131,8 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	}
 	p.PhotoClient = iowrappers.CreatePhotoHttpClient(mapsClientApiKey, PhotoApiBaseURL)
 
-	p.ResultHTMLTemplate = template.Must(template.ParseFiles("templates/search_results_layout_template.html"))
-	p.TripHTMLTemplate = template.Must(template.ParseFiles("templates/trip_plan_details_template.html"))
+	p.ResultHTMLTemplate = template.Must(template.ParseFiles("assets/templates/search_results_layout_template.html"))
+	p.TripHTMLTemplate = template.Must(template.ParseFiles("assets/templates/trip_plan_details_template.html"))
 	switch strings.ToLower(os.Getenv("ENVIRONMENT")) {
 	case "production":
 		p.Environment = ProductionEnvironment
@@ -821,7 +821,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.DefaultWriter = io.Discard
 
 	myRouter := gin.Default()
-	myRouter.LoadHTMLGlob("templates/*")
+	myRouter.LoadHTMLGlob("assets/templates/*")
 	myRouter.Static("/v1/assets", "assets")
 	// trace ID
 	myRouter.Use(requestid.New())
