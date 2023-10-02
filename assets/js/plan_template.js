@@ -213,16 +213,17 @@ function parseResponse(response) {
                     })
                 }
             )
-            // only shows the first 3 results
+
             $('#tables .table').slice(itemsPerPage).hide();
             $('#pagination').show();
             $('#pagination').pagination({
 
                 // Total number of items to be paginated
-                items: totalItemsCount,
+                items: plansCount,
 
                 // Items allowed on a single page
                 itemsOnPage: itemsPerPage,
+                pages: Math.ceil(plansCount / itemsPerPage),
                 onPageClick: function (pageIdx) {
                     const itemsOnPage = 2;
                     $('#tables .table').hide()
