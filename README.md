@@ -2,7 +2,7 @@
 
 + Website: www.unwind.dev
 
-![Unwind Logo](https://github.com/weihesdlegend/Vacation-Planner/blob/pr_logo/planner-app/public/logo.png?raw=true)
+![Unwind Logo](assets/public/logo.png)
 
 ## Motivation
 * Planning for travel is essential for having a most enjoyable trip.
