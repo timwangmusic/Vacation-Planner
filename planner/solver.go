@@ -24,7 +24,6 @@ const (
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 10000
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
-	ComputationTimedOutErrMsg             = "computation timed out"
 	ErrMsgMismatchIterAndPlace            = "mismatch in iterator status vector length"
 	ErrMsgRepeatedPlaceInSameTrip         = "repeated places in the same trip"
 )
@@ -228,7 +227,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, cacheRequest)
 
-	var resp PlanningResp
+	var resp = &PlanningResp{}
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < req.NumPlans {
 		resp = s.generateSolutions(ctx, req)
 		if resp.Err == nil {
@@ -236,7 +235,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 				logger.Error(err)
 			}
 		}
-		return &resp
+		return resp
 	}
 	logger.Debugf("[request_id: %s]Found planning solutions in Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), *req)
 	for idx, candidate := range cacheResponse.PlanningSolutionRecords {
@@ -258,7 +257,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 		resp.Solutions = append(resp.Solutions, planningSolution)
 	}
 	logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), len(resp.Solutions), *req)
-	return &resp
+	return resp
 }
 
 // generates a request for normal template used by the regular search
@@ -333,7 +332,7 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 	return res, nil
 }
 
-func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) (resp chan PlanningResp) {
+func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) (resp *PlanningResp) {
 	if topSolutionsCount <= 0 {
 		topSolutionsCount = TopSolutionsCountDefault
 	}
@@ -341,13 +340,15 @@ func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters []
 	priorityQueue := &MinPriorityQueue[Vertex]{}
 	// int8 is enough for place deduplication limit
 	includedPlaces := make(map[string]int8)
-	resp = make(chan PlanningResp, 1)
+	resp = &PlanningResp{}
 
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, SolverTimeout)
+	defer cancel()
 	for iterator.HasNext() {
 		select {
-		case <-ctx.Done():
-			resp <- PlanningResp{Err: errors.New(ComputationTimedOutErrMsg), ErrorCode: RequestTimeOut}
-			return
+		case <-ctxWithTimeout.Done():
+			iowrappers.Logger.Errorf("(Solver)FindBestPlanningSolutions -> computation timeout with iterator sizes %+v", iterator.Size)
+			return &PlanningResp{Solutions: solutions(priorityQueue)}
 		default:
 			var candidate PlanningSolution
 			var err error
@@ -374,16 +375,20 @@ func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters []
 		}
 	}
 
+	res := solutions(priorityQueue)
+	return &PlanningResp{Solutions: res}
+}
+
+func solutions(pq *MinPriorityQueue[Vertex]) []PlanningSolution {
 	res := make([]PlanningSolution, 0)
 
-	for priorityQueue.Len() > 0 {
-		top := heap.Pop(priorityQueue).(Vertex)
+	for pq.Len() > 0 {
+		top := heap.Pop(pq).(Vertex)
 		res = append(res, top.Object.(PlanningSolution))
 	}
-	// outputs from min-heap needs to be reversed to get the descending order by score
+	// sort plans by score descending
 	reversePlans(res)
-	resp <- PlanningResp{Solutions: res}
-	return
+	return res
 }
 
 func reversePlans(plans []PlanningSolution) {
@@ -537,7 +542,8 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 	return placeClusters, nil
 }
 
-func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (resp PlanningResp) {
+func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (resp *PlanningResp) {
+	resp = &PlanningResp{}
 	placeClusters, err := s.generatePlacesForSlots(ctx, req)
 	if err != nil {
 		resp.ErrorCode = InternalError
@@ -551,20 +557,10 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (r
 	if err = mdIter.Init(placeCategories, placeClusters); err != nil {
 		resp.ErrorCode = NoValidSolution
 		resp.Err = err
-		return resp
-	}
-
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, SolverTimeout)
-	defer cancel()
-
-	select {
-	case <-ctxWithTimeout.Done():
-		resp.Err = errors.New("cannot complete computation in time")
-		resp.ErrorCode = RequestTimeOut
 		return
-	case r := <-s.FindBestPlanningSolutions(ctxWithTimeout, placeClusters, req.NumPlans, mdIter):
-		return r
 	}
+
+	return s.FindBestPlanningSolutions(ctx, placeClusters, req.NumPlans, mdIter)
 }
 
 func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningRequest, solutions []PlanningSolution) error {
