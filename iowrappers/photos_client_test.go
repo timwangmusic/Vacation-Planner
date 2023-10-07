@@ -38,21 +38,20 @@ func TestDfsParseHtmlForUrl(t *testing.T) {
 	<TITLE>Document</TITLE></HEAD><BODY>
 	<H1>Document</H1>
 	Test Data
-	<A HREF="https://www.link1.com/">here</A>.
-	<A HREF="https://www.link2.com/">here</A>.
+	<A HREF="www.google.com">here</A>.
+	<A HREF="https://lh3.googleusercontent.com/places/bbc">here</A>.
 	</BODY></HTML>`
 
 	tests := []struct {
 		HtmlBody string
-		Attr     string
 		Output   PhotoURL
 	}{
-		{htmlOneLink, "href", PhotoURL("https://lh3.googleusercontent.com/places/AAcXr")},
-		{htmlTwoLinks, "href", PhotoURL("https://www.link1.com/")},
+		{htmlOneLink, PhotoURL("https://lh3.googleusercontent.com/places/AAcXr")},
+		{htmlTwoLinks, PhotoURL("https://lh3.googleusercontent.com/places/bbc")},
 	}
 
 	for _, test := range tests {
-		url, err := parseHTML([]byte(test.HtmlBody), isHtmlAnchor, test.Attr)
+		url, err := parseHTML([]byte(test.HtmlBody), isHtmlAnchor, isValidPhotoUrl)
 		assert.Equal(t, url, test.Output)
 		assert.Empty(t, err, nil)
 	}
@@ -76,16 +75,15 @@ func TestDfsParseHtmlWithErr(t *testing.T) {
 
 	tests := []struct {
 		HtmlBody string
-		Attr     string
 		Output   PhotoURL
 		ErrMsg   string
 	}{
-		{htmlOneLink, "src", PhotoURL(""), "No URL is found in HTML body!"},
-		{htmlNoLink, "href", PhotoURL(""), "No URL is found in HTML body!"},
+		{htmlOneLink, PhotoURL(""), "No URL is found in HTML body!"},
+		{htmlNoLink, PhotoURL(""), "No URL is found in HTML body!"},
 	}
 
 	for _, test := range tests {
-		url, err := parseHTML([]byte(test.HtmlBody), isHtmlAnchor, test.Attr)
+		url, err := parseHTML([]byte(test.HtmlBody), isHtmlAnchor, isValidPhotoUrl)
 		assert.Equal(t, test.Output, url)
 		assert.Error(t, err, test.ErrMsg)
 	}
