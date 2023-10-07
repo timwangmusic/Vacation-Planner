@@ -10,6 +10,8 @@ import (
 	"golang.org/x/net/html"
 )
 
+const ValidPrefix = "https://lh3.googleusercontent.com/places/"
+
 type PhotoHttpClient struct {
 	// connect to Google Photo API
 	client     *http.Client
@@ -24,7 +26,7 @@ var isHtmlAnchor = func(node *html.Node) bool {
 }
 
 var isValidPhotoUrl = func(url string) bool {
-	return strings.HasPrefix(url, "https://lh3.googleusercontent.com/places/")
+	return strings.HasPrefix(url, ValidPrefix)
 }
 
 // CreatePhotoHttpClient is a factory method for PhotoClient
@@ -59,9 +61,9 @@ func (photoClient *PhotoHttpClient) GetPhotoURL(photoRef string) PhotoURL {
 	photoURL, err = parseHTML(body, isHtmlAnchor, isValidPhotoUrl)
 	if err != nil {
 		Logger.Warn("Err Msg: ", err.Error())
+		return ""
 	}
 	return photoURL
-
 }
 
 func parseHTML(htmlBody []byte, judger func(*html.Node) bool, validator func(string) bool) (PhotoURL, error) {
