@@ -32,6 +32,10 @@ When taking in time and financial constraints, this manual planning process quic
 * Start (in background) Redis service with `brew services start redis`
 * Execute `go run main/main.go` to start the server
 
+## Running with Docker Compose
+* Use command `docker-compose up -d` to start the containers.
+* Make sure to set up environment variables `REDISCLOUD_URL=redis://redis:6379` and `MAPS_CLIENT_API_KEY=YOUR_GCP_API_KEY`. Note that using `localhost` for redis URL does not work.
+* To stop the containers, use the command `docker-compose stop`.
 
 ## Production Deployment
 * The service can be deployed on any service platform.
