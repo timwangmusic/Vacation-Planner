@@ -382,11 +382,11 @@ func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRe
 		return response
 	}
 
-	solutions := resp.Solutions
-	response.TravelPlans = make([]TravelPlan, len(solutions))
-	response.TripDetailsURL = make([]string, len(solutions))
+	s := resp.Solutions
+	response.TravelPlans = make([]TravelPlan, len(s))
+	response.TripDetailsURL = make([]string, len(s))
 
-	for sIdx, topSolution := range solutions {
+	for sIdx, topSolution := range s {
 		travelPlan := TravelPlan{
 			Places: make([]TimeSectionPlace, 0),
 		}

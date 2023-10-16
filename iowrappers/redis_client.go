@@ -28,8 +28,6 @@ const (
 	PlanningStatExpirationTime      = 24 * time.Hour
 	CityInfoExpirationTime          = 0
 
-	MaximumNumSlotsPerPlan = 5
-
 	NumVisitorsPlanningAPI         = "visitor_count:planning_APIs"
 	NumVisitorsPrefix              = "visitor_count"
 	TravelPlansRedisCacheKeyPrefix = "travel_plans"
