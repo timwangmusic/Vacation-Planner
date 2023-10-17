@@ -17,7 +17,7 @@ const (
 // TODO, RW: remove in the future
 func ScoreOld(places []Place) float64 {
 	if len(places) == 1 {
-		return singlePlaceScore(places[0])
+		return PlaceScore(places[0])
 	}
 	distances := calDistances(places)                     // Haversine distances
 	maxDist := math.Max(0.001, calMaxDistance(distances)) // protect against maximum distance being zero
@@ -30,7 +30,7 @@ func ScoreOld(places []Place) float64 {
 // Score uses constant distance normalisation factor
 func Score(places []Place, distNorm int) float64 {
 	if len(places) == 1 {
-		return singlePlaceScore(places[0])
+		return PlaceScore(places[0])
 	}
 	distances := calDistances(places)                            // Haversine distances
 	avgDistance := stat.Mean(distances, nil) / float64(distNorm) // normalized average distance
@@ -39,7 +39,7 @@ func Score(places []Place, distNorm int) float64 {
 	return avgScore - avgDistance
 }
 
-func singlePlaceScore(place Place) float64 {
+func PlaceScore(place Place) float64 {
 	var boostFactor float64
 	if place.PlacePrice() == 0 {
 		boostFactor = float64(place.Rating()) / MaxPlaceRating
@@ -70,7 +70,7 @@ func avgPlacesScore(places []Place) float64 {
 	numPlaces := len(places)
 	placeScores := make([]float64, numPlaces)
 	for k, place := range places {
-		placeScores[k] = singlePlaceScore(place)
+		placeScores[k] = PlaceScore(place)
 	}
 	return stat.Mean(placeScores, nil)
 }
