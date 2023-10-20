@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"cmp"
 	"container/heap"
 	"context"
 	"errors"
@@ -537,6 +538,8 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		if len(placesByPrice) == 0 {
 			return nil, fmt.Errorf("failed to find any place for category %s at slot %s for location %+v", slot.Category, slot.TimeSlot.ToString(), req.Location)
 		}
+		// sort places by score descending so the solver checks places with higher score first
+		slices.SortFunc(placesByPrice, func(a, b matching.Place) int { return cmp.Compare(matching.PlaceScore(b), matching.PlaceScore(a)) })
 		placeClusters = append(placeClusters, placesByPrice)
 	}
 	return placeClusters, nil
