@@ -46,12 +46,13 @@ func (ps PlanningSolution) Key() float64 {
 }
 
 type Solver struct {
-	Searcher                *iowrappers.PoiSearcher
-	UserRatingsCountMatcher matching.Matcher
-	TimeMatcher             matching.Matcher
-	PriceRangeMatcher       matching.Matcher
-	placeDedupeCountLimit   int
-	nearbyCitiesCountLimit  int
+	Searcher               *iowrappers.PoiSearcher
+	placeMatcher           *PlaceMatcher
+	timeMatcher            *matching.MatcherForTime
+	priceMatcher           *matching.MatcherForPriceRange
+	userRatingsMatcher     *matching.MatcherForUserRatings
+	placeDedupeCountLimit  int
+	nearbyCitiesCountLimit int
 }
 
 const (
@@ -101,11 +102,12 @@ type SlotRequest struct {
 
 func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int, nearbyCitiesCountLimit int) {
 	s.Searcher = poiSearcher
-	s.UserRatingsCountMatcher = matching.MatcherForUserRatings{}
-	s.TimeMatcher = matching.MatcherForTime{Searcher: poiSearcher}
-	s.PriceRangeMatcher = matching.MatcherForPriceRange{Searcher: poiSearcher}
 	s.placeDedupeCountLimit = placeDedupeCountLimit
 	s.nearbyCitiesCountLimit = nearbyCitiesCountLimit
+	s.timeMatcher = &matching.MatcherForTime{Searcher: poiSearcher}
+	s.priceMatcher = &matching.MatcherForPriceRange{Searcher: poiSearcher}
+	s.userRatingsMatcher = &matching.MatcherForUserRatings{}
+	s.placeMatcher = newPlaceMatcher(s.timeMatcher)
 }
 
 func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) bool {
@@ -473,6 +475,25 @@ func (s *Solver) weightMatrix(placeClusters [][]matching.Place) ([]string, [][]i
 	return placeIds, weights, nil
 }
 
+type PlaceMatcher struct {
+	m matching.Matcher
+}
+
+func newPlaceMatcher(matcher matching.Matcher) *PlaceMatcher {
+	return &PlaceMatcher{m: matcher}
+}
+
+func (pm *PlaceMatcher) setMatcher(matcher matching.Matcher) {
+	pm.m = matcher
+}
+
+// MatchPlaces uses strategy pattern to match places at runtime
+func (pm *PlaceMatcher) MatchPlaces(req *matching.FilterRequest, m matching.Matcher) ([]matching.Place, error) {
+	pm.setMatcher(m)
+
+	return pm.m.Match(req)
+}
+
 func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningRequest) ([][]matching.Place, error) {
 	logger := iowrappers.Logger
 	var placeClusters [][]matching.Place
@@ -505,35 +526,32 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 		logger.Debugf("Before filtering, the number of places for category %s is %d", slot.Category, len(places))
 
-		placesByRating, err := s.UserRatingsCountMatcher.Match(&matching.FilterRequest{
-			Places:   places,
-			Criteria: matching.FilterByUserRating,
-			Params:   filterParams,
-		})
+		placesByRating, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
+			Places: places,
+			Params: filterParams,
+		}, s.userRatingsMatcher)
 		if err != nil {
 			return nil, err
 		}
 		logger.Debugf("Filter out zero user rating, the number of places for category %s is %d", slot.Category, len(placesByRating))
 
-		placesByTime, err := s.TimeMatcher.Match(&matching.FilterRequest{
-			Places:   placesByRating,
-			Criteria: matching.FilterByTimePeriod,
-			Params:   filterParams,
-		})
+		placesByTime, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
+			Places: placesByRating,
+			Params: filterParams,
+		}, s.timeMatcher)
 		if err != nil {
 			return nil, err
 		}
 		logger.Debugf("Filtered by time, the number of places for category %s is %d", slot.Category, len(placesByTime))
 
-		placesByPrice, err := s.PriceRangeMatcher.Match(&matching.FilterRequest{
-			Places:   placesByTime,
-			Criteria: matching.FilterByPriceRange,
-			Params:   filterParams,
-		})
+		placesByPrice, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
+			Places: placesByTime,
+			Params: filterParams,
+		}, s.priceMatcher)
 		if err != nil {
 			return nil, err
 		}
-		logger.Debugf("Filtered by price, the number of places for category %s is %d", slot.Category, len(placesByPrice))
+		logger.Debugf("Filtered by price range, the number of places for category %s is %d", slot.Category, len(placesByPrice))
 
 		if len(placesByPrice) == 0 {
 			return nil, fmt.Errorf("failed to find any place for category %s at slot %s for location %+v", slot.Category, slot.TimeSlot.ToString(), req.Location)

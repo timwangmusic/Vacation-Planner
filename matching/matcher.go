@@ -31,9 +31,8 @@ type Request struct {
 }
 
 type FilterRequest struct {
-	Places   []Place
-	Criteria FilterCriteria
-	Params   map[FilterCriteria]interface{}
+	Places []Place
+	Params map[FilterCriteria]interface{}
 }
 
 type MatcherForPriceRange struct {
@@ -41,7 +40,7 @@ type MatcherForPriceRange struct {
 }
 
 func (matcher MatcherForPriceRange) Match(req *FilterRequest) ([]Place, error) {
-	filterParams := req.Params[req.Criteria]
+	filterParams := req.Params[FilterByPriceRange]
 
 	if _, ok := filterParams.(PriceRangeFilterParams); !ok {
 		return nil, errors.New("price range matcher received wrong filter params")
@@ -98,7 +97,7 @@ func NearbySearchForCategory(ctx context.Context, searcher iowrappers.SearchClie
 
 func (m MatcherForTime) Match(req *FilterRequest) ([]Place, error) {
 	var results []Place
-	filterParams := req.Params[req.Criteria]
+	filterParams := req.Params[FilterByTimePeriod]
 
 	if _, ok := filterParams.(TimeFilterParams); !ok {
 		return results, errors.New("time m received wrong filter params")
@@ -133,7 +132,6 @@ func filterPlacesOnPriceLevel(places []Place, level POI.PriceLevel) []Place {
 	return results
 }
 
-// Filter parameters related with user rating
 type UserRatingFilterParams struct {
 	MinUserRatings int
 }
@@ -143,7 +141,7 @@ type MatcherForUserRatings struct {
 
 func (m MatcherForUserRatings) Match(req *FilterRequest) ([]Place, error) {
 	var results []Place
-	filterParams := req.Params[req.Criteria]
+	filterParams := req.Params[FilterByUserRating]
 
 	if _, ok := filterParams.(UserRatingFilterParams); !ok {
 		return results, errors.New("user rating matcher received wrong filter params")
