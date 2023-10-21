@@ -100,14 +100,21 @@ type SlotRequest struct {
 	Category POI.PlaceCategory `json:"category"`
 }
 
+func init() {
+	err := iowrappers.CreateLogger()
+	if err != nil {
+		log.Error(err)
+	}
+}
+
 func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int, nearbyCitiesCountLimit int) {
 	s.Searcher = poiSearcher
 	s.placeDedupeCountLimit = placeDedupeCountLimit
 	s.nearbyCitiesCountLimit = nearbyCitiesCountLimit
-	s.timeMatcher = &matching.MatcherForTime{Searcher: poiSearcher}
-	s.priceMatcher = &matching.MatcherForPriceRange{Searcher: poiSearcher}
+	s.timeMatcher = &matching.MatcherForTime{}
+	s.priceMatcher = &matching.MatcherForPriceRange{}
 	s.userRatingsMatcher = &matching.MatcherForUserRatings{}
-	s.placeMatcher = newPlaceMatcher(s.timeMatcher)
+	s.placeMatcher = NewMatcher(s.timeMatcher)
 }
 
 func (s *Solver) ValidateLocation(ctx context.Context, location *POI.Location) bool {
@@ -479,7 +486,7 @@ type PlaceMatcher struct {
 	m matching.Matcher
 }
 
-func newPlaceMatcher(matcher matching.Matcher) *PlaceMatcher {
+func NewMatcher(matcher matching.Matcher) *PlaceMatcher {
 	return &PlaceMatcher{m: matcher}
 }
 
@@ -504,7 +511,6 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 
 		filterParams[matching.FilterByTimePeriod] = matching.TimeFilterParams{
-			Category:     slot.Category,
 			Day:          slot.Weekday,
 			TimeInterval: slot.TimeSlot.Slot,
 		}
@@ -526,41 +532,50 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 		logger.Debugf("Before filtering, the number of places for category %s is %d", slot.Category, len(places))
 
-		placesByRating, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
-			Places: places,
-			Params: filterParams,
-		}, s.userRatingsMatcher)
+		places, err = s.filterPlaces(places, filterParams, slot.Category)
 		if err != nil {
 			return nil, err
 		}
-		logger.Debugf("Filter out zero user rating, the number of places for category %s is %d", slot.Category, len(placesByRating))
 
-		placesByTime, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
-			Places: placesByRating,
-			Params: filterParams,
-		}, s.timeMatcher)
-		if err != nil {
-			return nil, err
-		}
-		logger.Debugf("Filtered by time, the number of places for category %s is %d", slot.Category, len(placesByTime))
-
-		placesByPrice, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
-			Places: placesByTime,
-			Params: filterParams,
-		}, s.priceMatcher)
-		if err != nil {
-			return nil, err
-		}
-		logger.Debugf("Filtered by price range, the number of places for category %s is %d", slot.Category, len(placesByPrice))
-
-		if len(placesByPrice) == 0 {
+		if len(places) == 0 {
 			return nil, fmt.Errorf("failed to find any place for category %s at slot %s for location %+v", slot.Category, slot.TimeSlot.ToString(), req.Location)
 		}
 		// sort places by score descending so the solver checks places with higher score first
-		slices.SortFunc(placesByPrice, func(a, b matching.Place) int { return cmp.Compare(matching.PlaceScore(b), matching.PlaceScore(a)) })
-		placeClusters = append(placeClusters, placesByPrice)
+		slices.SortFunc(places, func(a, b matching.Place) int { return cmp.Compare(matching.PlaceScore(b), matching.PlaceScore(a)) })
+		placeClusters = append(placeClusters, places)
 	}
 	return placeClusters, nil
+}
+
+func (s *Solver) filterPlaces(places []matching.Place, params map[matching.FilterCriteria]interface{}, c POI.PlaceCategory) ([]matching.Place, error) {
+	logger := iowrappers.Logger
+	placesByRating, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
+		Places: places,
+		Params: params,
+	}, s.userRatingsMatcher)
+	if err != nil {
+		return nil, err
+	}
+	logger.Debugf("Filtered by zero user rating count, the number of places for category %s is %d", c, len(placesByRating))
+
+	placesByTime, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
+		Places: placesByRating,
+		Params: params,
+	}, s.timeMatcher)
+	if err != nil {
+		return nil, err
+	}
+	logger.Debugf("Filtered by time, the number of places for category %s is %d", c, len(placesByTime))
+
+	placesByPrice, err := s.placeMatcher.MatchPlaces(&matching.FilterRequest{
+		Places: placesByTime,
+		Params: params,
+	}, s.priceMatcher)
+	if err != nil {
+		return nil, err
+	}
+	logger.Debugf("Filtered by price range, the number of places for category %s is %d", c, len(placesByPrice))
+	return placesByPrice, nil
 }
 
 func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (resp *PlanningResp) {

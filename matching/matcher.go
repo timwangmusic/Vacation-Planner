@@ -36,7 +36,6 @@ type FilterRequest struct {
 }
 
 type MatcherForPriceRange struct {
-	Searcher *iowrappers.PoiSearcher
 }
 
 func (matcher MatcherForPriceRange) Match(req *FilterRequest) ([]Place, error) {
@@ -47,8 +46,6 @@ func (matcher MatcherForPriceRange) Match(req *FilterRequest) ([]Place, error) {
 	}
 
 	priceRangeFilterParams := filterParams.(PriceRangeFilterParams)
-
-	iowrappers.Logger.Infof("obtained %d places before filtering price", len(req.Places))
 
 	// POI data from Google API does not have price range, therefore we only filter catering places on price
 	if priceRangeFilterParams.Category == POI.PlaceCategoryEatery {
@@ -64,13 +61,11 @@ type PriceRangeFilterParams struct {
 }
 
 type TimeFilterParams struct {
-	Category     POI.PlaceCategory
 	Day          POI.Weekday
 	TimeInterval POI.TimeInterval
 }
 
 type MatcherForTime struct {
-	Searcher *iowrappers.PoiSearcher
 }
 
 func NearbySearchForCategory(ctx context.Context, searcher iowrappers.SearchClient, req *Request) ([]Place, error) {
