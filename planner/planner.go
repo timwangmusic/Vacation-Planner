@@ -783,6 +783,10 @@ func (p *MyPlanner) resetPasswordPage(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "reset_password_page.html", gin.H{})
 }
 
+func (p *MyPlanner) fourZeroFourPage(ctx *gin.Context) {
+ 	ctx.HTML(http.StatusOK, "404.html", gin.H{})
+ }
+
 // when users click on the reset password button this handler requests mailer to send password reset emails
 func (p *MyPlanner) resetPasswordHandler(ctx *gin.Context) {
 	logger := iowrappers.Logger
@@ -851,6 +855,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/callback-google", p.oauthCallback)
 		v1.GET("/forgot-password", p.forgotPasswordPage)
 		v1.GET("/reset-password", p.resetPasswordPage)
+    v1.GET("/404", p.fourZeroFourPage)
 		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
 		v1.POST("/nearby-cities", p.getNearbyCities)
 		v1.POST("/optimal-plan", p.getOptimalPlan)

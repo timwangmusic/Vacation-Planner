@@ -82,3 +82,22 @@ tr:nth-child(even) {
     background-position: 50px 50px;
     color: transparent;
 }
+
+/* 404 styles.css */
+.specific404 {
+        background-image: url("../../assets/public/aJTiW00qqtI-unsplash.jpg");
+        background-size: cover;
+        font-family: 'Roboto', 'sans-serif';
+        display: flex;
+        height: 100vh;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    .header404{
+        font-family: 'Chango', cursive;
+        font-size: 48px;
+    }
+    .content404{
+        text-align: center;
+    }
+}
