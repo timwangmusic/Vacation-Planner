@@ -140,7 +140,7 @@ async function postPlanTemplate() {
     console.log(`data about to send: ${JSON.stringify(data)}`);
 
     axios.post(
-        url, JSON.stringify(data), { timeout: 10000 }
+        url, JSON.stringify(data), { timeout: 15000 }
     ).then(
         function (response) {
             console.log(response.data);
@@ -213,16 +213,17 @@ function parseResponse(response) {
                     })
                 }
             )
-            // only shows the first 3 results
+
             $('#tables .table').slice(itemsPerPage).hide();
             $('#pagination').show();
             $('#pagination').pagination({
 
                 // Total number of items to be paginated
-                items: totalItemsCount,
+                items: plansCount,
 
                 // Items allowed on a single page
                 itemsOnPage: itemsPerPage,
+                pages: Math.ceil(plansCount / itemsPerPage),
                 onPageClick: function (pageIdx) {
                     const itemsOnPage = 2;
                     $('#tables .table').hide()
