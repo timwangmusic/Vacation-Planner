@@ -11,18 +11,17 @@ import (
 	"testing"
 )
 
-func TestSolver_filterPlaces(t *testing.T) {
+func TestSolver_filterPlaces1(t *testing.T) {
 	type fields struct {
-		Searcher           *iowrappers.PoiSearcher
-		placeMatcher       *PlaceMatcher
-		timeMatcher        *matching.MatcherForTime
-		priceMatcher       *matching.MatcherForPriceRange
-		userRatingsMatcher *matching.MatcherForUserRatings
+		Searcher               *iowrappers.PoiSearcher
+		placeMatcher           *PlaceMatcher
+		placeDedupeCountLimit  int
+		nearbyCitiesCountLimit int
 	}
 	type args struct {
-		c      POI.PlaceCategory
 		places []matching.Place
 		params map[matching.FilterCriteria]interface{}
+		c      POI.PlaceCategory
 	}
 	tests := []struct {
 		name    string
@@ -34,11 +33,8 @@ func TestSolver_filterPlaces(t *testing.T) {
 		{
 			name: "test filter places should return correct results",
 			fields: fields{
-				Searcher:           &iowrappers.PoiSearcher{},
-				placeMatcher:       &PlaceMatcher{},
-				timeMatcher:        &matching.MatcherForTime{},
-				priceMatcher:       &matching.MatcherForPriceRange{},
-				userRatingsMatcher: &matching.MatcherForUserRatings{},
+				Searcher:     &iowrappers.PoiSearcher{},
+				placeMatcher: &PlaceMatcher{},
 			},
 			args: args{
 				c: POI.PlaceCategoryEatery,
@@ -101,13 +97,8 @@ func TestSolver_filterPlaces(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Solver{
-				Searcher:           tt.fields.Searcher,
-				placeMatcher:       tt.fields.placeMatcher,
-				timeMatcher:        tt.fields.timeMatcher,
-				priceMatcher:       tt.fields.priceMatcher,
-				userRatingsMatcher: tt.fields.userRatingsMatcher,
-			}
+			s := &Solver{}
+			s.Init(tt.fields.Searcher, tt.fields.placeDedupeCountLimit, tt.fields.nearbyCitiesCountLimit)
 			got, err := s.filterPlaces(tt.args.places, tt.args.params, tt.args.c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("filterPlaces() error = %v, wantErr %v", err, tt.wantErr)

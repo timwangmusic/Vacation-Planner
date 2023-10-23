@@ -10,6 +10,7 @@ import (
 
 type Matcher interface {
 	Match(req *FilterRequest) (places []Place, err error)
+	MatcherName() string
 }
 
 // FilterCriteria is an enum for various points of interest filtering criteria
@@ -36,6 +37,10 @@ type FilterRequest struct {
 }
 
 type MatcherForPriceRange struct {
+}
+
+func (matcher MatcherForPriceRange) MatcherName() string {
+	return "Matcher for Price Range"
 }
 
 func (matcher MatcherForPriceRange) Match(req *FilterRequest) ([]Place, error) {
@@ -90,6 +95,10 @@ func NearbySearchForCategory(ctx context.Context, searcher iowrappers.SearchClie
 	return results, nil
 }
 
+func (m MatcherForTime) MatcherName() string {
+	return "Matcher for Time"
+}
+
 func (m MatcherForTime) Match(req *FilterRequest) ([]Place, error) {
 	var results []Place
 	filterParams := req.Params[FilterByTimePeriod]
@@ -132,6 +141,10 @@ type UserRatingFilterParams struct {
 }
 
 type MatcherForUserRatings struct {
+}
+
+func (m MatcherForUserRatings) MatcherName() string {
+	return "Matcher for User Ratings"
 }
 
 func (m MatcherForUserRatings) Match(req *FilterRequest) ([]Place, error) {
