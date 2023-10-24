@@ -10,6 +10,7 @@ import (
 
 type Matcher interface {
 	Match(req *FilterRequest) (places []Place, err error)
+	MatcherName() string
 }
 
 // FilterCriteria is an enum for various points of interest filtering criteria
@@ -31,25 +32,25 @@ type Request struct {
 }
 
 type FilterRequest struct {
-	Places   []Place
-	Criteria FilterCriteria
-	Params   map[FilterCriteria]interface{}
+	Places []Place
+	Params map[FilterCriteria]interface{}
 }
 
 type MatcherForPriceRange struct {
-	Searcher *iowrappers.PoiSearcher
+}
+
+func (matcher MatcherForPriceRange) MatcherName() string {
+	return "Matcher for Price Range"
 }
 
 func (matcher MatcherForPriceRange) Match(req *FilterRequest) ([]Place, error) {
-	filterParams := req.Params[req.Criteria]
+	filterParams := req.Params[FilterByPriceRange]
 
 	if _, ok := filterParams.(PriceRangeFilterParams); !ok {
 		return nil, errors.New("price range matcher received wrong filter params")
 	}
 
 	priceRangeFilterParams := filterParams.(PriceRangeFilterParams)
-
-	iowrappers.Logger.Infof("obtained %d places before filtering price", len(req.Places))
 
 	// POI data from Google API does not have price range, therefore we only filter catering places on price
 	if priceRangeFilterParams.Category == POI.PlaceCategoryEatery {
@@ -65,13 +66,11 @@ type PriceRangeFilterParams struct {
 }
 
 type TimeFilterParams struct {
-	Category     POI.PlaceCategory
 	Day          POI.Weekday
 	TimeInterval POI.TimeInterval
 }
 
 type MatcherForTime struct {
-	Searcher *iowrappers.PoiSearcher
 }
 
 func NearbySearchForCategory(ctx context.Context, searcher iowrappers.SearchClient, req *Request) ([]Place, error) {
@@ -96,9 +95,13 @@ func NearbySearchForCategory(ctx context.Context, searcher iowrappers.SearchClie
 	return results, nil
 }
 
+func (m MatcherForTime) MatcherName() string {
+	return "Matcher for Time"
+}
+
 func (m MatcherForTime) Match(req *FilterRequest) ([]Place, error) {
 	var results []Place
-	filterParams := req.Params[req.Criteria]
+	filterParams := req.Params[FilterByTimePeriod]
 
 	if _, ok := filterParams.(TimeFilterParams); !ok {
 		return results, errors.New("time m received wrong filter params")
@@ -133,7 +136,6 @@ func filterPlacesOnPriceLevel(places []Place, level POI.PriceLevel) []Place {
 	return results
 }
 
-// Filter parameters related with user rating
 type UserRatingFilterParams struct {
 	MinUserRatings int
 }
@@ -141,9 +143,13 @@ type UserRatingFilterParams struct {
 type MatcherForUserRatings struct {
 }
 
+func (m MatcherForUserRatings) MatcherName() string {
+	return "Matcher for User Ratings"
+}
+
 func (m MatcherForUserRatings) Match(req *FilterRequest) ([]Place, error) {
 	var results []Place
-	filterParams := req.Params[req.Criteria]
+	filterParams := req.Params[FilterByUserRating]
 
 	if _, ok := filterParams.(UserRatingFilterParams); !ok {
 		return results, errors.New("user rating matcher received wrong filter params")
