@@ -46,16 +46,17 @@ func (photoClient *PhotoHttpClient) GetPhotoURL(photoRef string) PhotoURL {
 	res, err := photoClient.client.Get(reqURL)
 	if err != nil {
 		Logger.Fatal(err)
-		return photoURL
+		return ""
 	}
 	body, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	if res.StatusCode != 302 {
 		Logger.Warnf("status code should be 302, but is %d", res.StatusCode)
+		return ""
 	}
 	if err != nil {
 		Logger.Fatal(err)
-		return photoURL
+		return ""
 	}
 
 	photoURL, err = parseHTML(body, isHtmlAnchor, isValidPhotoUrl)
