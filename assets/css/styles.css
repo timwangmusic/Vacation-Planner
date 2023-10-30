@@ -75,10 +75,28 @@ tr:nth-child(even) {
 
 /*an option for a svg to be used directly*/
 .svg {
-    background: url("http://fofwebdesign.co.uk/template/_testing/test/svg/page-bg.svg") no-repeat;
     background-size: 100%;
     height: 100vh;
     width: 100%;
-    background-position: 50px 50px;
+    background: url("http://fofwebdesign.co.uk/template/_testing/test/svg/page-bg.svg") no-repeat 50px 50px;
     color: transparent;
+}
+
+/* 404 styles.css */
+.specific404 {
+        background-image: url("../../assets/public/aJTiW00qqtI-unsplash.jpg");
+        background-size: cover;
+        font-family: 'Roboto', 'sans-serif';
+        display: flex;
+        height: 100vh;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    .header404{
+        font-family: 'Chango', cursive;
+        font-size: 48px;
+    }
+    .content404{
+        text-align: center;
+    }
 }
