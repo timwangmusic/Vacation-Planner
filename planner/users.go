@@ -15,6 +15,7 @@ import (
 )
 
 type UserLoginResponse struct {
+	Email    string `json:"email"`
 	Username string `json:"username"`
 	Jwt      string `json:"jwt"`
 	Status   string `json:"status"`
@@ -111,18 +112,16 @@ func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLog
 		logger.Errorf("failed to update u %s: %v", u.Username, err)
 	}
 	if loginErr != nil {
-		logger.Error(loginErr)
-
 		if frontEndLogin {
 			ctx.JSON(http.StatusUnauthorized, UserLoginResponse{
-				Username: c.Username,
-				Jwt:      "",
-				Status:   "Unauthorized",
+				Email:  c.Email,
+				Jwt:    "",
+				Status: "Unauthorized",
 			})
 		}
 		return false
 	} else {
-		logger.Infof("u is logged in: %+v", u)
+		logger.Infof("user is logged in: %+v", u)
 	}
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
