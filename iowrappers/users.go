@@ -262,32 +262,15 @@ func (r *RedisClient) CreateUser(context context.Context, userView user.View, sk
 }
 
 func (r *RedisClient) Authenticate(context context.Context, credential user.Credential) (user.View, string, time.Time, error) {
-	userView := user.View{Username: credential.Username, Email: strings.ToLower(credential.Email)}
+	userView := user.View{Email: strings.ToLower(credential.Email)}
 	Logger.Infof("->Authenticate: user view is %+v", userView)
 	var u user.View
 	var err error
-	var authByEmail bool
-	if strings.TrimSpace(userView.Username) == "" {
-		authByEmail = true
-	}
 
-	if authByEmail {
-		Logger.Infof("->Authenticate: email from credential is %s", credential.Email)
-		userView.Email = credential.Email
-		if strings.TrimSpace(credential.Email) == "" {
-			userView.Email = strings.ToLower(credential.Username)
-		}
-		u, err = r.FindUser(context, FindUserByEmail, userView)
-		if err != nil {
-			Logger.Errorf("cannot find user by email %s, error: %v", credential.Email, err)
-		}
-	} else {
-		u, err = r.FindUser(context, FindUserByName, userView)
-		if err != nil {
-			Logger.Errorf("cannot find user by username %s, error: %v", credential.Username, err)
-		}
-	}
+	Logger.Infof("->Authenticate: by email from credential is %s", credential.Email)
+	u, err = r.FindUser(context, FindUserByEmail, userView)
 	if err != nil {
+		Logger.Errorf("cannot find user by email %s, error: %v", credential.Email, err)
 		return u, "", time.Now(), err
 	}
 

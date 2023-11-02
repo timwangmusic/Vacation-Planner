@@ -21,6 +21,7 @@ func TestUserAuthentication_shouldPass_forAuthenticatedUser(t *testing.T) {
 
 	// authenticate the user
 	_, _, _, err := RedisClient.Authenticate(RedisContext, user.Credential{
+		Email:    userEmail,
 		Username: username,
 		Password: password,
 	})
