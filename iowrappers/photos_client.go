@@ -12,15 +12,6 @@ import (
 
 const ValidPrefix = "https://lh3.googleusercontent.com/places/"
 
-type PhotoHttpClient struct {
-	// connect to Google Photo API
-	client     *http.Client
-	apiKey     string
-	apiBaseURL string
-}
-
-type PhotoURL string
-
 var isHtmlAnchor = func(node *html.Node) bool {
 	return node.Type == html.ElementNode && node.Data == "a"
 }
@@ -29,15 +20,36 @@ var isValidPhotoUrl = func(url string) bool {
 	return strings.HasPrefix(url, ValidPrefix)
 }
 
-// CreatePhotoHttpClient is a factory method for PhotoClient
-func CreatePhotoHttpClient(apiKey string, baseURL string) PhotoHttpClient {
-	// turn off auto-direct
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+type PhotoURL string
+
+type PhotoClient interface {
+	GetPhotoURL(string) PhotoURL
+}
+
+// Use Google Map API
+type MapsPhotoClient struct {
+	apiKey     string
+	apiBaseURL string
+}
+
+type PhotoHttpClient struct {
+	client     *http.Client
+	apiKey     string
+	apiBaseURL string
+}
+
+// CreatePhotoClient is a factory method for PhotoClient
+func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool) PhotoClient {
+	if enableMapPhotoClient {
+		return &MapsPhotoClient{apiKey: apiKey, apiBaseURL: baseURL}
 	}
-	return PhotoHttpClient{client: client, apiKey: apiKey, apiBaseURL: baseURL}
+	return &PhotoHttpClient{
+		// turn off http auto-direct
+		client: &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}, apiKey: apiKey, apiBaseURL: baseURL}
 }
 
 func (photoClient *PhotoHttpClient) GetPhotoURL(photoRef string) PhotoURL {
@@ -103,4 +115,9 @@ func dfs(node *html.Node, judger func(*html.Node) bool, validator func(string) b
 		}
 	}
 	return "", false
+}
+
+// TODO(rwangsc18): add real implementation
+func (photoClient *MapsPhotoClient) GetPhotoURL(photoRef string) PhotoURL {
+	return PhotoURL(photoRef + "fake_url")
 }
