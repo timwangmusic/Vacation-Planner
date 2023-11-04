@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gogeonames "github.com/timwangmusic/go-geonames"
 	"html/template"
 	"io"
 	"net/http"
@@ -17,6 +16,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	gogeonames "github.com/timwangmusic/go-geonames"
 
 	"golang.org/x/oauth2/google"
 	"golang.org/x/text/cases"
@@ -58,7 +59,7 @@ var placeTypeToIcon = map[POI.PlaceCategory]POI.PlaceIcon{
 type MyPlanner struct {
 	RedisClient        *iowrappers.RedisClient
 	RedisStreamName    string
-	PhotoClient        iowrappers.PhotoHttpClient
+	PhotoClient        iowrappers.PhotoClient
 	Solver             Solver
 	ResultHTMLTemplate *template.Template
 	TripHTMLTemplate   *template.Template
@@ -129,7 +130,6 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	if redisStreamName == "" {
 		p.RedisStreamName = "stream:planning_api_usage"
 	}
-	p.PhotoClient = iowrappers.CreatePhotoHttpClient(mapsClientApiKey, PhotoApiBaseURL)
 
 	p.ResultHTMLTemplate = template.Must(template.ParseFiles("assets/templates/search_results_layout_template.html"))
 	p.TripHTMLTemplate = template.Must(template.ParseFiles("assets/templates/trip_plan_details_template.html"))
@@ -145,6 +145,17 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	}
 	p.Configs = configs
 
+	// initialize photo client
+	var enable_maps_photo_client = false
+	if flag_enable_maps_photo_client, exists := p.Configs["server:plan_solver:enable_maps_photo_client"]; exists {
+		enable_maps_photo_client = flag_enable_maps_photo_client.(bool)
+		log.Debugf("flag server:plan_solver:enable_maps_photo_client: %v\n", enable_maps_photo_client)
+	} else {
+		log.Errorf("failed to load flag server:plan_solver:enable_maps_photo_client!")
+	}
+	p.PhotoClient = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enable_maps_photo_client)
+
+	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 	if v, exists := p.Configs["server:plan_solver:same_place_dedupe_count_limit"]; exists {
 		if c, exists := p.Configs["server:plan_solver:nearby_cities_count_limit"]; exists {

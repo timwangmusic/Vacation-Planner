@@ -10,22 +10,6 @@ func init() {
 	_ = CreateLogger()
 }
 
-func TestCreatePhotoClient(t *testing.T) {
-	tests := []struct {
-		apiKey  string
-		baseURL string
-	}{
-		{"abcd", "https://foos.com"},
-		{"xyz", "https://www.google.com"},
-	}
-
-	for _, test := range tests {
-		client := CreatePhotoHttpClient(test.apiKey, test.baseURL)
-		assert.Equal(t, client.apiKey, test.apiKey)
-		assert.Equal(t, client.apiBaseURL, test.baseURL)
-	}
-}
-
 func TestDfsParseHtmlForUrl(t *testing.T) {
 	var htmlOneLink = `<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<TITLE>302 Moved</TITLE></HEAD><BODY>

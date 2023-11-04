@@ -38,8 +38,9 @@ type Configurations struct {
 		} `yaml:"google_maps"`
 
 		PlanSolver struct {
-			SamePlaceDedupeCountLimit int `yaml:"same_place_dedupe_count_limit"`
-			NearbyCitiesCountLimit    int `yaml:"nearby_cities_count_limit"`
+			SamePlaceDedupeCountLimit int  `yaml:"same_place_dedupe_count_limit"`
+			NearbyCitiesCountLimit    int  `yaml:"nearby_cities_count_limit"`
+			EnableMapsPhotoClient     bool `yaml:"enable_maps_photo_client"`
 		} `yaml:"plan_solver"`
 	} `yaml:"server"`
 }
@@ -50,6 +51,7 @@ func flattenConfig(configs *Configurations) map[string]interface{} {
 	flattenedConfigs["server:google_maps:detailed_search_fields"] = configs.Server.GoogleMaps.DetailedSearchFields
 	flattenedConfigs["server:plan_solver:same_place_dedupe_count_limit"] = configs.Server.PlanSolver.SamePlaceDedupeCountLimit
 	flattenedConfigs["server:plan_solver:nearby_cities_count_limit"] = configs.Server.PlanSolver.NearbyCitiesCountLimit
+	flattenedConfigs["server:plan_solver:enable_maps_photo_client"] = configs.Server.PlanSolver.EnableMapsPhotoClient
 	return flattenedConfigs
 }
 
