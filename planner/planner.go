@@ -604,10 +604,9 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		tripResp.ShownActive = append(tripResp.ShownActive, idx == 0)
 
 		// Run Goroutines to retrieve place details
-		go p.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], cachePlaceDetails)
+		go p.asyncGetTripRespPlaceDetails(ctx, &wg, &tripResp.PlaceDetails[idx], cachePlaceDetails)
 	}
 	wg.Wait()
-	iowrappers.Logger.Debugf("Trip Details:\n%v\n", tripResp.PlaceDetails)
 
 	jsonOnly := strings.ToLower(ctx.DefaultQuery("json_only", "false"))
 	if jsonOnly != "false" {
@@ -618,17 +617,17 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, tripResp), utils.LogError)
 }
 
-func (p *MyPlanner) asyncGetTripRespPlaceDetails(wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
-	*resp = p.getTripFromPlace(place)
+func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
+	*resp = p.getTripFromPlace(ctx, place)
 	wg.Done()
 }
 
-func (p *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
+func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) PlaceDetailsResp {
 	return PlaceDetailsResp{
 		Name:             place.Name,
 		URL:              place.URL,
 		FormattedAddress: place.FormattedAddress,
-		PhotoURL:         string(p.PhotoClient.GetPhotoURL(place.Photo.Reference)),
+		PhotoURL:         string(p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference)),
 	}
 }
 

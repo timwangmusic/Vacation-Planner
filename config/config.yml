@@ -10,4 +10,4 @@ server:
   plan_solver:
     same_place_dedupe_count_limit: 2
     nearby_cities_count_limit: 3
-    enable_maps_photo_client: false
+    enable_maps_photo_client: true

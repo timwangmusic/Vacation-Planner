@@ -1,13 +1,18 @@
 package iowrappers
 
 import (
+	"bytes"
+	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"image/jpeg"
 	"io"
 	"net/http"
 	"strings"
 
 	"golang.org/x/net/html"
+	"googlemaps.github.io/maps"
 )
 
 const ValidPrefix = "https://lh3.googleusercontent.com/places/"
@@ -23,13 +28,14 @@ var isValidPhotoUrl = func(url string) bool {
 type PhotoURL string
 
 type PhotoClient interface {
-	GetPhotoURL(string) PhotoURL
+	GetPhotoURL(context.Context, string) PhotoURL
 }
 
 // Use Google Map API
 type MapsPhotoClient struct {
-	apiKey     string
-	apiBaseURL string
+	maps_client *maps.Client
+	apiKey      string
+	apiBaseURL  string
 }
 
 type PhotoHttpClient struct {
@@ -41,7 +47,11 @@ type PhotoHttpClient struct {
 // CreatePhotoClient is a factory method for PhotoClient
 func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool) PhotoClient {
 	if enableMapPhotoClient {
-		return &MapsPhotoClient{apiKey: apiKey, apiBaseURL: baseURL}
+		mapsClient, err := maps.NewClient(maps.WithAPIKey(apiKey))
+		if err != nil {
+			Logger.Fatal(err)
+		}
+		return &MapsPhotoClient{maps_client: mapsClient, apiKey: apiKey, apiBaseURL: baseURL}
 	}
 	return &PhotoHttpClient{
 		// turn off http auto-direct
@@ -52,7 +62,7 @@ func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool)
 		}, apiKey: apiKey, apiBaseURL: baseURL}
 }
 
-func (photoClient *PhotoHttpClient) GetPhotoURL(photoRef string) PhotoURL {
+func (photoClient *PhotoHttpClient) GetPhotoURL(ctx context.Context, photoRef string) PhotoURL {
 	var photoURL PhotoURL
 	var reqURL = fmt.Sprintf(photoClient.apiBaseURL, photoRef, photoClient.apiKey)
 	res, err := photoClient.client.Get(reqURL)
@@ -117,7 +127,32 @@ func dfs(node *html.Node, judger func(*html.Node) bool, validator func(string) b
 	return "", false
 }
 
-// TODO(rwangsc18): add real implementation
-func (photoClient *MapsPhotoClient) GetPhotoURL(photoRef string) PhotoURL {
-	return PhotoURL(photoRef + "fake_url")
+// TOOD(rwangsc18): add a unit test for this function
+func (photoClient *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string) PhotoURL {
+	// get PlacePhotoResponse
+	resp, err := photoClient.maps_client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
+		PhotoReference: photoRef,
+		MaxWidth:       400,
+	})
+	if err != nil {
+		Logger.Error(err)
+		// TODO(rwangsc18): replace with a default image
+		return PhotoURL("fake_url")
+	}
+
+	// get image data
+	image, err := resp.Image()
+	if err != nil {
+		Logger.Error(err)
+		return PhotoURL("fake_url")
+	}
+
+	// encode image to base64
+	buffer := new(bytes.Buffer)
+	if err := jpeg.Encode(buffer, image, nil); err != nil {
+		Logger.Error("unable to encode image.")
+		return PhotoURL("fake_url")
+	}
+	data := base64.StdEncoding.EncodeToString(buffer.Bytes())
+	return PhotoURL(data)
 }
