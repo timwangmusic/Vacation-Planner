@@ -184,6 +184,7 @@ function parseResponse(response) {
       createPlanResultTables(plansCount);
       $.each(response["travel_plans"], function (idx, plan) {
         console.log("processing travel plan:", plan);
+        $(`#plan-details-btn-${idx}`).attr('href', `/v1/plans/${plan.id}`);
         let planTableBody = $(`#plan-${idx} tbody`);
         $.each(plan.places, function (_, place) {
           let aTag = $("<a>", {
@@ -211,7 +212,7 @@ function parseResponse(response) {
         });
       });
 
-      $("#tables .table").slice(itemsPerPage).hide();
+      $("#tables .planning-result").slice(itemsPerPage).hide();
       $("#pagination").show();
       $("#pagination").pagination({
         // Total number of items to be paginated
@@ -222,12 +223,9 @@ function parseResponse(response) {
         pages: Math.ceil(plansCount / itemsPerPage),
         onPageClick: function (pageIdx) {
           const itemsOnPage = 2;
-          $("#tables .table")
+          $("#tables .planning-result")
             .hide()
-            .slice(
-              itemsOnPage * (pageIdx - 1),
-              itemsOnPage + itemsOnPage * (pageIdx - 1)
-            )
+            .slice(itemsOnPage * (pageIdx - 1), itemsOnPage * pageIdx)
             .show();
         },
       });
@@ -239,6 +237,11 @@ function parseResponse(response) {
 
 function createPlanResultTables(planCount) {
   for (let i = 0; i < planCount; i++) {
+    let newDiv = $("<div>").addClass("planning-result");
+    let planDetailsButton = $("<a>")
+      .addClass("btn btn-outline-success btn-sm float-end mb-1")
+      .attr("id", "plan-details-btn-" + i)
+      .text("details");
     let newTable = $("<table>")
       .addClass("table table-sm table-bordered")
       .attr("id", "plan-" + i)
@@ -252,7 +255,9 @@ function createPlanResultTables(planCount) {
 
     newTable.append($("<tbody>"));
 
-    $("#tables").append(newTable);
+    newDiv.append(planDetailsButton);
+    newDiv.append(newTable);
+    $("#tables").append(newDiv);
   }
 }
 
