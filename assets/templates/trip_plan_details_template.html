@@ -1,126 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--Bootstrap CSS-->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.6.0/font/bootstrap-icons.css">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.6.0/font/bootstrap-icons.css"
+    />
     <!-- Customized style -->
-    <link rel="stylesheet" href="/v1/assets/css/styles.css">
+    <link rel="stylesheet" href="/v1/assets/css/styles.css" />
     <!--Google Font Icon CSS-->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
     <title>Trip Details</title>
-</head>
+  </head>
 
-<body>
-
+  <body>
     <div class="header">
-        <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
-            <div class="container-fluid">
-                <a class="nav-link" href="javascript:history.back()">Back</a>
-                <!-- <span class="navbar-text" id="user-profile"> guest </span> -->
-                <div class="dropdown">
-                    <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
-                        data-bs-toggle="dropdown" aria-expanded="false">guest
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" style="min-width:120px;" aria-labelledby="user-profile">
-                        <li>
-                            <a class="dropdown-item p-0" id="profile">
-                                <div class="container d-flex justify-content-evenly p-0">
-                                    <span class="material-icons">
-                                        account_circle
-                                    </span>
-                                    <span> Profile
-                                    </span>
-                                </div>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+      <nav class="navbar navbar-light" style="background-color: #e3f2fd">
+        <div class="container-fluid">
+          <a class="nav-link" href="javascript:history.back()">Back</a>
+          <!-- <span class="navbar-text" id="user-profile"> guest </span> -->
+          <div class="dropdown">
+            <button
+              class="btn btn-outline-success dropdown-toggle"
+              type="button"
+              id="user-profile"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              guest
+            </button>
+            <ul
+              class="dropdown-menu dropdown-menu-end"
+              style="min-width: 120px"
+              aria-labelledby="user-profile"
+            >
+              <li>
+                <a class="dropdown-item p-0" id="profile">
+                  <div class="container d-flex justify-content-evenly p-0">
+                    <span class="material-icons"> account_circle </span>
+                    <span> Profile </span>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
 
-        <h1>
-            Plan Details
-        </h1>
+      <h1>Plan Details</h1>
     </div>
-    <div class="container d-flex flex-column align-items-center justify-content-center mt-4">
-
-        <div class="card shadow-sm border rounded" style="width: 95vw; max-width: 25rem;">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <span class="fs-4 fw-bold">
-                    {{.TravelDestination}}
-                </span>
-                <div>
-                    <i id="planSaveIcon" class="bi bi-bookmark fs-4" data-bs-toggle="tooltip"
-                        data-bs-original-title="Save"></i>
-                </div>
-
-            </div>
-            <div id="carouselExampleIndicators" class="carousel slide card-img-top" data-bs-ride="carousel">
-                <ol class="carousel-indicators">
-                    <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0"
-                        class="active" aria-current="true" aria-label="Slide 1"></button>
-                    <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1"
-                        aria-label="Slide 2"></button>
-                    <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2"
-                        aria-label="Slide 3"></button>
-                </ol>
-
-                <div id="tripCarousel" class="carousel-inner d-flex align-items-center">
-                    {{$active := .ShownActive}}
-                    {{range $i, $p := .PlaceDetails}}
-                    <div class={{if index $active $i}} "carousel-item active" {{else}} "carousel-item" {{end}}>
-                        <img src={{.PhotoURL}} class="d-block w-100" alt="...">
-                    </div>
-                    {{end}}
-                </div>
-
-                <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators"
-                    data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators"
-                    data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
-            </div>
-
-            {{$active := .ShownActive}}
+    <div
+      class="container d-flex flex-column align-items-center justify-content-center mt-4"
+    >
+      <div
+        class="card shadow-sm border rounded"
+        style="width: 95vw; max-width: 25rem"
+      >
+        <div
+          class="card-header d-flex align-items-center justify-content-between"
+        >
+          <span class="fs-4 fw-bold"> {{.TravelDestination}} </span>
+          <div>
+            <i
+              id="planSaveIcon"
+              class="bi bi-bookmark fs-4"
+              data-bs-toggle="tooltip"
+              data-bs-original-title="Save"
+            ></i>
+          </div>
+        </div>
+        <div
+          id="carouselExampleIndicators"
+          class="carousel slide card-img-top carousel-fade"
+          data-bs-ride="carousel"
+        >
+          <ol class="carousel-indicators">
             {{range $i, $p := .PlaceDetails}}
-            <div class={{if index $active $i}} "card-body" {{else}} "card-body d-none" {{end}}>
-                <h5 class="card-title">{{ .Name }}</h5>
-                <p class="card-text"><a href={{ .URL }}>{{ .FormattedAddress }}</a></p>
+            <button
+              type="button"
+              data-bs-target="#carouselExampleIndicators"
+              data-bs-slide-to="{{$i}}"
+              class="active"
+              aria-current="true"
+              aria-label="Slide-{{$i}}"
+            ></button>
+            {{end}}
+          </ol>
+
+          <div
+            id="tripCarousel"
+            class="carousel-inner d-flex align-items-center"
+          >
+            {{$active := .ShownActive}} {{range $i, $p := .PlaceDetails}}
+            <div
+              {{if
+              index
+              $active
+              $i}}
+              class="carousel-item active"
+              {{else}}
+              class="carousel-item"
+              {{end}}
+            >
+              <img src="{{.PhotoURL}}" class="d-block w-100" alt="..." />
             </div>
             {{end}}
+          </div>
+
+          <button
+            class="carousel-control-prev"
+            type="button"
+            data-bs-target="#carouselExampleIndicators"
+            data-bs-slide="prev"
+          >
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button
+            class="carousel-control-next"
+            type="button"
+            data-bs-target="#carouselExampleIndicators"
+            data-bs-slide="next"
+          >
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+          </button>
         </div>
 
-        <div class="card shadow-sm border rounded mt-2" style="height: 25rem; width: 95vw; max-width: 25rem;">
-            <div class="card-body" id="googleMap"></div>
+        {{$active := .ShownActive}} {{range $i, $p := .PlaceDetails}}
+        <div
+          {{
+          if
+          index
+          $active
+          $i}}
+          class="card-body"
+          {{else}}
+          class="card-body d-none"
+          {{end}}
+        >
+          <h5 class="card-title">{{ .Name }}</h5>
+          <p class="card-text">
+            <a href="{{.URL}}">{{ .FormattedAddress }}</a>
+          </p>
         </div>
+        {{end}}
+      </div>
 
+      <div
+        class="card shadow-sm border rounded mt-2"
+        style="height: 25rem; width: 95vw; max-width: 25rem"
+      >
+        <div class="card-body" id="googleMap"></div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"
+    ></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/v1/assets/js/show-trip-script.js"></script>
-    <script src="/v1/assets/js/google_map.js"> </script>
+    <script src="/v1/assets/js/google_map.js"></script>
     <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6KxWyyl6ysQ-RYyu9OVvTPyfxLEa03zk&callback=initMap&libraries=&v=weekly"
-        async></script>
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6KxWyyl6ysQ-RYyu9OVvTPyfxLEa03zk&callback=initMap&libraries=&v=weekly"
+      async
+    ></script>
     <script type="module" src="/v1/assets/js/jwt-decode.js"></script>
     <script type="module" src="/v1/assets/js/user.js"></script>
     <script type="module" src="/v1/assets/js/show-trip-details.js"></script>
-
-</body>
-
+  </body>
 </html>
