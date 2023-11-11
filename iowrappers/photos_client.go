@@ -45,13 +45,13 @@ type PhotoHttpClient struct {
 }
 
 // CreatePhotoClient is a factory method for PhotoClient
-func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool) PhotoClient {
+func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool) (PhotoClient, error) {
 	if enableMapPhotoClient {
 		mapsClient, err := maps.NewClient(maps.WithAPIKey(apiKey))
 		if err != nil {
-			Logger.Fatal(err)
+			return &MapsPhotoClient{}, err
 		}
-		return &MapsPhotoClient{maps_client: mapsClient, apiKey: apiKey, apiBaseURL: baseURL}
+		return &MapsPhotoClient{maps_client: mapsClient, apiKey: apiKey, apiBaseURL: baseURL}, nil
 	}
 	return &PhotoHttpClient{
 		// turn off http auto-direct
@@ -59,7 +59,7 @@ func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool)
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
-		}, apiKey: apiKey, apiBaseURL: baseURL}
+		}, apiKey: apiKey, apiBaseURL: baseURL}, nil
 }
 
 func (photoClient *PhotoHttpClient) GetPhotoURL(ctx context.Context, photoRef string) PhotoURL {

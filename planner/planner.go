@@ -145,6 +145,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	}
 	p.Configs = configs
 
+	var err error
 	// initialize photo client
 	var enable_maps_photo_client = false
 	if flag_enable_maps_photo_client, exists := p.Configs["server:plan_solver:enable_maps_photo_client"]; exists {
@@ -153,7 +154,10 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	} else {
 		log.Errorf("failed to load flag server:plan_solver:enable_maps_photo_client!")
 	}
-	p.PhotoClient = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enable_maps_photo_client)
+	p.PhotoClient, err = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enable_maps_photo_client)
+	if err != nil {
+		log.Fatalf("failed to initialize photo client, err:%v\n", err)
+	}
 
 	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
@@ -169,7 +173,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
 	}
 	p.GeonamesApiKey = geonamesApiKey
-	var err error
+
 	geocodes, err = p.RedisClient.GetCities(context.Background())
 	if err != nil {
 		log.Errorf("failed to load city geocodes: %v", err.Error())
