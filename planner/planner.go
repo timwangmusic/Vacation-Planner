@@ -119,6 +119,7 @@ type PlaceDetailsResp struct {
 	URL              string
 	FormattedAddress string
 	PhotoURL         string
+	Summary          string
 }
 
 type RequestIdKey string
@@ -629,6 +630,7 @@ func (p *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
 		URL:              place.URL,
 		FormattedAddress: place.FormattedAddress,
 		PhotoURL:         string(p.PhotoClient.GetPhotoURL(place.Photo.Reference)),
+		Summary:          place.GetSummary(),
 	}
 }
 

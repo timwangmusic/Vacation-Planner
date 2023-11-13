@@ -46,6 +46,9 @@ func TestCreatePlace(t *testing.T) {
 		t.Errorf("Price rating setting is not correct. \n Expected: %f \n Got: %f	",
 			4.5, place.GetRating())
 	}
+	if place.GetSummary() != "" {
+		t.Errorf("expected place summary is empty, got: %s", place.GetSummary())
+	}
 	retMicroAddr := place.GetAddress()
 	if retMicroAddr.StreetAddr != "540 Broadway" {
 		t.Errorf("micro address street address parsing error. \n Expected: 540 Broadway \n Got %s", retMicroAddr.StreetAddr)

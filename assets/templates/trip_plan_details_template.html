@@ -30,7 +30,6 @@
       <nav class="navbar navbar-light" style="background-color: #e3f2fd">
         <div class="container-fluid">
           <a class="nav-link" href="javascript:history.back()">Back</a>
-          <!-- <span class="navbar-text" id="user-profile"> guest </span> -->
           <div class="dropdown">
             <button
               class="btn btn-outline-success dropdown-toggle"
@@ -152,6 +151,7 @@
           {{end}}
         >
           <h5 class="card-title">{{ .Name }}</h5>
+          <p class="card-text">{{.Summary}}</p>
           <p class="card-text">
             <a href="{{.URL}}">{{ .FormattedAddress }}</a>
           </p>
