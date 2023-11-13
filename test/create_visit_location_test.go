@@ -15,7 +15,7 @@ func TestCreatePlace(t *testing.T) {
 
 	expectedLatitude := 32.715736
 	expectedLongitude := -117.161087
-	place := POI.CreatePlace(name, microAddr, addr, "OPERATIONAL", "stay", nil, "landmark_mtv", 3, 4.5, "", nil, 0, expectedLatitude, expectedLongitude)
+	place := POI.CreatePlace(name, microAddr, addr, "OPERATIONAL", "stay", nil, "landmark_mtv", 3, 4.5, "", nil, 0, expectedLatitude, expectedLongitude, nil)
 	if place.GetName() != name {
 		t.Errorf("Name setting is not correct. \n Expected: %s, got: %s",
 			name, place.GetName())

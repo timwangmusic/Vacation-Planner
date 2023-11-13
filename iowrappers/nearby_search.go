@@ -104,6 +104,7 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 	microAddrMap := make(map[string]string) // map place ID to its micro-address
 	placeMap := make(map[string]bool)       // remove duplication for place with same ID
 	urlMap := make(map[string]string)       // map place ID to url
+	summaryMap := make(map[string]string)   // map place ID to summary
 
 	var err error
 	for totalPlaceCount < request.MinNumResults {
@@ -149,13 +150,18 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 			for _, placeDetails := range detailsSearchResults {
 				idx := placeDetails.idx
 				placeId := searchResp.Results[idx].PlaceID
+				summary := placeDetails.res.EditorialSummary
+				if summary != nil {
+					summaryMap[placeId] = summary.Overview
+					Logger.Debugf("editorial summary for place %s is: %s", placeId, summary.Overview)
+				}
 				searchResp.Results[idx].OpeningHours = placeDetails.res.OpeningHours
 				searchResp.Results[idx].FormattedAddress = placeDetails.res.FormattedAddress
 				microAddrMap[placeId] = placeDetails.res.AdrAddress
 				urlMap[placeId] = placeDetails.res.URL
 			}
 
-			*places = append(*places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap)...)
+			*places = append(*places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap, summaryMap)...)
 			totalPlaceCount += uint(len(searchResp.Results))
 			placeCountPerPlaceType[placeType] += len(searchResp.Results)
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
@@ -220,7 +226,7 @@ func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeI
 	return resp, err
 }
 
-func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.LocationType, microAddrMap map[string]string, placeMap map[string]bool, urlMap map[string]string) (places []POI.Place) {
+func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.LocationType, microAddrMap map[string]string, placeMap map[string]bool, urlMap map[string]string, summaryMap map[string]string) (places []POI.Place) {
 	for _, res := range resp.Results {
 		id := res.PlaceID
 		if seen := placeMap[id]; !seen {
@@ -251,7 +257,12 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.
 		if userRatingsTotal == 0 {
 			continue
 		}
-		places = append(places, POI.CreatePlace(name, addr, res.FormattedAddress, res.BusinessStatus, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal, latitude, longitude))
+		var placeSummary *string
+		if summary, ok := summaryMap[id]; ok {
+			placeSummary = &summary
+		}
+
+		places = append(places, POI.CreatePlace(name, addr, res.FormattedAddress, res.BusinessStatus, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal, latitude, longitude, placeSummary))
 	}
 	return
 }
