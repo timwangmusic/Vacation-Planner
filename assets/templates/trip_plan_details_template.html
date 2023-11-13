@@ -152,9 +152,7 @@
         >
           <h5 class="card-title">{{ .Name }}</h5>
           <p class="card-text">{{.Summary}}</p>
-          <p class="card-text">
-            <a href="{{.URL}}">{{ .FormattedAddress }}</a>
-          </p>
+          <a class="card-link" href="{{.URL}}">{{ .FormattedAddress }}</a>
         </div>
         {{end}}
       </div>
