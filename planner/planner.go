@@ -622,17 +622,22 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 }
 
 func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
-	*resp = p.getTripFromPlace(ctx, place)
+	var err error
+	*resp, err = p.getTripFromPlace(ctx, place)
+	if err != nil {
+		iowrappers.Logger.Error(err)
+	}
 	wg.Done()
 }
 
-func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) PlaceDetailsResp {
+func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
+	photoURL, err := p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference)
 	return PlaceDetailsResp{
 		Name:             place.Name,
 		URL:              place.URL,
 		FormattedAddress: place.FormattedAddress,
-		PhotoURL:         string(p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference)),
-	}
+		PhotoURL:         string(photoURL),
+	}, err
 }
 
 func (p *MyPlanner) login(ctx *gin.Context) {

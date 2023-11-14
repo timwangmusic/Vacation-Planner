@@ -28,7 +28,7 @@ var isValidPhotoUrl = func(url string) bool {
 type PhotoURL string
 
 type PhotoClient interface {
-	GetPhotoURL(context.Context, string) PhotoURL
+	GetPhotoURL(context.Context, string) (PhotoURL, error)
 }
 
 // Use Google Map API
@@ -62,13 +62,12 @@ func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool)
 		}, apiKey: apiKey, apiBaseURL: baseURL}, nil
 }
 
-func (photoClient *PhotoHttpClient) GetPhotoURL(ctx context.Context, photoRef string) PhotoURL {
+func (photoClient *PhotoHttpClient) GetPhotoURL(ctx context.Context, photoRef string) (PhotoURL, error) {
 	var photoURL PhotoURL
 	var reqURL = fmt.Sprintf(photoClient.apiBaseURL, photoRef, photoClient.apiKey)
 	res, err := photoClient.client.Get(reqURL)
 	if err != nil {
-		Logger.Fatal(err)
-		return photoURL
+		return photoURL, err
 	}
 	body, err := io.ReadAll(res.Body)
 	res.Body.Close()
@@ -76,16 +75,14 @@ func (photoClient *PhotoHttpClient) GetPhotoURL(ctx context.Context, photoRef st
 		Logger.Warnf("status code should be 302, but is %d", res.StatusCode)
 	}
 	if err != nil {
-		Logger.Fatal(err)
-		return photoURL
+		return photoURL, err
 	}
 
 	photoURL, err = parseHTML(body, isHtmlAnchor, isValidPhotoUrl)
 	if err != nil {
-		Logger.Warn("Err Msg: ", err.Error())
-		return ""
+		return "", err
 	}
-	return photoURL
+	return photoURL, nil
 }
 
 func parseHTML(htmlBody []byte, judger func(*html.Node) bool, validator func(string) bool) (PhotoURL, error) {
@@ -127,32 +124,27 @@ func dfs(node *html.Node, judger func(*html.Node) bool, validator func(string) b
 	return "", false
 }
 
-// TOOD(rwangsc18): add a unit test for this function
-func (photoClient *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string) PhotoURL {
+func (photoClient *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string) (PhotoURL, error) {
 	// get PlacePhotoResponse
 	resp, err := photoClient.maps_client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
 		PhotoReference: photoRef,
 		MaxWidth:       400,
 	})
 	if err != nil {
-		Logger.Error(err)
-		// TODO(rwangsc18): replace with a default image
-		return PhotoURL("fake_url")
+		return PhotoURL(""), err
 	}
 
 	// get image data
 	image, err := resp.Image()
 	if err != nil {
-		Logger.Error(err)
-		return PhotoURL("fake_url")
+		return PhotoURL(""), err
 	}
 
 	// encode image to base64
 	buffer := new(bytes.Buffer)
 	if err := jpeg.Encode(buffer, image, nil); err != nil {
-		Logger.Error("unable to encode image.")
-		return PhotoURL("fake_url")
+		return PhotoURL(""), err
 	}
 	data := base64.StdEncoding.EncodeToString(buffer.Bytes())
-	return PhotoURL(data)
+	return PhotoURL(data), nil
 }
