@@ -15,7 +15,8 @@ func TestCreatePlace(t *testing.T) {
 
 	expectedLatitude := 32.715736
 	expectedLongitude := -117.161087
-	place := POI.CreatePlace(name, microAddr, addr, "OPERATIONAL", "stay", nil, "landmark_mtv", 3, 4.5, "", nil, 0, expectedLatitude, expectedLongitude, nil)
+	editorialSummary := "The Beat Museum is dedicated to preserving the memory and works of the Beat Generation."
+	place := POI.CreatePlace(name, microAddr, addr, "OPERATIONAL", "stay", nil, "landmark_mtv", 3, 4.5, "", nil, 0, expectedLatitude, expectedLongitude, &editorialSummary)
 	if place.GetName() != name {
 		t.Errorf("Name setting is not correct. \n Expected: %s, got: %s",
 			name, place.GetName())
@@ -46,8 +47,8 @@ func TestCreatePlace(t *testing.T) {
 		t.Errorf("Price rating setting is not correct. \n Expected: %f \n Got: %f	",
 			4.5, place.GetRating())
 	}
-	if place.GetSummary() != "" {
-		t.Errorf("expected place summary is empty, got: %s", place.GetSummary())
+	if place.GetSummary() != editorialSummary {
+		t.Errorf("expected place editorialSummary is %s, got: %s", editorialSummary, place.GetSummary())
 	}
 	retMicroAddr := place.GetAddress()
 	if retMicroAddr.StreetAddr != "540 Broadway" {
