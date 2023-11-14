@@ -1,8 +1,8 @@
 package POI
 
 import (
+	"github.com/modern-go/reflect2"
 	"log"
-	"reflect"
 	"regexp"
 	"strconv"
 
@@ -150,6 +150,10 @@ func (place *Place) GetSummary() string {
 	return place.Summary
 }
 
+func (place *Place) GetPhoto() PlacePhoto {
+	return place.Photo
+}
+
 func (place *Place) SetName(name string) {
 	place.Name = name
 }
@@ -263,7 +267,7 @@ func (place *Place) SetURL(url string) {
 }
 
 func (place *Place) SetPhoto(photo *maps.Photo) {
-	if val := reflect.ValueOf(photo); !val.IsNil() {
+	if !reflect2.IsNil(photo) {
 		place.Photo.Reference = photo.PhotoReference
 		place.Photo.Height = photo.Height
 		place.Photo.Width = photo.Width

@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
+	"googlemaps.github.io/maps"
 	"testing"
 )
 
@@ -16,7 +17,31 @@ func TestCreatePlace(t *testing.T) {
 	expectedLatitude := 32.715736
 	expectedLongitude := -117.161087
 	editorialSummary := "The Beat Museum is dedicated to preserving the memory and works of the Beat Generation."
-	place := POI.CreatePlace(name, microAddr, addr, "OPERATIONAL", "stay", nil, "landmark_mtv", 3, 4.5, "", nil, 0, expectedLatitude, expectedLongitude, &editorialSummary)
+	hours := &POI.OpeningHours{Hours: []string{
+		"10AM-7PM",
+		"Closed",
+		"Closed",
+		"10AM-7PM",
+		"10AM-7PM",
+		"10AM-7PM",
+		"10AM-7PM",
+	}}
+	expectedHours := [7]string{
+		"10AM-7PM",
+		"Closed",
+		"Closed",
+		"10AM-7PM",
+		"10AM-7PM",
+		"10AM-7PM",
+		"10AM-7PM",
+	}
+	expectedPhoto := &maps.Photo{
+		PhotoReference:   "xyz33521",
+		Height:           500,
+		Width:            500,
+		HTMLAttributions: nil,
+	}
+	place := POI.CreatePlace(name, microAddr, addr, "OPERATIONAL", "stay", hours, "landmark_mtv", POI.PriceLevelThree, 4.5, "", expectedPhoto, 0, expectedLatitude, expectedLongitude, &editorialSummary)
 	if place.GetName() != name {
 		t.Errorf("Name setting is not correct. \n Expected: %s, got: %s",
 			name, place.GetName())
@@ -49,6 +74,19 @@ func TestCreatePlace(t *testing.T) {
 	}
 	if place.GetSummary() != editorialSummary {
 		t.Errorf("expected place editorialSummary is %s, got: %s", editorialSummary, place.GetSummary())
+	}
+	if place.Hours != expectedHours {
+		t.Errorf("expected hours equals %v, got %v", expectedHours, place.Hours)
+	}
+	storedPhoto := place.GetPhoto()
+	if storedPhoto.Width != expectedPhoto.Width {
+		t.Errorf("stored photo width does not match expected")
+	}
+	if storedPhoto.Height != expectedPhoto.Height {
+		t.Errorf("stored photo height does not match expected")
+	}
+	if storedPhoto.Reference != expectedPhoto.PhotoReference {
+		t.Errorf("stored photo reference does not match expected")
 	}
 	retMicroAddr := place.GetAddress()
 	if retMicroAddr.StreetAddr != "540 Broadway" {
