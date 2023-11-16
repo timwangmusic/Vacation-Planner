@@ -1,8 +1,8 @@
 package POI
 
 import (
+	"github.com/modern-go/reflect2"
 	"log"
-	"reflect"
 	"regexp"
 	"strconv"
 
@@ -57,6 +57,7 @@ type Place struct {
 	URL              string         `bson:"url"`
 	Photo            PlacePhoto     `bson:"photo"`
 	UserRatingsTotal int            `bson:"user_ratings_total"`
+	Summary          string         `bson:"summary"`
 }
 
 type Location struct {
@@ -143,6 +144,14 @@ func (place *Place) GetURL() string {
 
 func (place *Place) GetUserRatingsTotal() int {
 	return place.UserRatingsTotal
+}
+
+func (place *Place) GetSummary() string {
+	return place.Summary
+}
+
+func (place *Place) GetPhoto() PlacePhoto {
+	return place.Photo
 }
 
 func (place *Place) SetName(name string) {
@@ -258,7 +267,7 @@ func (place *Place) SetURL(url string) {
 }
 
 func (place *Place) SetPhoto(photo *maps.Photo) {
-	if val := reflect.ValueOf(photo); !val.IsNil() {
+	if !reflect2.IsNil(photo) {
 		place.Photo.Reference = photo.PhotoReference
 		place.Photo.Height = photo.Height
 		place.Photo.Width = photo.Width
@@ -269,7 +278,11 @@ func (place *Place) SetUserRatingsTotal(userRatingsTotal int) {
 	place.UserRatingsTotal = userRatingsTotal
 }
 
-func CreatePlace(name, addr, formattedAddr, businessStatus string, locationType LocationType, openingHours *OpeningHours, placeID string, priceLevel int, rating float32, url string, photo *maps.Photo, userRatingsTotal int, latitude, longitude float64) (place Place) {
+func (place *Place) SetSummary(summary string) {
+	place.Summary = summary
+}
+
+func CreatePlace(name, addr, formattedAddr, businessStatus string, locationType LocationType, openingHours *OpeningHours, placeID string, priceLevel int, rating float32, url string, photo *maps.Photo, userRatingsTotal int, latitude, longitude float64, summary *string) (place Place) {
 	place.SetType(locationType)
 	place.SetName(name)
 	place.SetID(placeID)
@@ -295,5 +308,8 @@ func CreatePlace(name, addr, formattedAddr, businessStatus string, locationType 
 	place.SetURL(url)
 	place.SetPhoto(photo)
 	place.SetUserRatingsTotal(userRatingsTotal)
+	if summary != nil {
+		place.SetSummary(*summary)
+	}
 	return
 }
