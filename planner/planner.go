@@ -560,64 +560,61 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 }
 
 func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
+	logger := iowrappers.Logger
 	id := ctx.Param("id")
-	iowrappers.Logger.Debugf("GET Route /plans/%s", id)
 
-	var cachePlanSolution iowrappers.PlanningSolutionRecord
+	var record iowrappers.PlanningSolutionRecord
 	var planRecordRedisKey = strings.Join([]string{iowrappers.TravelPlanRedisCacheKeyPrefix, id}, ":")
-	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planRecordRedisKey, &cachePlanSolution)
+	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planRecordRedisKey, &record)
 	if cacheErr != nil {
-		iowrappers.Logger.Debugf("Error occurs in fetching plan with key %s\n", planRecordRedisKey)
-		ctx.String(http.StatusBadRequest, cacheErr.Error())
+		logger.Errorf("Error while fetching plan with key %s: %v", planRecordRedisKey, cacheErr)
+		ctx.String(http.StatusInternalServerError, cacheErr.Error())
 		return
 	}
 
 	const fixedPlaceKeyPrefix = "place_details:place_ID:"
 	var placeKey string
-	var cachePlaceDetails POI.Place
 	destination := "Dream Place"
 	var today = time.Now()
-	if cachePlanSolution.Destination != (POI.Location{}) {
+	if record.Destination != (POI.Location{}) {
 		c := cases.Title(language.English)
-		destination = c.String(cachePlanSolution.Destination.City) + ", " + c.String(cachePlanSolution.Destination.Country)
+		destination = c.String(record.Destination.City) + ", " + c.String(record.Destination.Country)
 	}
 	travelDate := ctx.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
-		LatLongs:          cachePlanSolution.PlaceLocations,
-		PlaceCategories:   cachePlanSolution.PlaceCategories,
-		PlaceDetails:      make([]PlaceDetailsResp, len(cachePlanSolution.PlaceIDs)),
+		LatLongs:          record.PlaceLocations,
+		PlaceCategories:   record.PlaceCategories,
+		PlaceDetails:      make([]PlaceDetailsResp, len(record.PlaceIDs)),
 		ShownActive:       make([]bool, 0),
 		TravelDestination: destination,
 		TravelDate:        travelDate,
-		Score:             cachePlanSolution.Score,
-		ScoreOld:          cachePlanSolution.ScoreOld,
+		Score:             record.Score,
+		ScoreOld:          record.ScoreOld,
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(cachePlanSolution.PlaceIDs))
-	for idx, placeId := range cachePlanSolution.PlaceIDs {
+	wg.Add(len(record.PlaceIDs))
+	for idx, placeId := range record.PlaceIDs {
 		placeKey = fixedPlaceKeyPrefix + placeId
-		cacheErr := p.RedisClient.FetchSingleRecord(ctx, placeKey, &cachePlaceDetails)
+		var place POI.Place
+		cacheErr = p.RedisClient.FetchSingleRecord(ctx, placeKey, &place)
 		if cacheErr != nil {
-			ctx.String(http.StatusBadRequest, cacheErr.Error())
-			return
+			logger.Error(cacheErr)
 		}
 
 		// Show the first place by default
 		tripResp.ShownActive = append(tripResp.ShownActive, idx == 0)
 
-		// Run Goroutines to retrieve place details
-		go p.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], cachePlaceDetails)
+		go p.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], place)
 	}
 	wg.Wait()
-	iowrappers.Logger.Debugf("Trip Details:\n%v\n", tripResp.PlaceDetails)
 
-	jsonOnly := strings.ToLower(ctx.DefaultQuery("json_only", "false"))
-	if jsonOnly != "false" {
+	jsonOnly, _ := strconv.ParseBool(strings.ToLower(ctx.DefaultQuery("json_only", "false")))
+	if jsonOnly {
 		ctx.JSON(http.StatusOK, tripResp)
 		return
 	}
-	// send data
+
 	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, tripResp), utils.LogError)
 }
 
