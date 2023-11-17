@@ -125,6 +125,7 @@ type PlaceDetailsResp struct {
 type RequestIdKey string
 
 func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string, geonamesApiKey string) {
+	logger := iowrappers.Logger
 	p.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	p.RedisClient = iowrappers.CreateRedisClient(redisURL)
 	p.RedisStreamName = redisStreamName
@@ -147,14 +148,14 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	p.Configs = configs
 
 	// initialize photo client
-	var enable_maps_photo_client = false
-	if flag_enable_maps_photo_client, exists := p.Configs["server:plan_solver:enable_maps_photo_client"]; exists {
-		enable_maps_photo_client = flag_enable_maps_photo_client.(bool)
-		log.Debugf("flag server:plan_solver:enable_maps_photo_client: %v\n", enable_maps_photo_client)
+	var enableMapsPhotoClient = false
+	if flagEnableMapsPhotoClient, exists := p.Configs["server:plan_solver:enable_maps_photo_client"]; exists {
+		enableMapsPhotoClient = flagEnableMapsPhotoClient.(bool)
+		logger.Debugf("flag server:plan_solver:enableMapsPhotoClient: %v\n", enableMapsPhotoClient)
 	} else {
-		log.Errorf("failed to load flag server:plan_solver:enable_maps_photo_client!")
+		logger.Errorf("failed to load flag server:plan_solver:enableMapsPhotoClient!")
 	}
-	p.PhotoClient = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enable_maps_photo_client)
+	p.PhotoClient = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enableMapsPhotoClient)
 
 	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
@@ -163,7 +164,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 			p.Solver.Init(PoiSearcher, v.(int), c.(int))
 		}
 	} else {
-		log.Fatal("failed to initialize the plan solver.")
+		logger.Fatal("failed to initialize the planner")
 	}
 
 	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
@@ -173,7 +174,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	var err error
 	geocodes, err = p.RedisClient.GetCities(context.Background())
 	if err != nil {
-		log.Errorf("failed to load city geocodes: %v", err.Error())
+		logger.Errorf("failed to load city geocodes: %v", err.Error())
 	}
 	p.OAuth2Config = &oauth2.Config{
 		ClientID:     oauthClientID,
@@ -185,9 +186,10 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	if p.Environment == ProductionEnvironment || p.Environment == TestingEnvironment {
 		p.Mailer = &iowrappers.Mailer{}
 		if err = p.Mailer.Init(p.RedisClient); err != nil {
-			log.Fatalf("p failed to create a Mailer: %s", err.Error())
+			logger.Fatalf("p failed to create a Mailer: %s", err.Error())
 		}
 	}
+	logger.Info("The planner initialization process completes")
 }
 
 func (p *MyPlanner) Destroy() {
