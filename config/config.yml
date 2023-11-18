@@ -7,6 +7,7 @@ server:
       - adr_address
       - url
       - user_ratings_total
+      - editorial_summary
   plan_solver:
     same_place_dedupe_count_limit: 2
     nearby_cities_count_limit: 3

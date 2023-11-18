@@ -119,11 +119,13 @@ type PlaceDetailsResp struct {
 	URL              string
 	FormattedAddress string
 	PhotoURL         string
+	Summary          string
 }
 
 type RequestIdKey string
 
 func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string, geonamesApiKey string) {
+	logger := iowrappers.Logger
 	p.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	p.RedisClient = iowrappers.CreateRedisClient(redisURL)
 	p.RedisStreamName = redisStreamName
@@ -147,14 +149,15 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 
 	var err error
 	// initialize photo client
-	var enable_maps_photo_client = false
-	if flag_enable_maps_photo_client, exists := p.Configs["server:plan_solver:enable_maps_photo_client"]; exists {
-		enable_maps_photo_client = flag_enable_maps_photo_client.(bool)
-		log.Debugf("flag server:plan_solver:enable_maps_photo_client: %v\n", enable_maps_photo_client)
+	var enableMapsPhotoClient = false
+	if flagEnableMapsPhotoClient, exists := p.Configs["server:plan_solver:enable_maps_photo_client"]; exists {
+		enableMapsPhotoClient = flagEnableMapsPhotoClient.(bool)
+		logger.Debugf("flag server:plan_solver:enableMapsPhotoClient: %v\n", enableMapsPhotoClient)
 	} else {
-		log.Errorf("failed to load flag server:plan_solver:enable_maps_photo_client!")
+		logger.Errorf("failed to load flag server:plan_solver:enableMapsPhotoClient!")
 	}
-	p.PhotoClient, err = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enable_maps_photo_client)
+  
+	p.PhotoClient, err = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enableMapsPhotoClient)
 	if err != nil {
 		log.Fatalf("failed to initialize photo client, err:%v\n", err)
 	}
@@ -166,7 +169,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 			p.Solver.Init(PoiSearcher, v.(int), c.(int))
 		}
 	} else {
-		log.Fatal("failed to initialize the plan solver.")
+		logger.Fatal("failed to initialize the planner")
 	}
 
 	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
@@ -176,7 +179,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 
 	geocodes, err = p.RedisClient.GetCities(context.Background())
 	if err != nil {
-		log.Errorf("failed to load city geocodes: %v", err.Error())
+		logger.Errorf("failed to load city geocodes: %v", err.Error())
 	}
 	p.OAuth2Config = &oauth2.Config{
 		ClientID:     oauthClientID,
@@ -188,9 +191,10 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	if p.Environment == ProductionEnvironment || p.Environment == TestingEnvironment {
 		p.Mailer = &iowrappers.Mailer{}
 		if err = p.Mailer.Init(p.RedisClient); err != nil {
-			log.Fatalf("p failed to create a Mailer: %s", err.Error())
+			logger.Fatalf("p failed to create a Mailer: %s", err.Error())
 		}
 	}
+	logger.Info("The planner initialization process completes")
 }
 
 func (p *MyPlanner) Destroy() {
@@ -561,63 +565,61 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 }
 
 func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
+	logger := iowrappers.Logger
 	id := ctx.Param("id")
-	iowrappers.Logger.Debugf("GET Route /plans/%s", id)
 
-	var cachePlanSolution iowrappers.PlanningSolutionRecord
+	var record iowrappers.PlanningSolutionRecord
 	var planRecordRedisKey = strings.Join([]string{iowrappers.TravelPlanRedisCacheKeyPrefix, id}, ":")
-	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planRecordRedisKey, &cachePlanSolution)
+	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planRecordRedisKey, &record)
 	if cacheErr != nil {
-		iowrappers.Logger.Debugf("Error occurs in fetching plan with key %s\n", planRecordRedisKey)
-		ctx.String(http.StatusBadRequest, cacheErr.Error())
+		logger.Errorf("Error while fetching plan with key %s: %v", planRecordRedisKey, cacheErr)
+		ctx.String(http.StatusInternalServerError, cacheErr.Error())
 		return
 	}
 
 	const fixedPlaceKeyPrefix = "place_details:place_ID:"
 	var placeKey string
-	var cachePlaceDetails POI.Place
 	destination := "Dream Place"
 	var today = time.Now()
-	if cachePlanSolution.Destination != (POI.Location{}) {
+	if record.Destination != (POI.Location{}) {
 		c := cases.Title(language.English)
-		destination = c.String(cachePlanSolution.Destination.City) + ", " + c.String(cachePlanSolution.Destination.Country)
+		destination = c.String(record.Destination.City) + ", " + c.String(record.Destination.Country)
 	}
 	travelDate := ctx.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
-		LatLongs:          cachePlanSolution.PlaceLocations,
-		PlaceCategories:   cachePlanSolution.PlaceCategories,
-		PlaceDetails:      make([]PlaceDetailsResp, len(cachePlanSolution.PlaceIDs)),
+		LatLongs:          record.PlaceLocations,
+		PlaceCategories:   record.PlaceCategories,
+		PlaceDetails:      make([]PlaceDetailsResp, len(record.PlaceIDs)),
 		ShownActive:       make([]bool, 0),
 		TravelDestination: destination,
 		TravelDate:        travelDate,
-		Score:             cachePlanSolution.Score,
-		ScoreOld:          cachePlanSolution.ScoreOld,
+		Score:             record.Score,
+		ScoreOld:          record.ScoreOld,
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(cachePlanSolution.PlaceIDs))
-	for idx, placeId := range cachePlanSolution.PlaceIDs {
+	wg.Add(len(record.PlaceIDs))
+	for idx, placeId := range record.PlaceIDs {
 		placeKey = fixedPlaceKeyPrefix + placeId
-		cacheErr := p.RedisClient.FetchSingleRecord(ctx, placeKey, &cachePlaceDetails)
+		var place POI.Place
+		cacheErr = p.RedisClient.FetchSingleRecord(ctx, placeKey, &place)
 		if cacheErr != nil {
-			ctx.String(http.StatusBadRequest, cacheErr.Error())
-			return
+			logger.Error(cacheErr)
 		}
 
 		// Show the first place by default
 		tripResp.ShownActive = append(tripResp.ShownActive, idx == 0)
 
-		// Run Goroutines to retrieve place details
-		go p.asyncGetTripRespPlaceDetails(ctx, &wg, &tripResp.PlaceDetails[idx], cachePlaceDetails)
+		go p.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], place)
 	}
 	wg.Wait()
 
-	jsonOnly := strings.ToLower(ctx.DefaultQuery("json_only", "false"))
-	if jsonOnly != "false" {
+	jsonOnly, _ := strconv.ParseBool(strings.ToLower(ctx.DefaultQuery("json_only", "false")))
+	if jsonOnly {
 		ctx.JSON(http.StatusOK, tripResp)
 		return
 	}
-	// send data
+
 	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, tripResp), utils.LogError)
 }
 
@@ -637,6 +639,7 @@ func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) (Plac
 		URL:              place.URL,
 		FormattedAddress: place.FormattedAddress,
 		PhotoURL:         string(photoURL),
+    Summary:          place.GetSummary(),
 	}, err
 }
 

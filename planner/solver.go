@@ -98,13 +98,6 @@ type SlotRequest struct {
 	Category POI.PlaceCategory `json:"category"`
 }
 
-func init() {
-	err := iowrappers.CreateLogger()
-	if err != nil {
-		log.Error(err)
-	}
-}
-
 func (s *Solver) Init(poiSearcher *iowrappers.PoiSearcher, placeDedupeCountLimit int, nearbyCitiesCountLimit int) {
 	s.Searcher = poiSearcher
 	s.placeDedupeCountLimit = placeDedupeCountLimit

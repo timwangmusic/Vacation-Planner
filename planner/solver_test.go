@@ -7,9 +7,14 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"reflect"
 	"testing"
 )
+
+func init() {
+	utils.LogErrorWithLevel(iowrappers.CreateLogger(), utils.LogFatal)
+}
 
 func TestSolver_filterPlaces1(t *testing.T) {
 	type fields struct {

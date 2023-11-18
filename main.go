@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
 	"os"
 	"os/signal"
@@ -43,6 +45,10 @@ type Configurations struct {
 			EnableMapsPhotoClient     bool `yaml:"enable_maps_photo_client"`
 		} `yaml:"plan_solver"`
 	} `yaml:"server"`
+}
+
+func init() {
+	utils.LogErrorWithLevel(iowrappers.CreateLogger(), utils.LogFatal)
 }
 
 // flatten configs as a key-value map
