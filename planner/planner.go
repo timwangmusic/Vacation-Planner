@@ -147,6 +147,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	}
 	p.Configs = configs
 
+	var err error
 	// initialize photo client
 	var enableMapsPhotoClient = false
 	if flagEnableMapsPhotoClient, exists := p.Configs["server:plan_solver:enable_maps_photo_client"]; exists {
@@ -155,7 +156,11 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	} else {
 		logger.Errorf("failed to load flag server:plan_solver:enableMapsPhotoClient!")
 	}
-	p.PhotoClient = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enableMapsPhotoClient)
+  
+	p.PhotoClient, err = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enableMapsPhotoClient)
+	if err != nil {
+		log.Fatalf("failed to initialize photo client, err:%v\n", err)
+	}
 
 	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
@@ -171,7 +176,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
 	}
 	p.GeonamesApiKey = geonamesApiKey
-	var err error
+
 	geocodes, err = p.RedisClient.GetCities(context.Background())
 	if err != nil {
 		logger.Errorf("failed to load city geocodes: %v", err.Error())
@@ -605,7 +610,7 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		// Show the first place by default
 		tripResp.ShownActive = append(tripResp.ShownActive, idx == 0)
 
-		go p.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], place)
+		go p.asyncGetTripRespPlaceDetails(ctx, &wg, &tripResp.PlaceDetails[idx], place)
 	}
 	wg.Wait()
 
@@ -618,19 +623,24 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, tripResp), utils.LogError)
 }
 
-func (p *MyPlanner) asyncGetTripRespPlaceDetails(wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
-	*resp = p.getTripFromPlace(place)
+func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
+	var err error
+	*resp, err = p.getTripFromPlace(ctx, place)
+	if err != nil {
+		iowrappers.Logger.Error(err)
+	}
 	wg.Done()
 }
 
-func (p *MyPlanner) getTripFromPlace(place POI.Place) PlaceDetailsResp {
+func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
+	photoURL, err := p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference)
 	return PlaceDetailsResp{
 		Name:             place.Name,
 		URL:              place.URL,
 		FormattedAddress: place.FormattedAddress,
-		PhotoURL:         string(p.PhotoClient.GetPhotoURL(place.Photo.Reference)),
-		Summary:          place.GetSummary(),
-	}
+		PhotoURL:         string(photoURL),
+    Summary:          place.GetSummary(),
+	}, err
 }
 
 func (p *MyPlanner) login(ctx *gin.Context) {
