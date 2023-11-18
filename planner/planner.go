@@ -610,7 +610,7 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		// Show the first place by default
 		tripResp.ShownActive = append(tripResp.ShownActive, idx == 0)
 
-		go p.asyncGetTripRespPlaceDetails(&wg, &tripResp.PlaceDetails[idx], place)
+		go p.asyncGetTripRespPlaceDetails(ctx, &wg, &tripResp.PlaceDetails[idx], place)
 	}
 	wg.Wait()
 
