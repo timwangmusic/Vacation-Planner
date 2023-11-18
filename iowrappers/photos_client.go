@@ -125,7 +125,6 @@ func dfs(node *html.Node, judger func(*html.Node) bool, validator func(string) b
 }
 
 func (photoClient *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string) (PhotoURL, error) {
-	// get PlacePhotoResponse
 	resp, err := photoClient.maps_client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
 		PhotoReference: photoRef,
 		MaxWidth:       400,
