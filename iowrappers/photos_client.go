@@ -31,11 +31,10 @@ type PhotoClient interface {
 	GetPhotoURL(context.Context, string) (PhotoURL, error)
 }
 
-// Use Google Map API
 type MapsPhotoClient struct {
-	maps_client *maps.Client
-	apiKey      string
-	apiBaseURL  string
+	mapsClient *maps.Client
+	apiKey     string
+	apiBaseURL string
 }
 
 type PhotoHttpClient struct {
@@ -51,7 +50,7 @@ func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool)
 		if err != nil {
 			return &MapsPhotoClient{}, err
 		}
-		return &MapsPhotoClient{maps_client: mapsClient, apiKey: apiKey, apiBaseURL: baseURL}, nil
+		return &MapsPhotoClient{mapsClient: mapsClient, apiKey: apiKey, apiBaseURL: baseURL}, nil
 	}
 	return &PhotoHttpClient{
 		// turn off http auto-direct
@@ -125,24 +124,24 @@ func dfs(node *html.Node, judger func(*html.Node) bool, validator func(string) b
 }
 
 func (photoClient *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string) (PhotoURL, error) {
-	resp, err := photoClient.maps_client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
+	var photoURL PhotoURL
+	resp, err := photoClient.mapsClient.PlacePhoto(ctx, &maps.PlacePhotoRequest{
 		PhotoReference: photoRef,
 		MaxWidth:       400,
 	})
 	if err != nil {
-		return PhotoURL(""), err
+		return photoURL, err
 	}
 
-	// get image data
 	image, err := resp.Image()
 	if err != nil {
-		return PhotoURL(""), err
+		return photoURL, err
 	}
 
 	// encode image to base64
 	buffer := new(bytes.Buffer)
 	if err := jpeg.Encode(buffer, image, nil); err != nil {
-		return PhotoURL(""), err
+		return photoURL, err
 	}
 	data := base64.StdEncoding.EncodeToString(buffer.Bytes())
 	return PhotoURL(data), nil
