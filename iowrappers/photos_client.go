@@ -173,6 +173,9 @@ func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, plac
 			} else {
 				img, err = resp.Image()
 			}
+			if err != nil {
+				return photoURL, err
+			}
 		}
 	}
 

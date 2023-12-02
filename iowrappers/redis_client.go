@@ -675,7 +675,7 @@ func (r *RedisClient) PlanningSolutions(context context.Context, request *Planni
 func (r *RedisClient) FetchSingleRecord(context context.Context, redisKey string, response interface{}) error {
 	json_, err := r.client.Get(context, redisKey).Result()
 	if err != nil {
-		return errors.New(fmt.Sprintf("[request_id: %s] redis server find no result for key: %s", context.Value(ContextRequestIdKey), redisKey))
+		return fmt.Errorf("[request_id: %s] redis server find no result for key: %s", context.Value(ContextRequestIdKey), redisKey)
 	}
 	err = json.Unmarshal([]byte(json_), response)
 	if err != nil {
