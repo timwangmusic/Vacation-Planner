@@ -115,6 +115,7 @@ type TripDetailResp struct {
 }
 
 type PlaceDetailsResp struct {
+	ID               string
 	Name             string
 	URL              string
 	FormattedAddress string
@@ -156,7 +157,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	} else {
 		logger.Errorf("failed to load flag server:plan_solver:enableMapsPhotoClient!")
 	}
-  
+
 	p.PhotoClient, err = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enableMapsPhotoClient)
 	if err != nil {
 		log.Fatalf("failed to initialize photo client, err:%v\n", err)
@@ -635,11 +636,12 @@ func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.W
 func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
 	photoURL, err := p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference)
 	return PlaceDetailsResp{
-		Name:             place.Name,
-		URL:              place.URL,
-		FormattedAddress: place.FormattedAddress,
+		ID:               place.GetID(),
+		Name:             place.GetName(),
+		URL:              place.GetURL(),
+		FormattedAddress: place.GetFormattedAddress(),
 		PhotoURL:         string(photoURL),
-    Summary:          place.GetSummary(),
+		Summary:          place.GetSummary(),
 	}, err
 }
 
