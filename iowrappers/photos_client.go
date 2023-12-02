@@ -6,7 +6,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"image"
 	"image/jpeg"
+	"image/png"
 	"io"
 	"net/http"
 	"strings"
@@ -28,13 +31,14 @@ var isValidPhotoUrl = func(url string) bool {
 type PhotoURL string
 
 type PhotoClient interface {
-	GetPhotoURL(context.Context, string) (PhotoURL, error)
+	GetPhotoURL(context.Context, string, string) (PhotoURL, error)
 }
 
 type MapsPhotoClient struct {
-	mapsClient *maps.Client
-	apiKey     string
-	apiBaseURL string
+	redisClient *RedisClient
+	mapsClient  *MapsClient
+	apiKey      string
+	apiBaseURL  string
 }
 
 type PhotoHttpClient struct {
@@ -44,13 +48,11 @@ type PhotoHttpClient struct {
 }
 
 // CreatePhotoClient is a factory method for PhotoClient
-func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool) (PhotoClient, error) {
+func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool, placeDetailsFields []string, redisClient *RedisClient) (PhotoClient, error) {
 	if enableMapPhotoClient {
-		mapsClient, err := maps.NewClient(maps.WithAPIKey(apiKey))
-		if err != nil {
-			return &MapsPhotoClient{}, err
-		}
-		return &MapsPhotoClient{mapsClient: mapsClient, apiKey: apiKey, apiBaseURL: baseURL}, nil
+		mapsClient := CreateMapsClient(apiKey)
+		mapsClient.SetDetailedSearchFields(placeDetailsFields)
+		return &MapsPhotoClient{mapsClient: mapsClient, apiKey: apiKey, apiBaseURL: baseURL, redisClient: redisClient}, nil
 	}
 	return &PhotoHttpClient{
 		// turn off http auto-direct
@@ -61,7 +63,7 @@ func CreatePhotoClient(apiKey string, baseURL string, enableMapPhotoClient bool)
 		}, apiKey: apiKey, apiBaseURL: baseURL}, nil
 }
 
-func (photoClient *PhotoHttpClient) GetPhotoURL(ctx context.Context, photoRef string) (PhotoURL, error) {
+func (photoClient *PhotoHttpClient) GetPhotoURL(ctx context.Context, photoRef string, s string) (PhotoURL, error) {
 	var photoURL PhotoURL
 	var reqURL = fmt.Sprintf(photoClient.apiBaseURL, photoRef, photoClient.apiKey)
 	res, err := photoClient.client.Get(reqURL)
@@ -123,9 +125,9 @@ func dfs(node *html.Node, judger func(*html.Node) bool, validator func(string) b
 	return "", false
 }
 
-func (photoClient *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string) (PhotoURL, error) {
+func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, placeId string) (PhotoURL, error) {
 	var photoURL PhotoURL
-	resp, err := photoClient.mapsClient.PlacePhoto(ctx, &maps.PlacePhotoRequest{
+	resp, err := c.mapsClient.client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
 		PhotoReference: photoRef,
 		MaxWidth:       400,
 	})
@@ -133,14 +135,50 @@ func (photoClient *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef st
 		return photoURL, err
 	}
 
-	image, err := resp.Image()
-	if err != nil {
-		return photoURL, err
+	Logger.Debugf("photo response content type is: %s", resp.ContentType)
+	var img image.Image
+	if resp.ContentType == "image/png" {
+		img, err = png.Decode(resp.Data)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		img, err = resp.Image()
+		// content type maybe text/html, need to update place photo reference
+		if err != nil {
+			var r maps.PlaceDetailsResult
+			r, err = c.mapsClient.PlaceDetailedSearch(ctx, placeId, c.mapsClient.DetailedSearchFields)
+			if err != nil {
+				return photoURL, err
+			}
+
+			data := make(map[string]interface{})
+			if len(r.Photos) > 0 {
+				data["photo"] = POI.PlacePhoto{Reference: r.Photos[0].PhotoReference, Width: 400}
+			}
+			err = c.redisClient.UpdatePlace(ctx, placeId, data)
+			if err != nil {
+				return photoURL, err
+			}
+			// try once again after the photo reference is updated
+			resp, err = c.mapsClient.client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
+				PhotoReference: r.Photos[0].PhotoReference,
+				MaxWidth:       400,
+			})
+			if err != nil {
+				return photoURL, err
+			}
+			if resp.ContentType == "image/png" {
+				img, err = png.Decode(resp.Data)
+			} else {
+				img, err = resp.Image()
+			}
+		}
 	}
 
-	// encode image to base64
+	// encode img to base64
 	buffer := new(bytes.Buffer)
-	if err := jpeg.Encode(buffer, image, nil); err != nil {
+	if err = jpeg.Encode(buffer, img, nil); err != nil {
 		return photoURL, err
 	}
 	data := base64.StdEncoding.EncodeToString(buffer.Bytes())

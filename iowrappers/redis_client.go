@@ -195,6 +195,29 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 	wg.Wait()
 }
 
+func (r *RedisClient) UpdatePlace(ctx context.Context, id string, data map[string]interface{}) error {
+	var p POI.Place
+	err := r.FetchSingleRecord(ctx, PlaceDetailsRedisKeyPrefix+id, &p)
+	if err != nil {
+		return err
+	}
+
+	for field, val := range data {
+		switch field {
+		case "photo":
+			p.Photo = val.(POI.PlacePhoto)
+		default:
+			return errors.New("field not known")
+		}
+	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	r.setPlace(ctx, p, wg)
+	wg.Wait()
+	return nil
+}
+
 func updateCity(ctx context.Context, pipe redis.Pipeliner, city *City) error {
 	key := strings.Join([]string{CityRedisKeyPrefix, city.ID}, ":")
 	json_, err := json.Marshal(city)
