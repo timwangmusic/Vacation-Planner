@@ -32,10 +32,8 @@ func (s *PoiSearcher) RemovePlaces(context context.Context, nonEmptyFields []Pla
 
 func (r *RedisClient) RemovePlaces(context context.Context, nonEmptyFields []PlaceDetailsFields) error {
 	var placeDetailsKeys []string
-	redisKeyPrefix := "place_details:place_ID:"
-
 	var err error
-	placeDetailsKeys, err = scanRedisKeys(context, r, redisKeyPrefix)
+	placeDetailsKeys, err = scanRedisKeys(context, r, PlaceDetailsRedisKeyPrefix)
 	if err != nil {
 		return err
 	}
