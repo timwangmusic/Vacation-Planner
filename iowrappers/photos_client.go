@@ -149,24 +149,26 @@ func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, plac
 			var r maps.PlaceDetailsResult
 			r, err = c.mapsClient.PlaceDetailedSearch(ctx, placeId, c.mapsClient.DetailedSearchFields)
 			if err != nil {
-				return photoURL, err
+				return "", err
 			}
 
 			data := make(map[string]interface{})
 			if len(r.Photos) > 0 {
 				data["photo"] = POI.PlacePhoto{Reference: r.Photos[0].PhotoReference, Width: 400}
+			} else {
+				return "", errors.New("cannot find photos from place details request")
 			}
 			err = c.redisClient.UpdatePlace(ctx, placeId, data)
 			if err != nil {
-				return photoURL, err
+				return "", err
 			}
-			// try once again after the photo reference is updated
+
 			resp, err = c.mapsClient.client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
 				PhotoReference: r.Photos[0].PhotoReference,
 				MaxWidth:       400,
 			})
 			if err != nil {
-				return photoURL, err
+				return "", err
 			}
 			if resp.ContentType == "image/png" {
 				img, err = png.Decode(resp.Data)
@@ -174,15 +176,15 @@ func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, plac
 				img, err = resp.Image()
 			}
 			if err != nil {
-				return photoURL, err
+				return "", err
 			}
 		}
 	}
 
-	// encode img to base64
+	// encode image to base64
 	buffer := new(bytes.Buffer)
 	if err = jpeg.Encode(buffer, img, nil); err != nil {
-		return photoURL, err
+		return "", err
 	}
 	data := base64.StdEncoding.EncodeToString(buffer.Bytes())
 	return PhotoURL(data), nil
