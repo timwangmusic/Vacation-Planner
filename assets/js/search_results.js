@@ -99,10 +99,7 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
 
 document
   .getElementById("profile")
-  .addEventListener(
-    "click",
-    () => (window.location = `/v1/profile?username=` + username)
-  );
+  .addEventListener("click", () => (window.location = "/v1/profile"));
 
 const rollUpButton = document.getElementById("scroll-to-top");
 rollUpButton.addEventListener("click", () => {
