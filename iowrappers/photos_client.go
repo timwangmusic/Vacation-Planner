@@ -18,7 +18,10 @@ import (
 	"googlemaps.github.io/maps"
 )
 
-const ValidPrefix = "https://lh3.googleusercontent.com/places/"
+const (
+	ValidPrefix        = "https://lh3.googleusercontent.com/places/"
+	UnknownImageFormat = "unknown image format"
+)
 
 var isHtmlAnchor = func(node *html.Node) bool {
 	return node.Type == html.ElementNode && node.Data == "a"
@@ -126,26 +129,11 @@ func dfs(node *html.Node, judger func(*html.Node) bool, validator func(string) b
 }
 
 func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, placeId string) (PhotoURL, error) {
-	var photoURL PhotoURL
-	resp, err := c.mapsClient.client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
-		PhotoReference: photoRef,
-		MaxWidth:       400,
-	})
+	img, err := c.placeImage(ctx, photoRef)
 	if err != nil {
-		return photoURL, err
-	}
-
-	Logger.Debugf("photo response content type is: %s", resp.ContentType)
-	var img image.Image
-	if resp.ContentType == "image/png" {
-		img, err = png.Decode(resp.Data)
-		if err != nil {
-			return "", err
-		}
-	} else {
-		img, err = resp.Image()
-		// content type maybe text/html, need to update place photo reference
-		if err != nil {
+		// we may fail to decode the image data due to unknown format such as html/text.
+		// the error may be due to stale photo reference in the databases.
+		if strings.HasPrefix(err.Error(), UnknownImageFormat) {
 			var r maps.PlaceDetailsResult
 			r, err = c.mapsClient.PlaceDetailedSearch(ctx, placeId, c.mapsClient.DetailedSearchFields)
 			if err != nil {
@@ -158,26 +146,20 @@ func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, plac
 			} else {
 				return "", errors.New("cannot find photos from place details request")
 			}
+
+			// update photo reference for the place
 			err = c.redisClient.UpdatePlace(ctx, placeId, data)
 			if err != nil {
 				return "", err
 			}
 
-			resp, err = c.mapsClient.client.PlacePhoto(ctx, &maps.PlacePhotoRequest{
-				PhotoReference: r.Photos[0].PhotoReference,
-				MaxWidth:       400,
-			})
+			img, err = c.placeImage(ctx, r.Photos[0].PhotoReference)
 			if err != nil {
 				return "", err
 			}
-			if resp.ContentType == "image/png" {
-				img, err = png.Decode(resp.Data)
-			} else {
-				img, err = resp.Image()
-			}
-			if err != nil {
-				return "", err
-			}
+		} else {
+			// http request failure or other error
+			return "", err
 		}
 	}
 
@@ -188,4 +170,22 @@ func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, plac
 	}
 	data := base64.StdEncoding.EncodeToString(buffer.Bytes())
 	return PhotoURL(data), nil
+}
+
+func (c *MapsPhotoClient) placeImage(ctx context.Context, ref string) (image.Image, error) {
+	resp, err := c.mapsClient.client.PlacePhoto(ctx, &maps.PlacePhotoRequest{PhotoReference: ref, MaxWidth: 400})
+	if err != nil {
+		return nil, err
+	}
+
+	Logger.Debugf("photo response content type is: %s", resp.ContentType)
+
+	switch resp.ContentType {
+	case "image/png":
+		return png.Decode(resp.Data)
+	case "image/jpeg":
+		return resp.Image()
+	default:
+		return nil, fmt.Errorf(UnknownImageFormat+": %s", resp.ContentType)
+	}
 }
