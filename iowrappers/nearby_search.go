@@ -197,7 +197,7 @@ type PlaceDetailsSearchResult struct {
 
 func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailsSearchResult, wg *sync.WaitGroup) {
 	defer wg.Done()
-	searchRes, err := PlaceDetailedSearch(context, mapsClient, placeId, fields)
+	searchRes, err := mapsClient.PlaceDetailedSearch(context, placeId, fields)
 	if err != nil {
 		Logger.Error(err)
 		return
@@ -205,8 +205,8 @@ func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, 
 	*detailSearchRes = PlaceDetailsSearchResult{res: &searchRes, idx: idx}
 }
 
-func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeId string, fields []string) (maps.PlaceDetailsResult, error) {
-	if reflect.ValueOf(mapsClient).IsNil() {
+func (c *MapsClient) PlaceDetailedSearch(context context.Context, placeId string, fields []string) (maps.PlaceDetailsResult, error) {
+	if reflect.ValueOf(c.client).IsNil() {
 		err := errors.New("client does not exist")
 		return maps.PlaceDetailsResult{}, err
 	}
@@ -222,7 +222,7 @@ func PlaceDetailedSearch(context context.Context, mapsClient *MapsClient, placeI
 		req.Fields = fieldMask
 	}
 
-	resp, err := mapsClient.client.PlaceDetails(context, req)
+	resp, err := c.client.PlaceDetails(context, req)
 	return resp, err
 }
 

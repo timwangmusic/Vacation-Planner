@@ -36,6 +36,7 @@ const (
 	CitiesRedisKey                 = "known_cities_ids"
 	KnownCitiesHashMapRedisKey     = "known_cities_name_to_id"
 	MapsLastSearchTimeRedisKey     = "MapsLastSearchTime"
+	PlaceDetailsRedisKeyPrefix     = "place_details:place_ID:"
 )
 
 var RedisClientDefaultBlankContext context.Context
@@ -103,7 +104,7 @@ func (r *RedisClient) setPlace(context context.Context, place POI.Place, wg *syn
 	json_, err := json.Marshal(place)
 	utils.LogErrorWithLevel(err, utils.LogError)
 
-	_, err = r.client.Set(context, "place_details:place_ID:"+place.ID, json_, 0).Result()
+	_, err = r.client.Set(context, PlaceDetailsRedisKeyPrefix+place.ID, json_, 0).Result()
 	if err != nil {
 		Logger.Error(err)
 	}
@@ -183,7 +184,7 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 				pipe.GeoAdd(c, redisKey, geoLocation)
 
 				json_, err := json.Marshal(place)
-				pipe.Set(c, "place_details:place_ID:"+place.ID, json_, 0)
+				pipe.Set(c, PlaceDetailsRedisKeyPrefix+place.ID, json_, 0)
 				return err
 			})
 			if err != nil {
@@ -192,6 +193,29 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 		}(place)
 	}
 	wg.Wait()
+}
+
+func (r *RedisClient) UpdatePlace(ctx context.Context, id string, data map[string]interface{}) error {
+	var p POI.Place
+	err := r.FetchSingleRecord(ctx, PlaceDetailsRedisKeyPrefix+id, &p)
+	if err != nil {
+		return err
+	}
+
+	for field, val := range data {
+		switch field {
+		case "photo":
+			p.Photo = val.(POI.PlacePhoto)
+		default:
+			return errors.New("field not known")
+		}
+	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	r.setPlace(ctx, p, wg)
+	wg.Wait()
+	return nil
 }
 
 func updateCity(ctx context.Context, pipe redis.Pipeliner, city *City) error {
@@ -312,7 +336,7 @@ func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64
 
 // obtain place info from Redis based with key place_details:place_ID:placeID
 func (r *RedisClient) getPlace(context context.Context, placeId string) (place POI.Place, err error) {
-	res, err := r.client.Get(context, "place_details:place_ID:"+placeId).Result()
+	res, err := r.client.Get(context, PlaceDetailsRedisKeyPrefix+placeId).Result()
 	utils.LogErrorWithLevel(err, utils.LogError)
 	if err != nil {
 		return
@@ -651,12 +675,10 @@ func (r *RedisClient) PlanningSolutions(context context.Context, request *Planni
 func (r *RedisClient) FetchSingleRecord(context context.Context, redisKey string, response interface{}) error {
 	json_, err := r.client.Get(context, redisKey).Result()
 	if err != nil {
-		Logger.Debugf("[request_id: %s] redis server find no result for key: %s", context.Value(ContextRequestIdKey), redisKey)
-		return err
+		return fmt.Errorf("[request_id: %s] redis server find no result for key: %s", context.Value(ContextRequestIdKey), redisKey)
 	}
 	err = json.Unmarshal([]byte(json_), response)
 	if err != nil {
-		Logger.Error(err)
 		return err
 	}
 	return nil
