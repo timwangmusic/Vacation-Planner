@@ -114,10 +114,7 @@ document.addEventListener("visibilitychange", hideSpinner);
 
 document
   .getElementById("profile")
-  .addEventListener(
-    "click",
-    () => (window.location = `/v1/profile?username=` + username)
-  );
+  .addEventListener("click", () => (window.location = "/v1/profile"));
 
 const nearbyCitiesFlag = document.getElementById("use-nearby-cities-flag");
 document

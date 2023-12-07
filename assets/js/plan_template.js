@@ -184,7 +184,7 @@ function parseResponse(response) {
       createPlanResultTables(plansCount);
       $.each(response["travel_plans"], function (idx, plan) {
         console.log("processing travel plan:", plan);
-        $(`#plan-details-btn-${idx}`).attr('href', `/v1/plans/${plan.id}`);
+        $(`#plan-details-btn-${idx}`).attr("href", `/v1/plans/${plan.id}`);
         let planTableBody = $(`#plan-${idx} tbody`);
         $.each(plan.places, function (_, place) {
           let aTag = $("<a>", {
@@ -261,9 +261,7 @@ function createPlanResultTables(planCount) {
   }
 }
 
-$("#profile").click(
-  () => (window.location = `/v1/profile?username=` + username)
-);
+$("#profile").click(() => (window.location = "/v1/profile"));
 
 // auto-completes location input
 locationAutocomplete(jQuery);
