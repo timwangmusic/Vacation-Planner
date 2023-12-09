@@ -100,3 +100,52 @@ tr:nth-child(even) {
         text-align: center;
     }
 }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.full-expanded-footer {
+    background-color: #f5f5f5;
+    padding: 20px 0;
+    text-align: center;
+    border-top: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.footer-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.footer-links,
+.footer-social {
+    flex-basis: 100%;
+    margin-bottom: 20px;
+}
+
+.footer-links a {
+    color: #891b1b;
+    text-decoration: none;
+    margin: 0 20px;
+    font-size: 16px;
+}
+
+.footer-social a img {
+    max-width: 30px;
+    margin: 0 15px;
+}
+
+/* Media queries for responsiveness */
+@media only screen and (min-width: 600px) {
+    .footer-links,
+    .footer-social {
+        flex-basis: auto;
+        margin-bottom: 0;
+    }
+}
+
+
