@@ -72,15 +72,13 @@
 
             <div class="dropdown">
                 <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
-                    data-bs-toggle="dropdown" aria-expanded="false">guest
+                    data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-users"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:120px;" aria-labelledby="user-profile">
                     <li>
                         <a class="dropdown-item p-0" id="profile">
                             <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class="material-icons">
-                                    account_circle
-                                </span>
+                                <i class="fa-regular fa-address-card"></i>
                                 <span> Profile </span>
                             </div>
                         </a>
@@ -88,9 +86,7 @@
                     <li id="login-button-item" class="d-none">
                         <a class="dropdown-item p-0" href="/v1/log-in">
                             <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class="material-icons">
-                                    login
-                                </span>
+                                <i class="fa-solid fa-right-to-bracket"></i>
                                 <span>Login</span>
                             </div>
                         </a>
@@ -98,9 +94,7 @@
                     <li id="logout-button-item">
                         <a class="dropdown-item p-0" data-bs-toggle="modal" data-bs-target="#logout-confirm" href="#">
                             <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class=" material-icons">
-                                    logout
-                                </span>
+                                <i class="fa-solid fa-right-from-bracket"></i>
                                 <span>Logout</span>
                             </div>
                         </a>
@@ -175,7 +169,7 @@
                     </select>
                 </div>
                 <div class="d-flex flex-row-reverse ps-1 pe-0 mt-1">
-                    <button class="btn btn-outline-primary" type="submit" id="searchBtn">search</button>
+                    <button class="btn btn-outline-primary" type="submit" id="searchBtn"><i class="fa-solid fa-magnifying-glass"></i></button>
                     <div class="form-check form-switch me-2 mt-2">
                         <input class="form-check-input" type="checkbox" id="searchNearbyCities">
                         <label class="form-check-label" for="searchNearbyCities">Include nearby cities</label>
