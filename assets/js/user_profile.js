@@ -92,7 +92,9 @@ function getUserPlans() {
         for (let i = 0; i < plans.length; i++) {
           renderCard(plans[i], i);
         }
-        $("#load-more-plans-btn").css("display", "");
+        if (plans.length > initNumPlansShown) {
+          $("#load-more-plans-btn").css("display", "");
+        }
       }
     })
     .catch((err) => console.error(err));
