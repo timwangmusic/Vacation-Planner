@@ -156,7 +156,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	} else {
 		logger.Errorf("failed to load flag server:plan_solver:enableMapsPhotoClient!")
 	}
-  
+
 	p.PhotoClient, err = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enableMapsPhotoClient)
 	if err != nil {
 		log.Fatalf("failed to initialize photo client, err:%v\n", err)
@@ -639,7 +639,7 @@ func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) (Plac
 		URL:              place.URL,
 		FormattedAddress: place.FormattedAddress,
 		PhotoURL:         string(photoURL),
-    Summary:          place.GetSummary(),
+		Summary:          place.GetSummary(),
 	}, err
 }
 
@@ -809,6 +809,10 @@ func (p *MyPlanner) fourZeroFourPage(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "404.html", gin.H{})
 }
 
+func (p *MyPlanner) aboutPage(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "about.html", gin.H{})
+}
+
 // when users click on the reset password button this handler requests mailer to send password reset emails
 func (p *MyPlanner) resetPasswordHandler(ctx *gin.Context) {
 	logger := iowrappers.Logger
@@ -881,6 +885,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
 		v1.POST("/nearby-cities", p.getNearbyCities)
 		v1.POST("/optimal-plan", p.getOptimalPlan)
+		v1.POST("/about", p.aboutPage)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)
