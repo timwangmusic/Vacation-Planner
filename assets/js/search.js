@@ -48,7 +48,6 @@ $(document).ready(() => {
   // FIXME: not a clean solution, improve this after we use front-end rendering
   const url = new URL(document.referrer);
   if (url.pathname === "/v1/" && pageIsNavigated()) {
-    console.debug("no planning solution is found");
     $("#no-plan-error-alert").removeClass("d-none");
   }
 });
