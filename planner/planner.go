@@ -524,7 +524,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 
 	planningReq := standardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.WithNearbyCities = enableNearbyCities
-	planningReq.SearchRadius = 10000 // default to 10km
+	planningReq.SearchRadius = DefaultPlaceSearchRadius
 	planningReq.PreciseLocation = preciseLocation
 	logger.Debugf("use precise location: %t", preciseLocation)
 	if preciseLocation {
