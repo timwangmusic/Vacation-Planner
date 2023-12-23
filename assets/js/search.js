@@ -52,24 +52,6 @@ $(document).ready(() => {
   }
 
   document.querySelector("#crack-house").addEventListener("click", crackedHouseClickedState);
-  document.addEventListener('DOMContentLoaded', function (event) {
-    // get the footer element
-    let footer = document.querySelector('footer');
-
-    // Attach a click Event Listener to the footer
-    footer.addEventListener('click', function (event) {
-      console.log(`Did we click!!`)
-    })
-    //is_cracked_house_clicked = true;
-  })
-  // HOME_FOOTER.addEventListener("change", function () {
-  //   var footer = document.querySelector('footer');
-  //   footer.addEventListener('click', function (event) {
-  //     if (event.target.classList.contains('fa-solid fa-house-chimney-crack fa-xl')) {
-  //       console.log('The link inside the footer has been clicked..')
-  //     }
-  //   })
-  // })
 
   // FIXME: not a clean solution, improve this after we use front-end rendering
   const url = new URL(document.referrer);
