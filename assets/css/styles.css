@@ -131,6 +131,7 @@ body {
     text-decoration: none;
     margin: 0 20px;
     font-size: 16px;
+    cursor: pointer;
 }
 
 .footer-social a img {
