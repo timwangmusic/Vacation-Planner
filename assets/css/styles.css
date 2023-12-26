@@ -30,6 +30,10 @@ h1 {
     background-color: whitesmoke;
 }
 
+.inherit-line-height {
+    line-height: inherit;
+}
+
 h3 {
     color: mediumvioletred;
 }
