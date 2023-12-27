@@ -25,13 +25,12 @@ button.square-button {
 h1 {
     text-align: center;
     color: #24c1e0;
-    line-height: 100px;
     margin: 0;
     background-color: whitesmoke;
 }
 
 .inherit-line-height {
-    line-height: inherit;
+    line-height: 100px;
 }
 
 h3 {
