@@ -23,7 +23,7 @@ import (
 const (
 	NumPlansDefault                       = 5
 	TopSolutionsCountDefault              = 5
-	DefaultPlaceSearchRadius              = 10000
+	DefaultPlaceSearchRadius              = 20000 // default to 20km (~12.43 miles)
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
 	ErrMsgMismatchIterAndPlace            = "mismatch in iterator status vector length"
 	ErrMsgRepeatedPlaceInSameTrip         = "repeated places in the same trip"
@@ -138,7 +138,7 @@ func (s *Solver) SolveHungarianOptimal(ctx context.Context, req *PlanningRequest
 	places := make([]matching.Place, len(placeIDs))
 	results := make([]PlacePlanningDetails, len(placeIDs))
 	for idx, id := range placeIDs {
-		err = s.Searcher.GetRedisClient().FetchSingleRecord(ctx, "place_details:place_ID:"+id, &places[idx].Place)
+		err = s.Searcher.GetRedisClient().FetchSingleRecord(ctx, iowrappers.PlaceDetailsRedisKeyPrefix+id, &places[idx].Place)
 		if err != nil {
 			return nil, err
 		}
@@ -293,7 +293,7 @@ func standardRequest(travelDate string, weekday POI.Weekday, numResults int, pri
 	return
 }
 
-func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]matching.Place) (PlanningSolution, error) {
+func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]matching.Place, radius uint) (PlanningSolution, error) {
 	var res PlanningSolution
 	if len(placeIndexes) != len(placeClusters) {
 		return res, errors.New(ErrMsgMismatchIterAndPlace)
@@ -327,14 +327,14 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 		}
 		res.PlaceURLs = append(res.PlaceURLs, place.Url())
 	}
-	// TODO: replace default search radius with user search input
-	res.Score = matching.Score(places, DefaultPlaceSearchRadius)
+
+	res.Score = matching.Score(places, int(radius))
 	res.ScoreOld = matching.ScoreOld(places)
 	res.ID = uuid.NewString()
 	return res, nil
 }
 
-func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator) (resp *PlanningResp) {
+func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator, radius uint) (resp *PlanningResp) {
 	if topSolutionsCount <= 0 {
 		topSolutionsCount = TopSolutionsCountDefault
 	}
@@ -354,7 +354,7 @@ func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters []
 		default:
 			var candidate PlanningSolution
 			var err error
-			candidate, err = createPlanningSolutionCandidate(iterator.Status, placeClusters)
+			candidate, err = createPlanningSolutionCandidate(iterator.Status, placeClusters, radius)
 			iterator.Next()
 			if err != nil {
 				log.Debug(err)
@@ -513,7 +513,7 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 
 		places, err := matching.NearbySearchForCategory(ctx, s.Searcher, &matching.Request{
-			Radius:             DefaultPlaceSearchRadius,
+			Radius:             req.SearchRadius,
 			Location:           req.Location,
 			Category:           slot.Category,
 			UsePreciseLocation: req.PreciseLocation,
@@ -575,7 +575,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (r
 		return
 	}
 
-	return s.FindBestPlanningSolutions(ctx, placeClusters, req.NumPlans, mdIter)
+	return s.FindBestPlanningSolutions(ctx, placeClusters, req.NumPlans, mdIter, req.SearchRadius)
 }
 
 func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningRequest, solutions []PlanningSolution) error {

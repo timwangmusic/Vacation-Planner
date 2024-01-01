@@ -8,6 +8,7 @@ server:
       - url
       - user_ratings_total
       - editorial_summary
+      - photos
   plan_solver:
     same_place_dedupe_count_limit: 2
     nearby_cities_count_limit: 3

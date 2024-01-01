@@ -115,6 +115,7 @@ type TripDetailResp struct {
 }
 
 type PlaceDetailsResp struct {
+	ID               string
 	Name             string
 	URL              string
 	FormattedAddress string
@@ -157,11 +158,6 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		logger.Errorf("failed to load flag server:plan_solver:enableMapsPhotoClient!")
 	}
 
-	p.PhotoClient, err = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enableMapsPhotoClient)
-	if err != nil {
-		log.Fatalf("failed to initialize photo client, err:%v\n", err)
-	}
-
 	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 	if v, exists := p.Configs["server:plan_solver:same_place_dedupe_count_limit"]; exists {
@@ -172,9 +168,17 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		logger.Fatal("failed to initialize the planner")
 	}
 
+	var placeDetailsFields []string
 	if v, exists := p.Configs["server:google_maps:detailed_search_fields"]; exists {
-		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(v.([]string))
+		placeDetailsFields = v.([]string)
+		p.Solver.Searcher.GetMapsClient().SetDetailedSearchFields(placeDetailsFields)
 	}
+
+	p.PhotoClient, err = iowrappers.CreatePhotoClient(mapsClientApiKey, PhotoApiBaseURL, enableMapsPhotoClient, placeDetailsFields, p.RedisClient)
+	if err != nil {
+		log.Fatalf("failed to initialize photo client, err:%v\n", err)
+	}
+
 	p.GeonamesApiKey = geonamesApiKey
 
 	geocodes, err = p.RedisClient.GetCities(context.Background())
@@ -520,7 +524,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 
 	planningReq := standardRequest(date, toWeekday(date), numResultsInt, toPriceLevel(priceLevel))
 	planningReq.WithNearbyCities = enableNearbyCities
-	planningReq.SearchRadius = 10000 // default to 10km
+	planningReq.SearchRadius = DefaultPlaceSearchRadius
 	planningReq.PreciseLocation = preciseLocation
 	logger.Debugf("use precise location: %t", preciseLocation)
 	if preciseLocation {
@@ -633,11 +637,12 @@ func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.W
 }
 
 func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
-	photoURL, err := p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference)
+	photoURL, err := p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference, place.GetID())
 	return PlaceDetailsResp{
-		Name:             place.Name,
-		URL:              place.URL,
-		FormattedAddress: place.FormattedAddress,
+		ID:               place.GetID(),
+		Name:             place.GetName(),
+		URL:              place.GetURL(),
+		FormattedAddress: place.GetFormattedAddress(),
 		PhotoURL:         string(photoURL),
 		Summary:          place.GetSummary(),
 	}, err
@@ -843,6 +848,26 @@ func (p *MyPlanner) getNearbyCities(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"cities": resp.Cities})
 }
 
+func (p *MyPlanner) GetPlaceDetails(ctx *gin.Context) {
+	id := ctx.Param("id")
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, "place ID is missing")
+	}
+
+	var place POI.Place
+	requestId := requestid.Get(ctx)
+	ctx_ := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
+	err := p.RedisClient.FetchSingleRecord(ctx_, iowrappers.PlaceDetailsRedisKeyPrefix+id, &place)
+	if err != nil {
+		if strings.Contains(err.Error(), "redis server find no result for key") {
+			ctx.JSON(http.StatusBadRequest, "the requested place does not exist in the system")
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, "failed to find place details")
+	}
+	ctx.JSON(http.StatusOK, place)
+}
+
 func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if p.Environment == "debug" {
@@ -900,6 +925,11 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			users.POST("/:username/plans", p.userSavedPlansPostHandler)
 			users.GET("/:username/plans", p.userSavedPlansGetHandler)
 			users.DELETE("/:username/plan/:id", p.userPlanDeleteHandler)
+		}
+
+		places := v1.Group("/places")
+		{
+			places.GET("/:id", p.GetPlaceDetails)
 		}
 	}
 

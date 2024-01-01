@@ -65,7 +65,7 @@ func init() {
 
 	// if place are not cached, it is possibly because of GeoAdd failure
 	for _, place := range places {
-		if !RedisMockSvr.Exists("place_details:place_ID:" + place.ID) {
+		if !RedisMockSvr.Exists(iowrappers.PlaceDetailsRedisKeyPrefix + place.ID) {
 			log.Errorf("place with ID %s does not exist in Redis", place.ID)
 		}
 	}

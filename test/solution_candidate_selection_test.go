@@ -30,7 +30,7 @@ func TestSolutionCandidateSelection(t *testing.T) {
 		t.Fatal(err)
 	}
 	topSolutionsCount := 5
-	res := s.FindBestPlanningSolutions(context.Background(), clusters, topSolutionsCount, iterator)
+	res := s.FindBestPlanningSolutions(context.Background(), clusters, topSolutionsCount, iterator, planner.DefaultPlaceSearchRadius)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,6 +1,8 @@
 import { updateUsername } from "./user.js";
 
 const username = updateUsername();
+const initNumPlansShown = 3;
+let numPlansShown = initNumPlansShown;
 
 async function deleteUserPlan() {
   const username = this.dataset.user;
@@ -16,9 +18,12 @@ async function deleteUserPlan() {
     .catch((err) => console.error(err));
 }
 
-function renderCard(plan) {
+function renderCard(plan, idx) {
   const cards = $("#cards");
   let card = $("<div>").addClass("card rounded mb-2").css("max-width", "350px");
+  if (idx >= numPlansShown) {
+    card.css("display", "none");
+  }
   let cardBody = $("<div>").addClass("card-body");
   cardBody.append($("<h5>").addClass("card-title").text(plan.destination));
   cardBody.append($("<h6>").addClass("card-subtitle").text(plan.travel_date));
@@ -85,7 +90,10 @@ function getUserPlans() {
       const plans = data["travel_plans"];
       if (plans.length > 0) {
         for (let i = 0; i < plans.length; i++) {
-          renderCard(plans[i]);
+          renderCard(plans[i], i);
+        }
+        if (plans.length > initNumPlansShown) {
+          $("#load-more-plans-btn").css("display", "");
         }
       }
     })
@@ -109,5 +117,22 @@ function getUserFavorites() {
 async function renderUserProfile() {
   await Promise.all([getUserPlans(), getUserFavorites()]);
 }
+
+$("#load-more-plans-btn").on("click", () => {
+  numPlansShown = numPlansShown + 3;
+  $("#cards")
+    .children()
+    .each((idx, card) => {
+      if (idx >= numPlansShown) {
+        card.style.display = "none";
+      } else {
+        card.style.display = "";
+      }
+    });
+  // hide the load more button when all plans are shown
+  if (numPlansShown >= $("#cards").children().length) {
+    $("#load-more-plans-btn").css("display", "none");
+  }
+});
 
 renderUserProfile().then(() => console.log("user profile is loaded"));
