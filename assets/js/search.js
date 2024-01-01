@@ -44,18 +44,10 @@ $(document).ready(() => {
   if (usePreciseLocation) {
     document.querySelector("#precise-location-flag").value = usePreciseLocation;
   }
-  let is_cracked_house_clicked = false;
-  function crackedHouseClickedState() {
-    console.log(`we click!!`)
-    is_cracked_house_clicked = true;
-    return is_cracked_house_clicked
-  }
-
-  document.querySelector("#crack-house").addEventListener("click", crackedHouseClickedState);
 
   // FIXME: not a clean solution, improve this after we use front-end rendering
   const url = new URL(document.referrer);
-  if (url.pathname === "/v1/" && pageIsNavigated() && !is_cracked_house_clicked) {
+  if (url.pathname === "/v1/" && pageIsNavigated()) {
     console.debug("no planning solution is found");
     $("#no-plan-error-alert").removeClass("d-none");
   }
