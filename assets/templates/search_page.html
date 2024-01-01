@@ -48,7 +48,6 @@
     <!--navigation bar-->
     <nav class="navbar navbar-light navbar-expand-lg" style="background-color: #e3f2fd;">
         <div class="container-fluid">
-
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-items"
                 aria-controls="navbar-items" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -72,15 +71,13 @@
 
             <div class="dropdown">
                 <button class="btn btn-outline-success dropdown-toggle" type="button" id="user-profile"
-                    data-bs-toggle="dropdown" aria-expanded="false">guest
+                    data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-circle-user fa-xl"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width:120px;" aria-labelledby="user-profile">
                     <li>
                         <a class="dropdown-item p-0" id="profile">
                             <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class="material-icons">
-                                    account_circle
-                                </span>
+                                <i class="fa-regular fa-address-card"></i>
                                 <span> Profile </span>
                             </div>
                         </a>
@@ -88,9 +85,7 @@
                     <li id="login-button-item" class="d-none">
                         <a class="dropdown-item p-0" href="/v1/log-in">
                             <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class="material-icons">
-                                    login
-                                </span>
+                                <i class="fa-solid fa-right-to-bracket"></i>
                                 <span>Login</span>
                             </div>
                         </a>
@@ -98,21 +93,17 @@
                     <li id="logout-button-item">
                         <a class="dropdown-item p-0" data-bs-toggle="modal" data-bs-target="#logout-confirm" href="#">
                             <div class="container d-flex align-items-center justify-content-evenly p-0">
-                                <span class=" material-icons">
-                                    logout
-                                </span>
+                                <i class="fa-solid fa-right-from-bracket"></i>
                                 <span>Logout</span>
                             </div>
                         </a>
                     </li>
                 </ul>
             </div>
-
-
         </div>
     </nav>
 
-    <h1 style="color: #24c1e0; text-align: center; background-color: whitesmoke">
+    <h1 class="inherit-line-height" style="color: #24c1e0; text-align: center; background-color: whitesmoke">
         Vacation Planner
     </h1>
 
@@ -175,7 +166,7 @@
                     </select>
                 </div>
                 <div class="d-flex flex-row-reverse ps-1 pe-0 mt-1">
-                    <button class="btn btn-outline-primary" type="submit" id="searchBtn">search</button>
+                    <button class="btn btn-outline-primary" type="submit" id="searchBtn"><i class="fa-solid fa-magnifying-glass"></i></button>
                     <div class="form-check form-switch me-2 mt-2">
                         <input class="form-check-input" type="checkbox" id="searchNearbyCities">
                         <label class="form-check-label" for="searchNearbyCities">Include nearby cities</label>
@@ -326,11 +317,25 @@
         </svg>
     </div>
 
+    <footer class="full-expanded-footer">
+        <div class="footer-container">
+            <div class="footer-links">
+                <a href="/v1/about">About</a>
+            </div>
+
+            <div class="footer-social">
+                <a href="https://discord.gg/S5CCn2Ab" target="_blank"><i class="fa-brands fa-discord"></i></a>
+            </div>
+
+        </div>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+    <script src="https://kit.fontawesome.com/0ee567c03b.js" crossorigin="anonymous"></script>
     <script type="module" src="assets/js/jwt-decode.js"></script>
     <script type="module" src="assets/js/user.js"></script>
     <script type="module" src="assets/js/utils.js"></script>
@@ -338,7 +343,6 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script src="https://kit.fontawesome.com/0ee567c03b.js" crossorigin="anonymous"></script>
 </body>
 
 </html>
