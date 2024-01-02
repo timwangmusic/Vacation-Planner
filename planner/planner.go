@@ -38,6 +38,7 @@ const (
 	SolverTimeout      = time.Second * 10
 	jobQueueBufferSize = 1000
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
+	requestIdKey       = "request_id"
 )
 
 type Environment string
@@ -468,6 +469,8 @@ func (p *MyPlanner) getOptimalPlan(ctx *gin.Context) {
 // Return top planning results to user
 func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
+	requestId := requestid.Get(ctx)
+	ctx.Set(requestIdKey, requestId)
 
 	var userView user.View
 	var authenticationErr error
@@ -479,7 +482,6 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	logger.Debugf("->getPlanningApi: user view: %+v", userView)
-	requestId := requestid.Get(ctx)
 
 	var err error
 	var preciseLocation bool
