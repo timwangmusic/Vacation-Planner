@@ -6,6 +6,7 @@ import { logOut, updateUsername } from "./user.js";
 const username = updateUsername();
 const totalItemsCount = 10;
 const itemsPerPage = 2;
+const defaultStartingTime = "9";
 
 setDateToday();
 
@@ -22,7 +23,7 @@ function removeLastRow() {
 }
 
 function insertNewRow(start = "8", end = "10", category = "Visit") {
-  const template = document.getElementById("template");
+  const template = document.querySelector("#template");
   const lastColumnOfLastRow = document.querySelector(
     "table tr:last-child td:last-child"
   );
@@ -36,7 +37,10 @@ function insertNewRow(start = "8", end = "10", category = "Visit") {
   let cafeOption = document.createElement("option");
   let attractionOption = document.createElement("option");
 
-  if (template.rows.length > 2) {
+  // the number of rows will never be 1 or less
+  if (template.rows.length == 2) {
+    start = defaultStartingTime;
+  } else if (template.rows.length > 2) {
     start = lastColumnOfLastRow.firstChild.value;
   }
 
@@ -170,7 +174,7 @@ document.getElementById("search").addEventListener("click", postPlanTemplate);
 
 document.addEventListener("DOMContentLoaded", () => {
   // set a default time-category template
-  insertNewRow("8", "11", "Visit");
+  insertNewRow(defaultStartingTime, "11", "Visit");
   insertNewRow("11", "13", "Eatery");
   insertNewRow("13", "17", "Visit");
 });
