@@ -5,9 +5,9 @@
 
 // codepoint from https://fonts.google.com/icons
 const placeCategoryToIconCode = {
-  "Eatery": "\ue56c",
-  "Visit": "\uea52"
-}
+  Eatery: "\ue56c",
+  Visit: "\uea52",
+};
 
 class LatLng {
   constructor(lat, lng) {
@@ -17,7 +17,12 @@ class LatLng {
 }
 
 class Label {
-  constructor(text, color = "#ffffff", fontFamily = "Material Icons", fontSize = "18px") {
+  constructor(
+    text,
+    color = "#ffffff",
+    fontFamily = "Material Icons",
+    fontSize = "18px"
+  ) {
     this.text = text;
     this.color = color;
     this.fontFamily = fontFamily;
@@ -44,11 +49,10 @@ async function initMap() {
 
 function makeLatLngs(arr) {
   try {
-    return arr.map(x => new LatLng(x[0], x[1]))
-  }
-  catch (e) {
+    return arr.map((x) => new LatLng(x[0], x[1]));
+  } catch (e) {
     console.log(e);
-    return []
+    return [];
   }
 }
 
@@ -59,47 +63,44 @@ function makeMarkerLabels(placeCategories) {
       let iconCode = utils.placeCategoryToIconCode[cat];
       labels.push(new Label(iconCode));
     }
-    return labels
-  }
-  catch (e) {
+    return labels;
+  } catch (e) {
     console.log(e);
-    return []
+    return [];
   }
 }
 
 function makeOptions(latLngs, labels) {
   try {
-    opts = []
+    opts = [];
     for (let i = 0; i < latLngs.length; i++) {
       opts.push({
         position: latLngs[i],
-        label: labels[i]
+        label: labels[i],
       });
     }
-    return opts
-  }
-  catch (e) {
+    return opts;
+  } catch (e) {
     console.log(e);
-    return []
+    return [];
   }
 }
 
 function findCenter(latLngs) {
   const center = new LatLng(-25.344, 131.036);
   try {
-    let centerLat = utils.mean(latLngs.map(x => x.lat));
-    let centerLng = utils.mean(latLngs.map(x => x.lng));
+    let centerLat = utils.mean(latLngs.map((x) => x.lat));
+    let centerLng = utils.mean(latLngs.map((x) => x.lng));
     return new LatLng(centerLat, centerLng);
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e);
-    return center
+    return center;
   }
 }
 
 function arithmeticMean(arr) {
   let sum = arr.reduce((a, b) => a + b, 0);
-  return sum / arr.length
+  return sum / arr.length;
 }
 
 function addMarkers(map, cfgs) {
@@ -107,8 +108,7 @@ function addMarkers(map, cfgs) {
     for (let cfg of cfgs) {
       utils.createMarker(map, cfg);
     }
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e);
   }
 }
@@ -116,7 +116,7 @@ function addMarkers(map, cfgs) {
 function createMarker(map, cfg) {
   let marker = new google.maps.Marker({
     map: map,
-    ...cfg
+    ...cfg,
   });
 }
 
@@ -131,5 +131,5 @@ const utils = {
   makeOptions: makeOptions,
   Label: Label,
   placeCategoryToIconCode: placeCategoryToIconCode,
-}
+};
 module.exports = utils;
