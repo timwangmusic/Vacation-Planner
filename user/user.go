@@ -23,6 +23,7 @@ type View struct {
 	UserLevel     string             `json:"user_level"`
 	Favorites     *PersonalFavorites `json:"favorites"`
 	LastLoginTime string             `json:"lastLoginTime"`
+	IsSavedPlans  bool               `json:"IsSavedPlans"`
 }
 
 type Credential struct {

@@ -108,3 +108,12 @@ rollUpButton.addEventListener("click", () => {
     behavior: "smooth",
   });
 });
+
+
+/**
+ * This will check if a user plan is already saved in the user profile
+ * If so, we will disable the save button as a result
+ */
+function checkifUserPlanisSaved() {
+  //TODO: operate and check here
+}

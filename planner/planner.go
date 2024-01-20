@@ -560,6 +560,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
+	// TODO: Check for user Saved Plans here
 	jsonOnly := ctx.DefaultQuery("json_only", "false")
 	if jsonOnly != "false" {
 		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
