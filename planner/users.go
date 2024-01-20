@@ -175,6 +175,7 @@ func (p *MyPlanner) UserAuthentication(ctx *gin.Context, minimumUserLevel user.L
 	case user.LevelStringAdmin:
 		userLevel = user.LevelAdmin
 	}
+	//todo: if the key: saved_plan_state:user_id exists then update userView.IsSavedPlans to true
 	if userLevel < minimumUserLevel {
 		log.Debugf("user level is %d, required %d", userLevel, minimumUserLevel)
 		return userView, errors.New("does not meet minimum user level requirement")
