@@ -470,6 +470,8 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
 
 	var userView user.View
+	// debug
+	// var planView user.TravelPlanView
 	var authenticationErr error
 	userView, authenticationErr = p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {

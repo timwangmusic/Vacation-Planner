@@ -332,6 +332,13 @@ func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, 
 	Logger.Debugf("-> Saving the Plan %s for user %s here", planView.ID, userView.ID)
 
 	SavedPlanState := strings.Join([]string{UserSavedPlanState, "user", userView.ID}, ":")
+	//todo: the bool is not working due to json: cannot unmarshal bool into Go value of type User:TravelPlanView
+	//savedState := 1
+	//json_, err = json.Marshal(savedState)
+	//if err != nil {
+	//	return err
+	//}
+	//_, err = r.client.Set(context, SavedPlanState, json_, 0).Result()
 	_, err = r.client.Set(context, SavedPlanState, 1, 0).Result()
 	if err != nil {
 		return err
