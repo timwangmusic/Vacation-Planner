@@ -503,6 +503,8 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	ctx.Set(requestIdKey, requestId)
 
 	var userView user.View
+	// debug
+	// var planView user.TravelPlanView
 	var authenticationErr error
 	userView, authenticationErr = p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
