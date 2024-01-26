@@ -673,7 +673,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	iowrappers.Logger.Debugf("received date in request: %s", date)
+	logger.Debugf("received date in request: %s", date)
 
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
@@ -691,7 +691,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 	}
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
-		iowrappers.Logger.Error(err)
+		logger.Error(err)
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
@@ -703,7 +703,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
 	planningResp := p.Planning(c, request, "guest")
-	iowrappers.Logger.Debugf("response status code is: %d", planningResp.StatusCode)
+	logger.Debugf("response status code is: %d", planningResp.StatusCode)
 	if planningResp.StatusCode == RequestTimeOut {
 		ctx.JSON(http.StatusRequestTimeout, nil)
 	}
