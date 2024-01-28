@@ -83,6 +83,7 @@ type TimeSectionPlace struct {
 type TravelPlan struct {
 	ID     string             `json:"id"`
 	Places []TimeSectionPlace `json:"places"`
+	Saved  bool               `json:"saved"`
 }
 
 type PlanningResponse struct {
@@ -562,7 +563,21 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: Check for user Saved Plans here
+	// key to search: user_saved_travel_plans:user:4efc1f59-ee16-4453-8610-65f2444c7288:plans
+	if userView.IsSavedPlans != false {
+		var s1 []string = make([]string, 0)
+		var savedUserOriginalPlans = strings.Join([]string{"user_saved_travel_plans", "user", userView.ID, "plans"}, ":")
+		s1, err := p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans, &s1)
+		if err != nil {
+			logger.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
+		}
+		for PlanIndex := 0; PlanIndex < numResultsInt; PlanIndex++ {
+			var SearchFoundNewPlanId = strings.Join([]string{"travel_plan", planningResp.TravelPlans[PlanIndex].ID}, ":")
+			if isPlanIDPresentInSavedList(SearchFoundNewPlanId, s1) {
+				planningResp.TravelPlans[PlanIndex].Saved = true
+			}
+		}
+	}
 	jsonOnly := ctx.DefaultQuery("json_only", "false")
 	if jsonOnly != "false" {
 		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
@@ -956,4 +971,13 @@ func getPlaceIcon(placeTypes []POI.PlaceCategory, pIdx int) string {
 		return string(POI.PlaceIconEmpty)
 	}
 	return string(placeTypeToIcon[placeTypes[pIdx]])
+}
+
+func isPlanIDPresentInSavedList(planID string, savedPlaces []string) bool {
+	for _, savePlaceID := range savedPlaces {
+		if savePlaceID == planID {
+			return true
+		}
+	}
+	return false
 }

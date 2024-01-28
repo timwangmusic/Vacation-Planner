@@ -683,3 +683,12 @@ func (r *RedisClient) FetchSingleRecord(context context.Context, redisKey string
 	}
 	return nil
 }
+
+func (r *RedisClient) FetchSingleRecordTypeSet(context context.Context, redisKey string, response interface{}) ([]string, error) {
+	members, err := r.client.SMembers(context, redisKey).Result()
+	if err != nil {
+		fmt.Errorf("[request_id: %s] redis server find no result for key: %s", context.Value(ContextRequestIdKey), redisKey)
+		return members, err
+	}
+	return members, nil
+}
