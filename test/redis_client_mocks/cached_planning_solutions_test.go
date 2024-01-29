@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-func TestGetCachedPlanningSolutions_shouldReturnCorrectRecords(t *testing.T) {
-	cacheRequest1 := &iowrappers.PlanningSolutionsSaveRequest{
+func TestGetSavedPlanningSolutions_shouldReturnCorrectResults(t *testing.T) {
+	request1 := &iowrappers.PlanningSolutionsSaveRequest{
 		Location: POI.Location{City: "Beijing", Country: "China"},
 		Intervals: []POI.TimeInterval{
 			{
@@ -28,49 +28,63 @@ func TestGetCachedPlanningSolutions_shouldReturnCorrectRecords(t *testing.T) {
 			POI.PlaceCategoryVisit,
 			POI.PlaceCategoryEatery,
 		},
-		PlanningSolutionRecords: make([]iowrappers.PlanningSolutionRecord, 1),
+		PlanningSolutionRecords: []iowrappers.PlanningSolutionRecord{
+			{
+				ID:         "33521-12533",
+				PlaceIDs:   []string{"1", "2"},
+				Score:      100,
+				PlaceNames: []string{"Tian Tan Park", "Yuan Ming Yuan"},
+			},
+		},
 	}
-	cacheRequest1.PlanningSolutionRecords[0].PlaceIDs = []string{"1", "2"}
-	cacheRequest1.PlanningSolutionRecords[0].ID = "33521-12533"
 
 	var err error
-	err = RedisClient.SavePlanningSolutions(RedisContext, cacheRequest1)
+	err = RedisClient.SavePlanningSolutions(RedisContext, request1)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	cacheRequest2 := &iowrappers.PlanningSolutionsSaveRequest{
-		Location:                POI.Location{City: "San Francisco", Country: "United States"},
-		PlanningSolutionRecords: make([]iowrappers.PlanningSolutionRecord, 1),
+	request2 := &iowrappers.PlanningSolutionsSaveRequest{
+		Location: POI.Location{City: "San Francisco", Country: "United States"},
+		PlanningSolutionRecords: []iowrappers.PlanningSolutionRecord{
+			{
+				ID:       "33522-22533",
+				PlaceIDs: []string{"111", "222", "333"},
+			},
+		},
 	}
-	cacheRequest2.PlanningSolutionRecords[0].ID = "33522-22533"
-	cacheRequest2.PlanningSolutionRecords[0].PlaceIDs = []string{"111", "222", "333"}
 
-	err = RedisClient.SavePlanningSolutions(RedisContext, cacheRequest2)
+	err = RedisClient.SavePlanningSolutions(RedisContext, request2)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	cacheResponse, err := RedisClient.PlanningSolutions(RedisContext, cacheRequest1)
+	planningSolutions, err := RedisClient.PlanningSolutions(RedisContext, request1)
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	for idx, planningSolution := range cacheResponse.PlanningSolutionRecords {
-		assert.Equal(t, cacheRequest1.PlanningSolutionRecords[idx].PlaceIDs, planningSolution.PlaceIDs)
+	for idx, planningSolution := range planningSolutions.PlanningSolutionRecords {
+		record := request1.PlanningSolutionRecords[idx]
+		assert.Equal(t, record.ID, planningSolution.ID)
+		assert.Equal(t, record.PlaceIDs, planningSolution.PlaceIDs)
+		assert.Equal(t, record.Score, planningSolution.Score)
+		assert.Equal(t, record.PlaceNames, planningSolution.PlaceNames)
 	}
 
-	cacheResponse, err = RedisClient.PlanningSolutions(RedisContext, cacheRequest2)
+	planningSolutions, err = RedisClient.PlanningSolutions(RedisContext, request2)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	for idx, planningSolution := range cacheResponse.PlanningSolutionRecords {
-		assert.Equal(t, cacheRequest2.PlanningSolutionRecords[idx].PlaceIDs, planningSolution.PlaceIDs)
+	for idx, planningSolution := range planningSolutions.PlanningSolutionRecords {
+		record := request2.PlanningSolutionRecords[idx]
+		assert.Equal(t, record.ID, planningSolution.ID)
+		assert.Equal(t, record.PlaceIDs, planningSolution.PlaceIDs)
 	}
 }
