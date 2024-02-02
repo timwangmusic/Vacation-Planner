@@ -79,7 +79,7 @@ func (r *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
 	pipeline.PFAdd(RedisClientDefaultBlankContext, NumVisitorsPlanningAPI, event.User)
 
 	// set expiration time
-	if _, err := pipeline.Exists(RedisClientDefaultBlankContext, NumVisitorsPlanningAPI).Result(); err != nil && err == redis.Nil {
+	if _, err := pipeline.Exists(RedisClientDefaultBlankContext, NumVisitorsPlanningAPI).Result(); err != nil && errors.Is(err, redis.Nil) {
 		pipeline.Expire(RedisClientDefaultBlankContext, NumVisitorsPlanningAPI, PlanningStatExpirationTime)
 	}
 
@@ -600,7 +600,7 @@ func generateTravelPlansCacheKey(req *PlanningSolutionsSaveRequest) (string, err
 	return redisFieldKey, nil
 }
 
-func (r *RedisClient) SavePlanningSolutions(context context.Context, request *PlanningSolutionsSaveRequest) error {
+func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *PlanningSolutionsSaveRequest) error {
 	// solutions with no valid solutions do not worth saving
 	if len(request.PlanningSolutionRecords) == 0 {
 		return nil
@@ -611,24 +611,34 @@ func (r *RedisClient) SavePlanningSolutions(context context.Context, request *Pl
 		return keyGenerationErr
 	}
 
+	// cleans up previous results
+	exists, _ := r.client.Exists(ctx, redisListKey).Result()
+	if exists == 1 {
+		if err := r.client.Del(ctx, redisListKey).Err(); err != nil {
+			Logger.Error(err)
+		}
+	}
+
 	var recordKeys []string
 	for _, record := range request.PlanningSolutionRecords {
 		solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, record.ID}, ":")
 		json_, err := json.Marshal(record)
 		if err != nil {
-			return err
+			Logger.Error(err)
+			continue
 		}
-		_, recordSaveErr := r.client.Set(context, solutionRedisKey, json_, 0).Result()
+		_, recordSaveErr := r.client.Set(ctx, solutionRedisKey, json_, 0).Result()
 		if recordSaveErr != nil {
-			return recordSaveErr
+			Logger.Error(err)
+			continue
 		}
 		recordKeys = append(recordKeys, solutionRedisKey)
 	}
 
 	if len(recordKeys) > 0 {
-		numTravelPlanKeys, listSaveErr := r.client.LPush(context, redisListKey, recordKeys).Result()
+		numTravelPlanKeys, listSaveErr := r.client.LPush(ctx, redisListKey, recordKeys).Result()
 		Logger.Debugf("added the %d travel plan keys to %s", numTravelPlanKeys, redisListKey)
-		r.client.Expire(context, redisListKey, PlanningSolutionsExpirationTime)
+		r.client.Expire(ctx, redisListKey, PlanningSolutionsExpirationTime)
 
 		return listSaveErr
 	}
@@ -636,7 +646,7 @@ func (r *RedisClient) SavePlanningSolutions(context context.Context, request *Pl
 	return nil
 }
 
-func (r *RedisClient) PlanningSolutions(context context.Context, request *PlanningSolutionsSaveRequest) (PlanningSolutionsResponse, error) {
+func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSolutionsSaveRequest) (PlanningSolutionsResponse, error) {
 	Logger.Debugf("->RedisClient.PlanningSolutions(%v)", request)
 	var response PlanningSolutionsResponse
 	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
@@ -645,28 +655,36 @@ func (r *RedisClient) PlanningSolutions(context context.Context, request *Planni
 		return response, keyGenerationErr
 	}
 
-	exists, _ := r.client.Exists(context, redisListKey).Result()
+	exists, err := r.client.Exists(ctx, redisListKey).Result()
+	if err != nil {
+		return response, err
+	}
 	if exists == 0 {
 		return response, fmt.Errorf("redis key %s does not exist", redisListKey)
 	}
 
-	recordKeys, listFetchErr := r.client.LRange(context, redisListKey, 0, -1).Result()
+	recordKeys, listFetchErr := r.client.LRange(ctx, redisListKey, 0, -1).Result()
 	if listFetchErr != nil {
 		Logger.Error(listFetchErr)
 		return response, listFetchErr
 	}
 
-	response.PlanningSolutionRecords = make([]PlanningSolutionRecord, len(recordKeys))
-	for idx, key := range recordKeys {
-		json_, err := r.client.Get(context, key).Result()
+	response.PlanningSolutionRecords = make([]PlanningSolutionRecord, 0)
+	for _, key := range recordKeys {
+		var json_ string
+		json_, err = r.client.Get(ctx, key).Result()
 		if err != nil {
-			return response, err
+			Logger.Error(err)
+			continue
 		}
 
-		err = json.Unmarshal([]byte(json_), &response.PlanningSolutionRecords[idx])
+		var r PlanningSolutionRecord
+		err = json.Unmarshal([]byte(json_), &r)
 		if err != nil {
-			return response, err
+			Logger.Error(err)
+			continue
 		}
+		response.PlanningSolutionRecords = append(response.PlanningSolutionRecords, r)
 	}
 
 	return response, nil
