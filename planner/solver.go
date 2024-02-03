@@ -230,7 +230,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, cacheRequest)
 
 	var resp = &PlanningResp{}
-	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < req.NumPlans {
+	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) == 0 {
 		resp = s.generateSolutions(ctx, req)
 		if resp.Err == nil {
 			if err := saveSolutions(ctx, redisClient, req, resp.Solutions); err != nil {
