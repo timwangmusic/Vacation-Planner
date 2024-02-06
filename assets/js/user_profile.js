@@ -51,7 +51,7 @@ function renderCard(plan, idx) {
   let showDetailsButton = $("<button>")
     .addClass("btn btn-outline-info float-end m-1")
     .attr("type", "button")
-    .attr("data-planid", `${plan.original_plan_id}`)
+    .attr("data-planid", `${plan.id}`)
     .text("details");
   showDetailsButton.click(showPlanDetails);
   cardBody.append(showDetailsButton);
@@ -78,7 +78,7 @@ function renderFavorites(favorites) {
 
 function showPlanDetails() {
   const planID = this.dataset.planid;
-  window.location = `plans/${planID}`;
+  window.location = `users/${username}/plan/${planID}`;
 }
 
 function getUserPlans() {
