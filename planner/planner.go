@@ -604,7 +604,44 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, *planDetails)
+	wg := &sync.WaitGroup{}
+	wg.Add(len(planDetails.Places))
+	placesCount := len(planDetails.Places)
+
+	resp := TripDetailResp{
+		LatLongs:          make([][2]float64, placesCount),
+		PlaceCategories:   make([]POI.PlaceCategory, placesCount),
+		PlaceDetails:      make([]PlaceDetailsResp, placesCount),
+		ShownActive:       make([]bool, placesCount),
+		TravelDestination: planDetails.Destination,
+		TravelDate:        planDetails.TravelDate,
+	}
+
+	const fixedPlaceKeyPrefix = "place_details:place_ID:"
+	for idx, view := range planDetails.Places {
+		go func(i int, v user.TravelPlaceView) {
+			defer wg.Done()
+			placeRedisKey := fixedPlaceKeyPrefix + v.ID
+			var place POI.Place
+			if err := p.RedisClient.FetchSingleRecord(ctx, placeRedisKey, &place); err != nil {
+				logger.Error(err)
+				return
+			}
+			resp.LatLongs[i] = [2]float64{place.Location.Latitude, place.Location.Longitude}
+			resp.ShownActive[i] = i == 0
+
+			details, err := p.placeDetailsResp(ctx, place)
+			if err != nil {
+				logger.Error(err)
+				return
+			}
+			resp.PlaceDetails[i] = details
+		}(idx, view)
+	}
+
+	wg.Wait()
+
+	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, resp), utils.LogError)
 }
 
 func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
@@ -664,19 +701,20 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		return
 	}
 
+	logger.Debugf("lat/lng are: %+v", tripResp.LatLongs)
 	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, tripResp), utils.LogError)
 }
 
 func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
 	var err error
-	*resp, err = p.getTripFromPlace(ctx, place)
+	*resp, err = p.placeDetailsResp(ctx, place)
 	if err != nil {
 		iowrappers.Logger.Error(err)
 	}
 	wg.Done()
 }
 
-func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
+func (p *MyPlanner) placeDetailsResp(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
 	photoURL, err := p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference, place.GetID())
 	return PlaceDetailsResp{
 		ID:               place.GetID(),
