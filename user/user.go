@@ -58,6 +58,7 @@ func (p *PersonalFavorites) UnmarshalBinary(data []byte) error {
 
 // TravelPlaceView reflect what users see on Front-end result tables
 type TravelPlaceView struct {
+	ID         string `json:"id"`
 	TimePeriod string `json:"time_period"`
 	PlaceName  string `json:"place_name"`
 	Address    string `json:"address"`

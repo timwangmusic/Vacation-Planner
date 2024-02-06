@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/modern-go/reflect2"
 	"html/template"
 	"io"
 	"net/http"
@@ -74,12 +75,14 @@ type MyPlanner struct {
 }
 
 type TimeSectionPlace struct {
-	PlaceName string   `json:"place_name"`
-	StartTime POI.Hour `json:"start_time"`
-	EndTime   POI.Hour `json:"end_time"`
-	Address   string   `json:"address"`
-	URL       string   `json:"url"`
-	PlaceIcon string   `json:"place_icon_css_class"`
+	ID        string            `json:"id"`
+	PlaceName string            `json:"place_name"`
+	Category  POI.PlaceCategory `json:"category"`
+	StartTime POI.Hour          `json:"start_time"`
+	EndTime   POI.Hour          `json:"end_time"`
+	Address   string            `json:"address"`
+	URL       string            `json:"url"`
+	PlaceIcon string            `json:"place_icon_css_class"`
 }
 
 type TravelPlan struct {
@@ -105,6 +108,7 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
+// TODO: deprecate Score and ScoreOld fields
 type TripDetailResp struct {
 	LatLongs          [][2]float64
 	PlaceCategories   []POI.PlaceCategory
@@ -413,23 +417,25 @@ func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRe
 	response.TravelPlans = make([]TravelPlan, len(s))
 	response.TripDetailsURL = make([]string, len(s))
 
-	for sIdx, topSolution := range s {
+	for idx, solution := range s {
 		travelPlan := TravelPlan{
 			Places: make([]TimeSectionPlace, 0),
 		}
-		for pIdx, placeName := range topSolution.PlaceNames {
+		for pIdx, placeName := range solution.PlaceNames {
 			travelPlan.Places = append(travelPlan.Places, TimeSectionPlace{
+				ID:        solution.PlaceIDS[pIdx],
 				PlaceName: placeName,
+				Category:  solution.PlaceCategories[pIdx],
 				StartTime: request.Slots[pIdx].TimeSlot.Slot.Start,
 				EndTime:   request.Slots[pIdx].TimeSlot.Slot.End,
-				Address:   topSolution.PlaceAddresses[pIdx],
-				URL:       topSolution.PlaceURLs[pIdx],
-				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
+				Address:   solution.PlaceAddresses[pIdx],
+				URL:       solution.PlaceURLs[pIdx],
+				PlaceIcon: getPlaceIcon(solution.PlaceCategories, pIdx),
 			})
 		}
-		travelPlan.ID = topSolution.ID
-		response.TravelPlans[sIdx] = travelPlan
-		response.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID + "?date=" + request.TravelDate
+		travelPlan.ID = solution.ID
+		response.TravelPlans[idx] = travelPlan
+		response.TripDetailsURL[idx] = "/v1/plans/" + travelPlan.ID + "?date=" + request.TravelDate
 	}
 
 	response.StatusCode = ValidSolutionFound
@@ -571,6 +577,34 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 	utils.LogErrorWithLevel(p.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
+}
+
+func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
+	logger := iowrappers.Logger
+	if reflect2.IsNil(logger) {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	username := ctx.Param("username")
+	planId := ctx.Param("id")
+	logger.Debugf("looking for plan %s saved by user %s", planId, username)
+
+	userView, findUserErr := p.RedisClient.FindUser(ctx, iowrappers.FindUserByName, user.View{Username: username})
+	if findUserErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("cannot find user %s", username)})
+		return
+	}
+
+	planDetailsRedisKey := strings.Join([]string{iowrappers.UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planId}, ":")
+	planDetails := &user.TravelPlanView{}
+	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planDetailsRedisKey, planDetails)
+	if cacheErr != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("cannot find plan %s from user %s", planId, username)})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, *planDetails)
 }
 
 func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
@@ -931,6 +965,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			users.POST("/:username/plans", p.userSavedPlansPostHandler)
 			users.GET("/:username/plans", p.userSavedPlansGetHandler)
 			users.DELETE("/:username/plan/:id", p.userPlanDeleteHandler)
+			users.GET("/:username/plan/:id", p.getUserSavedPlanDetails)
 		}
 
 		places := v1.Group("/places")
