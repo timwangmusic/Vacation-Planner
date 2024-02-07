@@ -163,7 +163,7 @@
 
       <div
         class="card shadow-sm border rounded mt-2"
-        style="height: 25rem; width: 95vw; max-width: 25rem"
+        style="height: 25rem; width: 95vw; max-width: 25rem; display: none"
       >
         <div class="card-body" id="googleMap"></div>
       </div>
@@ -178,8 +178,10 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/v1/assets/js/show-trip-script.js"></script>
     <script src="/v1/assets/js/google_map.js"></script>
+    <!-- TODO: figure out how to load API key from environment before enabling the map feature.
+      The Maps JavaScript API needs to be enabled on the key. -->
     <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6KxWyyl6ysQ-RYyu9OVvTPyfxLEa03zk&callback=initMap&libraries=&v=weekly"
+      src="https://maps.googleapis.com/maps/api/js?callback=initMap&libraries=&v=weekly"
       async
     ></script>
     <script type="module" src="/v1/assets/js/jwt-decode.js"></script>
