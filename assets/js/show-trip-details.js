@@ -39,31 +39,26 @@ async function postPlanForUser() {
 
 function planToView(plan) {
   const url = new URL(document.URL);
-  const planId = getPlanId(url);
   const travelDate = getTravelDate(url);
   const view = new View(
     plan.TravelDestination,
     travelDate, // YYYY-MM-DD
-    planId,
+    plan.OriginalPlanID,
     new Date().toISOString(),
     []
   );
   for (const pDetail of plan.PlaceDetails) {
     const {
+      ID: id,
       Name: placeName,
       FormattedAddress: address,
       TimePeriod: timePeriod = "10 - 16", // TODO: use actual time period for each place
       URL: mapURL,
     } = pDetail;
-    const place = new Place(timePeriod, placeName, address, mapURL);
+    const place = new Place(id, timePeriod, placeName, address, mapURL);
     view.places.push(place);
   }
   return view;
-}
-
-function getPlanId(url) {
-  const results = url.pathname.split("/");
-  return results[results.length - 1];
 }
 
 function getTravelDate(url) {

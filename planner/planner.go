@@ -110,6 +110,7 @@ type PlanningPostRequest struct {
 
 // TODO: deprecate Score and ScoreOld fields
 type TripDetailResp struct {
+	OriginalPlanID    string
 	LatLongs          [][2]float64
 	PlaceCategories   []POI.PlaceCategory
 	PlaceDetails      []PlaceDetailsResp
@@ -609,6 +610,7 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 	placesCount := len(planDetails.Places)
 
 	resp := TripDetailResp{
+		OriginalPlanID:    planDetails.OriginalPlanID,
 		LatLongs:          make([][2]float64, placesCount),
 		PlaceCategories:   make([]POI.PlaceCategory, placesCount),
 		PlaceDetails:      make([]PlaceDetailsResp, placesCount),
@@ -675,6 +677,7 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 	}
 	travelDate := ctx.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
+		OriginalPlanID:    record.ID,
 		LatLongs:          record.PlaceLocations,
 		PlaceCategories:   record.PlaceCategories,
 		PlaceDetails:      make([]PlaceDetailsResp, len(record.PlaceIDs)),
