@@ -629,6 +629,7 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 			}
 			resp.LatLongs[i] = [2]float64{place.Location.Latitude, place.Location.Longitude}
 			resp.ShownActive[i] = i == 0
+			resp.PlaceCategories[i] = POI.GetPlaceCategory(place.LocationType)
 
 			details, err := p.placeDetailsResp(ctx, place)
 			if err != nil {
@@ -640,6 +641,13 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 	}
 
 	wg.Wait()
+
+	resp.ApiKey = p.MapsClientApiKey
+	jsonOnly, _ := strconv.ParseBool(strings.ToLower(ctx.DefaultQuery("json_only", "false")))
+	if jsonOnly {
+		ctx.JSON(http.StatusOK, resp)
+		return
+	}
 
 	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, resp), utils.LogError)
 }

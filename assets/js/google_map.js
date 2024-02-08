@@ -32,8 +32,8 @@ class Label {
 
 // Called by Google Map API
 async function initMap() {
-  // adjust zoom to city level
-  const zoom = 10;
+  // adjust zoom to city level plus one
+  const zoom = 11;
   const mapDiv = document.getElementById("googleMap");
 
   const plan = await getTravelPlan();
