@@ -70,6 +70,7 @@ type MyPlanner struct {
 	OAuth2Config       *oauth2.Config
 	Mailer             *iowrappers.Mailer
 	GeonamesApiKey     string
+	MapsClientApiKey   string
 }
 
 type TimeSectionPlace struct {
@@ -113,6 +114,7 @@ type TripDetailResp struct {
 	TravelDate        string
 	Score             float64
 	ScoreOld          float64
+	ApiKey            string
 }
 
 type PlaceDetailsResp struct {
@@ -159,6 +161,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		logger.Errorf("failed to load flag server:plan_solver:enableMapsPhotoClient!")
 	}
 
+	p.MapsClientApiKey = mapsClientApiKey
 	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 	if v, exists := p.Configs["server:plan_solver:same_place_dedupe_count_limit"]; exists {
@@ -601,6 +604,7 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		TravelDate:        travelDate,
 		Score:             record.Score,
 		ScoreOld:          record.ScoreOld,
+		ApiKey:            p.MapsClientApiKey,
 	}
 
 	wg := sync.WaitGroup{}

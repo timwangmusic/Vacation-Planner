@@ -32,14 +32,17 @@ class Label {
 
 // Called by Google Map API
 async function initMap() {
-  const zoom = 13;
+  // adjust zoom to city level
+  const zoom = 10;
   const mapDiv = document.getElementById("googleMap");
 
   const plan = await getTravelPlan();
   const latLngs = makeLatLngs(plan.LatLongs);
   const labels = makeMarkerLabels(plan.PlaceCategories);
   const options = makeOptions(latLngs, labels);
-  const map = new google.maps.Map(mapDiv, {
+
+  const { Map } = await google.maps.importLibrary("maps");
+  const map = new Map(mapDiv, {
     zoom: zoom,
     center: findCenter(latLngs),
   });
