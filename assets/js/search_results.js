@@ -56,10 +56,12 @@ function planToView(plan, planIndex) {
     []
   );
 
-  $(`#plan-table-${planIndex} tbody tr`).map(function () {
-    const $row = $(this);
+  $(`#plan-table-${planIndex} tbody tr`).map((idx, row) => {
+    const $row = $(row);
+
     view.places.push(
       new Place(
+        plan.places[idx].id,
         $row.find(`:nth-child(1) #interval-${planIndex}`).text().trim(),
         $row.find(":nth-child(2)").find("a").text(),
         $row.find(":nth-child(3)").text(),

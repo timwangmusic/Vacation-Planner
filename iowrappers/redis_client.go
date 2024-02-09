@@ -627,7 +627,7 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 			Logger.Error(err)
 			continue
 		}
-		_, recordSaveErr := r.client.Set(ctx, solutionRedisKey, json_, 0).Result()
+		_, recordSaveErr := r.client.Set(ctx, solutionRedisKey, json_, PlanningSolutionsExpirationTime).Result()
 		if recordSaveErr != nil {
 			Logger.Error(err)
 			continue
