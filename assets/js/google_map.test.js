@@ -42,6 +42,7 @@ describe("Test Single Marker", () => {
       options: {
         position: [0, 1],
         label: new Label("\uea52"),
+        title: "Tian Tan Park",
       },
     };
 
@@ -251,13 +252,14 @@ describe("Test to create an array of marker options", () => {
     // setup
     const latlngs = [0, 1];
     const labels = ["a", "b"];
+    const names = ["fancy garden", "fun park"];
     const target = [
-      { position: 0, label: "a" },
-      { position: 1, label: "b" },
+      { position: 0, label: "a", title: names[0] },
+      { position: 1, label: "b", title: names[1] },
     ];
 
     // test
-    const result = makeOptions(latlngs, labels);
+    const result = makeOptions(latlngs, labels, names);
     expect(result).toEqual(target);
   });
 });
