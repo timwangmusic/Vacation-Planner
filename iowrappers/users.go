@@ -314,7 +314,7 @@ func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, 
 	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
 	userSavedPlansRedisKey := strings.Join([]string{UserSavedTravelPlansPrefix, "user", userView.ID, "plans"}, ":")
 	if exists, getPlanErr := r.client.SIsMember(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); getPlanErr != nil || exists {
-		if getPlanErr != nil && getPlanErr != redis.Nil {
+		if getPlanErr != nil && !errors.Is(getPlanErr, redis.Nil) {
 			return getPlanErr
 		}
 		if exists {

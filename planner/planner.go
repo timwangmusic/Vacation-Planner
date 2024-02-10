@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/modern-go/reflect2"
 	"html/template"
 	"io"
 	"net/http"
@@ -38,6 +39,7 @@ const (
 	SolverTimeout      = time.Second * 10
 	jobQueueBufferSize = 1000
 	PhotoApiBaseURL    = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=%s&key=%s"
+	requestIdKey       = "request_id"
 )
 
 type Environment string
@@ -69,15 +71,18 @@ type MyPlanner struct {
 	OAuth2Config       *oauth2.Config
 	Mailer             *iowrappers.Mailer
 	GeonamesApiKey     string
+	MapsClientApiKey   string
 }
 
 type TimeSectionPlace struct {
-	PlaceName string   `json:"place_name"`
-	StartTime POI.Hour `json:"start_time"`
-	EndTime   POI.Hour `json:"end_time"`
-	Address   string   `json:"address"`
-	URL       string   `json:"url"`
-	PlaceIcon string   `json:"place_icon_css_class"`
+	ID        string            `json:"id"`
+	PlaceName string            `json:"place_name"`
+	Category  POI.PlaceCategory `json:"category"`
+	StartTime POI.Hour          `json:"start_time"`
+	EndTime   POI.Hour          `json:"end_time"`
+	Address   string            `json:"address"`
+	URL       string            `json:"url"`
+	PlaceIcon string            `json:"place_icon_css_class"`
 }
 
 type TravelPlan struct {
@@ -104,7 +109,9 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
+// TODO: deprecate Score and ScoreOld fields
 type TripDetailResp struct {
+	OriginalPlanID    string
 	LatLongs          [][2]float64
 	PlaceCategories   []POI.PlaceCategory
 	PlaceDetails      []PlaceDetailsResp
@@ -113,6 +120,7 @@ type TripDetailResp struct {
 	TravelDate        string
 	Score             float64
 	ScoreOld          float64
+	ApiKey            string
 }
 
 type PlaceDetailsResp struct {
@@ -159,6 +167,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 		logger.Errorf("failed to load flag server:plan_solver:enableMapsPhotoClient!")
 	}
 
+	p.MapsClientApiKey = mapsClientApiKey
 	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 	if v, exists := p.Configs["server:plan_solver:same_place_dedupe_count_limit"]; exists {
@@ -410,23 +419,25 @@ func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRe
 	response.TravelPlans = make([]TravelPlan, len(s))
 	response.TripDetailsURL = make([]string, len(s))
 
-	for sIdx, topSolution := range s {
+	for idx, solution := range s {
 		travelPlan := TravelPlan{
 			Places: make([]TimeSectionPlace, 0),
 		}
-		for pIdx, placeName := range topSolution.PlaceNames {
+		for pIdx, placeName := range solution.PlaceNames {
 			travelPlan.Places = append(travelPlan.Places, TimeSectionPlace{
+				ID:        solution.PlaceIDS[pIdx],
 				PlaceName: placeName,
+				Category:  solution.PlaceCategories[pIdx],
 				StartTime: request.Slots[pIdx].TimeSlot.Slot.Start,
 				EndTime:   request.Slots[pIdx].TimeSlot.Slot.End,
-				Address:   topSolution.PlaceAddresses[pIdx],
-				URL:       topSolution.PlaceURLs[pIdx],
-				PlaceIcon: getPlaceIcon(topSolution.PlaceCategories, pIdx),
+				Address:   solution.PlaceAddresses[pIdx],
+				URL:       solution.PlaceURLs[pIdx],
+				PlaceIcon: getPlaceIcon(solution.PlaceCategories, pIdx),
 			})
 		}
-		travelPlan.ID = topSolution.ID
-		response.TravelPlans[sIdx] = travelPlan
-		response.TripDetailsURL[sIdx] = "/v1/plans/" + travelPlan.ID + "?date=" + request.TravelDate
+		travelPlan.ID = solution.ID
+		response.TravelPlans[idx] = travelPlan
+		response.TripDetailsURL[idx] = "/v1/plans/" + travelPlan.ID + "?date=" + request.TravelDate
 	}
 
 	response.StatusCode = ValidSolutionFound
@@ -469,6 +480,8 @@ func (p *MyPlanner) getOptimalPlan(ctx *gin.Context) {
 // Return top planning results to user
 func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
+	requestId := requestid.Get(ctx)
+	ctx.Set(requestIdKey, requestId)
 
 	var userView user.View
 	// debug
@@ -482,7 +495,6 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	logger.Debugf("->getPlanningApi: user view: %+v", userView)
-	requestId := requestid.Get(ctx)
 
 	var err error
 	var preciseLocation bool
@@ -587,6 +599,80 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	utils.LogErrorWithLevel(p.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
 }
 
+func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
+	logger := iowrappers.Logger
+	if reflect2.IsNil(logger) {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	username := ctx.Param("username")
+	planId := ctx.Param("id")
+	logger.Debugf("looking for plan %s saved by user %s", planId, username)
+
+	userView, findUserErr := p.RedisClient.FindUser(ctx, iowrappers.FindUserByName, user.View{Username: username})
+	if findUserErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("cannot find user %s", username)})
+		return
+	}
+
+	planDetailsRedisKey := strings.Join([]string{iowrappers.UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planId}, ":")
+	planDetails := &user.TravelPlanView{}
+	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planDetailsRedisKey, planDetails)
+	if cacheErr != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("cannot find plan %s from user %s", planId, username)})
+		return
+	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(len(planDetails.Places))
+	placesCount := len(planDetails.Places)
+
+	resp := TripDetailResp{
+		OriginalPlanID:    planDetails.OriginalPlanID,
+		LatLongs:          make([][2]float64, placesCount),
+		PlaceCategories:   make([]POI.PlaceCategory, placesCount),
+		PlaceDetails:      make([]PlaceDetailsResp, placesCount),
+		ShownActive:       make([]bool, placesCount),
+		TravelDestination: planDetails.Destination,
+		TravelDate:        planDetails.TravelDate,
+	}
+
+	const fixedPlaceKeyPrefix = "place_details:place_ID:"
+	for idx, view := range planDetails.Places {
+		go func(i int, v user.TravelPlaceView) {
+			defer wg.Done()
+			placeRedisKey := fixedPlaceKeyPrefix + v.ID
+			var place POI.Place
+			if err := p.RedisClient.FetchSingleRecord(ctx, placeRedisKey, &place); err != nil {
+				logger.Error(err)
+				return
+			}
+			resp.LatLongs[i] = [2]float64{place.Location.Latitude, place.Location.Longitude}
+			resp.ShownActive[i] = i == 0
+			resp.PlaceCategories[i] = POI.GetPlaceCategory(place.LocationType)
+
+			details, err := p.placeDetailsResp(ctx, place)
+			if err != nil {
+				logger.Error(err)
+				return
+			}
+			resp.PlaceDetails[i] = details
+		}(idx, view)
+	}
+
+	wg.Wait()
+
+	resp.ApiKey = p.MapsClientApiKey
+	jsonOnly, _ := strconv.ParseBool(strings.ToLower(ctx.DefaultQuery("json_only", "false")))
+	if jsonOnly {
+		ctx.JSON(http.StatusOK, resp)
+		return
+	}
+
+	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, resp), utils.LogError)
+}
+
 func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 	logger := iowrappers.Logger
 	id := ctx.Param("id")
@@ -610,6 +696,7 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 	}
 	travelDate := ctx.DefaultQuery("date", today.Format("2006-01-02")) // yyyy-mm-dd
 	var tripResp = TripDetailResp{
+		OriginalPlanID:    record.ID,
 		LatLongs:          record.PlaceLocations,
 		PlaceCategories:   record.PlaceCategories,
 		PlaceDetails:      make([]PlaceDetailsResp, len(record.PlaceIDs)),
@@ -618,6 +705,7 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		TravelDate:        travelDate,
 		Score:             record.Score,
 		ScoreOld:          record.ScoreOld,
+		ApiKey:            p.MapsClientApiKey,
 	}
 
 	wg := sync.WaitGroup{}
@@ -643,19 +731,20 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		return
 	}
 
+	logger.Debugf("lat/lng are: %+v", tripResp.LatLongs)
 	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, tripResp), utils.LogError)
 }
 
 func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
 	var err error
-	*resp, err = p.getTripFromPlace(ctx, place)
+	*resp, err = p.placeDetailsResp(ctx, place)
 	if err != nil {
 		iowrappers.Logger.Error(err)
 	}
 	wg.Done()
 }
 
-func (p *MyPlanner) getTripFromPlace(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
+func (p *MyPlanner) placeDetailsResp(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
 	photoURL, err := p.PhotoClient.GetPhotoURL(ctx, place.Photo.Reference, place.GetID())
 	return PlaceDetailsResp{
 		ID:               place.GetID(),
@@ -692,7 +781,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	iowrappers.Logger.Debugf("received date in request: %s", date)
+	logger.Debugf("received date in request: %s", date)
 
 	priceLevel := ctx.DefaultQuery("price", "2")
 	logger.Debugf("Requested price range is %s", priceLevel)
@@ -710,7 +799,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 	}
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
-		iowrappers.Logger.Error(err)
+		logger.Error(err)
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
@@ -722,7 +811,7 @@ func (p *MyPlanner) customize(ctx *gin.Context) {
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestid.Get(ctx))
 	planningResp := p.Planning(c, request, "guest")
-	iowrappers.Logger.Debugf("response status code is: %d", planningResp.StatusCode)
+	logger.Debugf("response status code is: %d", planningResp.StatusCode)
 	if planningResp.StatusCode == RequestTimeOut {
 		ctx.JSON(http.StatusRequestTimeout, nil)
 	}
@@ -944,6 +1033,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			users.POST("/:username/plans", p.userSavedPlansPostHandler)
 			users.GET("/:username/plans", p.userSavedPlansGetHandler)
 			users.DELETE("/:username/plan/:id", p.userPlanDeleteHandler)
+			users.GET("/:username/plan/:id", p.getUserSavedPlanDetails)
 		}
 
 		places := v1.Group("/places")

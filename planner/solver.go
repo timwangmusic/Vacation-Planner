@@ -230,7 +230,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, cacheRequest)
 
 	var resp = &PlanningResp{}
-	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) < req.NumPlans {
+	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) == 0 {
 		resp = s.generateSolutions(ctx, req)
 		if resp.Err == nil {
 			if err := saveSolutions(ctx, redisClient, req, resp.Solutions); err != nil {
@@ -278,7 +278,7 @@ func standardRequest(travelDate string, weekday POI.Weekday, numResults int, pri
 		Weekday:  weekday,
 	}
 
-	timeSlot3 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 13, End: 17}}
+	timeSlot3 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 14, End: 17}}
 
 	slotReq3 := SlotRequest{
 		TimeSlot: timeSlot3,
@@ -286,7 +286,14 @@ func standardRequest(travelDate string, weekday POI.Weekday, numResults int, pri
 		Weekday:  weekday,
 	}
 
-	req.Slots = append(req.Slots, []SlotRequest{slotReq1, slotReq2, slotReq3}...)
+	timeSlot4 := matching.TimeSlot{Slot: POI.TimeInterval{Start: 18, End: 20}}
+	slotReq4 := SlotRequest{
+		TimeSlot: timeSlot4,
+		Category: POI.PlaceCategoryEatery,
+		Weekday:  weekday,
+	}
+
+	req.Slots = append(req.Slots, []SlotRequest{slotReq1, slotReq2, slotReq3, slotReq4}...)
 	req.TravelDate = travelDate
 	req.NumPlans = numResults
 	req.PriceLevel = priceLevel

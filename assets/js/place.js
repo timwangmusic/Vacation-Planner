@@ -9,7 +9,8 @@ class View {
 }
 
 class Place {
-  constructor(timePeriod, placeName, address, url) {
+  constructor(id, timePeriod, placeName, address, url) {
+    this.id = id;
     this.time_period = timePeriod;
     this.place_name = placeName;
     this.address = address;

@@ -113,7 +113,11 @@
               class="carousel-item"
               {{end}}
             >
-              <img src="data:image/jpg;base64,{{.PhotoURL}}" class="d-block w-100" alt="..." />
+              <img
+                src="data:image/jpg;base64,{{.PhotoURL}}"
+                class="d-block w-100"
+                alt="..."
+              />
             </div>
             {{end}}
           </div>
@@ -175,8 +179,8 @@
     <script src="/v1/assets/js/show-trip-script.js"></script>
     <script src="/v1/assets/js/google_map.js"></script>
     <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6KxWyyl6ysQ-RYyu9OVvTPyfxLEa03zk&callback=initMap&libraries=&v=weekly"
       async
+      src="https://maps.googleapis.com/maps/api/js?key={{.ApiKey}}&loading=async&callback=initMap&loading=async&libraries=&v=weekly"
     ></script>
     <script type="module" src="/v1/assets/js/jwt-decode.js"></script>
     <script type="module" src="/v1/assets/js/user.js"></script>

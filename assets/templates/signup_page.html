@@ -1,112 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!--Bootstrap CSS-->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css"
+    />
 
     <!--Scripts-->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"
+    ></script>
     <title>Vacation Planner Sign up</title>
-</head>
+  </head>
 
-<body>
-    <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
-        <a class="nav-link" href="https://github.com/weihesdlegend/Vacation-Planner"><i
-                class="fa fa-github-alt fa_custom fa-2x" style='color:#5d9ba8'></i></a>
+  <body>
+    <nav class="navbar navbar-light" style="background-color: #e3f2fd">
+      <a
+        class="nav-link"
+        href="https://github.com/weihesdlegend/Vacation-Planner"
+        ><i class="fa fa-github-alt fa_custom fa-2x" style="color: #5d9ba8"></i
+      ></a>
     </nav>
-    <h1> Vacation Planner </h1>
+    <h1>Vacation Planner</h1>
 
     <div class="container mt-3" style="align-content: center">
-        <form id="signup-form">
-            <div class="input-group mb-3">
-                <span class="input-group-text">
-                    <span class="fa fa-user"></span>
-                </span>
-                <input id="username" type="text" class="form-control" name="username" placeholder="Username" required>
-            </div>
-            <div class="input-group mb-3">
-                <span class="input-group-text">
-                    <i class="fa fa-lock"></i>
-                </span>
-                <input id="password" type="password" class="form-control" name="password" placeholder="Password"
-                    required>
-            </div>
-            <div class="input-group mb-3">
-                <span class="input-group-text">
-                    <span class="fa fa-envelope"></span>
-                </span>
-                <input id="email" type="text" class="form-control" name="email" placeholder="Email" required>
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary login-btn btn-block">Sign up</button>
-            </div>
-        </form>
-        <div class="d-flex justify-content-center align-items-center mt-2">
-            <div class="alert alert-primary d-none" role="alert" id="sign-up-error-alert"></div>
+      <form id="signup-form">
+        <div class="input-group mb-3">
+          <span class="input-group-text">
+            <span class="fa fa-user"></span>
+          </span>
+          <input
+            id="username"
+            type="text"
+            class="form-control"
+            name="username"
+            placeholder="Username"
+            required
+          />
         </div>
-        <div class="d-flex justify-content-center align-items-center mt-2">
-            <div class="alert alert-success d-none" role="alert" id="sign-up-submitted"></div>
+        <div class="input-group mb-3">
+          <span class="input-group-text">
+            <i class="fa fa-lock"></i>
+          </span>
+          <input
+            id="password"
+            type="password"
+            class="form-control"
+            name="password"
+            placeholder="Password"
+            required
+          />
         </div>
+        <div class="input-group mb-3">
+          <span class="input-group-text">
+            <span class="fa fa-envelope"></span>
+          </span>
+          <input
+            id="email"
+            type="text"
+            class="form-control"
+            name="email"
+            placeholder="Email"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary login-btn btn-block">
+            Sign up
+          </button>
+        </div>
+      </form>
+      <div class="d-flex justify-content-center align-items-center mt-2">
+        <div
+          class="alert alert-primary d-none"
+          role="alert"
+          id="sign-up-error-alert"
+        ></div>
+      </div>
+      <div class="d-flex justify-content-center align-items-center mt-2">
+        <div
+          class="alert alert-success d-none"
+          role="alert"
+          id="sign-up-submitted"
+        ></div>
+      </div>
     </div>
 
-
     <script>
-        window.addEventListener("load", function () {
-            function sendData() {
-                const XHR = new XMLHttpRequest();
+      window.addEventListener("load", function () {
+        function sendData() {
+          const XHR = new XMLHttpRequest();
 
-                const username = document.getElementById("username").value;
-                const password = document.getElementById("password").value;
-                const email = document.getElementById("email").value;
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+          const email = document.getElementById("email").value;
 
-                XHR.onload = function () {
-                    if (XHR.readyState === XHR.DONE) {
-                        if (XHR.status === 200) {
-                            console.log("pending user email verification.")
-                            const resp = jQuery.parseJSON(XHR.responseText).message;
-                            const signUpResp = document.getElementById("sign-up-submitted");
-                            signUpResp.innerText = resp;
-                            signUpResp.classList.remove("d-none");
-                        } else if (XHR.status === 400) {
-                            const errorMessage = jQuery.parseJSON(XHR.responseText).error;
+          XHR.onload = function () {
+            if (XHR.readyState === XHR.DONE) {
+              if (XHR.status === 200) {
+                console.log("pending user email verification.");
+                const resp = jQuery.parseJSON(XHR.responseText).message;
+                const signUpResp = document.getElementById("sign-up-submitted");
+                signUpResp.innerText = resp;
+                signUpResp.classList.remove("d-none");
+              } else if (XHR.status === 400) {
+                const errorMessage = jQuery.parseJSON(XHR.responseText).error;
 
-                            const signUpError = document.getElementById("sign-up-error-alert");
-                            signUpError.innerText = errorMessage;
-                            signUpError.classList.remove("d-none");
-                        }
-                    }
-                }
-
-                XHR.open("POST", "/v1/signup", true);
-
-                XHR.setRequestHeader("Content-Type", "application/json");
-
-                XHR.send(JSON.stringify({
-                    username: username,
-                    password: password,
-                    email: email,
-                }));
+                const signUpError = document.getElementById(
+                  "sign-up-error-alert"
+                );
+                signUpError.innerText = errorMessage;
+                signUpError.classList.remove("d-none");
+              }
             }
+          };
 
-            const form = document.getElementById("signup-form");
+          XHR.open("POST", "/v1/signup", true);
 
-            form.addEventListener("submit", function (event) {
-                event.preventDefault();
+          XHR.setRequestHeader("Content-Type", "application/json");
 
-                sendData();
-            });
+          XHR.send(
+            JSON.stringify({
+              username: username,
+              password: password,
+              email: email,
+            })
+          );
+        }
+
+        const form = document.getElementById("signup-form");
+
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          sendData();
         });
+      });
     </script>
-</body>
-
+  </body>
 </html>

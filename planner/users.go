@@ -161,7 +161,7 @@ func (p *MyPlanner) UserAuthentication(ctx *gin.Context, minimumUserLevel user.L
 		return userView, errors.New("failed to parse JWT claims")
 	}
 
-	iowrappers.Logger.Debugf("the current logged-in user is %s", username)
+	iowrappers.Logger.Debugf("[request ID: %s] The current logged-in user is %s", ctx.Value(requestIdKey), username)
 
 	userView, findUserErr := p.RedisClient.FindUser(ctx, iowrappers.FindUserByName, user.View{Username: username})
 	if findUserErr != nil {
