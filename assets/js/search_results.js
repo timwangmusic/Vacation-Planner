@@ -23,7 +23,6 @@ async function postPlanForUser() {
   const url = `/v1/users/${username}/plans`;
   const fields = this.id.split("-");
   const planIndex = fields[fields.length - 1];
-
   const data = await getPlans();
   // the number of plans equals the array length in the JSON result
   numberOfPlans = data.length;
@@ -38,7 +37,12 @@ async function postPlanForUser() {
   }).catch((err) => console.error(err));
 
   $(this).attr("disabled", "true");
+  var shouldDisable = true
   $(this).parent().attr("title", "saved!");
+
+  // Store the state in localStorage
+  // the button also needs to be associated with the correct button-id
+  localStorage.setItem(`buttonState-${sourcePlan.id}`, shouldDisable);
 
   $(`#edit-${planIndex}`).attr("disabled", "true");
   $(`#plan-table-${planIndex} tBody`).attr("contenteditable", "false");
@@ -110,10 +114,26 @@ rollUpButton.addEventListener("click", () => {
 });
 
 
-/**
- * This will check if a user plan is already saved in the user profile
- * If so, we will disable the save button as a result
- */
-function checkifUserPlanisSaved() {
-  //TODO: operate and check here
+async function getButtonSavedState(planIndex){
+  const data = await getPlans();
+  let storedState = null
+  let button = document.getElementById("save-{$planIndex}");
+  if (localStorage.getItem(`buttonState-${data[planIndex].id}`) != null) {
+    console.debug(`the button item ${data[planIndex].id} is found ..`)
+    storedState = localStorage.getItem(`buttonState-${data[planIndex].id}`);
+  } else {
+    console.debug(`the button item ${data[planIndex].id} is not found!`)
+  }
+  if (storedState === "true") {
+    button.disabled = true;
+  }
 }
+
+
+// If you refresh this still does not work, only works when you go to profile and come back to check
+// It should work if we refresh as well
+document.addEventListener("DOMContentLoaded", function () {
+  for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
+    getButtonSavedState(planIndex);
+  }
+});

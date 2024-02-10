@@ -583,6 +583,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
 		return
 	}
+	// Debug: Below is the rendering done, so we need to talk to the JS here
 	utils.LogErrorWithLevel(p.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
 }
 
