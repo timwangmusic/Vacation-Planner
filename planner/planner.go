@@ -484,8 +484,6 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	ctx.Set(requestIdKey, requestId)
 
 	var userView user.View
-	// debug
-	// var planView user.TravelPlanView
 	var authenticationErr error
 	userView, authenticationErr = p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
@@ -575,7 +573,6 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	// key to search: user_saved_travel_plans:user:4efc1f59-ee16-4453-8610-65f2444c7288:plans
 	if userView.IsSavedPlans != false {
 		var s1 []string = make([]string, 0)
 		var numOfPlanResultsAvail int = min(numResultsInt, len(planningResp.TravelPlans))
@@ -596,7 +593,6 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
 		return
 	}
-	// Debug: Below is the rendering done, so we need to talk to the JS here
 	utils.LogErrorWithLevel(p.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
 }
 
