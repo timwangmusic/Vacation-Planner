@@ -578,12 +578,13 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	// key to search: user_saved_travel_plans:user:4efc1f59-ee16-4453-8610-65f2444c7288:plans
 	if userView.IsSavedPlans != false {
 		var s1 []string = make([]string, 0)
+		var numOfPlanResultsAvail int = min(numResultsInt, len(planningResp.TravelPlans))
 		var savedUserOriginalPlans = strings.Join([]string{"user_saved_travel_plans", "user", userView.ID, "plans"}, ":")
 		s1, err := p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans, &s1)
 		if err != nil {
 			logger.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
 		}
-		for PlanIndex := 0; PlanIndex < numResultsInt; PlanIndex++ {
+		for PlanIndex := 0; PlanIndex < numOfPlanResultsAvail; PlanIndex++ {
 			var SearchFoundNewPlanId = strings.Join([]string{"travel_plan", planningResp.TravelPlans[PlanIndex].ID}, ":")
 			if isPlanIDPresentInSavedList(SearchFoundNewPlanId, s1) {
 				planningResp.TravelPlans[PlanIndex].Saved = true

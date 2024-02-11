@@ -37,12 +37,7 @@ async function postPlanForUser() {
   }).catch((err) => console.error(err));
 
   $(this).attr("disabled", "true");
-  var shouldDisable = true
   $(this).parent().attr("title", "saved!");
-
-  // Store the state in localStorage
-  // the button also needs to be associated with the correct button-id
-  localStorage.setItem(`buttonState-${sourcePlan.id}`, shouldDisable);
 
   $(`#edit-${planIndex}`).attr("disabled", "true");
   $(`#plan-table-${planIndex} tBody`).attr("contenteditable", "false");
@@ -115,27 +110,15 @@ rollUpButton.addEventListener("click", () => {
   });
 });
 
-
-async function getButtonSavedState(planIndex){
+window.onload = async function () {
   const data = await getPlans();
-  let storedState = null
-  let button = document.getElementById("save-{$planIndex}");
-  if (localStorage.getItem(`buttonState-${data[planIndex].id}`) != null) {
-    console.debug(`the button item ${data[planIndex].id} is found ..`)
-    storedState = localStorage.getItem(`buttonState-${data[planIndex].id}`);
-  } else {
-    console.debug(`the button item ${data[planIndex].id} is not found!`)
-  }
-  if (storedState === "true") {
-    button.disabled = true;
+  for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
+    var buttonId = 'save-' + planIndex
+    let buttonHandle = document.getElementById(buttonId);
+    if (buttonHandle != null) {
+      if (data[planIndex].saved) {
+        buttonHandle.disabled = true
+      }
+    }
   }
 }
-
-
-// If you refresh this still does not work, only works when you go to profile and come back to check
-// It should work if we refresh as well
-document.addEventListener("DOMContentLoaded", function () {
-  for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
-    getButtonSavedState(planIndex);
-  }
-});
