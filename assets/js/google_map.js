@@ -39,7 +39,8 @@ async function initMap() {
   const plan = await getTravelPlan();
   const latLngs = makeLatLngs(plan.LatLongs);
   const labels = makeMarkerLabels(plan.PlaceCategories);
-  const options = makeOptions(latLngs, labels);
+  const names = plan.PlaceDetails.map(p => p.Name);
+  const options = makeOptions(latLngs, labels, names);
 
   const { Map } = await google.maps.importLibrary("maps");
   const map = new Map(mapDiv, {
@@ -73,13 +74,14 @@ function makeMarkerLabels(placeCategories) {
   }
 }
 
-function makeOptions(latLngs, labels) {
+function makeOptions(latLngs, labels, names) {
   try {
     opts = [];
     for (let i = 0; i < latLngs.length; i++) {
       opts.push({
         position: latLngs[i],
         label: labels[i],
+        title: names[i],
       });
     }
     return opts;
@@ -135,4 +137,5 @@ const utils = {
   Label: Label,
   placeCategoryToIconCode: placeCategoryToIconCode,
 };
+
 module.exports = utils;
