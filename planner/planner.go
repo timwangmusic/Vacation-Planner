@@ -573,7 +573,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	if userView.IsSavedPlans != false {
+	if userView.IsSavedPlans {
 		var s1 []string = make([]string, 0)
 		var numOfPlanResultsAvail int = min(numResultsInt, len(planningResp.TravelPlans))
 		var savedUserOriginalPlans = strings.Join([]string{"user_saved_travel_plans", "user", userView.ID, "plans"}, ":")
