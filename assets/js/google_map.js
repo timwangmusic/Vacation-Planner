@@ -39,7 +39,7 @@ async function initMap() {
   const plan = await getTravelPlan();
   const latLngs = makeLatLngs(plan.LatLongs);
   const labels = makeMarkerLabels(plan.PlaceCategories);
-  const names = plan.PlaceDetails.map(p => p.Name);
+  const names = plan.PlaceDetails.map((p) => p.Name);
   const options = makeOptions(latLngs, labels, names);
 
   const { Map } = await google.maps.importLibrary("maps");
@@ -119,9 +119,20 @@ function addMarkers(map, cfgs) {
 }
 
 function createMarker(map, cfg) {
-  let marker = new google.maps.Marker({
+  const infowindow = new google.maps.InfoWindow({
+    content: `<div><span><b>${cfg.title}</b></span></div>`,
+  });
+
+  const marker = new google.maps.Marker({
     map: map,
     ...cfg,
+  });
+
+  marker.addListener("click", () => {
+    infowindow.open({
+      anchor: marker,
+      map,
+    });
   });
 }
 
