@@ -8,6 +8,8 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"os"
+	"sync"
+	"sync/atomic"
 )
 
 type Mailer struct {
@@ -31,6 +33,43 @@ func (m *Mailer) Init(redisClient *RedisClient) error {
 	m.client = sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
 	m.redisClient = redisClient
 	m.email = os.Getenv("MAILER_EMAIL_ADDRESS")
+	return nil
+}
+
+// Broadcast sends a message to all users
+func (m *Mailer) Broadcast(ctx context.Context, subject, message, environment string) error {
+	switch environment {
+	case "development":
+		return errors.New("cannot broadcast messages in dev environment")
+	// TODO: Enable email capability in staging
+	case "staging":
+		return errors.New("cannot broadcast messages in staging environment")
+	default:
+		userEmails, err := m.redisClient.Get().HGetAll(ctx, UserEmailsKey).Result()
+		if err != nil {
+			return err
+		}
+		Logger.Debugf("obtained %d users from Redis", len(userEmails))
+
+		from := mail.NewEmail("Vacation Planner", m.email)
+		message = fmt.Sprintf("<div><p>Dear Users,<br><br>%s</p><div>", message)
+
+		var sentCounter atomic.Int64
+		wg := &sync.WaitGroup{}
+		wg.Add(len(userEmails))
+		for email := range userEmails {
+			go func(e string) {
+				defer wg.Done()
+				msg := mail.NewSingleEmail(from, subject, mail.NewEmail(e, e), "", message)
+				if _, err = m.client.Send(msg); err != nil {
+					Logger.Error(err)
+				}
+				sentCounter.Add(1)
+			}(email)
+		}
+		wg.Wait()
+		Logger.Debugf("successfully sent emails to %d users", sentCounter.Load())
+	}
 	return nil
 }
 

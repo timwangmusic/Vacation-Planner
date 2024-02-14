@@ -1044,6 +1044,11 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		{
 			places.GET("/:id", p.GetPlaceDetails)
 		}
+
+		admins := v1.Group("/admins")
+		{
+			admins.POST("/announce", p.announce)
+		}
 	}
 
 	// API endpoints for collecting database statistics

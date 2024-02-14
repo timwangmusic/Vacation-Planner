@@ -36,7 +36,9 @@ const (
 	CitiesRedisKey                 = "known_cities_ids"
 	KnownCitiesHashMapRedisKey     = "known_cities_name_to_id"
 	MapsLastSearchTimeRedisKey     = "MapsLastSearchTime"
-	PlaceDetailsRedisKeyPrefix     = "place_details:place_ID:"
+	// AnnouncementsRedisKey is a Redis Hash that maps ID to announcement details
+	AnnouncementsRedisKey      = "announcements"
+	PlaceDetailsRedisKeyPrefix = "place_details:place_ID:"
 )
 
 var RedisClientDefaultBlankContext context.Context
@@ -688,6 +690,10 @@ func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSo
 	}
 
 	return response, nil
+}
+
+func (r *RedisClient) SaveAnnouncement(ctx context.Context, id, data string) error {
+	return r.Get().HSet(ctx, AnnouncementsRedisKey, id, data).Err()
 }
 
 func (r *RedisClient) FetchSingleRecord(context context.Context, redisKey string, response interface{}) error {
