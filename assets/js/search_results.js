@@ -115,10 +115,8 @@ window.onload = async function () {
   for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
     var buttonId = 'save-' + planIndex
     let buttonHandle = document.getElementById(buttonId);
-    if (buttonHandle != null) {
-      if (data[planIndex].saved) {
+    if (buttonHandle != null && data[planIndex].saved) {
         buttonHandle.disabled = true
-      }
     }
   }
 }

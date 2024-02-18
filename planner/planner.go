@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/modern-go/reflect2"
+	"golang.org/x/oauth2"
 	"html/template"
 	"io"
 	"net/http"
@@ -32,7 +33,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"golang.org/x/oauth2"
 )
 
 const (
@@ -573,21 +573,20 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	if userView.IsSavedPlans {
-		var s1 []string = make([]string, 0)
-		var numOfPlanResultsAvail int = min(numResultsInt, len(planningResp.TravelPlans))
-		var savedUserOriginalPlans = strings.Join([]string{"user_saved_travel_plans", "user", userView.ID, "plans"}, ":")
-		s1, err := p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans, &s1)
-		if err != nil {
-			logger.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
-		}
-		for PlanIndex := 0; PlanIndex < numOfPlanResultsAvail; PlanIndex++ {
-			var SearchFoundNewPlanId = strings.Join([]string{"travel_plan", planningResp.TravelPlans[PlanIndex].ID}, ":")
-			if isPlanIDPresentInSavedList(SearchFoundNewPlanId, s1) {
-				planningResp.TravelPlans[PlanIndex].Saved = true
-			}
+	var s1 []string = make([]string, 0)
+	var numOfPlanResultsAvail int = min(numResultsInt, len(planningResp.TravelPlans))
+	var savedUserOriginalPlans = strings.Join([]string{"user_saved_travel_plans", "user", userView.ID, "plans"}, ":")
+	s1, err = p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans, &s1)
+	if err != nil {
+		logger.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
+	}
+	for PlanIndex := 0; PlanIndex < numOfPlanResultsAvail; PlanIndex++ {
+		var SearchFoundNewPlanId = strings.Join([]string{"travel_plan", planningResp.TravelPlans[PlanIndex].ID}, ":")
+		if isPlanIDPresentInSavedList(SearchFoundNewPlanId, s1) {
+			planningResp.TravelPlans[PlanIndex].Saved = true
 		}
 	}
+
 	jsonOnly := ctx.DefaultQuery("json_only", "false")
 	if jsonOnly != "false" {
 		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
