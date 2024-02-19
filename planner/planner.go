@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/modern-go/reflect2"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"html/template"
 	"io"
@@ -477,6 +478,24 @@ func (p *MyPlanner) getOptimalPlan(ctx *gin.Context) {
 	}
 }
 
+func (p *MyPlanner) UpdatePlanSavedStateForUser(ctx *gin.Context, numResultsInt int, resp PlanningResponse, uv user.View, lgr *zap.SugaredLogger) {
+	var s1 = make([]string, 0)
+	var err error
+	var numOfPlanResultsAvail int = min(numResultsInt, len(resp.TravelPlans))
+	var savedUserOriginalPlans = strings.Join([]string{"user_saved_travel_plans", "user", uv.ID, "plans"}, ":")
+	s1, err = p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans, &s1)
+	if err != nil {
+		lgr.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
+	}
+	for PlanIndex := 0; PlanIndex < numOfPlanResultsAvail; PlanIndex++ {
+		var SearchFoundNewPlanId = strings.Join([]string{"travel_plan", resp.TravelPlans[PlanIndex].ID}, ":")
+		if isPlanIDPresentInSavedList(SearchFoundNewPlanId, s1) {
+			resp.TravelPlans[PlanIndex].Saved = true
+		}
+	}
+
+}
+
 // Return top planning results to user
 func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
@@ -572,20 +591,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		}
 		return
 	}
-
-	var s1 []string = make([]string, 0)
-	var numOfPlanResultsAvail int = min(numResultsInt, len(planningResp.TravelPlans))
-	var savedUserOriginalPlans = strings.Join([]string{"user_saved_travel_plans", "user", userView.ID, "plans"}, ":")
-	s1, err = p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans, &s1)
-	if err != nil {
-		logger.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
-	}
-	for PlanIndex := 0; PlanIndex < numOfPlanResultsAvail; PlanIndex++ {
-		var SearchFoundNewPlanId = strings.Join([]string{"travel_plan", planningResp.TravelPlans[PlanIndex].ID}, ":")
-		if isPlanIDPresentInSavedList(SearchFoundNewPlanId, s1) {
-			planningResp.TravelPlans[PlanIndex].Saved = true
-		}
-	}
+	p.UpdatePlanSavedStateForUser(ctx, numResultsInt, planningResp, userView, logger)
 
 	jsonOnly := ctx.DefaultQuery("json_only", "false")
 	if jsonOnly != "false" {
