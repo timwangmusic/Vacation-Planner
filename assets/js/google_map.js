@@ -40,7 +40,8 @@ async function initMap() {
   const latLngs = makeLatLngs(plan.LatLongs);
   const labels = makeMarkerLabels(plan.PlaceCategories);
   const names = plan.PlaceDetails.map((p) => p.Name);
-  const options = makeOptions(latLngs, labels, names);
+  const urls = plan.PlaceDetails.map((p) => p.URL);
+  const options = makeOptions(latLngs, labels, names, urls);
 
   const { Map } = await google.maps.importLibrary("maps");
   const map = new Map(mapDiv, {
@@ -74,7 +75,7 @@ function makeMarkerLabels(placeCategories) {
   }
 }
 
-function makeOptions(latLngs, labels, names) {
+function makeOptions(latLngs, labels, names, urls) {
   try {
     opts = [];
     for (let i = 0; i < latLngs.length; i++) {
@@ -82,6 +83,7 @@ function makeOptions(latLngs, labels, names) {
         position: latLngs[i],
         label: labels[i],
         title: names[i],
+        url: urls[i],
       });
     }
     return opts;
@@ -120,7 +122,14 @@ function addMarkers(map, cfgs) {
 
 function createMarker(map, cfg) {
   const infowindow = new google.maps.InfoWindow({
-    content: `<div><span><b>${cfg.title}</b></span></div>`,
+    content:
+      `<div>` +
+      `<span>` +
+      `<a href=${cfg.url} style="color: #1DA1F2">` +
+      `<b>${cfg.title}</b>` +
+      `</a>` +
+      `</span>` +
+      `</div>`,
   });
 
   const marker = new google.maps.Marker({
