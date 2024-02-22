@@ -3,6 +3,7 @@ package iowrappers
 import (
 	"context"
 	"errors"
+	"go.uber.org/zap/zapcore"
 	"os"
 	"reflect"
 	"strings"
@@ -45,24 +46,26 @@ func CreateMapsClient(apiKey string) *MapsClient {
 }
 
 func CreateLogger() error {
-	currentEnv := strings.ToUpper(os.Getenv("ENVIRONMENT"))
+	env := strings.ToUpper(os.Getenv("ENVIRONMENT"))
 	var err error
 	var logger *zap.Logger
 
-	if currentEnv == "" || currentEnv == "DEVELOPMENT" {
+	if env == "" || env == "DEVELOPMENT" {
 		logger, err = zap.NewDevelopment() // logging at debug level and above
 	} else {
-		logger, err = zap.NewProduction() // logging at info level and above
+		cfg := zap.NewProductionConfig()
+		cfg.Level.SetLevel(zapcore.DebugLevel) // logging at debug level and above
+		logger, err = cfg.Build()
 	}
 	if err != nil {
 		return err
 	}
 
 	Logger = logger.Sugar()
-	if currentEnv == "" {
-		currentEnv = "TEST"
+	if env == "" {
+		env = "DEVELOPMENT"
 	}
-	Logger.Infof("current environment is %s", currentEnv)
+	Logger.Infof("->CreateLogger: the current environment is %s", env)
 	return nil
 }
 
