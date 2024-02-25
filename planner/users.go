@@ -167,6 +167,7 @@ func (p *MyPlanner) UserAuthentication(ctx *gin.Context, minimumUserLevel user.L
 	if findUserErr != nil {
 		return userView, findUserErr
 	}
+
 	var userLevel user.Level
 	switch userView.UserLevel {
 	case user.LevelStringRegular:

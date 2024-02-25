@@ -23,6 +23,7 @@ async function postPlanForUser() {
   const url = `/v1/users/${username}/plans`;
   const fields = this.id.split("-");
   const planIndex = fields[fields.length - 1];
+
   const data = await getPlans();
   // the number of plans equals the array length in the JSON result
   numberOfPlans = data.length;
@@ -112,6 +113,7 @@ rollUpButton.addEventListener("click", () => {
 
 window.onload = async function () {
   const data = await getPlans();
+  numberOfPlans = data.length;
   for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
     var buttonId = 'save-' + planIndex
     let buttonHandle = document.getElementById(buttonId);

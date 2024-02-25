@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/modern-go/reflect2"
-	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"html/template"
 	"io"
@@ -478,14 +477,15 @@ func (p *MyPlanner) getOptimalPlan(ctx *gin.Context) {
 	}
 }
 
-func (p *MyPlanner) UpdatePlanSavedStateForUser(ctx *gin.Context, numResultsInt int, resp PlanningResponse, uv user.View, lgr *zap.SugaredLogger) {
-	var s1 = make([]string, 0)
+func (p *MyPlanner) UpdatePlanSavedStateForUser(ctx *gin.Context, numResultsInt int, resp PlanningResponse, uv user.View) error {
 	var err error
+	logger := iowrappers.Logger
 	var numOfPlanResultsAvail int = min(numResultsInt, len(resp.TravelPlans))
-	var savedUserOriginalPlans = strings.Join([]string{"user_saved_travel_plans", "user", uv.ID, "plans"}, ":")
-	s1, err = p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans, &s1)
+	var savedUserOriginalPlans = strings.Join([]string{iowrappers.UserSavedTravelPlansPrefix, "user", uv.ID, "plans"}, ":")
+	s1, err := p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans)
 	if err != nil {
-		lgr.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
+		logger.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
+		return err
 	}
 	for PlanIndex := 0; PlanIndex < numOfPlanResultsAvail; PlanIndex++ {
 		var SearchFoundNewPlanId = strings.Join([]string{"travel_plan", resp.TravelPlans[PlanIndex].ID}, ":")
@@ -493,7 +493,7 @@ func (p *MyPlanner) UpdatePlanSavedStateForUser(ctx *gin.Context, numResultsInt 
 			resp.TravelPlans[PlanIndex].Saved = true
 		}
 	}
-
+	return nil
 }
 
 // Return top planning results to user
@@ -591,7 +591,9 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		}
 		return
 	}
-	p.UpdatePlanSavedStateForUser(ctx, numResultsInt, planningResp, userView, logger)
+	if err = p.UpdatePlanSavedStateForUser(ctx, numResultsInt, planningResp, userView); err != nil {
+		logger.Debug(err)
+	}
 
 	jsonOnly := ctx.DefaultQuery("json_only", "false")
 	if jsonOnly != "false" {
@@ -1066,8 +1068,8 @@ func getPlaceIcon(placeTypes []POI.PlaceCategory, pIdx int) string {
 	return string(placeTypeToIcon[placeTypes[pIdx]])
 }
 
-func isPlanIDPresentInSavedList(planID string, savedPlaces []string) bool {
-	for _, savePlaceID := range savedPlaces {
+func isPlanIDPresentInSavedList(planID string, userSavedPlans []string) bool {
+	for _, savePlaceID := range userSavedPlans {
 		if savePlaceID == planID {
 			return true
 		}
