@@ -63,3 +63,7 @@ will incorporate personalized recommendations.
 
 * Backend: Golang
 * Frontend: Bootstrap and Javascript
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=timwangmusic/Vacation-planner&type=Date)](https://star-history.com/#timwangmusic/Vacation-planner&Date)
