@@ -167,7 +167,15 @@ func (p *MyPlanner) UserAuthentication(ctx *gin.Context, minimumUserLevel user.L
 	if findUserErr != nil {
 		return userView, findUserErr
 	}
-
+	var savedPlanStateKey = strings.Join([]string{iowrappers.UserSavedPlanState, "user", userView.ID}, ":")
+	var state int
+	err := p.RedisClient.FetchSingleRecord(ctx, savedPlanStateKey, &state)
+	if err != nil {
+		return userView, findUserErr
+	}
+	if state == 1 {
+		userView.IsSavedPlans = true
+	}
 	var userLevel user.Level
 	switch userView.UserLevel {
 	case user.LevelStringRegular:

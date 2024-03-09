@@ -50,6 +50,7 @@ type FindUserBy string
 const (
 	UserSavedTravelPlansPrefix = "user_saved_travel_plans"
 	UserSavedTravelPlanPrefix  = "user_saved_travel_plan"
+	UserSavedPlanState         = "saved_plan_state"
 
 	//UserNamesKey maps usernames to IDs
 	UserNamesKey = "user_names"
@@ -236,12 +237,13 @@ func (r *RedisClient) CreateUser(context context.Context, userView user.View, sk
 
 	userID := uuid.NewString()
 	userData := map[string]interface{}{
-		"id":         userID,
-		"username":   userView.Username,
-		"user_level": userView.UserLevel,
-		"password":   string(passwordEncrypted),
-		"email":      userView.Email,
-		"favorites":  userView.Favorites,
+		"id":             userID,
+		"username":       userView.Username,
+		"user_level":     userView.UserLevel,
+		"password":       string(passwordEncrypted),
+		"email":          userView.Email,
+		"favorites":      userView.Favorites,
+		"is_saved_plans": userView.IsSavedPlans,
 	}
 
 	// username is required
@@ -327,6 +329,21 @@ func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, 
 	}
 
 	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
+	Logger.Debugf("-> Saving the Plan %s for user %s here", planView.ID, userView.ID)
+
+	SavedPlanState := strings.Join([]string{UserSavedPlanState, "user", userView.ID}, ":")
+	//todo: the bool is not working due to json: cannot unmarshal bool into Go value of type User:TravelPlanView
+	//savedState := 1
+	//json_, err = json.Marshal(savedState)
+	//if err != nil {
+	//	return err
+	//}
+	//_, err = r.client.Set(context, SavedPlanState, json_, 0).Result()
+	_, err = r.client.Set(context, SavedPlanState, 1, 0).Result()
+	if err != nil {
+		return err
+	}
+
 	_, err = r.client.Set(context, redisKey, json_, 0).Result()
 	return err
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/modern-go/reflect2"
+	"golang.org/x/oauth2"
 	"html/template"
 	"io"
 	"net/http"
@@ -32,7 +33,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"golang.org/x/oauth2"
 )
 
 const (
@@ -88,6 +88,7 @@ type TimeSectionPlace struct {
 type TravelPlan struct {
 	ID     string             `json:"id"`
 	Places []TimeSectionPlace `json:"places"`
+	Saved  bool               `json:"saved"`
 }
 
 type PlanningResponse struct {
@@ -476,6 +477,25 @@ func (p *MyPlanner) getOptimalPlan(ctx *gin.Context) {
 	}
 }
 
+func (p *MyPlanner) UpdatePlanSavedStateForUser(ctx *gin.Context, numResultsInt int, resp PlanningResponse, uv user.View) error {
+	var err error
+	logger := iowrappers.Logger
+	var numOfPlanResultsAvail int = min(numResultsInt, len(resp.TravelPlans))
+	var savedUserOriginalPlans = strings.Join([]string{iowrappers.UserSavedTravelPlansPrefix, "user", uv.ID, "plans"}, ":")
+	savedPlanIds, err := p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans)
+	if err != nil {
+		logger.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
+		return err
+	}
+	for PlanIndex := 0; PlanIndex < numOfPlanResultsAvail; PlanIndex++ {
+		var targetPlanId = strings.Join([]string{"travel_plan", resp.TravelPlans[PlanIndex].ID}, ":")
+		if isPlanIDPresentInSavedList(targetPlanId, savedPlanIds) {
+			resp.TravelPlans[PlanIndex].Saved = true
+		}
+	}
+	return nil
+}
+
 // Return top planning results to user
 func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	logger := iowrappers.Logger
@@ -483,6 +503,8 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	ctx.Set(requestIdKey, requestId)
 
 	var userView user.View
+	// debug
+	// var planView user.TravelPlanView
 	var authenticationErr error
 	userView, authenticationErr = p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
@@ -571,7 +593,11 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		}
 		return
 	}
+	if err = p.UpdatePlanSavedStateForUser(ctx, numResultsInt, planningResp, userView); err != nil {
+		logger.Debug(err)
+	}
 
+	// TODO: Check for user Saved Plans here
 	jsonOnly := ctx.DefaultQuery("json_only", "false")
 	if jsonOnly != "false" {
 		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
@@ -1048,4 +1074,13 @@ func getPlaceIcon(placeTypes []POI.PlaceCategory, pIdx int) string {
 		return string(POI.PlaceIconEmpty)
 	}
 	return string(placeTypeToIcon[placeTypes[pIdx]])
+}
+
+func isPlanIDPresentInSavedList(planID string, userSavedPlans []string) bool {
+	for _, savePlaceID := range userSavedPlans {
+		if savePlaceID == planID {
+			return true
+		}
+	}
+	return false
 }
