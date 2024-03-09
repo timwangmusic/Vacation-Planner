@@ -482,14 +482,14 @@ func (p *MyPlanner) UpdatePlanSavedStateForUser(ctx *gin.Context, numResultsInt 
 	logger := iowrappers.Logger
 	var numOfPlanResultsAvail int = min(numResultsInt, len(resp.TravelPlans))
 	var savedUserOriginalPlans = strings.Join([]string{iowrappers.UserSavedTravelPlansPrefix, "user", uv.ID, "plans"}, ":")
-	s1, err := p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans)
+	savedPlanIds, err := p.RedisClient.FetchSingleRecordTypeSet(ctx, savedUserOriginalPlans)
 	if err != nil {
 		logger.Debugf("Cannot find plan with key %s: %v", savedUserOriginalPlans, err)
 		return err
 	}
 	for PlanIndex := 0; PlanIndex < numOfPlanResultsAvail; PlanIndex++ {
-		var SearchFoundNewPlanId = strings.Join([]string{"travel_plan", resp.TravelPlans[PlanIndex].ID}, ":")
-		if isPlanIDPresentInSavedList(SearchFoundNewPlanId, s1) {
+		var targetPlanId = strings.Join([]string{"travel_plan", resp.TravelPlans[PlanIndex].ID}, ":")
+		if isPlanIDPresentInSavedList(targetPlanId, savedPlanIds) {
 			resp.TravelPlans[PlanIndex].Saved = true
 		}
 	}

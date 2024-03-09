@@ -327,7 +327,6 @@ func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, 
 	}
 
 	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
-
 	_, err = r.client.Set(context, redisKey, json_, 0).Result()
 	return err
 }
