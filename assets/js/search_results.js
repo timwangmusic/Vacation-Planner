@@ -111,14 +111,14 @@ rollUpButton.addEventListener("click", () => {
   });
 });
 
-window.onload = async function () {
-  const data = await getPlans();
-  numberOfPlans = data.length;
-  for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
-    var buttonId = "save-" + planIndex;
-    let buttonHandle = document.getElementById(buttonId);
-    if (buttonHandle != null && data[planIndex].saved) {
-      buttonHandle.disabled = true;
+$(document).ready(async function () {
+  {
+    const plans = await getPlans();
+    for (let idx = 0; idx < plans.length; idx++) {
+      let btn = document.getElementById("save-" + idx);
+      if (btn != null && plans[idx].saved) {
+        btn.disabled = true;
+      }
     }
   }
-};
+});
