@@ -39,9 +39,6 @@ async function postPlanForUser() {
 
   $(this).attr("disabled", "true");
   $(this).parent().attr("title", "saved!");
-
-  $(`#edit-${planIndex}`).attr("disabled", "true");
-  $(`#plan-table-${planIndex} tBody`).attr("contenteditable", "false");
 }
 
 function planToView(plan, planIndex) {
@@ -93,10 +90,6 @@ function normalizeLocation(location) {
 // create button event actions
 for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
-  $(`#edit-${planIndex}`).click(() => {
-    $(`#plan-table-${planIndex} tBody`).attr("contenteditable", "true");
-    $(this).innerText = "done";
-  });
 }
 
 document
