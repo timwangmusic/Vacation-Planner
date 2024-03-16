@@ -37,18 +37,19 @@ async function initMap() {
   const mapDiv = document.getElementById("googleMap");
 
   const plan = await getTravelPlan();
+  const placeIds = plan.PlaceDetails.map((p) => p.ID);
   const latLngs = makeLatLngs(plan.LatLongs);
   const labels = makeMarkerLabels(plan.PlaceCategories);
-  const names = plan.PlaceDetails.map(p => p.Name);
-  const options = makeOptions(latLngs, labels, names);
+  const options = makeOptions(placeIds, latLngs, labels);
 
   const { Map } = await google.maps.importLibrary("maps");
   const map = new Map(mapDiv, {
     zoom: zoom,
     center: findCenter(latLngs),
+    mapId: "DEMO_MAP_ID",
   });
 
-  addMarkers(map, options);
+  await addMarkers(map, options);
 }
 
 function makeLatLngs(arr) {
@@ -74,14 +75,13 @@ function makeMarkerLabels(placeCategories) {
   }
 }
 
-function makeOptions(latLngs, labels, names) {
+function makeOptions(ids, latLngs) {
   try {
     opts = [];
     for (let i = 0; i < latLngs.length; i++) {
       opts.push({
+        id: ids[i],
         position: latLngs[i],
-        label: labels[i],
-        title: names[i],
       });
     }
     return opts;
@@ -108,20 +108,51 @@ function arithmeticMean(arr) {
   return sum / arr.length;
 }
 
-function addMarkers(map, cfgs) {
+async function addMarkers(map, cfgs) {
+  const { Place } = await google.maps.importLibrary("places");
+  const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary(
+    "marker"
+  );
+
   try {
     for (let cfg of cfgs) {
-      utils.createMarker(map, cfg);
+      await utils.createMarker(
+        map,
+        cfg,
+        Place,
+        AdvancedMarkerElement,
+        PinElement
+      );
     }
   } catch (e) {
     console.log(e);
   }
 }
 
-function createMarker(map, cfg) {
-  let marker = new google.maps.Marker({
+async function createMarker(
+  map,
+  cfg,
+  Place,
+  AdvancedMarkerElement,
+  PinElement
+) {
+  const place = new Place({
+    id: cfg.id,
+  });
+
+  await place.fetchFields({
+    fields: ["svgIconMaskURI", "iconBackgroundColor"],
+  });
+
+  const pinElement = new PinElement({
+    background: place.iconBackgroundColor,
+    glyph: new URL(String(place.svgIconMaskURI)),
+  });
+
+  new AdvancedMarkerElement({
     map: map,
-    ...cfg,
+    content: pinElement.element,
+    position: cfg.position,
   });
 }
 

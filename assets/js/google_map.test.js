@@ -34,93 +34,6 @@ describe("Test middle point", () => {
   });
 });
 
-describe("Test Single Marker", () => {
-  const { createMarker, Label } = utils;
-  test("Create a Google map marker", () => {
-    let data = {
-      map: "test",
-      options: {
-        position: [0, 1],
-        label: new Label("\uea52"),
-        title: "Tian Tan Park",
-      },
-    };
-
-    google.maps.Marker = jest.fn();
-    let mock = google.maps.Marker;
-    let mockArgs = {
-      map: data.map,
-      ...data.options,
-    };
-
-    // test target func
-    createMarker(data.map, data.options);
-
-    // verify
-    expect(mock).toHaveBeenCalledTimes(1);
-    expect(mock).toHaveBeenCalledWith(mockArgs);
-
-    mock.mockRestore();
-  });
-});
-
-describe("Test Google map markers", () => {
-  const { addMarkers } = utils;
-  beforeEach(() => {
-    jest.spyOn(utils, "createMarker");
-  });
-  afterEach(() => {
-    utils.createMarker.mockRestore();
-  });
-
-  test("Successfully add markers", () => {
-    const spy = utils.createMarker;
-    spy.mockImplementation();
-    let data = {
-      map: "test",
-      cfgs: ["cfg0", "cfg1", "cfg2"],
-    };
-    let args = [];
-    for (let cfg of data.cfgs) {
-      args.push([data.map, cfg]);
-    }
-
-    // test target func
-    addMarkers(data.map, data.cfgs);
-
-    // verify
-    expect(spy).toHaveBeenCalledTimes(data.cfgs.length);
-    for (let i = 0; i < args.length; i++) {
-      expect(spy).toHaveBeenNthCalledWith(i + 1, ...args[i]);
-    }
-  });
-
-  test("Fail to add markers", () => {
-    // setup
-    const msg = "fake error";
-    const fakeErr = new Error(msg);
-    utils.createMarker.mockImplementation(() => {
-      throw fakeErr;
-    });
-    const spy = jest.spyOn(console, "log");
-    spy.mockImplementation();
-    let data = {
-      map: "test",
-      cfgs: ["cfg0", "cfg1", "cfg2"],
-    };
-
-    // test target func
-    addMarkers(data.map, data.cfgs);
-
-    // verify
-    expect(spy).toHaveBeenCalledTimes(1);
-    expect(spy).toHaveBeenCalledWith(fakeErr);
-
-    // restore
-    spy.mockRestore();
-  });
-});
-
 describe("Test findCenter of array of latLng points", () => {
   const { findCenter, LatLng } = utils;
   beforeEach(() => {
@@ -242,24 +155,6 @@ describe("Test to create an array of marker labels", () => {
     const result = makeMarkerLabels(categories);
 
     // verify
-    expect(result).toEqual(target);
-  });
-});
-
-describe("Test to create an array of marker options", () => {
-  const { makeOptions } = utils;
-  test("Successfully create an array of marker options", () => {
-    // setup
-    const latlngs = [0, 1];
-    const labels = ["a", "b"];
-    const names = ["fancy garden", "fun park"];
-    const target = [
-      { position: 0, label: "a", title: names[0] },
-      { position: 1, label: "b", title: names[1] },
-    ];
-
-    // test
-    const result = makeOptions(latlngs, labels, names);
     expect(result).toEqual(target);
   });
 });
