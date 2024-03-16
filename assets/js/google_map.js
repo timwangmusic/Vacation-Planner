@@ -147,6 +147,7 @@ async function createMarker(
   const pinElement = new PinElement({
     background: place.iconBackgroundColor,
     glyph: new URL(String(place.svgIconMaskURI)),
+    borderColor: "#ffffff",
   });
 
   new AdvancedMarkerElement({
