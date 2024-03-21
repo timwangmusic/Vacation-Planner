@@ -92,6 +92,23 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
 }
 
+function handleUserLike() {
+  const fields = this.id.split("-");
+  const planIdx = fields[fields.length-1];
+  $(`#dislike-${planIdx}`).attr("disabled", "true");
+}
+
+function handleUserDislike() {
+  const fields = this.id.split("-");
+  const planIdx = fields[fields.length-1];
+  $(`#like-${planIdx}`).attr("disabled", "true");
+}
+
+for (let planIdx = 0; planIdx < numberOfPlans; planIdx++) {
+  $(`#like-${planIdx}`).click(handleUserLike);
+  $(`#dislike-${planIdx}`).click(handleUserDislike);
+}
+
 document
   .getElementById("profile")
   .addEventListener("click", () => (window.location = "/v1/profile"));
