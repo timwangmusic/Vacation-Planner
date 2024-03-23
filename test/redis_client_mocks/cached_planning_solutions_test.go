@@ -32,10 +32,17 @@ func TestGetSavedPlanningSolutions_shouldReturnCorrectResults(t *testing.T) {
 			{
 				ID:         "33521-12533",
 				PlaceIDs:   []string{"1", "2"},
-				Score:      100,
+				Score:      200,
 				PlaceNames: []string{"Tian Tan Park", "Yuan Ming Yuan"},
 			},
+			{
+				ID:         "33523-32533",
+				PlaceIDs:   []string{"3", "2"},
+				Score:      100,
+				PlaceNames: []string{"Summer Palace", "Yuan Ming Yuan"},
+			},
 		},
+		NumPlans: 2,
 	}
 
 	var err error

@@ -534,6 +534,7 @@ type PlanningSolutionsSaveRequest struct {
 	Intervals               []POI.TimeInterval
 	Weekdays                []POI.Weekday
 	PlanningSolutionRecords []PlanningSolutionRecord
+	NumPlans                int64
 }
 
 func timeSlotsIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeInterval, weekdays []POI.Weekday) (string, error) {
@@ -607,21 +608,22 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 	if len(request.PlanningSolutionRecords) == 0 {
 		return nil
 	}
-	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
+	sortedSetKey, keyGenerationErr := generateTravelPlansCacheKey(request)
 	if keyGenerationErr != nil {
 		Logger.Errorf("failed to generate travel plans cache key, error %s", keyGenerationErr.Error())
 		return keyGenerationErr
 	}
 
 	// cleans up previous results
-	exists, _ := r.client.Exists(ctx, redisListKey).Result()
+	exists, _ := r.client.Exists(ctx, sortedSetKey).Result()
 	if exists == 1 {
-		if err := r.client.Del(ctx, redisListKey).Err(); err != nil {
+		if err := r.client.Del(ctx, sortedSetKey).Err(); err != nil {
 			Logger.Error(err)
 		}
 	}
 
 	var recordKeys []string
+	var scores []float64
 	for _, record := range request.PlanningSolutionRecords {
 		solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, record.ID}, ":")
 		json_, err := json.Marshal(record)
@@ -635,14 +637,29 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 			continue
 		}
 		recordKeys = append(recordKeys, solutionRedisKey)
+		scores = append(scores, record.Score)
+	}
+
+	var members = make([]redis.Z, 0)
+	for idx, key := range recordKeys {
+		members = append(members, redis.Z{
+			Score:  scores[idx],
+			Member: key,
+		})
 	}
 
 	if len(recordKeys) > 0 {
-		numTravelPlanKeys, listSaveErr := r.client.LPush(ctx, redisListKey, recordKeys).Result()
-		Logger.Debugf("added the %d travel plan keys to %s", numTravelPlanKeys, redisListKey)
-		r.client.Expire(ctx, redisListKey, PlanningSolutionsExpirationTime)
+		_, err := r.Get().ZAdd(ctx, sortedSetKey, members...).Result()
+		if err != nil {
+			return err
+		}
 
-		return listSaveErr
+		if err == nil {
+			Logger.Debugf("added the %d travel plan keys to %s", len(members), sortedSetKey)
+		}
+		r.Get().Expire(ctx, sortedSetKey, PlanningSolutionsExpirationTime)
+
+		return err
 	}
 
 	return nil
@@ -651,30 +668,33 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSolutionsSaveRequest) (*PlanningSolutionsResponse, error) {
 	Logger.Debugf("->RedisClient.PlanningSolutions(%v)", request)
 	var response = &PlanningSolutionsResponse{}
-	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
+	sortedSetKey, keyGenerationErr := generateTravelPlansCacheKey(request)
 	if keyGenerationErr != nil {
 		Logger.Error(keyGenerationErr)
 		return response, keyGenerationErr
 	}
 
-	exists, err := r.client.Exists(ctx, redisListKey).Result()
+	exists, err := r.Get().Exists(ctx, sortedSetKey).Result()
 	if err != nil {
 		return response, err
 	}
 	if exists == 0 {
-		return response, fmt.Errorf("redis key %s does not exist", redisListKey)
+		return response, fmt.Errorf("redis key %s does not exist", sortedSetKey)
 	}
 
-	recordKeys, listFetchErr := r.client.LRange(ctx, redisListKey, 0, -1).Result()
-	if listFetchErr != nil {
-		Logger.Error(listFetchErr)
-		return response, listFetchErr
+	recordKeys, ssFetchErr := r.Get().ZRevRange(ctx, sortedSetKey, 0, request.NumPlans-1).Result()
+	if ssFetchErr != nil {
+		return response, ssFetchErr
 	}
 
-	response.PlanningSolutionRecords = make([]PlanningSolutionRecord, 0)
-	for _, key := range recordKeys {
+	response.PlanningSolutionRecords = make([]PlanningSolutionRecord, request.NumPlans)
+	for idx, key := range recordKeys {
+		if int64(idx) >= request.NumPlans {
+			break
+		}
+
 		var json_ string
-		json_, err = r.client.Get(ctx, key).Result()
+		json_, err = r.Get().Get(ctx, key).Result()
 		if err != nil {
 			Logger.Error(err)
 			continue
@@ -686,7 +706,7 @@ func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSo
 			Logger.Error(err)
 			continue
 		}
-		response.PlanningSolutionRecords = append(response.PlanningSolutionRecords, r)
+		response.PlanningSolutionRecords[idx] = r
 	}
 
 	return response, nil
