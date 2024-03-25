@@ -1041,6 +1041,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			users.GET("/:username/plans", p.userSavedPlansGetHandler)
 			users.DELETE("/:username/plan/:id", p.userPlanDeleteHandler)
 			users.GET("/:username/plan/:id", p.getUserSavedPlanDetails)
+			users.POST("/:username/feedback", p.userFeedbackHandler)
 		}
 
 		places := v1.Group("/places")

@@ -257,3 +257,27 @@ func (p *MyPlanner) userFavoritesHandler(ctx *gin.Context) {
 	iowrappers.Logger.Debugf("->userFavoritesHandler: user favorites %+v", *userView.Favorites)
 	ctx.JSON(http.StatusOK, userView.Favorites)
 }
+
+func (p *MyPlanner) userFeedbackHandler(ctx *gin.Context) {
+	userView, authErr := p.UserAuthentication(ctx, user.LevelRegular)
+
+	if authErr != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+		return
+	}
+
+	fb := iowrappers.UserFeedback{UserId: userView.ID}
+	err := ctx.ShouldBind(&fb)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = p.RedisClient.UserFeedback(ctx, &fb)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"msg": "plan is updated"})
+}
