@@ -521,9 +521,11 @@ type PlanningSolutionRecord struct {
 	PlaceURLs       []string            `json:"place_urls"`
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 	Destination     POI.Location        `json:"destination"`
+	PlanSpec        string              `json:"plan_spec"`
 }
 
 type PlanningSolutionsResponse struct {
+	PlanningSpec            string                   `json:"planning_spec"`
 	PlanningSolutionRecords []PlanningSolutionRecord `json:"cached_planning_solutions"`
 }
 
@@ -673,6 +675,8 @@ func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSo
 		Logger.Error(keyGenerationErr)
 		return response, keyGenerationErr
 	}
+
+	response.PlanningSpec = sortedSetKey
 
 	exists, err := r.Get().Exists(ctx, sortedSetKey).Result()
 	if err != nil {

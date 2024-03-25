@@ -86,9 +86,10 @@ type TimeSectionPlace struct {
 }
 
 type TravelPlan struct {
-	ID     string             `json:"id"`
-	Places []TimeSectionPlace `json:"places"`
-	Saved  bool               `json:"saved"`
+	ID           string             `json:"id"`
+	Places       []TimeSectionPlace `json:"places"`
+	Saved        bool               `json:"saved"`
+	PlanningSpec string             `json:"planning_spec"`
 }
 
 type PlanningResponse struct {
@@ -422,7 +423,8 @@ func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRe
 
 	for idx, solution := range s {
 		travelPlan := TravelPlan{
-			Places: make([]TimeSectionPlace, 0),
+			Places:       make([]TimeSectionPlace, 0),
+			PlanningSpec: solution.PlanSpec,
 		}
 		for pIdx, placeName := range solution.PlaceNames {
 			travelPlan.Places = append(travelPlan.Places, TimeSectionPlace{

@@ -118,6 +118,7 @@ func toPlanningSolutionRecord(solution PlanningSolution, location POI.Location) 
 		PlaceURLs:       solution.PlaceURLs,
 		PlaceCategories: solution.PlaceCategories,
 		Destination:     location,
+		PlanSpec:        solution.PlanSpec,
 	}
 }
 
