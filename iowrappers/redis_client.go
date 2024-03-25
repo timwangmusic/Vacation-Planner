@@ -704,7 +704,7 @@ func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSo
 		return response, ssFetchErr
 	}
 
-	response.PlanningSolutionRecords = make([]PlanningSolutionRecord, request.NumPlans)
+	response.PlanningSolutionRecords = make([]PlanningSolutionRecord, 0)
 	for idx, key := range recordKeys {
 		if int64(idx) >= request.NumPlans {
 			break
@@ -723,7 +723,7 @@ func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSo
 			Logger.Error(err)
 			continue
 		}
-		response.PlanningSolutionRecords[idx] = r
+		response.PlanningSolutionRecords = append(response.PlanningSolutionRecords, r)
 	}
 
 	return response, nil
