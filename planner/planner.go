@@ -326,6 +326,7 @@ func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 
 func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningRequest, user string) (resp PlanningResponse) {
 	logger := iowrappers.Logger
+	logger.Debugf("->MyPlanner.Planning: handling planning request %+v for user: %s", *planningRequest, ctx.Value(iowrappers.ContextRequestUserId))
 
 	primaryLocationPlanningResponse := p.Solver.Solve(ctx, planningRequest)
 	resp = p.processPlanningResp(ctx, planningRequest, primaryLocationPlanningResponse, user)
@@ -575,6 +576,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
+	c = context.WithValue(c, iowrappers.ContextRequestUserId, userView.ID)
 	planningResp := p.Planning(c, &planningReq, userView.Username)
 	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
 		logger.Debug(err)

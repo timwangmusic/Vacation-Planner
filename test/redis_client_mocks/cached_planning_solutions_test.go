@@ -1,6 +1,7 @@
 package redis_client_mocks
 
 import (
+	"context"
 	"github.com/go-playground/assert/v2"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
@@ -68,7 +69,8 @@ func TestGetSavedPlanningSolutions_shouldReturnCorrectResults(t *testing.T) {
 		return
 	}
 
-	planningSolutions, err := RedisClient.PlanningSolutions(RedisContext, request1)
+	ctx := context.WithValue(RedisContext, iowrappers.ContextRequestUserId, "test_user")
+	planningSolutions, err := RedisClient.PlanningSolutions(ctx, request1)
 
 	if err != nil {
 		t.Error(err)
@@ -83,7 +85,7 @@ func TestGetSavedPlanningSolutions_shouldReturnCorrectResults(t *testing.T) {
 		assert.Equal(t, record.PlaceNames, planningSolution.PlaceNames)
 	}
 
-	planningSolutions, err = RedisClient.PlanningSolutions(RedisContext, request2)
+	planningSolutions, err = RedisClient.PlanningSolutions(ctx, request2)
 	if err != nil {
 		t.Error(err)
 		return

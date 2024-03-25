@@ -682,7 +682,24 @@ func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSo
 		return response, fmt.Errorf("redis key %s does not exist", sortedSetKey)
 	}
 
-	recordKeys, ssFetchErr := r.Get().ZRevRange(ctx, sortedSetKey, 0, request.NumPlans-1).Result()
+	ttl := r.Get().TTL(ctx, sortedSetKey).Val()
+
+	userId := ctx.Value(ContextRequestUserId).(string)
+	userPlansSSKey := strings.Join([]string{"user", userId, sortedSetKey}, ":")
+
+	exists, err = r.Get().Exists(ctx, userPlansSSKey).Result()
+	if err != nil {
+		Logger.Error(err)
+	}
+	if exists == 0 {
+		if err = r.Get().Copy(ctx, sortedSetKey, userPlansSSKey, 0, false).Err(); err != nil {
+			return response, err
+		}
+		// TTL for user plans set should follow the expiration of the master set
+		r.Get().Expire(ctx, userPlansSSKey, ttl)
+	}
+
+	recordKeys, ssFetchErr := r.Get().ZRevRange(ctx, userPlansSSKey, 0, request.NumPlans-1).Result()
 	if ssFetchErr != nil {
 		return response, ssFetchErr
 	}
