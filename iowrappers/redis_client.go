@@ -624,23 +624,40 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 		}
 	}
 
-	var recordKeys []string
-	var scores []float64
-	for _, record := range request.PlanningSolutionRecords {
-		solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, record.ID}, ":")
-		json_, err := json.Marshal(record)
-		if err != nil {
+	numRecords := len(request.PlanningSolutionRecords)
+	recordKeys := make([]string, numRecords)
+	scores := make([]float64, numRecords)
+	wg := &sync.WaitGroup{}
+	wg.Add(numRecords)
+
+	errChan := make(chan error)
+	go func() {
+		for err := range errChan {
 			Logger.Error(err)
-			continue
 		}
-		_, recordSaveErr := r.client.Set(ctx, solutionRedisKey, json_, PlanningSolutionsExpirationTime).Result()
-		if recordSaveErr != nil {
-			Logger.Error(err)
-			continue
-		}
-		recordKeys = append(recordKeys, solutionRedisKey)
-		scores = append(scores, record.Score)
+	}()
+
+	for i, record := range request.PlanningSolutionRecords {
+		go func(idx int, solutionRecord PlanningSolutionRecord) {
+			defer wg.Done()
+			solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, solutionRecord.ID}, ":")
+			json_, err := json.Marshal(solutionRecord)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			_, recordSaveErr := r.client.Set(ctx, solutionRedisKey, json_, PlanningSolutionsExpirationTime).Result()
+			if recordSaveErr != nil {
+				errChan <- recordSaveErr
+				return
+			}
+			recordKeys[idx] = solutionRedisKey
+			scores[idx] = solutionRecord.Score
+		}(i, record)
 	}
+
+	wg.Wait()
+	close(errChan)
 
 	var members = make([]redis.Z, 0)
 	for idx, key := range recordKeys {

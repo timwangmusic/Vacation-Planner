@@ -241,6 +241,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 				logger.Error(err)
 			}
 		}
+		resp.Solutions = resp.Solutions[:req.NumPlans]
 		return resp
 	}
 	logger.Debugf("[request_id: %s]Found planning solutions in Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), *req)
@@ -347,7 +348,7 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 	return res, nil
 }
 
-func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, maxSolutionsToSaveCount int, iterator *MultiDimIterator, radius uint, requestedSolutionsCount int, spec string) (resp *PlanningResp) {
+func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, maxSolutionsToSaveCount int, iterator *MultiDimIterator, radius uint, spec string) (resp *PlanningResp) {
 	if maxSolutionsToSaveCount <= 0 {
 		maxSolutionsToSaveCount = TopSolutionsCountDefault
 	}
@@ -391,7 +392,7 @@ func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters []
 	}
 
 	res := solutions(priorityQueue)
-	return &PlanningResp{Solutions: res[:requestedSolutionsCount]}
+	return &PlanningResp{Solutions: res}
 }
 
 func solutions(pq *MinPriorityQueue[Vertex]) []PlanningSolution {
@@ -588,7 +589,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (r
 		return
 	}
 
-	return s.FindBestPlanningSolutions(ctx, placeClusters, MaxSolutionsToSaveCount, mdIter, req.SearchRadius, req.NumPlans, req.spec)
+	return s.FindBestPlanningSolutions(ctx, placeClusters, MaxSolutionsToSaveCount, mdIter, req.SearchRadius, req.spec)
 }
 
 func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningRequest, solutions []PlanningSolution) error {

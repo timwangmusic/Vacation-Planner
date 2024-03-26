@@ -29,8 +29,8 @@ func TestSolutionCandidateSelection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	topSolutionsCount := 5
-	res := s.FindBestPlanningSolutions(context.Background(), clusters, planner.MaxSolutionsToSaveCount, iterator, planner.DefaultPlaceSearchRadius, topSolutionsCount, "test-spec")
+	topSolutionsCount := 100
+	res := s.FindBestPlanningSolutions(context.Background(), clusters, planner.MaxSolutionsToSaveCount, iterator, planner.DefaultPlaceSearchRadius, "test-spec")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,9 +41,9 @@ func TestSolutionCandidateSelection(t *testing.T) {
 
 	// Suggested top five plan scores should match top five ratings
 	expectation := []float64{99, 98, 97, 96, 95}
-	for idx, r := range res.Solutions {
-		if r.Score != expectation[idx] {
-			t.Errorf("expected %f, got %f", expectation[idx], r.Score)
+	for idx, r := range expectation {
+		if res.Solutions[idx].Score != r {
+			t.Errorf("expected %f, got %f", expectation[idx], r)
 		}
 	}
 }
