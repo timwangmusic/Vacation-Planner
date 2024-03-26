@@ -476,3 +476,30 @@ func (r *RedisClient) CreateUserOnEmailVerified(ctx context.Context, tmpUserID s
 	}
 	return nil
 }
+
+type UserFeedback struct {
+	UserId   string `json:"user_id"`
+	PlanSpec string `json:"plan_spec"`
+	PlanId   string `json:"plan_id"`
+	Like     bool   `json:"like"`
+}
+
+func (r *RedisClient) UserFeedback(ctx context.Context, fb *UserFeedback) error {
+	if fb.Like {
+		Logger.Debugf("->RedisClient.UserFeedback: user %s likes plan %s", fb.UserId, fb.PlanId)
+		return nil
+	}
+
+	userPlansSSKey := strings.Join([]string{"user", fb.UserId, fb.PlanSpec}, ":")
+	Logger.Debugf("->RedisClient.UserFeedback: looking for key %s", userPlansSSKey)
+	if exists, err := r.Get().Exists(ctx, userPlansSSKey).Result(); err != nil {
+		return err
+	} else if exists == 0 {
+		return fmt.Errorf("failed to find user plans with key: %s", userPlansSSKey)
+	}
+
+	if err := r.Get().ZRem(ctx, userPlansSSKey, fb.PlanId).Err(); err != nil {
+		return err
+	}
+	return nil
+}

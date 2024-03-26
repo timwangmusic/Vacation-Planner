@@ -86,9 +86,10 @@ type TimeSectionPlace struct {
 }
 
 type TravelPlan struct {
-	ID     string             `json:"id"`
-	Places []TimeSectionPlace `json:"places"`
-	Saved  bool               `json:"saved"`
+	ID           string             `json:"id"`
+	Places       []TimeSectionPlace `json:"places"`
+	Saved        bool               `json:"saved"`
+	PlanningSpec string             `json:"planning_spec"`
 }
 
 type PlanningResponse struct {
@@ -326,6 +327,7 @@ func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 
 func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningRequest, user string) (resp PlanningResponse) {
 	logger := iowrappers.Logger
+	logger.Debugf("->MyPlanner.Planning: handling planning request %+v for user: %s", *planningRequest, ctx.Value(iowrappers.ContextRequestUserId))
 
 	primaryLocationPlanningResponse := p.Solver.Solve(ctx, planningRequest)
 	resp = p.processPlanningResp(ctx, planningRequest, primaryLocationPlanningResponse, user)
@@ -421,7 +423,8 @@ func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRe
 
 	for idx, solution := range s {
 		travelPlan := TravelPlan{
-			Places: make([]TimeSectionPlace, 0),
+			Places:       make([]TimeSectionPlace, 0),
+			PlanningSpec: solution.PlanSpec,
 		}
 		for pIdx, placeName := range solution.PlaceNames {
 			travelPlan.Places = append(travelPlan.Places, TimeSectionPlace{
@@ -575,6 +578,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
+	c = context.WithValue(c, iowrappers.ContextRequestUserId, userView.ID)
 	planningResp := p.Planning(c, &planningReq, userView.Username)
 	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView); err != nil {
 		logger.Debug(err)
@@ -1037,6 +1041,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			users.GET("/:username/plans", p.userSavedPlansGetHandler)
 			users.DELETE("/:username/plan/:id", p.userPlanDeleteHandler)
 			users.GET("/:username/plan/:id", p.getUserSavedPlanDetails)
+			users.POST("/:username/feedback", p.userFeedbackHandler)
 		}
 
 		places := v1.Group("/places")
