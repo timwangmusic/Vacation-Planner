@@ -253,6 +253,10 @@ body {
     margin: 0 15px;
 }
 
+.reload-btn {
+  display: inline-block;
+}
+
 /* Media queries for responsiveness */
 @media only screen and (min-width: 600px) {
     .footer-links,

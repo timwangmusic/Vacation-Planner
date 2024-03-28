@@ -114,6 +114,10 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
 }
 
+$(".reload-btn").each(function (_, element) {
+  $(element).click(() => location.reload());
+});
+
 function handleUserLike() {
   const fields = this.id.split("-");
   const planIdx = fields[fields.length - 1];
