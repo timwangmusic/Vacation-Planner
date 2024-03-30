@@ -88,6 +88,25 @@
             data-bs-parent="#accordionSetParent"
           >
             <div class="accordion-body">
+              <div class="btn-group" role="group">
+                <button id="like-{{$i}}" class="btn btn-sm btn-outline-primary">
+                  <i class="fa fa-thumbs-o-up"></i>
+                </button>
+
+                <button
+                  id="dislike-{{$i}}"
+                  class="btn btn-sm btn-outline-primary"
+                >
+                  <i class="fa fa-thumbs-o-down"></i>
+                </button>
+
+                <button
+                  class="reload-btn btn btn-sm btn-outline-success"
+                >
+                  <i class="fa fa-refresh fa-spin"></i>
+                </button>
+              </div>
+
               <span
                 class="d-inline-block float-end"
                 tabindex="0"

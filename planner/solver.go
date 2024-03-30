@@ -24,6 +24,7 @@ const (
 	NumPlansDefault                       = 5
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 20000 // default to 20km (~12.43 miles)
+	MaxSolutionsToSaveCount               = 100
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
 	ErrMsgMismatchIterAndPlace            = "mismatch in iterator status vector length"
 	ErrMsgRepeatedPlaceInSameTrip         = "repeated places in the same trip"
@@ -39,6 +40,7 @@ type PlanningSolution struct {
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 	Score           float64             `json:"score"`
 	ScoreOld        float64             `json:"score_old"`
+	PlanSpec        string              `json:"plan_spec"`
 }
 
 func (ps PlanningSolution) Key() float64 {
@@ -83,6 +85,7 @@ type PlanningRequest struct {
 	PriceLevel       POI.PriceLevel `json:"price_level"`
 	PreciseLocation  bool
 	WithNearbyCities bool
+	spec             string
 }
 
 type PlanningResp struct {
@@ -228,6 +231,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 	cacheRequest := toSolutionsSaveRequest(req, nil)
 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, cacheRequest)
+	req.spec = cacheResponse.PlanningSpec
 
 	var resp = &PlanningResp{}
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) == 0 {
@@ -237,6 +241,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 				logger.Error(err)
 			}
 		}
+		resp.Solutions = resp.Solutions[:req.NumPlans]
 		return resp
 	}
 	logger.Debugf("[request_id: %s]Found planning solutions in Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), *req)
@@ -255,6 +260,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 			PlaceCategories: candidate.PlaceCategories,
 			Score:           candidate.Score,
 			ScoreOld:        candidate.ScoreOld,
+			PlanSpec:        req.spec,
 		}
 		resp.Solutions = append(resp.Solutions, planningSolution)
 	}
@@ -300,7 +306,7 @@ func standardRequest(travelDate string, weekday POI.Weekday, numResults int, pri
 	return
 }
 
-func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]matching.Place, radius uint) (PlanningSolution, error) {
+func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]matching.Place, radius uint, spec string) (PlanningSolution, error) {
 	var res PlanningSolution
 	if len(placeIndexes) != len(placeClusters) {
 		return res, errors.New(ErrMsgMismatchIterAndPlace)
@@ -338,12 +344,13 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 	res.Score = matching.Score(places, int(radius))
 	res.ScoreOld = matching.ScoreOld(places)
 	res.ID = uuid.NewString()
+	res.PlanSpec = spec
 	return res, nil
 }
 
-func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, topSolutionsCount int, iterator *MultiDimIterator, radius uint) (resp *PlanningResp) {
-	if topSolutionsCount <= 0 {
-		topSolutionsCount = TopSolutionsCountDefault
+func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters [][]matching.Place, maxSolutionsToSaveCount int, iterator *MultiDimIterator, radius uint, spec string) (resp *PlanningResp) {
+	if maxSolutionsToSaveCount <= 0 {
+		maxSolutionsToSaveCount = TopSolutionsCountDefault
 	}
 
 	priorityQueue := &MinPriorityQueue[Vertex]{}
@@ -361,7 +368,7 @@ func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters []
 		default:
 			var candidate PlanningSolution
 			var err error
-			candidate, err = createPlanningSolutionCandidate(iterator.Status, placeClusters, radius)
+			candidate, err = createPlanningSolutionCandidate(iterator.Status, placeClusters, radius, spec)
 			iterator.Next()
 			if err != nil {
 				log.Debug(err)
@@ -371,7 +378,7 @@ func (s *Solver) FindBestPlanningSolutions(ctx context.Context, placeClusters []
 				continue
 			}
 			newVertex := Vertex{Name: candidate.ID, K: candidate.Score, Object: candidate}
-			if priorityQueue.Len() == topSolutionsCount {
+			if priorityQueue.Len() == maxSolutionsToSaveCount {
 				topVertex := priorityQueue.items[0]
 				if topVertex.Key() < newVertex.Key() {
 					heap.Pop(priorityQueue)
@@ -582,7 +589,7 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (r
 		return
 	}
 
-	return s.FindBestPlanningSolutions(ctx, placeClusters, req.NumPlans, mdIter, req.SearchRadius)
+	return s.FindBestPlanningSolutions(ctx, placeClusters, MaxSolutionsToSaveCount, mdIter, req.SearchRadius, req.spec)
 }
 
 func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningRequest, solutions []PlanningSolution) error {

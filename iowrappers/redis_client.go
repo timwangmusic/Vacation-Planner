@@ -521,9 +521,11 @@ type PlanningSolutionRecord struct {
 	PlaceURLs       []string            `json:"place_urls"`
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 	Destination     POI.Location        `json:"destination"`
+	PlanSpec        string              `json:"plan_spec"`
 }
 
 type PlanningSolutionsResponse struct {
+	PlanningSpec            string                   `json:"planning_spec"`
 	PlanningSolutionRecords []PlanningSolutionRecord `json:"cached_planning_solutions"`
 }
 
@@ -534,6 +536,7 @@ type PlanningSolutionsSaveRequest struct {
 	Intervals               []POI.TimeInterval
 	Weekdays                []POI.Weekday
 	PlanningSolutionRecords []PlanningSolutionRecord
+	NumPlans                int64
 }
 
 func timeSlotsIndex(placeCategories []POI.PlaceCategory, intervals []POI.TimeInterval, weekdays []POI.Weekday) (string, error) {
@@ -607,42 +610,75 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 	if len(request.PlanningSolutionRecords) == 0 {
 		return nil
 	}
-	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
+	sortedSetKey, keyGenerationErr := generateTravelPlansCacheKey(request)
 	if keyGenerationErr != nil {
 		Logger.Errorf("failed to generate travel plans cache key, error %s", keyGenerationErr.Error())
 		return keyGenerationErr
 	}
 
 	// cleans up previous results
-	exists, _ := r.client.Exists(ctx, redisListKey).Result()
+	exists, _ := r.client.Exists(ctx, sortedSetKey).Result()
 	if exists == 1 {
-		if err := r.client.Del(ctx, redisListKey).Err(); err != nil {
+		if err := r.client.Del(ctx, sortedSetKey).Err(); err != nil {
 			Logger.Error(err)
 		}
 	}
 
-	var recordKeys []string
-	for _, record := range request.PlanningSolutionRecords {
-		solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, record.ID}, ":")
-		json_, err := json.Marshal(record)
-		if err != nil {
+	numRecords := len(request.PlanningSolutionRecords)
+	recordKeys := make([]string, numRecords)
+	scores := make([]float64, numRecords)
+	wg := &sync.WaitGroup{}
+	wg.Add(numRecords)
+
+	errChan := make(chan error)
+	go func() {
+		for err := range errChan {
 			Logger.Error(err)
-			continue
 		}
-		_, recordSaveErr := r.client.Set(ctx, solutionRedisKey, json_, PlanningSolutionsExpirationTime).Result()
-		if recordSaveErr != nil {
-			Logger.Error(err)
-			continue
-		}
-		recordKeys = append(recordKeys, solutionRedisKey)
+	}()
+
+	for i, record := range request.PlanningSolutionRecords {
+		go func(idx int, solutionRecord PlanningSolutionRecord) {
+			defer wg.Done()
+			solutionRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, solutionRecord.ID}, ":")
+			json_, err := json.Marshal(solutionRecord)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			_, recordSaveErr := r.client.Set(ctx, solutionRedisKey, json_, PlanningSolutionsExpirationTime).Result()
+			if recordSaveErr != nil {
+				errChan <- recordSaveErr
+				return
+			}
+			recordKeys[idx] = solutionRedisKey
+			scores[idx] = solutionRecord.Score
+		}(i, record)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	var members = make([]redis.Z, 0)
+	for idx, key := range recordKeys {
+		members = append(members, redis.Z{
+			Score:  scores[idx],
+			Member: key,
+		})
 	}
 
 	if len(recordKeys) > 0 {
-		numTravelPlanKeys, listSaveErr := r.client.LPush(ctx, redisListKey, recordKeys).Result()
-		Logger.Debugf("added the %d travel plan keys to %s", numTravelPlanKeys, redisListKey)
-		r.client.Expire(ctx, redisListKey, PlanningSolutionsExpirationTime)
+		_, err := r.Get().ZAdd(ctx, sortedSetKey, members...).Result()
+		if err != nil {
+			return err
+		}
 
-		return listSaveErr
+		if err == nil {
+			Logger.Debugf("added the %d travel plan keys to %s", len(members), sortedSetKey)
+		}
+		r.Get().Expire(ctx, sortedSetKey, PlanningSolutionsExpirationTime)
+
+		return err
 	}
 
 	return nil
@@ -651,30 +687,52 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSolutionsSaveRequest) (*PlanningSolutionsResponse, error) {
 	Logger.Debugf("->RedisClient.PlanningSolutions(%v)", request)
 	var response = &PlanningSolutionsResponse{}
-	redisListKey, keyGenerationErr := generateTravelPlansCacheKey(request)
+	sortedSetKey, keyGenerationErr := generateTravelPlansCacheKey(request)
 	if keyGenerationErr != nil {
 		Logger.Error(keyGenerationErr)
 		return response, keyGenerationErr
 	}
 
-	exists, err := r.client.Exists(ctx, redisListKey).Result()
+	response.PlanningSpec = sortedSetKey
+
+	exists, err := r.Get().Exists(ctx, sortedSetKey).Result()
 	if err != nil {
 		return response, err
 	}
 	if exists == 0 {
-		return response, fmt.Errorf("redis key %s does not exist", redisListKey)
+		return response, fmt.Errorf("redis key %s does not exist", sortedSetKey)
 	}
 
-	recordKeys, listFetchErr := r.client.LRange(ctx, redisListKey, 0, -1).Result()
-	if listFetchErr != nil {
-		Logger.Error(listFetchErr)
-		return response, listFetchErr
+	ttl := r.Get().TTL(ctx, sortedSetKey).Val()
+
+	userId := ctx.Value(ContextRequestUserId).(string)
+	userPlansSSKey := strings.Join([]string{"user", userId, sortedSetKey}, ":")
+
+	exists, err = r.Get().Exists(ctx, userPlansSSKey).Result()
+	if err != nil {
+		Logger.Error(err)
+	}
+	if exists == 0 {
+		if err = r.Get().Copy(ctx, sortedSetKey, userPlansSSKey, 0, false).Err(); err != nil {
+			return response, err
+		}
+		// TTL for user plans set should follow the expiration of the master set
+		r.Get().Expire(ctx, userPlansSSKey, ttl)
+	}
+
+	recordKeys, ssFetchErr := r.Get().ZRevRange(ctx, userPlansSSKey, 0, request.NumPlans-1).Result()
+	if ssFetchErr != nil {
+		return response, ssFetchErr
 	}
 
 	response.PlanningSolutionRecords = make([]PlanningSolutionRecord, 0)
-	for _, key := range recordKeys {
+	for idx, key := range recordKeys {
+		if int64(idx) >= request.NumPlans {
+			break
+		}
+
 		var json_ string
-		json_, err = r.client.Get(ctx, key).Result()
+		json_, err = r.Get().Get(ctx, key).Result()
 		if err != nil {
 			Logger.Error(err)
 			continue

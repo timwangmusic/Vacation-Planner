@@ -19,6 +19,28 @@ async function getPlans() {
     .catch((err) => console.log(err));
 }
 
+async function postUserFeedback(planIdx) {
+  const url = `/v1/users/${username}/feedback`;
+
+  const data = await getPlans();
+  const plan = data[planIdx];
+
+  await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(planToFeedback(plan)),
+  }).catch((err) => console.error(err));
+}
+
+function planToFeedback(plan) {
+  return {
+    plan_id: "travel_plan:" + plan.id,
+    plan_spec: plan.planning_spec,
+  };
+}
+
 async function postPlanForUser() {
   const url = `/v1/users/${username}/plans`;
   const fields = this.id.split("-");
@@ -90,6 +112,29 @@ function normalizeLocation(location) {
 // create button event actions
 for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
+}
+
+$(".reload-btn").each(function (_, element) {
+  $(element).click(() => location.reload());
+});
+
+function handleUserLike() {
+  const fields = this.id.split("-");
+  const planIdx = fields[fields.length - 1];
+  $(`#dislike-${planIdx}`).attr("disabled", "true");
+}
+
+async function handleUserDislike() {
+  const fields = this.id.split("-");
+  const planIdx = fields[fields.length - 1];
+  $(`#like-${planIdx}`).attr("disabled", "true");
+
+  await postUserFeedback(planIdx);
+}
+
+for (let planIdx = 0; planIdx < numberOfPlans; planIdx++) {
+  $(`#like-${planIdx}`).click(handleUserLike);
+  $(`#dislike-${planIdx}`).click(handleUserDislike);
 }
 
 document

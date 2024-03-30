@@ -78,6 +78,7 @@ func toSolutionsSaveRequest(req *PlanningRequest, solutions []iowrappers.Plannin
 		Intervals:               intervals,
 		Weekdays:                weekdays,
 		PlanningSolutionRecords: solutions,
+		NumPlans:                int64(req.NumPlans),
 	}
 }
 
@@ -117,6 +118,7 @@ func toPlanningSolutionRecord(solution PlanningSolution, location POI.Location) 
 		PlaceURLs:       solution.PlaceURLs,
 		PlaceCategories: solution.PlaceCategories,
 		Destination:     location,
+		PlanSpec:        solution.PlanSpec,
 	}
 }
 

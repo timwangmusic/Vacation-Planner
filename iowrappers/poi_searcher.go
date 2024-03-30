@@ -18,6 +18,7 @@ const (
 	MinMapsResultRefreshDuration = time.Hour * 24 * 14 // 14 days
 	GoogleSearchHomePageURL      = "https://www.google.com/"
 	ContextRequestIdKey          = ContextKey("request_id")
+	ContextRequestUserId         = ContextKey("user_id")
 )
 
 type PoiSearcher struct {
