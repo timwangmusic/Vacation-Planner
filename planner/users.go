@@ -190,13 +190,13 @@ func (p *MyPlanner) userSavedPlansPostHandler(ctx *gin.Context) {
 	}
 
 	userView, authErr := p.UserAuthentication(ctx, user.LevelRegular)
-	if userView.Username != ctx.Param("username") {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
+	if authErr != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
 		return
 	}
 
-	if authErr != nil {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+	if userView.Username != ctx.Param("username") {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
 		return
 	}
 
@@ -210,13 +210,13 @@ func (p *MyPlanner) userSavedPlansPostHandler(ctx *gin.Context) {
 
 func (p *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
 	userView, authErr := p.UserAuthentication(context, user.LevelRegular)
-	if userView.Username != context.Param("username") {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
+	if authErr != nil {
+		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
 		return
 	}
 
-	if authErr != nil {
-		context.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+	if userView.Username != context.Param("username") {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "only logged-in users can view their saved plans"})
 		return
 	}
 
@@ -229,13 +229,13 @@ func (p *MyPlanner) userSavedPlansGetHandler(context *gin.Context) {
 
 func (p *MyPlanner) userPlanDeleteHandler(ctx *gin.Context) {
 	userView, authErr := p.UserAuthentication(ctx, user.LevelRegular)
-	if userView.Username != ctx.Param("username") {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "only authorized users can delete plans"})
+	if authErr != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
 		return
 	}
 
-	if authErr != nil {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.Error()})
+	if userView.Username != ctx.Param("username") {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "only authorized users can delete plans"})
 		return
 	}
 
