@@ -667,10 +667,8 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 			return err
 		}
 
-		if err == nil {
-			Logger.Debugf("added the %d travel plan keys to %s", len(members), sortedSetKey)
-		}
 		r.Get().Expire(ctx, sortedSetKey, PlanningSolutionsExpirationTime)
+		Logger.Debugf("added the %d travel plan keys to %s", len(members), sortedSetKey)
 
 		return err
 	}
