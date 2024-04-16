@@ -231,7 +231,9 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 	cacheRequest := toSolutionsSaveRequest(req, nil)
 
 	cacheResponse, cacheErr := redisClient.PlanningSolutions(ctx, cacheRequest)
-	req.spec = cacheResponse.PlanningSpec
+	if cacheErr == nil {
+		req.spec = cacheResponse.PlanningSpec
+	}
 
 	var resp = &PlanningResp{}
 	if cacheErr != nil || len(cacheResponse.PlanningSolutionRecords) == 0 {
@@ -241,10 +243,11 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 				logger.Error(err)
 			}
 		}
-		resp.Solutions = resp.Solutions[:req.NumPlans]
+		resp.Solutions = resp.Solutions[:min(req.NumPlans, len(resp.Solutions))]
 		return resp
 	}
-	logger.Debugf("[request_id: %s]Found planning solutions in Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), *req)
+
+	logger.Debugf("[request_id: %s]Found %d planning solutions in Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), len(cacheResponse.PlanningSolutionRecords), *req)
 	for idx, candidate := range cacheResponse.PlanningSolutionRecords {
 		// deal with cases where there are more saved solutions than requested
 		if idx >= req.NumPlans {
@@ -264,7 +267,7 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 		}
 		resp.Solutions = append(resp.Solutions, planningSolution)
 	}
-	logger.Debugf("[request_id: %s]Retrieved %d cached plans from Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), len(resp.Solutions), *req)
+	logger.Debugf("[request_id: %s]Using %d cached plans from Redis for req %+v.", ctx.Value(iowrappers.ContextRequestIdKey), len(resp.Solutions), *req)
 	return resp
 }
 
