@@ -31,7 +31,9 @@ async function postUserFeedback(planIdx) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(planToFeedback(plan)),
-  }).catch((err) => console.error(err));
+  })
+    .then(() => $(`#refresh-${planIdx}`).css("display", "inline-block"))
+    .catch((err) => console.error(err));
 }
 
 function planToFeedback(plan) {

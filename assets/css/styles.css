@@ -254,7 +254,7 @@ body {
 }
 
 .reload-btn {
-  display: inline-block;
+  display: none;
 }
 
 /* Media queries for responsiveness */
