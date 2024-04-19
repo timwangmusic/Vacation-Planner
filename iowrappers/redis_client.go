@@ -235,52 +235,46 @@ func updateCity(ctx context.Context, pipe redis.Pipeliner, city *City) error {
 }
 
 func (r *RedisClient) AddCities(ctx context.Context, cities []City) error {
-	wg := sync.WaitGroup{}
-	wg.Add(len(cities))
 	var err error
 	for _, city := range cities {
-		go func(city City) {
-			defer wg.Done()
-			_, err = r.Get().Pipelined(ctx, func(pipe redis.Pipeliner) error {
-				hashKey := strings.Join([]string{city.Name, city.AdminArea1, city.Country}, "_")
-				var existedCityId string
-				existedCityId, err = r.Get().HGet(ctx, KnownCitiesHashMapRedisKey, hashKey).Result()
-				if err == nil && existedCityId != "" {
-					city.ID = existedCityId
-					return updateCity(ctx, pipe, &city)
-				}
-
-				err = pipe.HSet(ctx, KnownCitiesHashMapRedisKey, hashKey, city.ID).Err()
-				if err != nil {
-					Logger.Debugf("error adding city %s to %s: %v", city.Name, KnownCitiesHashMapRedisKey, err)
-				}
-
-				key := strings.Join([]string{CityRedisKeyPrefix, city.ID}, ":")
-				var json_ []byte
-				json_, err = json.Marshal(city)
-				if err != nil {
-					return err
-				}
-				if err = pipe.Set(ctx, key, json_, CityInfoExpirationTime).Err(); err != nil {
-					return err
-				}
-
-				if err = pipe.GeoAdd(ctx, CitiesRedisKey, &redis.GeoLocation{
-					Name:      city.ID,
-					Longitude: city.Longitude,
-					Latitude:  city.Latitude,
-				}).Err(); err != nil {
-					return err
-				}
-				Logger.Debugf("added city %s to Redis with key: %s", city.Name, key)
-				return nil
-			})
-			if err != nil {
-				Logger.Error(err)
+		_, err = r.Get().Pipelined(ctx, func(pipe redis.Pipeliner) error {
+			hashKey := strings.Join([]string{city.Name, city.AdminArea1, city.Country}, "_")
+			var existedCityId string
+			existedCityId, err = r.Get().HGet(ctx, KnownCitiesHashMapRedisKey, hashKey).Result()
+			if err == nil && existedCityId != "" {
+				city.ID = existedCityId
+				return updateCity(ctx, pipe, &city)
 			}
-		}(city)
+
+			err = pipe.HSet(ctx, KnownCitiesHashMapRedisKey, hashKey, city.ID).Err()
+			if err != nil {
+				Logger.Debugf("error adding city %s to %s: %v", city.Name, KnownCitiesHashMapRedisKey, err)
+			}
+
+			key := strings.Join([]string{CityRedisKeyPrefix, city.ID}, ":")
+			var json_ []byte
+			json_, err = json.Marshal(city)
+			if err != nil {
+				return err
+			}
+			if err = pipe.Set(ctx, key, json_, CityInfoExpirationTime).Err(); err != nil {
+				return err
+			}
+
+			if err = pipe.GeoAdd(ctx, CitiesRedisKey, &redis.GeoLocation{
+				Name:      city.ID,
+				Longitude: city.Longitude,
+				Latitude:  city.Latitude,
+			}).Err(); err != nil {
+				return err
+			}
+			Logger.Debugf("added city %s to Redis with key: %s", city.Name, key)
+			return nil
+		})
+		if err != nil {
+			Logger.Error(err)
+		}
 	}
-	wg.Wait()
 	return err
 }
 
