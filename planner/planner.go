@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/modern-go/reflect2"
 	"golang.org/x/oauth2"
 	"html/template"
@@ -72,6 +73,7 @@ type MyPlanner struct {
 	Mailer             *iowrappers.Mailer
 	GeonamesApiKey     string
 	MapsClientApiKey   string
+	Dispatcher         *Dispatcher
 }
 
 type TimeSectionPlace struct {
@@ -209,6 +211,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 			logger.Fatalf("p failed to create a Mailer: %s", err.Error())
 		}
 	}
+	p.Dispatcher = NewDispatcher(&p.Solver)
 	logger.Info("The planner initialization process completes")
 }
 
@@ -330,6 +333,11 @@ func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningReque
 	logger.Debugf("->MyPlanner.Planning: handling planning request %+v for user: %s", *planningRequest, ctx.Value(iowrappers.ContextRequestUserId))
 
 	primaryLocationPlanningResponse := p.Solver.Solve(ctx, planningRequest)
+
+	if err := p.queuePlanningJobsForAllPriceLevels(planningRequest); err != nil {
+		logger.Error(err)
+	}
+
 	resp = p.processPlanningResp(ctx, planningRequest, primaryLocationPlanningResponse, user)
 	if !planningRequest.WithNearbyCities {
 		return resp
@@ -493,6 +501,25 @@ func (p *MyPlanner) SetPlanSavedStatusForUser(ctx *gin.Context, numResults int, 
 		var targetPlanId = strings.Join([]string{"travel_plan", resp.TravelPlans[idx].ID}, ":")
 		if isPlanIdSaved(targetPlanId, savedPlanIds) {
 			resp.TravelPlans[idx].Saved = true
+		}
+	}
+	return nil
+}
+
+func (p *MyPlanner) queuePlanningJobsForAllPriceLevels(req *PlanningRequest) error {
+	curTime := time.Now()
+	for l := range []POI.PriceLevel{POI.PriceLevelZero, POI.PriceLevelOne, POI.PriceLevelTwo, POI.PriceLevelThree, POI.PriceLevelFour} {
+		newReq := *req
+		newReq.PriceLevel = POI.PriceLevel(l)
+
+		p.Dispatcher.JobQueue <- &iowrappers.Job{
+			ID:          uuid.New().String(),
+			Name:        "Planning",
+			Description: "Compute Planning Solutions",
+			Parameters:  &newReq,
+			Status:      iowrappers.JobStatusNew,
+			CreatedAt:   curTime,
+			UpdatedAt:   curTime,
 		}
 	}
 	return nil
