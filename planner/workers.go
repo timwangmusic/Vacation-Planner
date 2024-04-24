@@ -99,20 +99,15 @@ func (w *PlanningSolutionsWorker) Run(ctx context.Context, mu *sync.RWMutex) {
 		defer w.wg.Done()
 		logger := iowrappers.Logger
 
-		for {
-			select {
-			case job, ok := <-w.jobQueue:
-				if !ok {
-					logger.Debugf("worker %d is shutting down", w.idx)
-					return
-				}
-				err := w.handleJob(ctx, job, mu)
-				if err != nil {
-					logger.Error(err)
-					continue
-				}
-				logger.Debugf("worker %d successfully handled job %s: %+v", w.idx, job.ID, job.Parameters)
+		for job := range w.jobQueue {
+			err := w.handleJob(ctx, job, mu)
+			if err != nil {
+				logger.Error(err)
+				continue
 			}
+			logger.Debugf("worker %d successfully handled job %s: %+v", w.idx, job.ID, job.Parameters)
 		}
+
+		logger.Debugf("worker %d is shutting down", w.idx)
 	}()
 }
