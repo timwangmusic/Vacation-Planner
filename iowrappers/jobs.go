@@ -10,11 +10,13 @@ import (
 type JobStatus string
 
 const (
+	JobStatusNew       JobStatus = "new"
 	JobStatusCreated   JobStatus = "created"
 	JobStatusRunning   JobStatus = "running"
 	JobStatusFailed    JobStatus = "failed"
 	JobStatusCompleted JobStatus = "completed"
-	JobExpirationTime            = time.Hour
+
+	JobExpirationTime = time.Hour
 )
 
 type Job struct {
@@ -25,6 +27,13 @@ type Job struct {
 	Status      JobStatus   `json:"status"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`
+}
+
+// JobExecution helps the service to determine if the job result is still valid
+type JobExecution struct {
+	JobID     string    `json:"job_id"`
+	Status    JobStatus `json:"status"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 const JobRedisKeyPrefix = "job:"

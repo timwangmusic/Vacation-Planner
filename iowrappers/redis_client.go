@@ -584,7 +584,7 @@ func singleTimeSlotIndex(category POI.PlaceCategory, interval POI.TimeInterval, 
 	return strings.Join(parts, "-"), nil
 }
 
-func generateTravelPlansCacheKey(req *PlanningSolutionsSaveRequest) (string, error) {
+func TravelPlansCacheKey(req *PlanningSolutionsSaveRequest) (string, error) {
 	country, region, city := req.Location.Country, req.Location.AdminAreaLevelOne, req.Location.City
 	slotsIndex, err := timeSlotsIndex(req.PlaceCategories, req.Intervals, req.Weekdays)
 	if err != nil {
@@ -604,7 +604,7 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 	if len(request.PlanningSolutionRecords) == 0 {
 		return nil
 	}
-	sortedSetKey, keyGenerationErr := generateTravelPlansCacheKey(request)
+	sortedSetKey, keyGenerationErr := TravelPlansCacheKey(request)
 	if keyGenerationErr != nil {
 		Logger.Errorf("failed to generate travel plans cache key, error %s", keyGenerationErr.Error())
 		return keyGenerationErr
@@ -679,7 +679,7 @@ func (r *RedisClient) SavePlanningSolutions(ctx context.Context, request *Planni
 func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSolutionsSaveRequest) (*PlanningSolutionsResponse, error) {
 	Logger.Debugf("->RedisClient.PlanningSolutions(%v)", request)
 	var response = &PlanningSolutionsResponse{}
-	sortedSetKey, keyGenerationErr := generateTravelPlansCacheKey(request)
+	sortedSetKey, keyGenerationErr := TravelPlansCacheKey(request)
 	if keyGenerationErr != nil {
 		Logger.Error(keyGenerationErr)
 		return response, keyGenerationErr
