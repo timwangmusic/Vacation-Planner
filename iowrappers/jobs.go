@@ -3,20 +3,24 @@ package iowrappers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/modern-go/reflect2"
 	"time"
 )
 
 type JobStatus string
 
 const (
-	JobStatusNew       JobStatus = "new"
-	JobStatusCreated   JobStatus = "created"
-	JobStatusRunning   JobStatus = "running"
-	JobStatusFailed    JobStatus = "failed"
-	JobStatusCompleted JobStatus = "completed"
+	JobStatusNew        JobStatus = "new"
+	JobStatusCreated    JobStatus = "created"
+	JobStatusDuplicated JobStatus = "duplicated"
+	JobStatusRunning    JobStatus = "running"
+	JobStatusFailed     JobStatus = "failed"
+	JobStatusCompleted  JobStatus = "completed"
+	JobStatusUnknown    JobStatus = "unknown"
 
-	JobExpirationTime = time.Hour
+	JobExpirationTime = 24 * time.Hour
 )
 
 type Job struct {
@@ -39,6 +43,10 @@ type JobExecution struct {
 const JobRedisKeyPrefix = "job:"
 
 func (r *RedisClient) UpdateJob(ctx context.Context, job *Job) error {
+	if reflect2.IsNil(job) {
+		return errors.New("job cannot be nil")
+	}
+
 	key := JobRedisKeyPrefix + job.ID
 	curTime := time.Now()
 	if exists, err := r.Get().Exists(ctx, key).Result(); err != nil {

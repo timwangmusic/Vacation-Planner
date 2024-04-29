@@ -12,14 +12,16 @@ type Dispatcher struct {
 	JobQueue chan *iowrappers.Job
 	workers  []*PlanningSolutionsWorker
 	solver   *Solver
+	c        *iowrappers.RedisClient
 	wg       *sync.WaitGroup
 }
 
-func NewDispatcher(s *Solver) *Dispatcher {
+func NewDispatcher(s *Solver, c *iowrappers.RedisClient) *Dispatcher {
 	return &Dispatcher{
 		JobQueue: make(chan *iowrappers.Job),
 		workers:  make([]*PlanningSolutionsWorker, 0),
 		solver:   s,
+		c:        c,
 		wg:       &sync.WaitGroup{},
 	}
 }
@@ -32,6 +34,7 @@ func (d *Dispatcher) Run(ctx context.Context) {
 		w := &PlanningSolutionsWorker{
 			idx:      i,
 			s:        d.solver,
+			c:        d.c,
 			jobQueue: d.JobQueue,
 			wg:       d.wg,
 		}

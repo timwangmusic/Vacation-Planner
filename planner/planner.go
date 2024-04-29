@@ -211,7 +211,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 			logger.Fatalf("p failed to create a Mailer: %s", err.Error())
 		}
 	}
-	p.Dispatcher = NewDispatcher(&p.Solver)
+	p.Dispatcher = NewDispatcher(&p.Solver, p.RedisClient)
 	logger.Info("The planner initialization process completes")
 }
 

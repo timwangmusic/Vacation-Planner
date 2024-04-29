@@ -18,11 +18,13 @@ type Worker interface {
 type PlanningSolutionsWorker struct {
 	idx      int
 	s        *Solver
+	c        *iowrappers.RedisClient
 	jobQueue chan *iowrappers.Job
 	wg       *sync.WaitGroup
 }
 
 func (w *PlanningSolutionsWorker) handleJob(ctx context.Context, job *iowrappers.Job, mutex *sync.RWMutex) error {
+	defer createJobRecord(ctx, job, w.c)
 	req := job.Parameters.(*PlanningRequest)
 
 	jobKey, err := toSolutionKey(req)
@@ -31,29 +33,43 @@ func (w *PlanningSolutionsWorker) handleJob(ctx context.Context, job *iowrappers
 	}
 
 	if shouldSkipJobExecution(jobKey, mutex) {
+		job.Status = iowrappers.JobStatusDuplicated
 		return nil
 	}
 
 	if err = createJobExecution(jobKey, job, mutex); err != nil {
+		job.Status = iowrappers.JobStatusFailed
 		return err
 	}
 
 	if err = updateJobExecutionStatus(jobKey, mutex, iowrappers.JobStatusRunning); err != nil {
+		job.Status = iowrappers.JobStatusFailed
 		return err
 	}
 
 	resp := w.s.Solve(ctx, req)
 	if resp.Err != nil {
+		job.Status = iowrappers.JobStatusFailed
 		if err = updateJobExecutionStatus(jobKey, mutex, iowrappers.JobStatusFailed); err != nil {
+			job.Status = iowrappers.JobStatusUnknown
 			return err
 		}
 		return resp.Err
 	}
 
 	if err = updateJobExecutionStatus(jobKey, mutex, iowrappers.JobStatusCompleted); err != nil {
+		job.Status = iowrappers.JobStatusUnknown
 		return err
 	}
+
+	job.Status = iowrappers.JobStatusCompleted
 	return nil
+}
+
+func createJobRecord(ctx context.Context, job *iowrappers.Job, c *iowrappers.RedisClient) {
+	if err := c.UpdateJob(ctx, job); err != nil {
+		iowrappers.Logger.Error(err)
+	}
 }
 
 func createJobExecution(jobKey string, job *iowrappers.Job, mutex *sync.RWMutex) error {
