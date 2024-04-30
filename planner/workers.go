@@ -67,8 +67,14 @@ func (w *PlanningSolutionsWorker) handleJob(ctx context.Context, job *iowrappers
 }
 
 func createJobRecord(ctx context.Context, job *iowrappers.Job, c *iowrappers.RedisClient) {
+	logger := iowrappers.Logger
+	if job.Status == iowrappers.JobStatusDuplicated {
+		logger.Debugf("job %s is duplicated, do not create a record for now.", job.ID)
+		return
+	}
+
 	if err := c.UpdateJob(ctx, job); err != nil {
-		iowrappers.Logger.Error(err)
+		logger.Error(err)
 	}
 }
 
