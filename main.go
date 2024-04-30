@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
@@ -119,14 +120,20 @@ func listenForShutDownServer(ch <-chan os.Signal, svr *manners.GracefulServer, m
 		go myPlanner.ProcessPlanningEvent(worker, wg)
 	}
 
+	myPlanner.Dispatcher.Run(context.Background())
+
 	go func() {
 		// wait for shut-down signal
 		<-ch
 
 		// close worker channels
 		close(myPlanner.PlanningEvents)
+		wg.Wait()
+
+		myPlanner.Dispatcher.Stop()
 	}()
 
-	wg.Wait()
+	myPlanner.Dispatcher.Wait()
+
 	svr.Close()
 }

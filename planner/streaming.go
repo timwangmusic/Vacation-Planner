@@ -4,7 +4,6 @@ import (
 	"strings"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -21,10 +20,11 @@ func (p *MyPlanner) planningEventLogging(event iowrappers.PlanningEvent) {
 }
 
 func (p *MyPlanner) ProcessPlanningEvent(worker int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	for event := range p.PlanningEvents {
 		c := cases.Title(language.English)
-		log.Debugf("worker %d processing event for %s", worker, c.String(event.City)+", "+strings.ToUpper(event.Country))
+		iowrappers.Logger.Debugf("worker %d processing event for %s", worker, c.String(event.City)+", "+strings.ToUpper(event.Country))
 		p.RedisClient.CollectPlanningAPIStats(event)
 	}
-	wg.Done()
+	iowrappers.Logger.Debugf("recollected resources for worker %d", worker)
 }

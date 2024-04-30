@@ -3,6 +3,7 @@ package planner
 import (
 	"errors"
 	"github.com/barkimedes/go-deepcopy"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"regexp"
 )
 
@@ -54,4 +55,8 @@ func deepCopyAnything[T any](req T, numCopies int) ([]T, error) {
 		result[idx] = copied.(T)
 	}
 	return result, nil
+}
+
+func toSolutionKey(req *PlanningRequest) (string, error) {
+	return iowrappers.TravelPlansCacheKey(toSolutionsSaveRequest(req, nil))
 }
