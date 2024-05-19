@@ -128,6 +128,7 @@ func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLog
 		Name:    "JWT",
 		Value:   token,
 		Expires: tokenExpirationTime,
+		Secure:  true,
 	})
 	return true
 }

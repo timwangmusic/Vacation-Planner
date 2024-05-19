@@ -1018,6 +1018,11 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.DefaultWriter = io.Discard
 
 	myRouter := gin.Default()
+	myRouter.Use(func(c *gin.Context) {
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("X-Frame-Options", "SAMEORIGIN")
+		c.Next()
+	})
 	myRouter.LoadHTMLGlob("assets/templates/*")
 	myRouter.Static("/v1/assets", "assets")
 	// trace ID
