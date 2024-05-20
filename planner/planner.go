@@ -658,7 +658,7 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 	planDetails := &user.TravelPlanView{}
 	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planDetailsRedisKey, planDetails)
 	if cacheErr != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("cannot find plan %s from user %s", planId, view.ID)})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("plan %s does not exist or is not owned by %s", planId, view.Username)})
 		return
 	}
 
