@@ -78,7 +78,7 @@ function renderFavorites(favorites) {
 
 function showPlanDetails() {
   const planID = this.dataset.planid;
-  window.location = `users/${username}/plan/${planID}`;
+  window.location = `users/plan/${planID}`;
 }
 
 function getUserPlans() {

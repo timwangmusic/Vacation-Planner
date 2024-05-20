@@ -640,21 +640,25 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 		return
 	}
 
-	username := ctx.Param("username")
-	planId := ctx.Param("id")
-	logger.Debugf("looking for plan %s saved by user %s", planId, username)
-
-	userView, findUserErr := p.RedisClient.FindUser(ctx, iowrappers.FindUserByName, user.View{Username: username})
-	if findUserErr != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("cannot find user %s", username)})
+	view, err := p.UserAuthentication(ctx, user.LevelRegular)
+	if err != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
-	planDetailsRedisKey := strings.Join([]string{iowrappers.UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planId}, ":")
+	if reflect2.IsNil(view) {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	planId := ctx.Param("id")
+	logger.Debugf("looking for plan %s saved by user %s", planId, view.ID)
+
+	planDetailsRedisKey := strings.Join([]string{iowrappers.UserSavedTravelPlanPrefix, "user", view.ID, "plan", planId}, ":")
 	planDetails := &user.TravelPlanView{}
 	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planDetailsRedisKey, planDetails)
 	if cacheErr != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("cannot find plan %s from user %s", planId, username)})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("plan %s does not exist or is not owned by %s", planId, view.Username)})
 		return
 	}
 
@@ -1018,6 +1022,11 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.DefaultWriter = io.Discard
 
 	myRouter := gin.Default()
+	myRouter.Use(func(c *gin.Context) {
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("X-Frame-Options", "SAMEORIGIN")
+		c.Next()
+	})
 	myRouter.LoadHTMLGlob("assets/templates/*")
 	myRouter.Static("/v1/assets", "assets")
 	// trace ID
@@ -1067,7 +1076,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			users.POST("/:username/plans", p.userSavedPlansPostHandler)
 			users.GET("/:username/plans", p.userSavedPlansGetHandler)
 			users.DELETE("/:username/plan/:id", p.userPlanDeleteHandler)
-			users.GET("/:username/plan/:id", p.getUserSavedPlanDetails)
+			users.GET("/plan/:id", p.getUserSavedPlanDetails)
 			users.POST("/:username/feedback", p.userFeedbackHandler)
 		}
 
