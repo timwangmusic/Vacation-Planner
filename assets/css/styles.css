@@ -232,6 +232,7 @@ body {
     flex-wrap: wrap;
     justify-content: space-evenly;
     align-items: center;
+    flex-wrap: wrap; /* Allows items to wrap if they don't fit in one line */
 }
 
 .footer-links,
@@ -266,3 +267,43 @@ body {
     }
 }
 
+.subscribe-container {
+  max-width: 600px;
+  width: 100%;
+  margin: 10px 0;
+}
+
+#subscribe-form {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+#subscribe-form input[type="email"] {
+  padding: 10px; /* Reduced padding for a compressed look */
+  border: 1px solid #ccc;
+  border-radius: 5px 0 0 5px;
+  font-size: 14px; /* Slightly smaller font size for compression */
+  flex: 1;
+  min-width: 0;
+}
+
+#subscribe-form button {
+  padding: 10px; /* Reduced padding for a compressed look */
+  border: none;
+  background: #28a745;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 0 5px 5px 0;
+  font-size: 14px; /* Slightly smaller font size for compression */
+}
+
+#subscribe-form button:hover {
+  background: #218838;
+}
+
+#message {
+  margin-top: 10px;
+  color: #28a745;
+  text-align: center;
+}
