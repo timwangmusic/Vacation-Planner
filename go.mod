@@ -21,6 +21,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	github.com/timwangmusic/go-geonames v0.1.1
+	github.com/ulule/limiter/v3 v3.11.2
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.21.0
@@ -55,6 +56,7 @@ require (
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sendgrid/rest v2.6.9+incompatible // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

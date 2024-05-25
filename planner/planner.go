@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/modern-go/reflect2"
+	"github.com/ulule/limiter/v3"
+	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
 	"golang.org/x/oauth2"
 	"html/template"
 	"io"
@@ -34,6 +36,8 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
+
+	mgin "github.com/ulule/limiter/v3/drivers/middleware/gin"
 )
 
 const (
@@ -1014,6 +1018,22 @@ func (p *MyPlanner) GetPlaceDetails(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, place)
 }
 
+func (p *MyPlanner) rateLimiter() gin.HandlerFunc {
+	logger := iowrappers.Logger
+	// 100 requests per hour
+	rate, err := limiter.NewRateFromFormatted("100-H")
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	store, err := sredis.NewStore(p.RedisClient.Get())
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	return mgin.NewMiddleware(limiter.New(store, rate))
+}
+
 func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if p.Environment == "debug" {
@@ -1032,9 +1052,12 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	// trace ID
 	myRouter.Use(requestid.New())
 
+	middleware := p.rateLimiter()
 	// cors settings
 	// TODO: change to front-end domain once front-end server is deployed
+	myRouter.ForwardedByClientIP = true
 	myRouter.Use(cors.Default())
+	myRouter.Use(middleware)
 
 	myRouter.GET("/", p.homePageHandler)
 
