@@ -65,7 +65,11 @@ const (
 	FindUserByEmail FindUserBy = "FindUserByEmail"
 )
 
-func (r *RedisClient) UpdateSearchHistory(ctx context.Context, location string, userView *user.View) error {
+func (r *RedisClient) UpdateSearchHistory(ctx context.Context, location string, userView *user.View, preciseLocation bool) error {
+	// do not update search history for precise location
+	if preciseLocation {
+		return nil
+	}
 	if userView.ID == "" {
 		if view, err := r.FindUser(ctx, FindUserByName, *userView); err != nil {
 			return err
