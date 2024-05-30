@@ -154,10 +154,10 @@ rollUpButton.addEventListener("click", () => {
 
 $(document).ready(async function () {
   {
-    const plans = await getPlans();
-    for (let idx = 0; idx < plans.length; idx++) {
+    const data = await getPlans();
+    for (let idx = 0; idx < data.travel_plans.length; idx++) {
       let btn = document.getElementById("save-" + idx);
-      if (btn != null && plans[idx].saved) {
+      if (btn != null && data.travel_plans[idx].saved) {
         btn.disabled = true;
       }
     }
