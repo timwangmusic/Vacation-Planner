@@ -457,15 +457,14 @@ func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRe
 
 	response.StatusCode = ValidSolutionFound
 	if len(request.Location.City) > 0 {
-		c := cases.Title(language.English)
-		response.TravelDestination = c.String(request.Location.City)
+		response.TravelDestination = request.Location.String()
 	} else {
 		geocodeResp, err := p.Solver.Searcher.ReverseGeocode(ctx, request.Location.Latitude, request.Location.Longitude)
 		if err != nil {
 			response.TravelDestination = "Dream Vacation Destination"
 			return response
 		}
-		response.TravelDestination = geocodeResp.City
+		response.TravelDestination = geocodeResp.String()
 	}
 	return response
 }
@@ -631,7 +630,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 
 	jsonOnly := ctx.DefaultQuery("json_only", "false")
 	if jsonOnly != "false" {
-		ctx.JSON(http.StatusOK, planningResp.TravelPlans)
+		ctx.JSON(http.StatusOK, planningResp)
 		return
 	}
 	utils.LogErrorWithLevel(p.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)

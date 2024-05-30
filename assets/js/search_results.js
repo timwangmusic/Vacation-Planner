@@ -23,7 +23,7 @@ async function postUserFeedback(planIdx) {
   const url = `/v1/users/${username}/feedback`;
 
   const data = await getPlans();
-  const plan = data[planIdx];
+  const plan = data.travel_plans[planIdx];
 
   await fetch(url, {
     method: "POST",
@@ -50,24 +50,25 @@ async function postPlanForUser() {
 
   const data = await getPlans();
   // the number of plans equals the array length in the JSON result
-  numberOfPlans = data.length;
-  const sourcePlan = data[planIndex];
+  numberOfPlans = data.travel_plans.length;
+  const sourcePlan = data.travel_plans[planIndex];
+  const destination = data.travel_destination;
 
   await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(planToView(sourcePlan, planIndex)),
+    body: JSON.stringify(planToView(sourcePlan, planIndex, destination)),
   }).catch((err) => console.error(err));
 
   $(this).attr("disabled", "true");
   $(this).parent().attr("title", "saved!");
 }
 
-function planToView(plan, planIndex) {
+function planToView(plan, planIndex, destination) {
   const url = new URL(document.URL);
-  const location = normalizeLocation(url.searchParams.get("location"));
+  const location = normalizeLocation(destination);
   console.log("The format fixed location is: ", location);
   const view = new View(
     location,
