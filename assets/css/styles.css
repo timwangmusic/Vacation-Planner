@@ -218,7 +218,67 @@ tr:nth-child(even) {
 body {
     margin: 0;
     padding: 0;
+    background-color: white;
+    color: black;
+    transition: background-color 0.4s, color 0.4s;
 }
+
+/* Solarized dark mode styles */
+body.dark-mode {
+  background-color: #002b36; /* Base03 */
+  color: #839496; /* Base0 */
+}
+
+/* Additional elements styled with Solarized theme colors */
+a {
+  color: #268bd2; /* Blue for links */
+}
+
+code {
+  background-color: #073642; /* Base02 */
+  color: #93a1a1; /* Base1 */
+}
+
+.comment {
+  color: #586e75; /* Base01 */
+}
+
+.highlight {
+  background-color: #073642; /* Base02 */
+}
+
+.yellow {
+  color: #b58900;
+}
+
+.orange {
+  color: #cb4b16;
+}
+
+.red {
+  color: #dc322f;
+}
+
+.magenta {
+  color: #d33682;
+}
+
+.violet {
+  color: #6c71c4;
+}
+
+.blue {
+  color: #268bd2;
+}
+
+.cyan {
+  color: #2aa198;
+}
+
+.green {
+  color: #859900;
+}
+
 
 .full-expanded-footer {
     background-color: #f5f5f5;
@@ -248,6 +308,14 @@ body {
     cursor: pointer;
 }
 
+.footer-mode a {
+  color: #6c63ff;
+  text-decoration: none;
+  margin: 0 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
 .footer-social a img {
     max-width: 30px;
     margin: 0 15px;
@@ -260,9 +328,66 @@ body {
 /* Media queries for responsiveness */
 @media only screen and (min-width: 600px) {
     .footer-links,
+    .footer-mode,
     .footer-social {
         flex-basis: auto;
         margin-bottom: 0;
     }
 }
 
+/* The switch - the container */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide the default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
