@@ -2,7 +2,10 @@ package iowrappers
 
 import (
 	"context"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"net/url"
+	"strings"
 	"time"
 
 	gogeonames "github.com/timwangmusic/go-geonames"
@@ -31,6 +34,11 @@ type GeocodeQuery struct {
 	City              string `json:"city"`
 	AdminAreaLevelOne string `json:"admin_area_level_one"`
 	Country           string `json:"country"`
+}
+
+func (gq *GeocodeQuery) String() string {
+	c := cases.Title(language.English)
+	return strings.Join([]string{c.String(gq.City), strings.ToUpper(gq.AdminAreaLevelOne), c.String(gq.Country)}, ", ")
 }
 
 type NearbyCityRequest struct {

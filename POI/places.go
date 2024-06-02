@@ -2,9 +2,12 @@ package POI
 
 import (
 	"github.com/modern-go/reflect2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"googlemaps.github.io/maps"
 )
@@ -66,6 +69,11 @@ type Location struct {
 	City              string  `json:"city"`              // name of the city where the location belongs to
 	AdminAreaLevelOne string  `json:"adminAreaLevelOne"` // e.g. state names in the United States
 	Country           string  `json:"country"`           // name of the country where the location belongs to
+}
+
+func (l *Location) String() string {
+	c := cases.Title(language.English)
+	return strings.Join([]string{c.String(l.City), strings.ToUpper(l.AdminAreaLevelOne), c.String(l.Country)}, ", ")
 }
 
 // Address in adr micro-format example:
