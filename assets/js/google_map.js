@@ -53,6 +53,12 @@ async function initMap() {
     mapId: "DEMO_MAP_ID",
   });
 
+  document
+    .getElementById("show-route-btn")
+    .addEventListener("click", async () => {
+      await showRoute(map, options);
+    });
+
   await addMarkers(map, options);
 }
 
@@ -122,12 +128,6 @@ function removeMarkers() {
     m.map = null;
   }
 }
-
-document
-  .getElementById("show-route-btn")
-  .addEventListener("click", async () => {
-    await showRoute(map, options);
-  });
 
 async function addMarkers(map, cfgs) {
   const { Place } = await google.maps.importLibrary("places");
