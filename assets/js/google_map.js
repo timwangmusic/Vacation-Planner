@@ -193,7 +193,10 @@ async function drawRoute(map, cfgs) {
     .then((response) => {
       directionsRenderer.setDirections(response);
     })
-    .catch((e) => console.error(e));
+    .catch((e) => {
+      console.error(e);
+      alert("failed to fetch route from Google Maps");
+    });
 }
 
 async function createMarker(
