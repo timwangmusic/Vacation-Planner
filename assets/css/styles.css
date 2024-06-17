@@ -413,6 +413,7 @@ body.dark-mode {
   cursor: pointer;
   padding: 0.66rem;
   position: relative;
+  transform: var(--default-border-radius);
 }
 
 #theme-switcher::before {
@@ -425,10 +426,12 @@ body.dark-mode {
   z-index: 0;
   left: 0;
   transform: translateX(var(--switch-circle-pos));
+  transition: var(--default-transition);
 }
 
 #theme-switcher svg {
   z-index: 1;
+  transition: var(--default-transition);
 }
 
 #icon-sun {
