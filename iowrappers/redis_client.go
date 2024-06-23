@@ -697,7 +697,10 @@ func (r *RedisClient) PlanningSolutions(ctx context.Context, request *PlanningSo
 
 	ttl := r.Get().TTL(ctx, sortedSetKey).Val()
 
-	userId := ctx.Value(ContextRequestUserId).(string)
+	userId, ok := ctx.Value(ContextRequestUserId).(string)
+	if !ok {
+		userId = "guest"
+	}
 	userPlansSSKey := strings.Join([]string{"user", userId, sortedSetKey}, ":")
 
 	exists, err = r.Get().Exists(ctx, userPlansSSKey).Result()

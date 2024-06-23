@@ -89,7 +89,8 @@ func toWeekday(date string) POI.Weekday {
 	month, _ := strconv.Atoi(dateFields[2])
 	day, _ := strconv.Atoi(dateFields[3])
 	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
-	return POI.Weekday(t.Weekday())
+	// compensate for the difference between time.Weekday (starts on Sunday) and internal Weekday definition (starts on Monday)
+	return POI.Weekday((t.Weekday() + 6) % 7)
 }
 
 func toPriceLevel(priceLevel string) POI.PriceLevel {
