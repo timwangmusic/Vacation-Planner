@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,7 +16,6 @@
     <!--navigation bar-->
     <nav
       class="navbar navbar-light navbar-expand-lg"
-      style="background-color: #e3f2fd"
     >
       <div class="container-fluid">
         <button
@@ -47,8 +46,9 @@
       </div>
     </nav>
     <h1
-      class="inherit-line-height"
-      style="color: #24c1e0; text-align: center; background-color: whitesmoke"
+    class="inherit-line-height"
+    style="color: #24c1e0;
+    text-align: center;"
     >
       Vacation Planner
     </h1>
@@ -86,8 +86,15 @@
       src="https://kit.fontawesome.com/0ee567c03b.js"
       crossorigin="anonymous"
     ></script>
-
+    <script>
+      // Check local Storage here for theme
+      let localStore = localStorage.getItem('theme')
+      if (localStore === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark')
+      }
+    </script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="module" src="assets/js/mode-switch.js"></script>
   </body>
 </html>

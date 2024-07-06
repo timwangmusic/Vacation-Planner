@@ -124,6 +124,7 @@
 :root {
   --black: BLACK;
   --white: WHITE;
+  --bs-body-bg: var(--page-bg);
   --default-border-radius: 8px;
   --default-transition: color .3s ease-in-out, background-color .3s ease-in-out, border-color .3s
   ease-in-out, fill .3s ease-in-out, transform .3s ease-in-out;
@@ -484,4 +485,16 @@ html body div.container.mt-3 div.row.mt-1 form#main-form.row.d-flex.flex-column.
 
 html body div.container.mt-3 div.row.mt-1 form#main-form.row.d-flex.flex-column.flex-sm-row.align-items-start.align-items-sm-center.pe-0 div#locationDiv.container.border.border-secondary.rounded-1.d-flex.flex-row.align-items-center.col.ms-1.mt-1 div.fixedwidthicon i#searchIcon.bi.bi-search.mx-1.visible {
   color: var(--footer-icon-color);
+}
+
+html body {
+  background-color: var(--page-bg);
+}
+
+html body main.content {
+  color: var(--primary-text);
+}
+
+html body footer.footer {
+  color: var(--primary-text);
 }
