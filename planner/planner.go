@@ -6,10 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/modern-go/reflect2"
 	"github.com/ulule/limiter/v3"
 	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
+	aws2 "github.com/weihesdlegend/Vacation-planner/aws"
 	"golang.org/x/oauth2"
 	"html/template"
 	"io"
@@ -330,6 +334,55 @@ func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 		Cities: geocodes,
 	}
 	context.JSON(http.StatusOK, view)
+}
+
+func (p *MyPlanner) uploadS3Object(ctx *gin.Context) {
+	type S3Object struct {
+		Bucket   string `json:"bucket"`
+		Key      string `json:"key"`
+		Filename string `json:"filename"`
+	}
+
+	obj := &S3Object{}
+	if err := ctx.Bind(obj); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	if err := aws2.UploadFile(ctx, obj.Bucket, obj.Key, obj.Filename); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+}
+
+func (p *MyPlanner) createS3ObjectURL(ctx *gin.Context) {
+	type S3Object struct {
+		Bucket string `json:"bucket"`
+		Key    string `json:"key"`
+	}
+
+	obj := &S3Object{}
+	if err := ctx.Bind(obj); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	svc := s3.NewFromConfig(cfg)
+
+	presignClient := s3.NewPresignClient(svc)
+
+	req, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(obj.Bucket),
+		Key:    aws.String(obj.Key),
+	})
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"url": req.URL})
 }
 
 func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningRequest, user string) (resp PlanningResponse) {
@@ -1164,6 +1217,10 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/url", p.UrlMigrationHandler)
 			migrations.GET("/remove-places", p.removePlacesMigrationHandler)
 		}
+
+		v1.POST("/plan-summary", p.planSummary)
+		v1.POST("/s3_url", p.createS3ObjectURL)
+		v1.POST("/s3_upload", p.uploadS3Object)
 
 		v1.POST("/plan-summary", p.planSummary)
 		v1.GET("/profile", p.userProfile)
