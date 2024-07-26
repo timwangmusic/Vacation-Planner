@@ -1223,6 +1223,9 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/s3_upload", p.uploadS3Object)
 
 		v1.POST("/plan-summary", p.planSummary)
+		v1.POST("/s3_url", p.createS3ObjectURL)
+		v1.POST("/s3_upload", p.uploadS3Object)
+
 		v1.GET("/profile", p.userProfile)
 		users := v1.Group("/users")
 		{
