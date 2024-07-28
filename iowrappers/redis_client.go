@@ -514,6 +514,8 @@ type PlanningSolutionRecord struct {
 	PlaceAddresses  []string            `json:"place_addresses"`
 	PlaceURLs       []string            `json:"place_urls"`
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
+	Weekdays        []string            `json:"weekdays"`
+	TimeSlots       []string            `json:"time_slots"`
 	Destination     POI.Location        `json:"destination"`
 	PlanSpec        string              `json:"plan_spec"`
 }

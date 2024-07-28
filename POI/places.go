@@ -28,6 +28,19 @@ func (w Weekday) String() string {
 	return strconv.Itoa(int(w))
 }
 
+func (w Weekday) Name() string {
+	mapping := map[Weekday]string{
+		DateMonday:    "Monday",
+		DateTuesday:   "Tuesday",
+		DateWednesday: "Wednesday",
+		DateThursday:  "Thursday",
+		DateFriday:    "Friday",
+		DateSaturday:  "Saturday",
+		DateSunday:    "Sunday",
+	}
+	return mapping[w]
+}
+
 type PlacePhoto struct {
 	// reference from Google Images
 	Reference string `bson:"reference"`
