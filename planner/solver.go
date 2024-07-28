@@ -599,7 +599,7 @@ func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *Planning
 	planningSolutionRecords := make([]iowrappers.PlanningSolutionRecord, len(solutions))
 
 	for idx, candidate := range solutions {
-		record := toPlanningSolutionRecord(candidate, req.Location)
+		record := toPlanningSolutionRecord(req, candidate, req.Location)
 		planningSolutionRecords[idx] = record
 	}
 
