@@ -129,6 +129,61 @@
                 >show</a
               >
 
+              <span class="d-inline-block float-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary m-1"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modal-{{$i}}"
+                >
+                  summary
+                </button>
+              </span>
+
+              <!-- Modal -->
+              <div
+                class="modal fade"
+                id="modal-{{$i}}"
+                tabindex="-1"
+                aria-hidden="true"
+              >
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h1
+                        class="modal-title fs-5"
+                        style="background-color: white"
+                      >
+                        Travel Plan Summary
+                      </h1>
+                      <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                      ></button>
+                    </div>
+                    <div class="modal-body" id="modal-body-{{$i}}">...</div>
+                    <div class="modal-footer">
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        id="gen-summary-{{$i}}"
+                      >
+                        Generate Summary
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <table
                 id="plan-table-{{$i}}"
                 class="table table-bordered table-striped table-hover"

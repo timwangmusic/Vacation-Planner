@@ -1017,6 +1017,17 @@ func (p *MyPlanner) GetPlaceDetails(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, place)
 }
 
+func (p *MyPlanner) ChatCompletion(ctx *gin.Context) {
+	planDetails := "10-12: Golden Gate Bridge, 12-13: Sunset cliffs cafe, 13-15: Golden Gate park, 17-18: Fantastic Steakhouse"
+
+	resp, err := chatCompletion(ctx, "please summarize the travel plan in one paragraph:"+planDetails)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": resp})
+}
+
 func (p *MyPlanner) rateLimiter() gin.HandlerFunc {
 	logger := iowrappers.Logger
 	// 100 requests per hour
@@ -1091,6 +1102,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/remove-places", p.removePlacesMigrationHandler)
 		}
 
+		v1.GET("/chatcompletion", p.ChatCompletion)
 		v1.GET("/profile", p.userProfile)
 		users := v1.Group("/users")
 		{

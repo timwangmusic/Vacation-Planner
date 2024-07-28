@@ -112,9 +112,26 @@ function normalizeLocation(location) {
   return [results[0], results[1]].join(", ");
 }
 
+async function getPlanSummaryResponse() {
+  const url = "/v1/chatcompletion";
+  return await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((resp) => resp.json())
+    .catch((err) => console.log(err));
+}
+
 // create button event actions
 for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
+  $(`#gen-summary-${planIndex}`).click(async () => {
+    console.log("generating plan summary...");
+    const resp = await getPlanSummaryResponse();
+    $(`#modal-body-${planIndex}`).text(resp.message);
+  });
 }
 
 $(".reload-btn").each(function (_, element) {
