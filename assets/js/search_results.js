@@ -133,8 +133,10 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
   $(`#gen-summary-${planIndex}`).click(async () => {
     console.log("generating plan summary...");
+    $(`#gen-summary-${planIndex}`).prop("disabled", true);
     const resp = await getPlanSummaryResponse(planIndex);
     $(`#modal-body-${planIndex}`).text(resp.message);
+    $(`#gen-summary-${planIndex}`).prop("disabled", false).text("regenerate summary");
   });
 }
 
