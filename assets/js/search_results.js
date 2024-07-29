@@ -112,13 +112,17 @@ function normalizeLocation(location) {
   return [results[0], results[1]].join(", ");
 }
 
-async function getPlanSummaryResponse() {
-  const url = "/v1/chatcompletion";
+async function getPlanSummaryResponse(planIdx) {
+  const url = "/v1/plan-summary";
+  const data = await getPlans();
   return await fetch(url, {
-    method: "GET",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      plan_id: data.travel_plans[planIdx].id,
+    }),
   })
     .then((resp) => resp.json())
     .catch((err) => console.log(err));
@@ -129,7 +133,7 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
   $(`#gen-summary-${planIndex}`).click(async () => {
     console.log("generating plan summary...");
-    const resp = await getPlanSummaryResponse();
+    const resp = await getPlanSummaryResponse(planIndex);
     $(`#modal-body-${planIndex}`).text(resp.message);
   });
 }
