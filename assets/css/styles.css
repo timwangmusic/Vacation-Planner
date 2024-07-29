@@ -15,6 +15,7 @@
   --header-thead-bg: #395870;
   --header-thead-general: antiquewhite;
   --header-tr-nth: beige;
+  --table_bg: var(--lightcyan);
 
   --nav-bg: var(--page-bg);
 
@@ -61,6 +62,7 @@
   --muted-text: #77757E;
   --footer-icon-color: #6c63ff;
   --dark-mode-bg-color: #4c5057;
+  --table_bg: var(--page-bg);
 
   /*
     main svg
@@ -79,11 +81,12 @@
   --header-bg: var(--page-bg);
   --header-text-color: #24c1e0;
   --header-h3-color: mediumvioletred;
-  --header-thead-bg: #395870;
+  --header-thead-bg: var(--page-bg);
   --header-thead-general: antiquewhite;
-  --header-tr-nth: beige;
+  --header-tr-nth: var(--page-bg);
 
   --nav-bg: var(--page-bg);
+  --accordion-bg: var(--page-bg);
 
   --gsi-material-bg: var(--page-bg);
   --gsi-material-button: rgba(0, 0, 0, 0.25);
@@ -124,6 +127,8 @@
 :root {
   --black: BLACK;
   --white: WHITE;
+  --darkcyan: darkcyan;
+  --lightcyan: lightcyan;
   --bs-body-bg: var(--page-bg);
   --default-border-radius: 8px;
   --default-transition: color .3s ease-in-out, background-color .3s ease-in-out, border-color .3s
@@ -497,4 +502,16 @@ html body main.content {
 
 html body footer.footer {
   color: var(--primary-text);
+}
+
+.accordion-item {
+  background-color: var(--accordion-bg)
+}
+
+.accordion-button {
+  background-color: var(--accordion-bg);
+}
+
+.table {
+  background: var(--table_bg);
 }
