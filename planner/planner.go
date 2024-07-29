@@ -1057,10 +1057,10 @@ func planDetails(r *iowrappers.PlanningSolutionRecord) (string, error) {
 
 	parts := make([]string, 0)
 	for idx, name := range r.PlaceNames {
-		parts = append(parts, r.TimeSlots[idx]+"at: "+name)
+		parts = append(parts, r.TimeSlots[idx]+" at: "+name)
 	}
 
-	return strings.Join(parts, "; "), nil
+	return "Visiting " + r.Destination.String() + ". " + strings.Join(parts, "; "), nil
 }
 
 func (p *MyPlanner) rateLimiter() gin.HandlerFunc {
