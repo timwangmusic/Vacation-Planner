@@ -18,6 +18,7 @@
   --table_bg: var(--lightcyan);
 
   --nav-bg: var(--page-bg);
+  --accordion-transition: #E7F1FF;
 
   --gsi-material-bg: var(--page-bg);
   --gsi-material-button: rgba(0, 0, 0, 0.25);
@@ -87,6 +88,7 @@
 
   --nav-bg: var(--page-bg);
   --accordion-bg: var(--page-bg);
+  --accordion-transition: var(--accordion-bg) ;
 
   --gsi-material-bg: var(--page-bg);
   --gsi-material-button: rgba(0, 0, 0, 0.25);
@@ -510,6 +512,10 @@ html body footer.footer {
 
 .accordion-button {
   background-color: var(--accordion-bg);
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: var(--accordion-transition);
 }
 
 .table {
