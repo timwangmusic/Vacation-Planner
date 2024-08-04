@@ -17,6 +17,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/oddg/hungarian-algorithm v0.0.0-20170809162819-9567cbc363de
 	github.com/redis/go-redis/v9 v9.2.1
+	github.com/sashabaranov/go-openai v1.27.0
 	github.com/sendgrid/sendgrid-go v3.13.0+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4

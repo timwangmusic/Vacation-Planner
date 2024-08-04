@@ -1017,6 +1017,52 @@ func (p *MyPlanner) GetPlaceDetails(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, place)
 }
 
+func (p *MyPlanner) planSummary(ctx *gin.Context) {
+	type planSummaryRequest struct {
+		PlanId string `json:"plan_id"`
+	}
+
+	summary := &planSummaryRequest{}
+	if err := ctx.ShouldBindJSON(summary); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	planKey := strings.Join([]string{iowrappers.TravelPlanRedisCacheKeyPrefix, summary.PlanId}, ":")
+	plan := &iowrappers.PlanningSolutionRecord{}
+	if err := p.RedisClient.FetchSingleRecord(ctx, planKey, plan); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	details, err := planDetails(plan)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	resp, err := chatCompletion(ctx, "please summarize the travel plan in one paragraph:"+details)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": resp})
+}
+
+func planDetails(r *iowrappers.PlanningSolutionRecord) (string, error) {
+	if r == nil {
+		return "", errors.New("invalid record with nil pointer")
+	}
+
+	if len(r.PlaceNames) != len(r.TimeSlots) {
+		return "", errors.New("invalid record with invalid number of place names")
+	}
+
+	parts := make([]string, 0)
+	for idx, name := range r.PlaceNames {
+		parts = append(parts, r.TimeSlots[idx]+" at: "+name)
+	}
+
+	return "Visiting " + r.Destination.String() + ". " + strings.Join(parts, "; "), nil
+}
+
 func (p *MyPlanner) rateLimiter() gin.HandlerFunc {
 	logger := iowrappers.Logger
 	// 100 requests per hour
@@ -1091,6 +1137,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/remove-places", p.removePlacesMigrationHandler)
 		}
 
+		v1.POST("/plan-summary", p.planSummary)
 		v1.GET("/profile", p.userProfile)
 		users := v1.Group("/users")
 		{

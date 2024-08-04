@@ -112,9 +112,52 @@ function normalizeLocation(location) {
   return [results[0], results[1]].join(", ");
 }
 
+async function getPlanSummaryResponse(planIdx) {
+  const url = "/v1/plan-summary";
+  const data = await getPlans();
+  return await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      plan_id: data.travel_plans[planIdx].id,
+    }),
+  })
+    .then((resp) => {
+      if (!resp.ok) {
+        switch (resp.status) {
+          case 400:
+            return {
+              message: "Bad request",
+            };
+          case 500:
+            return {
+              message: "Unable to generate a response, please try again later.",
+            };
+          default:
+            return {
+              message: "",
+            };
+        }
+      }
+      return resp.json();
+    })
+    .catch((err) => console.log(err));
+}
+
 // create button event actions
 for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
+  $(`#gen-summary-${planIndex}`).click(async () => {
+    console.log("generating plan summary...");
+    $(`#gen-summary-${planIndex}`).prop("disabled", true);
+    const resp = await getPlanSummaryResponse(planIndex);
+    $(`#modal-body-${planIndex}`).text(resp.message);
+    $(`#gen-summary-${planIndex}`)
+      .prop("disabled", false)
+      .text("regenerate summary");
+  });
 }
 
 $(".reload-btn").each(function (_, element) {
