@@ -5,6 +5,7 @@ import { updateUsername } from "./user.js";
 
 let numberOfPlans = 5;
 const username = updateUsername();
+let plansData = {};
 
 async function getPlans() {
   const plansUrl = document.URL + "&json_only=true";
@@ -22,8 +23,7 @@ async function getPlans() {
 async function postUserFeedback(planIdx) {
   const url = `/v1/users/${username}/feedback`;
 
-  const data = await getPlans();
-  const plan = data.travel_plans[planIdx];
+  const plan = plansData.travel_plans[planIdx];
 
   await fetch(url, {
     method: "POST",
@@ -48,11 +48,10 @@ async function postPlanForUser() {
   const fields = this.id.split("-");
   const planIndex = fields[fields.length - 1];
 
-  const data = await getPlans();
   // the number of plans equals the array length in the JSON result
-  numberOfPlans = data.travel_plans.length;
-  const sourcePlan = data.travel_plans[planIndex];
-  const destination = data.travel_destination;
+  numberOfPlans = plansData.travel_plans.length;
+  const sourcePlan = plansData.travel_plans[planIndex];
+  const destination = plansData.travel_destination;
 
   await fetch(url, {
     method: "POST",
@@ -114,14 +113,13 @@ function normalizeLocation(location) {
 
 async function getPlanSummaryResponse(planIdx) {
   const url = "/v1/plan-summary";
-  const data = await getPlans();
   return await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      plan_id: data.travel_plans[planIdx].id,
+      plan_id: plansData.travel_plans[planIdx].id,
     }),
   })
     .then((resp) => {
@@ -197,10 +195,10 @@ rollUpButton.addEventListener("click", () => {
 
 $(document).ready(async function () {
   {
-    const data = await getPlans();
-    for (let idx = 0; idx < data.travel_plans.length; idx++) {
+    plansData = await getPlans();
+    for (let idx = 0; idx < plansData.travel_plans.length; idx++) {
       let btn = document.getElementById("save-" + idx);
-      if (btn != null && data.travel_plans[idx].saved) {
+      if (btn != null && plansData.travel_plans[idx].saved) {
         btn.disabled = true;
       }
     }
