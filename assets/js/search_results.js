@@ -5,7 +5,7 @@ import { updateUsername } from "./user.js";
 
 let numberOfPlans = 5;
 const username = updateUsername();
-let plansData = {};
+let plansData = null;
 
 async function getPlans() {
   const plansUrl = document.URL + "&json_only=true";
@@ -23,6 +23,9 @@ async function getPlans() {
 async function postUserFeedback(planIdx) {
   const url = `/v1/users/${username}/feedback`;
 
+  if (!plansData) {
+    plansData = await getPlans();
+  }
   const plan = plansData.travel_plans[planIdx];
 
   await fetch(url, {
@@ -44,6 +47,10 @@ function planToFeedback(plan) {
 }
 
 async function postPlanForUser() {
+  if (!plansData) {
+    plansData = await getPlans();
+  }
+
   const url = `/v1/users/${username}/plans`;
   const fields = this.id.split("-");
   const planIndex = fields[fields.length - 1];
@@ -113,6 +120,10 @@ function normalizeLocation(location) {
 
 async function getPlanSummaryResponse(planIdx) {
   const url = "/v1/plan-summary";
+  if (!plansData) {
+    plansData = await getPlans();
+  }
+
   return await fetch(url, {
     method: "POST",
     headers: {
