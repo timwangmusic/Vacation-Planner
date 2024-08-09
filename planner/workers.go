@@ -12,7 +12,7 @@ import (
 var jobExecutions = make(map[string]*iowrappers.JobExecution)
 
 type Worker interface {
-	handleJob(context.Context, *iowrappers.Job) error
+	handleJob(context.Context, *iowrappers.Job, *sync.RWMutex) error
 }
 
 type PlanningSolutionsWorker struct {
