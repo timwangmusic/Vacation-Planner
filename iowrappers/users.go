@@ -34,10 +34,11 @@ type GoogleOAuthResponse struct {
 }
 
 type PlanningEvent struct {
-	User      string `json:"user"`
-	City      string `json:"city"`
-	Country   string `json:"country"`
-	Timestamp string `json:"timestamp"`
+	User              string `json:"user"`
+	City              string `json:"city"`
+	Country           string `json:"country"`
+	AdminAreaLevelOne string `json:"admin_area_level_one"`
+	Timestamp         string `json:"timestamp"`
 }
 
 type VerificationResult struct {

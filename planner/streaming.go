@@ -1,12 +1,9 @@
 package planner
 
 import (
-	"strings"
 	"sync"
 
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 func (p *MyPlanner) planningEventLogging(event iowrappers.PlanningEvent) {
@@ -22,9 +19,7 @@ func (p *MyPlanner) planningEventLogging(event iowrappers.PlanningEvent) {
 func (p *MyPlanner) ProcessPlanningEvent(worker int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for event := range p.PlanningEvents {
-		c := cases.Title(language.English)
-		iowrappers.Logger.Debugf("worker %d processing event for %s", worker, c.String(event.City)+", "+strings.ToUpper(event.Country))
-		p.RedisClient.CollectPlanningAPIStats(event)
+		p.RedisClient.CollectPlanningAPIStats(event, worker)
 	}
 	iowrappers.Logger.Debugf("recollected resources for worker %d", worker)
 }
