@@ -27,7 +27,7 @@ const (
 	PlanningSolutionsExpirationTime = 24 * time.Hour
 	CityInfoExpirationTime          = 0
 
-	NumVisitorsPlanningAPI = "visitor_count:planning_API"
+	NumVisitorsPlanningAPI = "visitor_count:planning_api"
 
 	TravelPlansRedisCacheKeyPrefix = "travel_plans"
 	TravelPlanRedisCacheKeyPrefix  = "travel_plan"
@@ -98,6 +98,7 @@ func (r *RedisClient) CollectPlanningAPIStats(event PlanningEvent, workerIdx int
 	if event.AdminAreaLevelOne != "" {
 		location = strings.ReplaceAll(strings.Join([]string{event.City, event.AdminAreaLevelOne, event.Country}, ":"), " ", "_")
 	}
+	location = strings.ToLower(location)
 
 	redisKey := strings.Join([]string{NumVisitorsPlanningAPI, location, bucketIdx}, ":")
 	if exists, err := r.client.Exists(ctx, redisKey).Result(); err != nil {
