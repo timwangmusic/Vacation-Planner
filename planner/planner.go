@@ -415,10 +415,11 @@ func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRe
 
 	// logging planning API usage for valid requests
 	event := iowrappers.PlanningEvent{
-		User:      user,
-		Country:   request.Location.Country,
-		City:      request.Location.City,
-		Timestamp: time.Now().Format(time.RFC3339),
+		User:              user,
+		Country:           request.Location.Country,
+		City:              request.Location.City,
+		AdminAreaLevelOne: request.Location.AdminAreaLevelOne,
+		Timestamp:         time.Now().Format(time.RFC3339),
 	}
 	p.PlanningEvents <- event
 	p.planningEventLogging(event)

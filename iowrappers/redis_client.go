@@ -25,11 +25,10 @@ import (
 
 const (
 	PlanningSolutionsExpirationTime = 24 * time.Hour
-	PlanningStatExpirationTime      = 24 * time.Hour
 	CityInfoExpirationTime          = 0
 
-	NumVisitorsPlanningAPI         = "visitor_count:planning_APIs"
-	NumVisitorsPrefix              = "visitor_count"
+	NumVisitorsPlanningAPI = "visitor_count:planning_api"
+
 	TravelPlansRedisCacheKeyPrefix = "travel_plans"
 	TravelPlanRedisCacheKeyPrefix  = "travel_plan"
 	CityRedisKeyPrefix             = "city"
@@ -71,28 +70,62 @@ func CreateRedisClient(url *url.URL) *RedisClient {
 	})}
 }
 
-// CollectPlanningAPIStats generates analytics of total number of unique visitors to the planning APIs in the last 24 hours
-// analytics of number of unique users planning for each city
-func (r *RedisClient) CollectPlanningAPIStats(event PlanningEvent) {
+// CollectPlanningAPIStats updates the number of calls to the planning APIs per hour.
+// It also updates API call stats for each city per hour.
+// These keys expire after 30 days.
+func (r *RedisClient) CollectPlanningAPIStats(event PlanningEvent, workerIdx int) {
 	c := r.client
 
 	pipeline := c.Pipeline()
 
-	pipeline.PFAdd(RedisClientDefaultBlankContext, NumVisitorsPlanningAPI, event.User)
-
-	// set expiration time
-	if _, err := pipeline.Exists(RedisClientDefaultBlankContext, NumVisitorsPlanningAPI).Result(); err != nil && errors.Is(err, redis.Nil) {
-		pipeline.Expire(RedisClientDefaultBlankContext, NumVisitorsPlanningAPI, PlanningStatExpirationTime)
+	bucketIdx, err := hourBucketIndex(event.Timestamp)
+	if err != nil {
+		Logger.Debugf("failed to collect API stat %+v", event)
+		return
 	}
 
-	city := strings.ReplaceAll(strings.ToLower(event.City), " ", "_")
-
-	redisKey := strings.Join([]string{NumVisitorsPrefix, event.Country, city}, ":")
-	pipeline.PFAdd(RedisClientDefaultBlankContext, redisKey, event.User)
-
-	if _, err := pipeline.Exec(RedisClientDefaultBlankContext); err != nil {
-		log.Error(err)
+	ctx := context.Background()
+	totalVisitorsKey := strings.Join([]string{NumVisitorsPlanningAPI, bucketIdx}, ":")
+	if exists, err := r.client.Exists(ctx, totalVisitorsKey).Result(); err != nil {
+		Logger.Errorf("failed to check Redis %s for key %s existence", err.Error(), totalVisitorsKey)
+		return
+	} else if exists == 0 {
+		pipeline.Set(ctx, totalVisitorsKey, 0, time.Hour*24*30)
 	}
+	pipeline.Incr(ctx, totalVisitorsKey)
+
+	location := strings.ReplaceAll(strings.Join([]string{event.City, event.Country}, ":"), " ", "_")
+	if event.AdminAreaLevelOne != "" {
+		location = strings.ReplaceAll(strings.Join([]string{event.City, event.AdminAreaLevelOne, event.Country}, ":"), " ", "_")
+	}
+	location = strings.ToLower(location)
+
+	redisKey := strings.Join([]string{NumVisitorsPlanningAPI, location, bucketIdx}, ":")
+	if exists, err := r.client.Exists(ctx, redisKey).Result(); err != nil {
+		Logger.Errorf("failed to check Redis %s for key %s existence", err.Error(), redisKey)
+		return
+	} else if exists == 0 {
+		pipeline.Set(ctx, redisKey, 0, time.Hour*24*30)
+	}
+	pipeline.Incr(ctx, redisKey)
+
+	if _, err = pipeline.Exec(ctx); err != nil {
+		Logger.Debugf("failed to collect API stats %+v: %s", event, err.Error())
+	}
+	Logger.Debugf("API event worker %d successfully handled job", workerIdx)
+}
+
+// hour bucket in UTC standard time
+func hourBucketIndex(timestamp string) (string, error) {
+	t, err := time.Parse(time.RFC3339, timestamp)
+	if err != nil {
+		return "", err
+	}
+
+	t = t.UTC()
+
+	// Convert to YYYYMMDD:HH format
+	return t.Format("20060102:15"), nil
 }
 
 func (r *RedisClient) RemoveKeys(context context.Context, keys []string) (err error) {
