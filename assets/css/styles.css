@@ -20,6 +20,10 @@
   --nav-bg: var(--page-bg);
   --accordion-transition: #E7F1FF;
 
+  --pagination-theme: 'light-theme';
+
+  --plan-template-nav-bar: #e3f2fd;
+
   --gsi-material-bg: var(--page-bg);
   --gsi-material-button: rgba(0, 0, 0, 0.25);
   --gsi-material-button-general: #1f1f1f;
@@ -88,7 +92,9 @@
 
   --nav-bg: var(--page-bg);
   --accordion-bg: var(--page-bg);
-  --accordion-transition: var(--accordion-bg) ;
+  --accordion-transition: var(--accordion-bg);
+
+  --plan-template-nav-bar: var(--page-bg);
 
   --gsi-material-bg: var(--page-bg);
   --gsi-material-button: rgba(0, 0, 0, 0.25);
@@ -520,4 +526,18 @@ html body footer.footer {
 
 .table {
   background: var(--table_bg);
+}
+
+#contains-everything.container.mt-3 {
+  background-color: var(--page-bg);
+  color: var(--primary-text);
+}
+
+#contains-everything.container.mt-3 * {
+  background-color: inherit;
+  color: inherit;
+}
+
+.nav.navbar.navbar-light.navbar-expand-lg {
+  background-color: var(--plan-template-nav-bar);
 }
