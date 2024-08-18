@@ -4,6 +4,7 @@
 /* ================================================= */
 :root[data-theme="light"] {
   --page-bg: #fff;
+  --nav-bar-bg: #e3f2fd;
   --primary-text: #3C3A47;
   --muted-text: #B1B0B5;
   --footer-icon-color: #6c63ff;
@@ -17,12 +18,10 @@
   --header-tr-nth: beige;
   --table_bg: var(--lightcyan);
 
-  --nav-bg: var(--page-bg);
+  --nav-bg: var(--nav-bar-bg);
   --accordion-transition: #E7F1FF;
 
   --pagination-theme: 'light-theme';
-
-  --plan-template-nav-bar: #e3f2fd;
 
   --gsi-material-bg: var(--page-bg);
   --gsi-material-button: rgba(0, 0, 0, 0.25);
@@ -63,6 +62,7 @@
 
 :root[data-theme="dark"] {
   --page-bg: #002b36;
+  --nav-bar-bg: var(--page-bg);
   --primary-text: #F5F5F6;
   --muted-text: #77757E;
   --footer-icon-color: #6c63ff;
@@ -94,7 +94,7 @@
   --accordion-bg: var(--page-bg);
   --accordion-transition: var(--accordion-bg);
 
-  --plan-template-nav-bar: var(--page-bg);
+  --plan-template-nav-bar: var(--plan-template-nav-bar);
 
   --gsi-material-bg: var(--page-bg);
   --gsi-material-button: rgba(0, 0, 0, 0.25);
@@ -477,6 +477,12 @@ body.dark-mode {
     }
 }
 
+/*nav bar*/
+.navbar.navbar-light.navbar-expand-lg {
+  background-color: var(--nav-bg);
+}
+
+/*nav items*/
 .nav {
   background-color: var(--nav-bg);
 }
@@ -536,8 +542,4 @@ html body footer.footer {
 #contains-everything.container.mt-3 * {
   background-color: inherit;
   color: inherit;
-}
-
-.nav.navbar.navbar-light.navbar-expand-lg {
-  background-color: var(--plan-template-nav-bar);
 }
