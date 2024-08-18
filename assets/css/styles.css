@@ -539,7 +539,9 @@ html body footer.footer {
   color: var(--primary-text);
 }
 
-#contains-everything.container.mt-3 * {
-  background-color: inherit;
-  color: inherit;
+[data-theme="dark"] {
+  #contains-everything.container.mt-3 * {
+    background-color: inherit;
+    color: inherit;
+  }
 }
