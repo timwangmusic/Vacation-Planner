@@ -201,7 +201,6 @@ func (p *MyPlanner) userSavedPlansPostHandler(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: differentiate between internal plan saving errors against duplicated plan saving requests errors
 	if err := p.RedisClient.SaveUserPlan(ctx, userView, &planView); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -303,7 +303,8 @@ func (r *RedisClient) Authenticate(context context.Context, credential user.Cred
 }
 
 func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, planView *user.TravelPlanView) error {
-	userView, findUserErr := r.FindUser(context, FindUserByName, userView)
+	var findUserErr error
+	userView, findUserErr = r.FindUser(context, FindUserByName, userView)
 	if findUserErr != nil {
 		return findUserErr
 	}
@@ -314,26 +315,32 @@ func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, 
 		return planSerializationErr
 	}
 
-	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
 	userSavedPlansRedisKey := strings.Join([]string{UserSavedTravelPlansPrefix, "user", userView.ID, "plans"}, ":")
-	if exists, getPlanErr := r.client.SIsMember(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); getPlanErr != nil || exists {
-		if getPlanErr != nil && !errors.Is(getPlanErr, redis.Nil) {
-			return getPlanErr
-		}
-		if exists {
-			return fmt.Errorf("travel plan %s is already saved to profile for user %s", planView.ID, userView.ID)
-		}
-	}
+	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
 
-	var err error
-	_, err = r.client.SAdd(context, userSavedPlansRedisKey, travelPlanRedisKey).Result()
-	if err != nil {
+	if _, err := r.Get().TxPipelined(context, func(pipeliner redis.Pipeliner) error {
+		if exists, getPlanErr := pipeliner.SIsMember(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); getPlanErr != nil || exists {
+			if getPlanErr != nil && !errors.Is(getPlanErr, redis.Nil) {
+				return getPlanErr
+			}
+			if exists {
+				return fmt.Errorf("travel plan %s is already saved to profile for user %s", planView.ID, userView.ID)
+			}
+		}
+
+		_, err := pipeliner.SAdd(context, userSavedPlansRedisKey, travelPlanRedisKey).Result()
+		if err != nil {
+			return err
+		}
+
+		savedPlanKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
+		_, err = pipeliner.Set(context, savedPlanKey, json_, 0).Result()
 		return err
+	}); err != nil {
+		return fmt.Errorf("failed to save travel plan for user %s with err: %v", userView.ID, err)
 	}
 
-	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
-	_, err = r.client.Set(context, redisKey, json_, 0).Result()
-	return err
+	return nil
 }
 
 func (r *RedisClient) DeleteUserPlan(context context.Context, userView user.View, planView user.TravelPlanView) error {
