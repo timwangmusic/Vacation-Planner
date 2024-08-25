@@ -307,14 +307,28 @@ tr:nth-child(even) {
   width: 100%;
 }
 
-.gsi-material-button .gsi-material-button-contents {
-  -webkit-flex-grow: 1;
-  flex-grow: 1;
-  font-family: "Roboto", arial, sans-serif;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: top;
+[data-theme="light"] {
+  .gsi-material-button .gsi-material-button-contents {
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
+    font-family: "Roboto", arial, sans-serif;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+  }
+}
+[data-theme="dark"] {
+  .gsi-material-button .gsi-material-button-contents {
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
+    font-family: "Roboto", arial, sans-serif;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+    color: rebeccapurple;
+  }
 }
 
 .gsi-material-button .gsi-material-button-state {
@@ -539,9 +553,26 @@ html body footer.footer {
   color: var(--primary-text);
 }
 
+.container.mt-3 {
+  background-color: var(--page-bg);
+  color: var(--primary-text);
+}
+
 [data-theme="dark"] {
   #contains-everything.container.mt-3 * {
     background-color: inherit;
     color: inherit;
+  };
+  .container.mt-3  > *:not(.form-check-input) {
+    background-color: inherit;
+    color: inherit;
+  };
+  /*handle only login form*/
+  .container.mt-3 form#login-form * {
+    background-color: var(--page-bg);
+    color: var(--primary-text);
   }
 }
+
+
+

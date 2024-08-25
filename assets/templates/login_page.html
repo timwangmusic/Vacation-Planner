@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -31,7 +31,6 @@
   <body>
     <nav
       class="navbar navbar-light navbar-expand-lg"
-      style="background-color: #e3f2fd"
     >
       <div class="container-fluid">
         <button
@@ -169,5 +168,13 @@
     </div>
 
     <script src="assets/js/login.js" type="module"></script>
+    <script>
+      // Check local Storage here for theme
+      let localStore = localStorage.getItem('theme')
+      if (localStore === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark')
+      }
+    </script>
+    <script type="module" src="assets/js/mode-switch.js"></script>
   </body>
 </html>
