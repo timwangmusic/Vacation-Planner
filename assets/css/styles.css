@@ -572,6 +572,10 @@ html body footer.footer {
     background-color: var(--page-bg);
     color: var(--primary-text);
   }
+  .container.d-flex.flex-column.align-items-center.justify-content-center.mt-4 * {
+    background-color: var(--page-bg);
+    color: var(--primary-text);
+  }
 }
 
 
