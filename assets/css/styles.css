@@ -571,10 +571,12 @@ html body footer.footer {
   .container.mt-3 form#login-form * {
     background-color: var(--page-bg);
     color: var(--primary-text);
-  }
+  };
   .container.d-flex.flex-column.align-items-center.justify-content-center.mt-4 * {
-    background-color: var(--page-bg);
-    color: var(--primary-text);
+    :is(div:not([name="googleMap"])) {
+      background-color: var(--page-bg);
+      color: var(--primary-text);
+    }
   }
 }
 
