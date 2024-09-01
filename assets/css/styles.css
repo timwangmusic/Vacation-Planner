@@ -109,6 +109,8 @@
 
   --logo-fill: var(--primary-text);
 
+  --table-border: var(--header-text-color);
+
   --input-bg: #F5F5F6;
   --input-bg-hover: #ecebed;
   --input-border-focus: var(--muted-text);
@@ -181,6 +183,14 @@ h1 {
 
 h3 {
   color: var(--header-h3-color);
+}
+
+h4 {
+  color: var(--primary-text);
+}
+
+h5 {
+  color: var(--primary-text);
 }
 
 thead {
@@ -567,16 +577,22 @@ html body footer.footer {
     background-color: inherit;
     color: inherit;
   };
-  /*handle only login form*/
+  /*handle login form*/
   .container.mt-3 form#login-form * {
     background-color: var(--page-bg);
     color: var(--primary-text);
   };
+  /*handle plan details*/
   .container.d-flex.flex-column.align-items-center.justify-content-center.mt-4 > *:not(.card.shadow-sm.border.rounded.mt-2) {
     background-color: var(--page-bg);
     color: var(--primary-text);
-
-  }
+  };
+  /*handle profile tables*/
+  #user-profile-container.container * {
+    background-color: var(--page-bg);
+    color: var(--primary-text);
+    border-color: var(--table-border);
+  };
 }
 
 
