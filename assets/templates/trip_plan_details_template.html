@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
   <head>
+    <script type="text/javascript" src="assets/js/local-storage-theme-check.js"></script>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -186,13 +187,6 @@
       async
       src="https://maps.googleapis.com/maps/api/js?key={{.ApiKey}}&loading=async&callback=initMap&loading=async&libraries=&v=weekly"
     ></script>
-    <script>
-      // Check local Storage here for theme
-      let localStore = localStorage.getItem('theme')
-      if (localStore === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark')
-      }
-    </script>
     <script type="module" src="assets/js/mode-switch.js"></script>
     <script type="module" src="/v1/assets/js/jwt-decode.js"></script>
     <script type="module" src="/v1/assets/js/user.js"></script>
