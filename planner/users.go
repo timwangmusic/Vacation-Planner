@@ -254,8 +254,13 @@ func (p *MyPlanner) userFavoritesHandler(ctx *gin.Context) {
 		return
 	}
 
-	iowrappers.Logger.Debugf("->userFavoritesHandler: user favorites %+v", *userView.Favorites)
-	ctx.JSON(http.StatusOK, userView.Favorites)
+	userFav, err := p.RedisClient.UserFavorites(ctx, &userView)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, userFav)
 }
 
 func (p *MyPlanner) userFeedbackHandler(ctx *gin.Context) {

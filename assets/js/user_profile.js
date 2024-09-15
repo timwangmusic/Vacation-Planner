@@ -65,15 +65,9 @@ function renderFavorites(favorites) {
   const mostSearchedPlace = document.querySelector(
     "#most-searched-place .card-body .card-text"
   );
-  let result = "";
-  let count = 0;
-  for (const location in favorites) {
-    if (favorites[location].count > count) {
-      result = favorites[location].location;
-      count = favorites[location].count;
-    }
-  }
-  mostSearchedPlace.innerText = result;
+  if (favorites.most_frequent_search?.length > 0) {
+    mostSearchedPlace.innerText = favorites.most_frequent_search;
+  } 
 }
 
 function showPlanDetails() {
@@ -105,11 +99,8 @@ function getUserFavorites() {
   return axios
     .get(favoritesUrl)
     .then((response) => {
-      const data = response.data;
-      const favorites = data["searchHistory"];
-      if (Object.keys(favorites).length > 0) {
-        renderFavorites(favorites);
-      }
+      const favorites = response.data;
+      renderFavorites(favorites);
     })
     .catch((err) => console.error(err));
 }
