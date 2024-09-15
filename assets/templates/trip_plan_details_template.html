@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
   <head>
+    <script>
+      var currentTheme = localStorage.getItem('theme');
+
+      if (currentTheme !== null && currentTheme === 'dark') {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -193,7 +200,6 @@
         document.documentElement.setAttribute('data-theme', 'dark')
       }
     </script>
-    <script type="module" src="assets/js/mode-switch.js"></script>
     <script type="module" src="/v1/assets/js/jwt-decode.js"></script>
     <script type="module" src="/v1/assets/js/user.js"></script>
     <script type="module" src="/v1/assets/js/show-trip-details.js"></script>

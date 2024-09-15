@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
   <head>
-    <script type="text/javascript" src="assets/js/local-storage-theme-check.js"></script>
+    <script>
+      var currentTheme = localStorage.getItem('theme');
+
+      if (currentTheme !== null && currentTheme === 'dark') {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="assets/css/styles.css" />
@@ -89,6 +95,5 @@
     ></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script type="module" src="assets/js/mode-switch.js"></script>
   </body>
 </html>

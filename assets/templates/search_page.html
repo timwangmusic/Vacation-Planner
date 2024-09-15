@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
   <head>
-    <script type="text/javascript" src="assets/js/local-storage-theme-check.js"></script>
+    <script>
+      var currentTheme = localStorage.getItem('theme');
+
+      if (currentTheme !== null && currentTheme === 'dark') {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!--Bootstrap CSS-->
