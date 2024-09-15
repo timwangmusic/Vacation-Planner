@@ -183,6 +183,10 @@ function parseResponse(response) {
   console.log("Raw JSON response is", response);
   const plansCount = response["travel_plans"]?.length;
 
+  // Check local Storage here for theme
+  let localStore = localStorage.getItem('theme')
+  let paginationTheme = (localStore === 'light') ? "light-theme" : "dark-theme"
+
   $(function () {
     if (plansCount > 0) {
       createPlanResultTables(plansCount);
@@ -224,6 +228,7 @@ function parseResponse(response) {
 
         // Items allowed on a single page
         itemsOnPage: itemsPerPage,
+        cssStyle: paginationTheme,
         pages: Math.ceil(plansCount / itemsPerPage),
         onPageClick: function (pageIdx) {
           const itemsOnPage = 2;
@@ -249,7 +254,7 @@ function createPlanResultTables(planCount) {
     let newTable = $("<table>")
       .addClass("table table-sm table-bordered")
       .attr("id", "plan-" + i)
-      .css("background", "lightcyan")
+      .css("background", "var(--table_bg)")
       .css("table-layout", "fixed");
     let headerRow = $("<tr>");
     headerRow.append($("<th>").text("Time"));

@@ -1,6 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
+    <script>
+      var currentTheme = localStorage.getItem('theme');
+
+      if (currentTheme !== null && currentTheme === 'dark') {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!--Bootstrap CSS-->
@@ -10,23 +17,14 @@
       integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
       crossorigin="anonymous"
     />
+    <link rel="stylesheet" href="assets/css/styles.css" />
 
-    <style>
-      h1 {
-        text-align: center;
-        color: #24c1e0;
-        line-height: 100px;
-        margin: 0;
-        background-color: whitesmoke;
-      }
-    </style>
     <title>profile</title>
   </head>
 
   <body>
     <nav
       class="navbar navbar-light navbar-expand-lg"
-      style="background-color: #e3f2fd"
     >
       <div class="container-fluid">
         <a class="nav-link" href="javascript:history.back()">Back</a>
@@ -35,7 +33,7 @@
     </nav>
     <h1>Profile</h1>
     <br />
-    <div class="container">
+    <div class="container" id="user-profile-container">
       <div class="row row-cols-md-2">
         <div class="col">
           <h4>Saved Travel Plans</h4>
