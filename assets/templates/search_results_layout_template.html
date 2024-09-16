@@ -1,6 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
+    <script>
+      var currentTheme = localStorage.getItem('theme');
+
+      if (currentTheme !== null && currentTheme === 'dark') {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Vacation Plans</title>
@@ -22,7 +29,7 @@
   <body>
     <div class="grid">
       <div class="header">
-        <nav class="navbar navbar-light" style="background-color: #e3f2fd">
+        <nav class="navbar navbar-light">
           <div class="container-fluid">
             <!--New Search-->
             <a class="nav-link" href="/v1/"
@@ -187,7 +194,7 @@
               <table
                 id="plan-table-{{$i}}"
                 class="table table-bordered table-striped table-hover"
-                style="background: lightcyan; table-layout: fixed"
+                style="table-layout: fixed"
               >
                 <thead>
                   <tr>
@@ -210,7 +217,7 @@
                     <td class="col-4 col-md-3">
                       <a href="{{.URL}}">{{.PlaceName}}</a>
                     </td>
-                    <td class="d-none d-md-block">{{.Address}}</td>
+                    <td class="d-none d-md-block" style="color: #0d6efd">{{.Address}}</td>
                   </tr>
                   {{end}}
                 </tbody>

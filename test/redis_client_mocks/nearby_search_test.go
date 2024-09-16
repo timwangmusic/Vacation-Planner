@@ -82,7 +82,7 @@ func TestGetPlaces_shouldExcludePlacesOutsideOfSearchRadius(t *testing.T) {
 
 	cachedEateryPlaces, err := RedisClient.NearbySearch(RedisContext, &placeSearchRequest)
 	if err != nil {
-		t.Error(err.Error())
+		t.Errorf("RedisClient.NearbySearch error %v", err)
 		return
 	}
 	// "Keens Steakhouse"
