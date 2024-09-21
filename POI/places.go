@@ -84,9 +84,11 @@ type Location struct {
 	Country           string  `json:"country"`           // name of the country where the location belongs to
 }
 
+// String formalizes a location to a format with capitalized locality, followed by upper-cased admin area one and country names
 func (l *Location) String() string {
-	c := cases.Title(language.English)
-	return strings.Join([]string{c.String(l.City), strings.ToUpper(l.AdminAreaLevelOne), c.String(l.Country)}, ", ")
+	title := cases.Title(language.English)
+	upper := cases.Upper(language.English)
+	return strings.Join([]string{title.String(l.City), upper.String(l.AdminAreaLevelOne), upper.String(l.Country)}, ", ")
 }
 
 // Address in adr micro-format example:

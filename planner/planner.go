@@ -597,21 +597,19 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		planningReq.Location.Longitude, _ = strconv.ParseFloat(locationFields[0], 64)
 		planningReq.Location.Latitude, _ = strconv.ParseFloat(locationFields[1], 64)
 	} else {
-		switch len(locationFields) {
-		case 2:
-			planningReq.Location = POI.Location{City: locationFields[0], Country: locationFields[1]}
-		case 3:
-			planningReq.Location = POI.Location{City: locationFields[0], AdminAreaLevelOne: locationFields[1], Country: locationFields[2]}
-		default:
-			ctx.String(http.StatusBadRequest, "wrong location input")
-			return
+		if len(locationFields) < 2 || len(locationFields) > 3 {
+			ctx.String(http.StatusBadRequest, "invalid location fields, expect location fields input has size 2 or 3")
+		}
+		err = p.formalizeLocation(ctx, locationFields, &planningReq.Location)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
 		}
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
 	c = context.WithValue(c, iowrappers.ContextRequestUserId, userView.ID)
 	planningResp := p.Planning(c, &planningReq, userView.Username)
-	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView, preciseLocation); err != nil {
+	if err = p.RedisClient.UpdateSearchHistory(c, planningReq.Location.String(), &userView, preciseLocation); err != nil {
 		logger.Debug(err)
 	}
 
@@ -635,6 +633,35 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 	utils.LogErrorWithLevel(p.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
+}
+
+func (p *MyPlanner) formalizeLocation(ctx context.Context, fields []string, location *POI.Location) error {
+	query := &iowrappers.GeocodeQuery{}
+
+	switch len(fields) {
+	case 2:
+		query.City = fields[0]
+		query.Country = fields[1]
+	case 3:
+		query.City = fields[0]
+		query.AdminAreaLevelOne = fields[1]
+		query.Country = fields[2]
+	}
+
+	lat, lng, err := p.Solver.Searcher.Geocode(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	queryResult, err := p.Solver.Searcher.ReverseGeocode(ctx, lat, lng)
+	if err != nil {
+		return err
+	}
+
+	location.City = queryResult.City
+	location.AdminAreaLevelOne = queryResult.AdminAreaLevelOne
+	location.Country = queryResult.Country
+	return nil
 }
 
 func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
