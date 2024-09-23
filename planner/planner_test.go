@@ -105,7 +105,7 @@ func Test_planDetails(t *testing.T) {
 				TimeSlots:   []string{"From 10 to 12", "From 15 to 17"},
 				Destination: POI.Location{Country: "China", City: "Beijing", AdminAreaLevelOne: "Beijing"},
 			}},
-			want:    "Visiting Beijing, BEIJING, China. From 10 to 12 at: Tian Tan Park; From 15 to 17 at: The Celestial Palace",
+			want:    "Visiting Beijing, BEIJING, CHINA. From 10 to 12 at: Tian Tan Park; From 15 to 17 at: The Celestial Palace",
 			wantErr: false,
 		},
 	}

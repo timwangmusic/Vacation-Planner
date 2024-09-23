@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/modern-go/reflect2"
 	"github.com/redis/go-redis/v9"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"github.com/weihesdlegend/Vacation-planner/utils"
@@ -51,6 +50,7 @@ type FindUserBy string
 const (
 	UserSavedTravelPlansPrefix = "user_saved_travel_plans"
 	UserSavedTravelPlanPrefix  = "user_saved_travel_plan"
+	UserSearchHistoryPrefix    = "users:search_history"
 
 	//UserNamesKey maps usernames to IDs
 	UserNamesKey = "user_names"
@@ -79,25 +79,90 @@ func (r *RedisClient) UpdateSearchHistory(ctx context.Context, location string, 
 		}
 	}
 
-	if reflect2.IsNil(userView.Favorites.SearchHistory) {
-		userView.Favorites = &user.PersonalFavorites{SearchHistory: make(map[string]user.LastSearchRecord)}
+	redisKey := strings.Join([]string{UserSearchHistoryPrefix, "user", userView.ID}, ":")
+	err := r.Get().Watch(ctx, func(tx *redis.Tx) error {
+		record := &user.LastSearchRecord{}
+		val, err := tx.HGet(ctx, redisKey, location).Result()
+		if err != nil && !errors.Is(err, redis.Nil) {
+			return err
+		}
+
+		if val != "" {
+			if err = json.Unmarshal([]byte(val), record); err != nil {
+				return fmt.Errorf("failed to unmarshal user search history: %w", err)
+			}
+		}
+
+		// Update the record
+		record.Location = location
+		record.LastSearchTimestamp = time.Now().Format(time.RFC3339)
+		record.Count++
+
+		// Serialize the record
+		serialized, err := json.Marshal(record)
+		if err != nil {
+			return fmt.Errorf("failed to serialize user search history: %w", err)
+		}
+
+		// Execute the transaction
+		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			pipe.HSet(ctx, redisKey, location, serialized)
+			return nil
+		})
+		return err
+	}, redisKey)
+
+	if err != nil {
+		return fmt.Errorf("failed to update search history: %w", err)
 	}
 
-	if _, exists := userView.Favorites.SearchHistory[location]; !exists {
-		userView.Favorites.SearchHistory[location] = user.LastSearchRecord{
-			Location:            location,
-			Count:               0,
-			LastSearchTimestamp: time.Now().Format(time.RFC3339),
+	return nil
+}
+
+type Favorites struct {
+	MostFrequentSearch string `json:"most_frequent_search"`
+}
+
+func (r *RedisClient) UserFavorites(ctx context.Context, view *user.View) (*Favorites, error) {
+	if view.ID == "" {
+		return nil, errors.New("user id is required")
+	}
+
+	redisKey := strings.Join([]string{UserSearchHistoryPrefix, "user", view.ID}, ":")
+	searchHistory, err := r.Get().HGetAll(ctx, redisKey).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user search history: %w", err)
+	}
+
+	topLocation, err := findTopLocation(searchHistory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find favorite location: %w", err)
+	}
+
+	return &Favorites{MostFrequentSearch: topLocation}, nil
+}
+
+func findTopLocation(locationData map[string]string) (string, error) {
+	var (
+		topLocation string
+		curMax      int
+	)
+
+	for location, data := range locationData {
+		record := &user.LastSearchRecord{}
+		if err := json.Unmarshal([]byte(data), record); err != nil {
+			Logger.Errorf("failed to unmarshal user search history for location %s: %v", location, err)
+			continue
+		}
+
+		if record.Count > curMax {
+			topLocation = record.Location
+			curMax = record.Count
+			Logger.Infof("current top location is %s with count %d", topLocation, record.Count)
 		}
 	}
 
-	data := userView.Favorites.SearchHistory[location]
-	data.Count++
-	data.LastSearchTimestamp = time.Now().Format(time.RFC3339)
-	userView.Favorites.SearchHistory[location] = data
-
-	Logger.Debugf("updating user favorite for user %s: %+v", userView.ID, data)
-	return r.UpdateUser(ctx, userView)
+	return topLocation, nil
 }
 
 func (r *RedisClient) VerifyPasswordResetRequest(ctx context.Context, req *user.PasswordResetRequest) VerificationResult {
@@ -303,7 +368,8 @@ func (r *RedisClient) Authenticate(context context.Context, credential user.Cred
 }
 
 func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, planView *user.TravelPlanView) error {
-	userView, findUserErr := r.FindUser(context, FindUserByName, userView)
+	var findUserErr error
+	userView, findUserErr = r.FindUser(context, FindUserByName, userView)
 	if findUserErr != nil {
 		return findUserErr
 	}
@@ -314,26 +380,32 @@ func (r *RedisClient) SaveUserPlan(context context.Context, userView user.View, 
 		return planSerializationErr
 	}
 
-	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
 	userSavedPlansRedisKey := strings.Join([]string{UserSavedTravelPlansPrefix, "user", userView.ID, "plans"}, ":")
-	if exists, getPlanErr := r.client.SIsMember(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); getPlanErr != nil || exists {
-		if getPlanErr != nil && !errors.Is(getPlanErr, redis.Nil) {
-			return getPlanErr
-		}
-		if exists {
-			return fmt.Errorf("travel plan %s is already saved to profile for user %s", planView.ID, userView.ID)
-		}
-	}
+	travelPlanRedisKey := strings.Join([]string{TravelPlanRedisCacheKeyPrefix, planView.OriginalPlanID}, ":")
 
-	var err error
-	_, err = r.client.SAdd(context, userSavedPlansRedisKey, travelPlanRedisKey).Result()
-	if err != nil {
+	if _, err := r.Get().TxPipelined(context, func(pipeliner redis.Pipeliner) error {
+		if exists, getPlanErr := pipeliner.SIsMember(context, userSavedPlansRedisKey, travelPlanRedisKey).Result(); getPlanErr != nil || exists {
+			if getPlanErr != nil && !errors.Is(getPlanErr, redis.Nil) {
+				return getPlanErr
+			}
+			if exists {
+				return fmt.Errorf("travel plan %s is already saved to profile for user %s", planView.ID, userView.ID)
+			}
+		}
+
+		_, err := pipeliner.SAdd(context, userSavedPlansRedisKey, travelPlanRedisKey).Result()
+		if err != nil {
+			return err
+		}
+
+		savedPlanKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
+		_, err = pipeliner.Set(context, savedPlanKey, json_, 0).Result()
 		return err
+	}); err != nil {
+		return fmt.Errorf("failed to save travel plan for user %s with err: %v", userView.ID, err)
 	}
 
-	redisKey := strings.Join([]string{UserSavedTravelPlanPrefix, "user", userView.ID, "plan", planView.ID}, ":")
-	_, err = r.client.Set(context, redisKey, json_, 0).Result()
-	return err
+	return nil
 }
 
 func (r *RedisClient) DeleteUserPlan(context context.Context, userView user.View, planView user.TravelPlanView) error {
