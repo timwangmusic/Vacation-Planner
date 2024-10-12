@@ -468,10 +468,11 @@ func (p *MyPlanner) processPlanningResp(ctx context.Context, request *PlanningRe
 
 	// logging planning API usage for valid requests
 	event := iowrappers.PlanningEvent{
-		User:      user,
-		Country:   request.Location.Country,
-		City:      request.Location.City,
-		Timestamp: time.Now().Format(time.RFC3339),
+		User:              user,
+		Country:           request.Location.Country,
+		City:              request.Location.City,
+		AdminAreaLevelOne: request.Location.AdminAreaLevelOne,
+		Timestamp:         time.Now().Format(time.RFC3339),
 	}
 	p.PlanningEvents <- event
 	p.planningEventLogging(event)
@@ -649,21 +650,19 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		planningReq.Location.Longitude, _ = strconv.ParseFloat(locationFields[0], 64)
 		planningReq.Location.Latitude, _ = strconv.ParseFloat(locationFields[1], 64)
 	} else {
-		switch len(locationFields) {
-		case 2:
-			planningReq.Location = POI.Location{City: locationFields[0], Country: locationFields[1]}
-		case 3:
-			planningReq.Location = POI.Location{City: locationFields[0], AdminAreaLevelOne: locationFields[1], Country: locationFields[2]}
-		default:
-			ctx.String(http.StatusBadRequest, "wrong location input")
-			return
+		if len(locationFields) < 2 || len(locationFields) > 3 {
+			ctx.String(http.StatusBadRequest, "invalid location fields, expect location fields input has size 2 or 3")
+		}
+		err = p.formalizeLocation(ctx, locationFields, &planningReq.Location)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
 		}
 	}
 
 	c := context.WithValue(ctx, iowrappers.ContextRequestIdKey, requestId)
 	c = context.WithValue(c, iowrappers.ContextRequestUserId, userView.ID)
 	planningResp := p.Planning(c, &planningReq, userView.Username)
-	if err = p.RedisClient.UpdateSearchHistory(c, location, &userView, preciseLocation); err != nil {
+	if err = p.RedisClient.UpdateSearchHistory(c, planningReq.Location.String(), &userView, preciseLocation); err != nil {
 		logger.Debug(err)
 	}
 
@@ -687,6 +686,35 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 	utils.LogErrorWithLevel(p.ResultHTMLTemplate.Execute(ctx.Writer, planningResp), utils.LogError)
+}
+
+func (p *MyPlanner) formalizeLocation(ctx context.Context, fields []string, location *POI.Location) error {
+	query := &iowrappers.GeocodeQuery{}
+
+	switch len(fields) {
+	case 2:
+		query.City = fields[0]
+		query.Country = fields[1]
+	case 3:
+		query.City = fields[0]
+		query.AdminAreaLevelOne = fields[1]
+		query.Country = fields[2]
+	}
+
+	lat, lng, err := p.Solver.Searcher.Geocode(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	queryResult, err := p.Solver.Searcher.ReverseGeocode(ctx, lat, lng)
+	if err != nil {
+		return err
+	}
+
+	location.City = queryResult.City
+	location.AdminAreaLevelOne = queryResult.AdminAreaLevelOne
+	location.Country = queryResult.Country
+	return nil
 }
 
 func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
@@ -1070,6 +1098,52 @@ func (p *MyPlanner) GetPlaceDetails(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, place)
 }
 
+func (p *MyPlanner) planSummary(ctx *gin.Context) {
+	type planSummaryRequest struct {
+		PlanId string `json:"plan_id"`
+	}
+
+	summary := &planSummaryRequest{}
+	if err := ctx.ShouldBindJSON(summary); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	planKey := strings.Join([]string{iowrappers.TravelPlanRedisCacheKeyPrefix, summary.PlanId}, ":")
+	plan := &iowrappers.PlanningSolutionRecord{}
+	if err := p.RedisClient.FetchSingleRecord(ctx, planKey, plan); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	details, err := planDetails(plan)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	resp, err := chatCompletion(ctx, "please summarize the travel plan in one paragraph:"+details)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": resp})
+}
+
+func planDetails(r *iowrappers.PlanningSolutionRecord) (string, error) {
+	if r == nil {
+		return "", errors.New("invalid record with nil pointer")
+	}
+
+	if len(r.PlaceNames) != len(r.TimeSlots) {
+		return "", errors.New("invalid record with invalid number of place names")
+	}
+
+	parts := make([]string, 0)
+	for idx, name := range r.PlaceNames {
+		parts = append(parts, r.TimeSlots[idx]+" at: "+name)
+	}
+
+	return "Visiting " + r.Destination.String() + ". " + strings.Join(parts, "; "), nil
+}
+
 func (p *MyPlanner) rateLimiter() gin.HandlerFunc {
 	logger := iowrappers.Logger
 	// 100 requests per hour
@@ -1147,6 +1221,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/s3_url", p.createS3ObjectURL)
 		v1.POST("/s3_upload", p.uploadS3Object)
 
+		v1.POST("/plan-summary", p.planSummary)
 		v1.GET("/profile", p.userProfile)
 		users := v1.Group("/users")
 		{

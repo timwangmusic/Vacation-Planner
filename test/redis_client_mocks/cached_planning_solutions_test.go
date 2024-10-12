@@ -35,12 +35,16 @@ func TestGetSavedPlanningSolutions_shouldReturnCorrectResults(t *testing.T) {
 				PlaceIDs:   []string{"1", "2"},
 				Score:      200,
 				PlaceNames: []string{"Tian Tan Park", "Yuan Ming Yuan"},
+				Weekdays:   []string{"Wednesday", "Friday"},
+				TimeSlots:  []string{"from 8 to 10", "from 11 to 13"},
 			},
 			{
 				ID:         "33523-32533",
 				PlaceIDs:   []string{"3", "2"},
 				Score:      100,
 				PlaceNames: []string{"Summer Palace", "Yuan Ming Yuan"},
+				Weekdays:   []string{"Wednesday", "Friday"},
+				TimeSlots:  []string{"from 8 to 10", "from 11 to 13"},
 			},
 		},
 		NumPlans: 2,
@@ -83,6 +87,8 @@ func TestGetSavedPlanningSolutions_shouldReturnCorrectResults(t *testing.T) {
 		assert.Equal(t, record.PlaceIDs, planningSolution.PlaceIDs)
 		assert.Equal(t, record.Score, planningSolution.Score)
 		assert.Equal(t, record.PlaceNames, planningSolution.PlaceNames)
+		assert.Equal(t, record.TimeSlots, planningSolution.TimeSlots)
+		assert.Equal(t, record.Weekdays, planningSolution.Weekdays)
 	}
 
 	planningSolutions, err = RedisClient.PlanningSolutions(ctx, request2)

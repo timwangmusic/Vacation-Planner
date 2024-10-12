@@ -68,8 +68,8 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestUserCreation(t *testing.T) {
-	username := "tom_cruise"
-	userEmail := "tom_cruise@gmail.com"
+	username := "teddy_cruise"
+	userEmail := "teddy_cruise@gmail.com"
 	userLevel := user.LevelStringRegular
 
 	expectedUserView := user.View{

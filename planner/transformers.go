@@ -107,7 +107,17 @@ func toPlacePlanningDetails(name string, slot SlotRequest, url string) PlacePlan
 	}
 }
 
-func toPlanningSolutionRecord(solution PlanningSolution, location POI.Location) iowrappers.PlanningSolutionRecord {
+func slotToWeekday(slot SlotRequest) string {
+	return slot.Weekday.Name()
+}
+
+func slotToTimeslot(slot SlotRequest) string {
+	return slot.TimeSlot.ToString()
+}
+
+func toPlanningSolutionRecord(request *PlanningRequest, solution PlanningSolution, location POI.Location) iowrappers.PlanningSolutionRecord {
+	weekdays := MapSlice(request.Slots, slotToWeekday)
+	timeSlots := MapSlice(request.Slots, slotToTimeslot)
 	return iowrappers.PlanningSolutionRecord{
 		ID:              solution.ID,
 		PlaceIDs:        solution.PlaceIDS,
@@ -118,6 +128,8 @@ func toPlanningSolutionRecord(solution PlanningSolution, location POI.Location) 
 		PlaceAddresses:  solution.PlaceAddresses,
 		PlaceURLs:       solution.PlaceURLs,
 		PlaceCategories: solution.PlaceCategories,
+		Weekdays:        weekdays,
+		TimeSlots:       timeSlots,
 		Destination:     location,
 		PlanSpec:        solution.PlanSpec,
 	}

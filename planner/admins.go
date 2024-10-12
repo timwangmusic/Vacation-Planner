@@ -47,7 +47,7 @@ func (p *MyPlanner) announce(ctx *gin.Context) {
 
 	data, marshalErr := json.Marshal(announcement)
 	if marshalErr != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": marshalErr.Error()})
 		return
 	}
 

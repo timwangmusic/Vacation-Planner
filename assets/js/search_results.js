@@ -5,6 +5,7 @@ import { updateUsername } from "./user.js";
 
 let numberOfPlans = 5;
 const username = updateUsername();
+let plansData = null;
 
 async function getPlans() {
   const plansUrl = document.URL + "&json_only=true";
@@ -22,8 +23,10 @@ async function getPlans() {
 async function postUserFeedback(planIdx) {
   const url = `/v1/users/${username}/feedback`;
 
-  const data = await getPlans();
-  const plan = data.travel_plans[planIdx];
+  if (!plansData) {
+    plansData = await getPlans();
+  }
+  const plan = plansData.travel_plans[planIdx];
 
   await fetch(url, {
     method: "POST",
@@ -44,15 +47,18 @@ function planToFeedback(plan) {
 }
 
 async function postPlanForUser() {
+  if (!plansData) {
+    plansData = await getPlans();
+  }
+
   const url = `/v1/users/${username}/plans`;
   const fields = this.id.split("-");
   const planIndex = fields[fields.length - 1];
 
-  const data = await getPlans();
   // the number of plans equals the array length in the JSON result
-  numberOfPlans = data.travel_plans.length;
-  const sourcePlan = data.travel_plans[planIndex];
-  const destination = data.travel_destination;
+  numberOfPlans = plansData.travel_plans.length;
+  const sourcePlan = plansData.travel_plans[planIndex];
+  const destination = plansData.travel_destination;
 
   await fetch(url, {
     method: "POST",
@@ -112,9 +118,55 @@ function normalizeLocation(location) {
   return [results[0], results[1]].join(", ");
 }
 
+async function getPlanSummaryResponse(planIdx) {
+  const url = "/v1/plan-summary";
+  if (!plansData) {
+    plansData = await getPlans();
+  }
+
+  return await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      plan_id: plansData.travel_plans[planIdx].id,
+    }),
+  })
+    .then((resp) => {
+      if (!resp.ok) {
+        switch (resp.status) {
+          case 400:
+            return {
+              message: "Bad request",
+            };
+          case 500:
+            return {
+              message: "Unable to generate a response, please try again later.",
+            };
+          default:
+            return {
+              message: "",
+            };
+        }
+      }
+      return resp.json();
+    })
+    .catch((err) => console.log(err));
+}
+
 // create button event actions
 for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
   $(`#save-${planIndex}`).click(postPlanForUser);
+  $(`#gen-summary-${planIndex}`).click(async () => {
+    console.log("generating plan summary...");
+    $(`#gen-summary-${planIndex}`).prop("disabled", true);
+    const resp = await getPlanSummaryResponse(planIndex);
+    $(`#modal-body-${planIndex}`).text(resp.message);
+    $(`#gen-summary-${planIndex}`)
+      .prop("disabled", false)
+      .text("regenerate summary");
+  });
 }
 
 $(".reload-btn").each(function (_, element) {
@@ -154,10 +206,10 @@ rollUpButton.addEventListener("click", () => {
 
 $(document).ready(async function () {
   {
-    const data = await getPlans();
-    for (let idx = 0; idx < data.travel_plans.length; idx++) {
+    plansData = await getPlans();
+    for (let idx = 0; idx < plansData.travel_plans.length; idx++) {
       let btn = document.getElementById("save-" + idx);
-      if (btn != null && data.travel_plans[idx].saved) {
+      if (btn != null && plansData.travel_plans[idx].saved) {
         btn.disabled = true;
       }
     }
