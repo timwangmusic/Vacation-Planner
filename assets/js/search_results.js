@@ -162,11 +162,20 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
     console.log("generating plan summary...");
     $(`#gen-summary-${planIndex}`).prop("disabled", true);
     const resp = await getPlanSummaryResponse(planIndex);
-    $(`#modal-body-${planIndex}`).text(resp.message);
+    $(`#modal-body-${planIndex}`).html(summaryToHTML(resp.message));
     $(`#gen-summary-${planIndex}`)
       .prop("disabled", false)
       .text("regenerate summary");
   });
+}
+
+function summaryToHTML(message) {
+  let result = ['<ul>'];
+  for (const line of message.trim().split('. ')) {
+    result.push('<li>' + line.trim() + '</li>');
+  }
+  result.push('</ul>');
+  return result.join('');
 }
 
 $(".reload-btn").each(function (_, element) {
