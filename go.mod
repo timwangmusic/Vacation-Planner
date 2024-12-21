@@ -27,7 +27,7 @@ require (
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/net v0.23.0
+	golang.org/x/net v0.33.0
 	golang.org/x/oauth2 v0.13.0
 	golang.org/x/text v0.21.0
 	gonum.org/v1/gonum v0.14.0
