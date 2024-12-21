@@ -78,6 +78,7 @@ type MyPlanner struct {
 	Mailer             *iowrappers.Mailer
 	GeonamesApiKey     string
 	MapsClientApiKey   string
+	BlobBucket         string
 	Dispatcher         *Dispatcher
 }
 
@@ -142,7 +143,7 @@ type PlaceDetailsResp struct {
 
 type RequestIdKey string
 
-func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string, geonamesApiKey string) {
+func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string, geonamesApiKey string, blobBucket string) {
 	logger := iowrappers.Logger
 	p.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	p.RedisClient = iowrappers.CreateRedisClient(redisURL)
@@ -176,6 +177,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	}
 
 	p.MapsClientApiKey = mapsClientApiKey
+	p.BlobBucket = blobBucket
 	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 	if v, exists := p.Configs["server:plan_solver:same_place_dedupe_count_limit"]; exists {
@@ -1233,6 +1235,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 
 		v1.GET("/blob_url", p.getBlobObjectURL)
 		v1.POST("/blob_upload", p.uploadBlobObject)
+		v1.POST("/gen_image", p.getLocationImage)
 
 		v1.POST("/plan-summary", p.planSummary)
 

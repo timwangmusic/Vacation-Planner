@@ -2,6 +2,7 @@ package planner
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/sashabaranov/go-openai"
@@ -27,4 +28,30 @@ func chatCompletion(ctx context.Context, msg string) (string, error) {
 	}
 
 	return resp.Choices[0].Message.Content, nil
+}
+
+func imageGeneration(ctx context.Context, description string) ([]byte, error) {
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return nil, errors.New("no openai api key found")
+	}
+
+	client := openai.NewClient(apiKey)
+
+	resp, err := client.CreateImage(ctx, openai.ImageRequest{
+		Prompt:         description,
+		Size:           openai.CreateImageSize256x256,
+		ResponseFormat: openai.CreateImageResponseFormatB64JSON,
+		N:              1,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error creating image: %w", err)
+	}
+
+	imgBytes, err := base64.StdEncoding.DecodeString(resp.Data[0].B64JSON)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding base64 image: %w", err)
+	}
+
+	return imgBytes, nil
 }

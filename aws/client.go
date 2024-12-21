@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	SignedUrlValidDuration = 30 * time.Minute
+	SignedUrlValidDuration = 30 * time.Minute // the maximum duration for S3 is 7 days
 )
 
 type Client struct {
