@@ -15,6 +15,7 @@ import (
 
 const (
 	locationImagePromptTemplate = "generate an image for this location on a sunny day: %s, %s, %s"
+	UseGeneratedImagesThreshold = 5
 )
 
 // provision an image for the given location in the form of URL.
@@ -41,7 +42,7 @@ func (p *MyPlanner) getLocationImage(ctx *gin.Context) {
 
 	blobBucket := p.BlobBucket
 
-	if err == nil && len(photos) > 0 {
+	if err == nil && len(photos) >= UseGeneratedImagesThreshold {
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		selected := photos[r.Intn(len(photos))]
 		blobKey := strings.Join([]string{locationToBlobKey(location), selected}, "/")
