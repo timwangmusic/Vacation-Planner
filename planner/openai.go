@@ -40,7 +40,7 @@ func imageGeneration(ctx context.Context, description string) ([]byte, error) {
 
 	resp, err := client.CreateImage(ctx, openai.ImageRequest{
 		Prompt:         description,
-		Size:           openai.CreateImageSize256x256,
+		Size:           openai.CreateImageSize512x512,
 		ResponseFormat: openai.CreateImageResponseFormatB64JSON,
 		N:              1,
 	})
