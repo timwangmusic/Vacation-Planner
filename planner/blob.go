@@ -31,6 +31,7 @@ func (p *MyPlanner) getLocationImage(ctx *gin.Context) {
 	if err = ctx.ShouldBindJSON(&location); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
+	location.Normalize()
 
 	rc := p.RedisClient
 	var photos []string
