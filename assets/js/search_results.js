@@ -57,7 +57,11 @@ async function getImageForLocation() {
     }),
   })
     .then((response) => response.json())
-    .then((data) => $("#generated-img").attr("src", data.photo))
+    .then((data) => {
+      $("#generated-img").attr("src", data.photo).show();
+
+      $("#loadingSpinner").hide();
+    })
     .catch(console.error);
 }
 
