@@ -91,6 +91,14 @@ func (l *Location) String() string {
 	return strings.Join([]string{title.String(l.City), upper.String(l.AdminAreaLevelOne), upper.String(l.Country)}, ", ")
 }
 
+func (l *Location) Normalize() {
+	title := cases.Title(language.English)
+	upper := cases.Upper(language.English)
+	l.City = title.String(l.City)
+	l.AdminAreaLevelOne = upper.String(l.AdminAreaLevelOne)
+	l.Country = upper.String(l.Country)
+}
+
 // Address in adr micro-format example:
 // 665 3rd St.
 // Suite 207

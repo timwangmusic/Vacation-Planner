@@ -10,6 +10,7 @@ import (
 	"github.com/modern-go/reflect2"
 	"github.com/ulule/limiter/v3"
 	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
+	awsinternal "github.com/weihesdlegend/Vacation-planner/aws"
 	"golang.org/x/oauth2"
 	"html/template"
 	"io"
@@ -77,6 +78,7 @@ type MyPlanner struct {
 	Mailer             *iowrappers.Mailer
 	GeonamesApiKey     string
 	MapsClientApiKey   string
+	BlobBucket         string
 	Dispatcher         *Dispatcher
 }
 
@@ -141,7 +143,7 @@ type PlaceDetailsResp struct {
 
 type RequestIdKey string
 
-func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string, geonamesApiKey string) {
+func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStreamName string, configs map[string]interface{}, oauthClientID string, oauthClientSecret string, domain string, geonamesApiKey string, blobBucket string) {
 	logger := iowrappers.Logger
 	p.PlanningEvents = make(chan iowrappers.PlanningEvent, jobQueueBufferSize)
 	p.RedisClient = iowrappers.CreateRedisClient(redisURL)
@@ -175,6 +177,7 @@ func (p *MyPlanner) Init(mapsClientApiKey string, redisURL *url.URL, redisStream
 	}
 
 	p.MapsClientApiKey = mapsClientApiKey
+	p.BlobBucket = blobBucket
 	// initialize poi searcher
 	PoiSearcher := iowrappers.CreatePoiSearcher(mapsClientApiKey, redisURL)
 	if v, exists := p.Configs["server:plan_solver:same_place_dedupe_count_limit"]; exists {
@@ -330,6 +333,71 @@ func (p *MyPlanner) cityStatsHandler(context *gin.Context) {
 		Cities: geocodes,
 	}
 	context.JSON(http.StatusOK, view)
+}
+
+func (p *MyPlanner) uploadBlobObject(ctx *gin.Context) {
+	c, err := awsinternal.NewClient()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	type blobObject struct {
+		Bucket   string `json:"bucket"`
+		Key      string `json:"key"`
+		Filename string `json:"filename"`
+	}
+
+	obj := &blobObject{}
+	if err = ctx.Bind(obj); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	file, err := os.ReadFile(obj.Filename)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err = c.Upload(ctx, &awsinternal.BlobMetaData{
+		Bucket: obj.Bucket,
+		Key:    obj.Key,
+	}, file); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+}
+
+func (p *MyPlanner) getBlobObjectURL(ctx *gin.Context) {
+	type blobObject struct {
+		Bucket string `json:"bucket"`
+		Key    string `json:"key"`
+	}
+
+	obj := &blobObject{
+		Bucket: ctx.DefaultQuery("bucket", ""),
+		Key:    ctx.DefaultQuery("key", ""),
+	}
+
+	c, err := awsinternal.NewClient()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	presignedURL, err := c.PresignedURL(ctx, &awsinternal.BlobMetaData{
+		Bucket: obj.Bucket,
+		Key:    obj.Key,
+	})
+
+	if err != nil {
+		if presignedURL == nil {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "object not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"presignedURL": presignedURL.String()})
 }
 
 func (p *MyPlanner) Planning(ctx context.Context, planningRequest *PlanningRequest, user string) (resp PlanningResponse) {
@@ -1165,7 +1233,12 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/remove-places", p.removePlacesMigrationHandler)
 		}
 
+		v1.GET("/blob_url", p.getBlobObjectURL)
+		v1.POST("/blob_upload", p.uploadBlobObject)
+		v1.POST("/gen_image", p.getLocationImage)
+
 		v1.POST("/plan-summary", p.planSummary)
+
 		v1.GET("/profile", p.userProfile)
 		users := v1.Group("/users")
 		{
