@@ -146,7 +146,7 @@ func toLocation(city iowrappers.City) POI.Location {
 	}
 }
 
-func locationToBlobKey(l POI.Location) string {
+func locationToBlobKey(l *POI.Location) string {
 	normalized := strings.Split(l.String(), ", ")
 
 	slices.Reverse(normalized)

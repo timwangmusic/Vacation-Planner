@@ -23,7 +23,7 @@ const (
 // provision an image for the given location in the form of URL.
 // If there are images in the blob storage (query database to find out), randomly selects one;
 // otherwise generates one and upload to the blob storage
-func (p *MyPlanner) getLocationPhoto(ctx *gin.Context, c *awsinternal.Client, location POI.Location) (string, error) {
+func (p *MyPlanner) getLocationPhoto(ctx *gin.Context, c *awsinternal.Client, location *POI.Location) (string, error) {
 	rc := p.RedisClient
 	blobBucket := p.BlobBucket
 
@@ -100,8 +100,8 @@ func (p *MyPlanner) getLocationImage(ctx *gin.Context) {
 		return
 	}
 
-	location := POI.Location{}
-	if err = ctx.ShouldBindJSON(&location); err != nil {
+	location := &POI.Location{}
+	if err = ctx.ShouldBindJSON(location); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 	location.Normalize()

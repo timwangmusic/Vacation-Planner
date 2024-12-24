@@ -29,7 +29,7 @@ func TestRedisClient_SaveLocationPhotoID(t *testing.T) {
 	}
 	type args struct {
 		ctx      context.Context
-		location POI.Location
+		location *POI.Location
 		id       string
 	}
 	tests := []struct {
@@ -45,7 +45,7 @@ func TestRedisClient_SaveLocationPhotoID(t *testing.T) {
 			},
 			args: args{
 				ctx: ctx,
-				location: POI.Location{
+				location: &POI.Location{
 					City:              "San Francisco",
 					AdminAreaLevelOne: "CA",
 					Country:           "USA",
