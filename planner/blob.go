@@ -3,11 +3,13 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	awsinternal "github.com/weihesdlegend/Vacation-planner/aws"
+	"github.com/weihesdlegend/Vacation-planner/user"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -94,6 +96,14 @@ func (p *MyPlanner) getLocationPhoto(ctx *gin.Context, c *awsinternal.Client, lo
 
 // handler for location image endpoint
 func (p *MyPlanner) getLocationImage(ctx *gin.Context) {
+	requestId := requestid.Get(ctx)
+	ctx.Set(requestIdKey, requestId)
+
+	if _, err := p.UserAuthentication(ctx, user.LevelRegular); err != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": err})
+		return
+	}
+
 	c, err := awsinternal.NewClient()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
