@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	openai2 "github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 	"github.com/sashabaranov/go-openai"
 	"os"
 )
@@ -36,13 +38,13 @@ func imageGeneration(ctx context.Context, description string) ([]byte, error) {
 		return nil, errors.New("no openai api key found")
 	}
 
-	client := openai.NewClient(apiKey)
+	client := openai2.NewClient(option.WithAPIKey(apiKey))
 
-	resp, err := client.CreateImage(ctx, openai.ImageRequest{
-		Prompt:         description,
-		Size:           openai.CreateImageSize512x512,
-		ResponseFormat: openai.CreateImageResponseFormatB64JSON,
-		N:              1,
+	resp, err := client.Images.Generate(ctx, openai2.ImageGenerateParams{
+		Prompt:         openai2.String(description),
+		Model:          openai2.F(openai2.ImageModelDallE3),
+		ResponseFormat: openai2.F(openai2.ImageGenerateParamsResponseFormatB64JSON),
+		N:              openai2.Int(1),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating image: %w", err)
