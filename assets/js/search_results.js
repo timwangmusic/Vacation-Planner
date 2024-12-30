@@ -43,7 +43,19 @@ async function getImageForLocation() {
   console.log("calling image generation function...");
   const location = getLocation();
   const url = `/v1/gen_image`;
-  let parts = location.split(", ");
+  const parts = location.split(",").map((str) => str.trim());
+  if (parts.length < 2 || parts.length > 3) {
+    console.log("wrong location input format", location);
+    $("#loadingSpinner").hide();
+    return;
+  }
+
+  let city = parts[0];
+  let country = parts[parts.length - 1];
+  let adminAreaLevelOne = "cities";
+  if (parts.length == 3) {
+    adminAreaLevelOne = parts[1];
+  }
 
   await fetch(url, {
     method: "POST",
@@ -51,9 +63,9 @@ async function getImageForLocation() {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      city: parts[0],
-      adminAreaLevelOne: parts[1],
-      country: parts[2],
+      city: city,
+      adminAreaLevelOne: adminAreaLevelOne,
+      country: country,
     }),
   })
     .then((response) => response.json())
