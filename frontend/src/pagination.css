@@ -1,0 +1,16 @@
+.pagination {
+  display: flex;
+  justify-content: center; /* Aligns the pagination in the center */
+  list-style-type: none; /* Removes the bullets */
+  padding: 0;
+  margin: 0;
+}
+
+.pagination li {
+  margin: 0 5px; /* Adds space between the pagination items */
+}
+
+.pagination a {
+  text-decoration: none;
+  color: #007bff; /* Customize the color */
+}
