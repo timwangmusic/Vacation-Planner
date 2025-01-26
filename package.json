@@ -7,7 +7,10 @@
     "test": "test"
   },
   "scripts": {
-    "test": "jest"
+    "test": "react-scripts test",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "eject": "react-scripts eject"
   },
   "repository": {
     "type": "git",
