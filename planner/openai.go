@@ -41,9 +41,9 @@ func imageGeneration(ctx context.Context, description string) ([]byte, error) {
 	client := openai2.NewClient(option.WithAPIKey(apiKey))
 
 	resp, err := client.Images.Generate(ctx, openai2.ImageGenerateParams{
-		Prompt:         openai2.String(description),
-		Model:          openai2.F(openai2.ImageModelDallE3),
-		ResponseFormat: openai2.F(openai2.ImageGenerateParamsResponseFormatB64JSON),
+		Prompt:         description,
+		Model:          openai2.ImageModelDallE3,
+		ResponseFormat: openai2.ImageGenerateParamsResponseFormatB64JSON,
 		N:              openai2.Int(1),
 	})
 	if err != nil {
