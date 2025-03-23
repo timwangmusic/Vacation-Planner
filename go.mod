@@ -23,7 +23,6 @@ require (
 	github.com/oddg/hungarian-algorithm v0.0.0-20170809162819-9567cbc363de
 	github.com/openai/openai-go v0.1.0-beta.2
 	github.com/redis/go-redis/v9 v9.7.3
-	github.com/sashabaranov/go-openai v1.38.1
 	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
