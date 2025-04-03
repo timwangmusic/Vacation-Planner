@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/modern-go/reflect2"
+	"github.com/redis/go-redis/v9"
 	"github.com/ulule/limiter/v3"
 	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
 	awsinternal "github.com/weihesdlegend/Vacation-planner/aws"
@@ -818,6 +819,9 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 	var planRecordRedisKey = strings.Join([]string{iowrappers.TravelPlanRedisCacheKeyPrefix, id}, ":")
 	cacheErr := p.RedisClient.FetchSingleRecord(ctx, planRecordRedisKey, &record)
 	if cacheErr != nil {
+		if errors.Is(cacheErr, redis.Nil) {
+			ctx.Redirect(http.StatusTemporaryRedirect, "/v1/404")
+		}
 		logger.Errorf("Error while fetching plan with key %s: %v", planRecordRedisKey, cacheErr)
 		ctx.String(http.StatusInternalServerError, cacheErr.Error())
 		return
@@ -1192,6 +1196,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	myRouter.Static("/v1/assets", "assets")
 	// trace ID
 	myRouter.Use(requestid.New())
+	myRouter.NoRoute(p.fourZeroFourPage)
 
 	middleware := p.rateLimiter()
 	// cors settings
