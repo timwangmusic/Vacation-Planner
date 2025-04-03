@@ -786,8 +786,12 @@ func (r *RedisClient) SaveAnnouncement(ctx context.Context, id, data string) err
 
 func (r *RedisClient) FetchSingleRecord(context context.Context, redisKey string, response interface{}) error {
 	json_, err := r.client.Get(context, redisKey).Result()
+	Logger.Debugf("redis server find no result for key: %s", redisKey)
 	if err != nil {
-		return fmt.Errorf("[request_id: %s] redis server find no result for key: %s", context.Value(ContextRequestIdKey), redisKey)
+		if errors.Is(err, redis.Nil) {
+			return redis.Nil
+		}
+		return fmt.Errorf("failed to fetch result for key %s: %w", redisKey, err)
 	}
 	err = json.Unmarshal([]byte(json_), response)
 	if err != nil {
