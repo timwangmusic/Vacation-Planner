@@ -119,7 +119,8 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 			var searchResp maps.PlacesSearchResponse
 			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, searchReq)
 			if err != nil {
-				Logger.Error(fmt.Errorf("places nearby search with Maps error: %w", err))
+				Logger.Error(fmt.Errorf("places nearby search with Maps failed for place type %s with error: %w",
+					placeType, err))
 				// we should still retry for the same place type but with a maximum being maxRequestTimes
 				continue
 			}
