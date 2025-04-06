@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	GoogleNearbySearchDelay             = time.Second
 	GoogleMapsSearchTimeout             = time.Second * 10
 	GoogleMapsSearchCallMaxCount        = 5
 	GoogleNearbySearchMaxRadiusInMeters = 50000
@@ -108,13 +107,6 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 
 	var err error
 	for totalPlaceCount < request.MinNumResults {
-		// if error, return regardless of number of results obtained
-		if err != nil {
-			Logger.Error(err)
-			done <- true
-			return
-		}
-
 		reqTimes++
 		for _, placeType := range placeTypes {
 			if reqTimes > 1 && nextPageTokenMap[placeType] == "" { // no more result for this location type
@@ -126,6 +118,11 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 			var searchReq = CreateMapSearchRequest(request, placeType, nextPageToken)
 			var searchResp maps.PlacesSearchResponse
 			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, searchReq)
+			if err != nil {
+				Logger.Error(fmt.Errorf("places nearby search with Maps error: %w", err))
+				// we should still retry for the same place type but with a maximum being maxRequestTimes
+				continue
+			}
 
 			// places for Google Maps place details search (https://developers.google.com/maps/documentation/places/web-service/details)
 			// the original purpose of doing a details search is getting opening hours info
@@ -177,7 +174,6 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 		if reqTimes == maxRequestTimes {
 			break
 		}
-		time.Sleep(GoogleNearbySearchDelay) // sleep to make sure new next page token comes to effect
 	}
 
 	Logger.Infow("Logging nearby search for a complete Google Maps search",
