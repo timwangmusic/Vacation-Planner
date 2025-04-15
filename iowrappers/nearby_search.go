@@ -99,6 +99,7 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 
 	var reqTimes uint = 0        // number of queries for each location type
 	var totalPlaceCount uint = 0 // number of results so far, keep this number low
+	maxRetries := reqTimes * uint(len(placeTypes))
 
 	microAddrMap := make(map[string]string) // map place ID to its micro-address
 	placeMap := make(map[string]bool)       // remove duplication for place with same ID
@@ -106,6 +107,8 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 	summaryMap := make(map[string]string)   // map place ID to summary
 
 	var err error
+	var mapsFailuresCount uint = 0
+outer:
 	for totalPlaceCount < request.MinNumResults {
 		reqTimes++
 		for _, placeType := range placeTypes {
@@ -121,7 +124,11 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 			if err != nil {
 				Logger.Error(fmt.Errorf("places nearby search with Maps failed for place type %s with error: %w",
 					placeType, err))
-				// we should still retry for the same place type but with a maximum being maxRequestTimes
+				mapsFailuresCount++
+				if mapsFailuresCount == maxRetries {
+					break outer
+				}
+				// we should still retry for the next place type if the number of failures is below maxRetries
 				continue
 			}
 
