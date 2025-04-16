@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	GoogleNearbySearchDelay             = time.Second
 	GoogleMapsSearchTimeout             = time.Second * 10
 	GoogleMapsSearchCallMaxCount        = 5
 	GoogleNearbySearchMaxRadiusInMeters = 50000
@@ -100,6 +99,7 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 
 	var reqTimes uint = 0        // number of queries for each location type
 	var totalPlaceCount uint = 0 // number of results so far, keep this number low
+	maxRetries := reqTimes * uint(len(placeTypes))
 
 	microAddrMap := make(map[string]string) // map place ID to its micro-address
 	placeMap := make(map[string]bool)       // remove duplication for place with same ID
@@ -107,14 +107,9 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 	summaryMap := make(map[string]string)   // map place ID to summary
 
 	var err error
+	var mapsFailuresCount uint = 0
+outer:
 	for totalPlaceCount < request.MinNumResults {
-		// if error, return regardless of number of results obtained
-		if err != nil {
-			Logger.Error(err)
-			done <- true
-			return
-		}
-
 		reqTimes++
 		for _, placeType := range placeTypes {
 			if reqTimes > 1 && nextPageTokenMap[placeType] == "" { // no more result for this location type
@@ -126,6 +121,16 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 			var searchReq = CreateMapSearchRequest(request, placeType, nextPageToken)
 			var searchResp maps.PlacesSearchResponse
 			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, searchReq)
+			if err != nil {
+				Logger.Error(fmt.Errorf("places nearby search with Maps failed for place type %s with error: %w",
+					placeType, err))
+				mapsFailuresCount++
+				if mapsFailuresCount == maxRetries {
+					break outer
+				}
+				// we should still retry for the next place type if the number of failures is below maxRetries
+				continue
+			}
 
 			// places for Google Maps place details search (https://developers.google.com/maps/documentation/places/web-service/details)
 			// the original purpose of doing a details search is getting opening hours info
@@ -177,7 +182,6 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 		if reqTimes == maxRequestTimes {
 			break
 		}
-		time.Sleep(GoogleNearbySearchDelay) // sleep to make sure new next page token comes to effect
 	}
 
 	Logger.Infow("Logging nearby search for a complete Google Maps search",
