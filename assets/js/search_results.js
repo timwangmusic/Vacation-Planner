@@ -71,7 +71,19 @@ async function getImageForLocation() {
     .then((response) => response.json())
     .then((data) => {
       $("#generated-img").attr("src", data.photo).show();
-
+      $("#gen-img-download-btn")
+        .off("click")
+        .click(() => {
+          console.log("downloading location image...");
+          const url = data.photo;
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "downloaded-city-image.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        })
+        .show();
       $("#loadingSpinner").hide();
     })
     .catch(console.error);
