@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/bobg/go-generics/set"
 	"reflect"
 	"strings"
 	"sync"
@@ -90,7 +91,7 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 	searchStartTime := time.Now()
 	placeTypes := POI.GetPlaceTypes(request.PlaceCat) // get place types in a category
 
-	nextPageTokenMap := make(map[POI.LocationType]string) // map for place type to search token
+	nextPageTokenMap := make(map[POI.LocationType]string) // map of place types to search token
 	placeCountPerPlaceType := make(map[POI.LocationType]int)
 	for _, placeType := range placeTypes {
 		nextPageTokenMap[placeType] = ""
@@ -134,7 +135,7 @@ outer:
 
 			// places for Google Maps place details search (https://developers.google.com/maps/documentation/places/web-service/details)
 			// the original purpose of doing a details search is getting opening hours info
-			// later on we added more fields of interest as specified in config/config.yaml file
+			// later on we added more fields of interest as specified in the config/config.yaml file
 			placeIdMap := make(map[int]string)
 			for k, res := range searchResp.Results {
 				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
@@ -142,29 +143,11 @@ outer:
 				}
 			}
 
-			detailsSearchResults := make([]PlaceDetailsSearchResult, len(placeIdMap))
-			var wg sync.WaitGroup
-			wg.Add(len(placeIdMap))
-			for idx, placeId := range placeIdMap {
-				go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailsSearchResults[idx], &wg)
+			placesToUpdate := set.Of[string]{}
+			for _, placeId := range placeIdMap {
+				placesToUpdate.Add(placeId)
 			}
-			wg.Wait()
-			searchDuration := time.Since(singlePlaceTypeSearchStartTime)
-
-			// fill fields from detail search results to nearby search results
-			for _, placeDetails := range detailsSearchResults {
-				idx := placeDetails.idx
-				placeId := searchResp.Results[idx].PlaceID
-				summary := placeDetails.res.EditorialSummary
-				if summary != nil {
-					summaryMap[placeId] = summary.Overview
-					Logger.Debugf("editorial summary for place %s is: %s", placeId, summary.Overview)
-				}
-				searchResp.Results[idx].OpeningHours = placeDetails.res.OpeningHours
-				searchResp.Results[idx].FormattedAddress = placeDetails.res.FormattedAddress
-				microAddrMap[placeId] = placeDetails.res.AdrAddress
-				urlMap[placeId] = placeDetails.res.URL
-			}
+			searchDuration := c.searchPlaceDetails(ctx, placeIdMap, singlePlaceTypeSearchStartTime, &searchResp, summaryMap, microAddrMap, urlMap, placesToUpdate)
 
 			*places = append(*places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap, summaryMap)...)
 			totalPlaceCount += uint(len(searchResp.Results))
@@ -194,13 +177,54 @@ outer:
 	done <- true
 }
 
+func (c *MapsClient) searchPlaceDetails(
+	ctx context.Context,
+	placeIdMap map[int]string,
+	singlePlaceTypeSearchStartTime time.Time,
+	searchResp *maps.PlacesSearchResponse,
+	summaryMap, microAddrMap, urlMap map[string]string,
+	placesToUpdate set.Of[string],
+) time.Duration {
+	detailsSearchResults := make([]PlaceDetailsSearchResult, len(placeIdMap))
+	var wg sync.WaitGroup
+	wg.Add(len(placeIdMap))
+	for idx, placeId := range placeIdMap {
+		go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailsSearchResults[idx], &wg, placesToUpdate)
+	}
+	wg.Wait()
+	searchDuration := time.Since(singlePlaceTypeSearchStartTime)
+
+	// fill fields from detail search results to nearby search results
+	for _, placeDetails := range detailsSearchResults {
+		idx := placeDetails.idx
+		placeId := searchResp.Results[idx].PlaceID
+		if !placesToUpdate.Has(placeId) {
+			continue
+		}
+
+		summary := placeDetails.res.EditorialSummary
+		if summary != nil {
+			summaryMap[placeId] = summary.Overview
+			Logger.Debugf("editorial summary for place %s is: %s", placeId, summary.Overview)
+		}
+		searchResp.Results[idx].OpeningHours = placeDetails.res.OpeningHours
+		searchResp.Results[idx].FormattedAddress = placeDetails.res.FormattedAddress
+		microAddrMap[placeId] = placeDetails.res.AdrAddress
+		urlMap[placeId] = placeDetails.res.URL
+	}
+	return searchDuration
+}
+
 type PlaceDetailsSearchResult struct {
 	res *maps.PlaceDetailsResult
 	idx int
 }
 
-func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailsSearchResult, wg *sync.WaitGroup) {
+func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, idx int, placeId string, fields []string, detailSearchRes *PlaceDetailsSearchResult, wg *sync.WaitGroup, toUpdate set.Of[string]) {
 	defer wg.Done()
+	if !toUpdate.Has(placeId) {
+		return
+	}
 	searchRes, err := mapsClient.PlaceDetailedSearch(context, placeId, fields)
 	if err != nil {
 		Logger.Error(err)
