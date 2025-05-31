@@ -3,6 +3,7 @@ package iowrappers
 import (
 	"context"
 	"fmt"
+	"github.com/bobg/go-generics/set"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"reflect"
 	"strconv"
@@ -137,8 +138,9 @@ func (s *PoiSearcher) addDataFieldsToPlaces(context context.Context, field strin
 	wg.Add(placesToUpdateCount)
 	for idx, placeId := range placesNeedUpdate[:placesToUpdateCount] {
 		redisClient.client.SAdd(context, updatedPlacesRedisKey, placeId)
-
-		go PlaceDetailsSearchWrapper(context, mapsClient, idx, placeId, fields, &newPlaceDetailsResults[idx], &wg)
+		toUpdate := set.Of[string]{}
+		toUpdate.Add(placeId)
+		go PlaceDetailsSearchWrapper(context, mapsClient, idx, placeId, fields, &newPlaceDetailsResults[idx], &wg, toUpdate)
 	}
 
 	wg.Wait()

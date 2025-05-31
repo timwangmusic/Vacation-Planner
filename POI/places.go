@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"googlemaps.github.io/maps"
 )
@@ -74,6 +75,7 @@ type Place struct {
 	Photo            PlacePhoto     `bson:"photo"`
 	UserRatingsTotal int            `bson:"user_ratings_total"`
 	Summary          string         `bson:"summary"`
+	LastUpdatedAt    string         `bson:"last_updated_at"`
 }
 
 type Location struct {
@@ -183,6 +185,10 @@ func (place *Place) GetSummary() string {
 
 func (place *Place) GetPhoto() PlacePhoto {
 	return place.Photo
+}
+
+func (place *Place) GetLastUpdatedAt() string {
+	return place.LastUpdatedAt
 }
 
 func (place *Place) SetName(name string) {
@@ -313,6 +319,10 @@ func (place *Place) SetSummary(summary string) {
 	place.Summary = summary
 }
 
+func (place *Place) SetLastUpdatedAt(lastUpdateTimeStamp time.Time) {
+	place.LastUpdatedAt = lastUpdateTimeStamp.Format(time.RFC3339)
+}
+
 func CreatePlace(name, addr, formattedAddr, businessStatus string, locationType LocationType, openingHours *OpeningHours, placeID string, priceLevel int, rating float32, url string, photo *maps.Photo, userRatingsTotal int, latitude, longitude float64, summary *string) (place Place) {
 	place.SetType(locationType)
 	place.SetName(name)
@@ -342,5 +352,6 @@ func CreatePlace(name, addr, formattedAddr, businessStatus string, locationType 
 	if summary != nil {
 		place.SetSummary(*summary)
 	}
+	place.SetLastUpdatedAt(time.Now())
 	return
 }
