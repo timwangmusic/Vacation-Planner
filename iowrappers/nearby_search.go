@@ -143,6 +143,7 @@ outer:
 				}
 			}
 
+			// placeholder for filtering places that do no need updates
 			placesToUpdate := set.Of[string]{}
 			for _, placeId := range placeIdMap {
 				placesToUpdate.Add(placeId)
