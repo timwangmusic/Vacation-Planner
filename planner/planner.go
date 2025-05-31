@@ -636,7 +636,7 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 		return
 	}
 
-	logger.Debugf("Requested weekday is %s.", date)
+	logger.Debugf("Requested date is %s.", date)
 
 	numResults := ctx.DefaultQuery("numberResults", "5")
 
