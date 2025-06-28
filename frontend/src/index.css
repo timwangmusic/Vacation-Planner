@@ -9,7 +9,6 @@ html {
 }
 
 body {
-  @apply bg-white text-black dark:bg-gray-900 dark:text-white transition-colors duration-300;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
