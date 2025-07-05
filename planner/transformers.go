@@ -5,6 +5,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -143,4 +144,11 @@ func toLocation(city iowrappers.City) POI.Location {
 		AdminAreaLevelOne: city.AdminArea1,
 		Country:           city.Country,
 	}
+}
+
+func locationToBlobKey(l *POI.Location) string {
+	normalized := strings.Split(l.String(), ", ")
+
+	slices.Reverse(normalized)
+	return strings.Join(normalized, "/")
 }

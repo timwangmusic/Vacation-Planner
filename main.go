@@ -32,6 +32,7 @@ type Config struct {
 	GoogleOAuthClientID     string `envconfig:"GOOGLE_OAUTH_CLIENT_ID"`
 	GoogleOAuthClientSecret string `envconfig:"GOOGLE_OAUTH_CLIENT_SECRET"`
 	GeonamesApiKey          string `envconfig:"GEONAMES_API_KEY"`
+	BlobBucketId            string `envconfig:"BLOB_BUCKET_ID"`
 }
 
 type Configurations struct {
@@ -87,7 +88,9 @@ func RunServer() {
 
 	myPlanner := planner.MyPlanner{}
 
-	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName, flattenConfig(configs), conf.GoogleOAuthClientID, conf.GoogleOAuthClientSecret, conf.Server.Domain, conf.GeonamesApiKey)
+	myPlanner.Init(conf.MapsClientApiKey, redisURL, conf.Redis.RedisStreamName,
+		flattenConfig(configs), conf.GoogleOAuthClientID, conf.GoogleOAuthClientSecret,
+		conf.Server.Domain, conf.GeonamesApiKey, conf.BlobBucketId)
 	svr := myPlanner.SetupRouter(conf.Server.ServerPort)
 
 	c := make(chan os.Signal, 1)

@@ -39,6 +39,56 @@ async function postUserFeedback(planIdx) {
     .catch((err) => console.error(err));
 }
 
+async function getImageForLocation() {
+  console.log("calling image generation function...");
+  const location = getLocation();
+  const url = `/v1/gen_image`;
+  const parts = location.split(",").map((str) => str.trim());
+  if (parts.length < 2 || parts.length > 3) {
+    console.log("wrong location input format", location);
+    $("#loadingSpinner").hide();
+    return;
+  }
+
+  let city = parts[0];
+  let country = parts[parts.length - 1];
+  let adminAreaLevelOne = "cities";
+  if (parts.length == 3) {
+    adminAreaLevelOne = parts[1];
+  }
+
+  await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      city: city,
+      adminAreaLevelOne: adminAreaLevelOne,
+      country: country,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      $("#generated-img").attr("src", data.photo).show();
+      $("#gen-img-download-btn")
+        .off("click")
+        .click(() => {
+          console.log("downloading location image...");
+          const url = data.photo;
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "downloaded-city-image.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        })
+        .show();
+      $("#loadingSpinner").hide();
+    })
+    .catch(console.error);
+}
+
 function planToFeedback(plan) {
   return {
     plan_id: "travel_plan:" + plan.id,
@@ -170,12 +220,12 @@ for (let planIndex = 0; planIndex < numberOfPlans; planIndex++) {
 }
 
 function summaryToHTML(message) {
-  let result = ['<ul>'];
-  for (const line of message.trim().split('. ')) {
-    result.push('<li>' + line.trim() + '</li>');
+  let result = ["<ul>"];
+  for (const line of message.trim().split(". ")) {
+    result.push("<li>" + line.trim() + "</li>");
   }
-  result.push('</ul>');
-  return result.join('');
+  result.push("</ul>");
+  return result.join("");
 }
 
 $(".reload-btn").each(function (_, element) {
@@ -222,5 +272,13 @@ $(document).ready(async function () {
         btn.disabled = true;
       }
     }
+
+    await getImageForLocation();
   }
 });
+
+function getLocation() {
+  const url = new URL(document.URL);
+  const searchParams = new URLSearchParams(url.search);
+  return searchParams.get("location");
+}
