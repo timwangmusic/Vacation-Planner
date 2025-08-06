@@ -1,9 +1,10 @@
 package redis_client_mocks
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"strings"
 	"testing"
+
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
 
 func TestGeoCodingCache(t *testing.T) {

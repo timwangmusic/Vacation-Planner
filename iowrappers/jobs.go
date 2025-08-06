@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/modern-go/reflect2"
 	"time"
+
+	"github.com/modern-go/reflect2"
 )
 
 type JobStatus string

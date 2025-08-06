@@ -1,8 +1,9 @@
 package test
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/matching"
 	"testing"
+
+	"github.com/weihesdlegend/Vacation-planner/matching"
 )
 
 func TestMatchClusterCenters(t *testing.T) {

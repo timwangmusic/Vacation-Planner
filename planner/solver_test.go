@@ -2,14 +2,15 @@ package planner
 
 import (
 	"errors"
+	"reflect"
+	"testing"
+
 	"github.com/bobg/go-generics/slices"
 	"github.com/modern-go/reflect2"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"reflect"
-	"testing"
 )
 
 func init() {

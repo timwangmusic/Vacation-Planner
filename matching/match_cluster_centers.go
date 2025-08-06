@@ -2,8 +2,9 @@ package matching
 
 import (
 	"errors"
-	"github.com/weihesdlegend/Vacation-planner/utils"
 	"math"
+
+	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
 type clusterCenterPair struct {

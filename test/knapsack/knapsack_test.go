@@ -1,11 +1,12 @@
 package knapsack
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"testing"
 )
 
 func TestKnapsack(t *testing.T) {

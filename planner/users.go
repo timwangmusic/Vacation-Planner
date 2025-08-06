@@ -3,15 +3,16 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"sort"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
-	"net/http"
-	"os"
-	"sort"
-	"strings"
 )
 
 type UserLoginResponse struct {

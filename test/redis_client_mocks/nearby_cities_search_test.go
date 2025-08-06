@@ -1,12 +1,13 @@
 package redis_client_mocks
 
 import (
-	log "github.com/sirupsen/logrus"
-	gogeonames "github.com/timwangmusic/go-geonames"
-	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"reflect"
 	"sort"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
+	gogeonames "github.com/timwangmusic/go-geonames"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
 
 var expectedCities = []iowrappers.City{

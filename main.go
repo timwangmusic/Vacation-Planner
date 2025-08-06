@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"github.com/weihesdlegend/Vacation-planner/utils"
 	"net/url"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 
 	"github.com/braintree/manners"
 	"github.com/kelseyhightower/envconfig"

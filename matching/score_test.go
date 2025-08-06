@@ -1,8 +1,9 @@
 package matching
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"testing"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 func TestPlaceScore(t *testing.T) {

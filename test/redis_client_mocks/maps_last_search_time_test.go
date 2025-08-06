@@ -2,10 +2,11 @@ package redis_client_mocks
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 func TestRedisClient_GetMapsLastSearchTime(t *testing.T) {

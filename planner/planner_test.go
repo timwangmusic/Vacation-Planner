@@ -1,11 +1,12 @@
 package planner
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
-	"reflect"
-	"testing"
 )
 
 func TestCopyRequests(t *testing.T) {

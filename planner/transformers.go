@@ -1,14 +1,15 @@
 package planner
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"github.com/weihesdlegend/Vacation-planner/matching"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
+	"github.com/weihesdlegend/Vacation-planner/matching"
 )
 
 type CityView struct {

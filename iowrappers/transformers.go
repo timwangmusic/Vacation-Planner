@@ -1,11 +1,12 @@
 package iowrappers
 
 import (
+	"strconv"
+
 	"github.com/google/uuid"
 	gogeonames "github.com/timwangmusic/go-geonames"
 	"github.com/weihesdlegend/Vacation-planner/user"
 	"googlemaps.github.io/maps"
-	"strconv"
 )
 
 func geocodingResultsToGeocodeQuery(query *GeocodeQuery, results []maps.GeocodingResult) {

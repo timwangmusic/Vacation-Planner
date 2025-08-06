@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	"github.com/weihesdlegend/Vacation-planner/user"
 	"os"
 	"sync"
 	"sync/atomic"
+
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/weihesdlegend/Vacation-planner/user"
 )
 
 type Mailer struct {

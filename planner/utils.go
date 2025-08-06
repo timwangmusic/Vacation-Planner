@@ -2,9 +2,10 @@ package planner
 
 import (
 	"errors"
+	"regexp"
+
 	"github.com/barkimedes/go-deepcopy"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"regexp"
 )
 
 // validate date is in the format of yyyy-mm-dd

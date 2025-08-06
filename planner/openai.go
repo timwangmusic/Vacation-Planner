@@ -5,9 +5,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
-	"os"
 )
 
 func chatCompletion(ctx context.Context, msg string) (string, error) {

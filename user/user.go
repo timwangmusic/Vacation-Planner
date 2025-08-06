@@ -1,8 +1,9 @@
 package user
 
 import (
-	"github.com/vmihailenco/msgpack"
 	"time"
+
+	"github.com/vmihailenco/msgpack"
 )
 
 type Level uint8

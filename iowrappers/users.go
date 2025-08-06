@@ -5,12 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
-	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
-	"github.com/weihesdlegend/Vacation-planner/user"
-	"github.com/weihesdlegend/Vacation-planner/utils"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/mail"
 	"os"
@@ -18,6 +12,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
+	"github.com/weihesdlegend/Vacation-planner/user"
+	"github.com/weihesdlegend/Vacation-planner/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (

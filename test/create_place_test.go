@@ -1,9 +1,10 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"googlemaps.github.io/maps"
-	"testing"
 )
 
 func TestCreatePlace(t *testing.T) {

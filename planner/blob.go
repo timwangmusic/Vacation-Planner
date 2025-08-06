@@ -3,6 +3,12 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"math/rand"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -10,11 +16,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	awsinternal "github.com/weihesdlegend/Vacation-planner/aws"
 	"github.com/weihesdlegend/Vacation-planner/user"
-	"math/rand"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const (

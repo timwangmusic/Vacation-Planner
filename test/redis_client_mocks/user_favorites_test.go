@@ -1,9 +1,10 @@
 package redis_client_mocks
 
 import (
+	"testing"
+
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
-	"testing"
 )
 
 func TestUserFavorite_shouldReturnCorrectResult(t *testing.T) {

@@ -1,10 +1,11 @@
 package redis_client_mocks
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/POI"
-	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"reflect"
 	"testing"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
 
 var TestReverseIndex = &iowrappers.ReverseIndex{

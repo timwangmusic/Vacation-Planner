@@ -1,9 +1,10 @@
 package test
 
 import (
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"sort"
 	"testing"
+
+	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 func TestTimeIntervalSort(t *testing.T) {

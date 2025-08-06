@@ -3,12 +3,13 @@ package iowrappers
 import (
 	"context"
 	"fmt"
-	"github.com/bobg/go-generics/set"
-	"github.com/weihesdlegend/Vacation-planner/POI"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/bobg/go-generics/set"
+	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 const (

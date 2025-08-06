@@ -2,8 +2,9 @@ package planner
 
 import (
 	"context"
-	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"sync"
+
+	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
 
 const NumWorkers = 10

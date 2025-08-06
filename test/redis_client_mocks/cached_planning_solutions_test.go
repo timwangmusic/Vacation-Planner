@@ -2,10 +2,11 @@ package redis_client_mocks
 
 import (
 	"context"
+	"testing"
+
 	"github.com/go-playground/assert/v2"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
-	"testing"
 )
 
 func TestGetSavedPlanningSolutions_shouldReturnCorrectResults(t *testing.T) {

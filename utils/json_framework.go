@@ -2,9 +2,10 @@ package utils
 
 import (
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
 /*

@@ -1,14 +1,15 @@
 package POI
 
 import (
-	"github.com/modern-go/reflect2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/modern-go/reflect2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"googlemaps.github.io/maps"
 )

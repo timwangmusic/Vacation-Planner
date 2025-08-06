@@ -3,9 +3,10 @@ package iowrappers
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/weihesdlegend/Vacation-planner/POI"
-	"strings"
 )
 
 const ReverseIndexStringPrefix string = "reverse_index"

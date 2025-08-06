@@ -2,10 +2,11 @@ package POI
 
 import (
 	"errors"
-	"github.com/weihesdlegend/Vacation-planner/utils"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/weihesdlegend/Vacation-planner/utils"
 )
 
 var closedRe = regexp.MustCompile(`.*\s+Closed$`)

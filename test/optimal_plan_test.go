@@ -1,11 +1,12 @@
 package test
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/matching"
 	"github.com/weihesdlegend/Vacation-planner/planner"
-	"reflect"
-	"testing"
 )
 
 func TestFindOptimalPlan_shouldReturnOptimalPlaceIDs(t *testing.T) {

@@ -1,8 +1,9 @@
 package utils
 
 import (
-	log "github.com/sirupsen/logrus"
 	"runtime/debug"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (

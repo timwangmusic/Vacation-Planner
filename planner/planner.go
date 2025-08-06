@@ -6,13 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/modern-go/reflect2"
-	"github.com/redis/go-redis/v9"
-	"github.com/ulule/limiter/v3"
-	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
-	awsinternal "github.com/weihesdlegend/Vacation-planner/aws"
-	"golang.org/x/oauth2"
 	"html/template"
 	"io"
 	"net/http"
@@ -23,6 +16,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/modern-go/reflect2"
+	"github.com/redis/go-redis/v9"
+	"github.com/ulule/limiter/v3"
+	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
+	awsinternal "github.com/weihesdlegend/Vacation-planner/aws"
+	"golang.org/x/oauth2"
 
 	gogeonames "github.com/timwangmusic/go-geonames"
 
