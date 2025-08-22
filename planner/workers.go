@@ -9,9 +9,6 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 )
 
-// deduplicate job executions
-var jobExecutions = make(map[string]*iowrappers.JobExecution)
-
 type Worker interface {
 	handleJob(context.Context, *iowrappers.Job) error
 }
