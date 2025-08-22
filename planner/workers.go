@@ -13,7 +13,7 @@ import (
 var jobExecutions = make(map[string]*iowrappers.JobExecution)
 
 type Worker interface {
-	handleJob(context.Context, *iowrappers.Job, *sync.RWMutex) error
+	handleJob(context.Context, *iowrappers.Job) error
 }
 
 type PlanningSolutionsWorker struct {
@@ -22,9 +22,10 @@ type PlanningSolutionsWorker struct {
 	c        *iowrappers.RedisClient
 	jobQueue chan *iowrappers.Job
 	wg       *sync.WaitGroup
+	store    *JobStore
 }
 
-func (w *PlanningSolutionsWorker) handleJob(ctx context.Context, job *iowrappers.Job, mutex *sync.RWMutex) error {
+func (w *PlanningSolutionsWorker) handleJob(ctx context.Context, job *iowrappers.Job) error {
 	defer createJobRecord(ctx, job, w.c)
 	req := job.Parameters.(*PlanningRequest)
 
@@ -33,17 +34,17 @@ func (w *PlanningSolutionsWorker) handleJob(ctx context.Context, job *iowrappers
 		return err
 	}
 
-	if shouldSkipJobExecution(jobKey, mutex) {
+	if w.store.shouldSkipJobExecution(jobKey) {
 		job.Status = iowrappers.JobStatusDuplicated
 		return nil
 	}
 
-	if err = createJobExecution(jobKey, job, mutex); err != nil {
+	if err = w.createJobExecution(jobKey, job); err != nil {
 		job.Status = iowrappers.JobStatusFailed
 		return err
 	}
 
-	if err = updateJobExecutionStatus(jobKey, mutex, iowrappers.JobStatusRunning); err != nil {
+	if err = w.store.updateJobExecutionStatus(jobKey, iowrappers.JobStatusRunning); err != nil {
 		job.Status = iowrappers.JobStatusFailed
 		return err
 	}
@@ -51,14 +52,14 @@ func (w *PlanningSolutionsWorker) handleJob(ctx context.Context, job *iowrappers
 	resp := w.s.Solve(ctx, req)
 	if resp.Err != nil {
 		job.Status = iowrappers.JobStatusFailed
-		if err = updateJobExecutionStatus(jobKey, mutex, iowrappers.JobStatusFailed); err != nil {
+		if err = w.store.updateJobExecutionStatus(jobKey, iowrappers.JobStatusFailed); err != nil {
 			job.Status = iowrappers.JobStatusUnknown
 			return err
 		}
 		return resp.Err
 	}
 
-	if err = updateJobExecutionStatus(jobKey, mutex, iowrappers.JobStatusCompleted); err != nil {
+	if err = w.store.updateJobExecutionStatus(jobKey, iowrappers.JobStatusCompleted); err != nil {
 		job.Status = iowrappers.JobStatusUnknown
 		return err
 	}
@@ -79,13 +80,13 @@ func createJobRecord(ctx context.Context, job *iowrappers.Job, c *iowrappers.Red
 	}
 }
 
-func createJobExecution(jobKey string, job *iowrappers.Job, mutex *sync.RWMutex) error {
-	defer mutex.Unlock()
-	mutex.Lock()
-	if _, ok := jobExecutions[jobKey]; ok {
+func (w *PlanningSolutionsWorker) createJobExecution(jobKey string, job *iowrappers.Job) error {
+	w.store.mu.Lock()
+	defer w.store.mu.Unlock()
+	if _, ok := w.store.execs[jobKey]; ok {
 		return fmt.Errorf("job execution already exists: %v", jobKey)
 	} else {
-		jobExecutions[jobKey] = &iowrappers.JobExecution{
+		w.store.execs[jobKey] = &iowrappers.JobExecution{
 			JobID:     job.ID,
 			Status:    iowrappers.JobStatusCreated,
 			ExpiresAt: time.Now().Add(iowrappers.JobExpirationTime),
@@ -94,11 +95,11 @@ func createJobExecution(jobKey string, job *iowrappers.Job, mutex *sync.RWMutex)
 	return nil
 }
 
-func shouldSkipJobExecution(jobKey string, mu *sync.RWMutex) bool {
-	defer mu.RUnlock()
+func (s *JobStore) shouldSkipJobExecution(jobKey string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	curTime := time.Now()
-	mu.RLock()
-	if execution, ok := jobExecutions[jobKey]; ok {
+	if execution, ok := s.execs[jobKey]; ok {
 		if execution.Status == iowrappers.JobStatusCreated || execution.Status == iowrappers.JobStatusRunning || execution.Status == iowrappers.JobStatusCompleted {
 			return execution.ExpiresAt.After(curTime)
 		}
@@ -106,24 +107,24 @@ func shouldSkipJobExecution(jobKey string, mu *sync.RWMutex) bool {
 	return false
 }
 
-func updateJobExecutionStatus(jobKey string, mu *sync.RWMutex, newStatus iowrappers.JobStatus) error {
-	defer mu.Unlock()
-	mu.Lock()
-	if _, ok := jobExecutions[jobKey]; ok {
-		jobExecutions[jobKey].Status = newStatus
+func (s *JobStore) updateJobExecutionStatus(jobKey string, newStatus iowrappers.JobStatus) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.execs[jobKey]; ok {
+		s.execs[jobKey].Status = newStatus
 	} else {
 		return fmt.Errorf("job to be updated %s does not exist", jobKey)
 	}
 	return nil
 }
 
-func (w *PlanningSolutionsWorker) Run(ctx context.Context, mu *sync.RWMutex) {
+func (w *PlanningSolutionsWorker) Run(ctx context.Context) {
 	go func() {
 		defer w.wg.Done()
 		logger := iowrappers.Logger
 
 		for job := range w.jobQueue {
-			err := w.handleJob(ctx, job, mu)
+			err := w.handleJob(ctx, job)
 			if err != nil {
 				logger.Error(err)
 				continue
