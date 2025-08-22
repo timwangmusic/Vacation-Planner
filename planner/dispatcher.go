@@ -9,6 +9,12 @@ import (
 
 const NumWorkers = 10
 
+// JobStore tracks and deduplicates concurrent job executions
+type JobStore struct {
+	mu    *sync.RWMutex
+	execs map[string]*iowrappers.JobExecution
+}
+
 type Dispatcher struct {
 	JobQueue chan *iowrappers.Job
 	workers  []*PlanningSolutionsWorker
@@ -28,7 +34,11 @@ func NewDispatcher(s *Solver, c *iowrappers.RedisClient) *Dispatcher {
 }
 
 func (d *Dispatcher) Run(ctx context.Context) {
-	mu := &sync.RWMutex{}
+	store := &JobStore{
+		mu:    &sync.RWMutex{},
+		execs: make(map[string]*iowrappers.JobExecution),
+	}
+
 	ctx = context.WithValue(ctx, iowrappers.ContextRequestUserId, "worker")
 	d.wg.Add(NumWorkers)
 	for i := 0; i < NumWorkers; i++ {
@@ -38,9 +48,10 @@ func (d *Dispatcher) Run(ctx context.Context) {
 			c:        d.c,
 			jobQueue: d.JobQueue,
 			wg:       d.wg,
+			store:    store,
 		}
 		d.workers = append(d.workers, w)
-		w.Run(ctx, mu)
+		w.Run(ctx)
 	}
 }
 
