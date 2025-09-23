@@ -482,14 +482,13 @@ func (r *RedisClient) userPlanFinder(ctx context.Context, in chan string) chan u
 func (r *RedisClient) FindUserPlans(ctx context.Context, userView user.View) []user.TravelPlanView {
 	in := r.userPlanKeysFinder(ctx, userView)
 
-	var workers [UserPlanWorkerCount]chan user.TravelPlanView
+	workers := make([]chan user.TravelPlanView, UserPlanWorkerCount)
 	for idx := range workers {
-		workers[idx] = make(chan user.TravelPlanView)
 		workers[idx] = r.userPlanFinder(ctx, in)
 	}
 
 	var result []user.TravelPlanView
-	for view := range merge(workers[:]...) {
+	for view := range merge(workers...) {
 		result = append(result, view)
 	}
 	return result
