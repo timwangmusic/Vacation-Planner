@@ -153,3 +153,16 @@ func locationToBlobKey(l *POI.Location) string {
 	slices.Reverse(normalized)
 	return strings.Join(normalized, "/")
 }
+
+func toPATView(metadata *iowrappers.TokenMetadata) PATView {
+	var expiresAt string
+	if metadata.ExpiresAt != nil {
+		expiresAt = metadata.ExpiresAt.Format(time.RFC3339)
+	}
+
+	return PATView{
+		Id:        metadata.Id,
+		Name:      metadata.Name,
+		ExpiresAt: expiresAt,
+	}
+}
