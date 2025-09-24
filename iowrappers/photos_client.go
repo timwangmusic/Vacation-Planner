@@ -136,7 +136,11 @@ func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, plac
 		// the error may be due to stale photo reference in the databases.
 		if strings.HasPrefix(err.Error(), UnknownImageFormat) {
 			var r maps.PlaceDetailsResult
+
+			// Acquire semaphore for API rate limiting
+			c.mapsClient.apiSemaphore <- struct{}{}
 			r, err = c.mapsClient.PlaceDetailedSearch(ctx, placeId, c.mapsClient.DetailedSearchFields)
+			<-c.mapsClient.apiSemaphore // Release semaphore
 			if err != nil {
 				return "", err
 			}
@@ -174,6 +178,10 @@ func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, plac
 }
 
 func (c *MapsPhotoClient) placeImage(ctx context.Context, ref string) (image.Image, error) {
+	// Acquire semaphore for API rate limiting
+	c.mapsClient.apiSemaphore <- struct{}{}
+	defer func() { <-c.mapsClient.apiSemaphore }() // Release semaphore
+
 	resp, err := c.mapsClient.client.PlacePhoto(ctx, &maps.PlacePhotoRequest{PhotoReference: ref, MaxWidth: 400})
 	if err != nil {
 		return nil, err

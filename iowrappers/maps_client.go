@@ -26,6 +26,7 @@ type MapsClient struct {
 	client               *maps.Client
 	apiKey               string
 	DetailedSearchFields []string
+	apiSemaphore         chan struct{}
 }
 
 func (c *MapsClient) SetDetailedSearchFields(fields []string) {
@@ -43,7 +44,13 @@ func CreateMapsClient(apiKey string) *MapsClient {
 	if reflect.ValueOf(mapsClient).IsNil() {
 		Logger.Fatal(errors.New("maps client does not exist"))
 	}
-	return &MapsClient{client: mapsClient, apiKey: apiKey}
+	// Initialize semaphore with MaxConcurrentAPIRequests capacity
+	semaphore := make(chan struct{}, 5) // Using constant value directly to avoid import cycle
+	return &MapsClient{
+		client:       mapsClient,
+		apiKey:       apiKey,
+		apiSemaphore: semaphore,
+	}
 }
 
 func CreateLogger() error {
@@ -79,6 +86,11 @@ func (c *MapsClient) ReverseGeocode(context context.Context, latitude, longitude
 		ResultType: []string{"country", "administrative_area_level_1", "locality"},
 	}
 	Logger.Debugf("reverse geocoding for latitude/longitude: %.2f/%.2f", latitude, longitude)
+
+	// Acquire semaphore for API rate limiting
+	c.apiSemaphore <- struct{}{}
+	defer func() { <-c.apiSemaphore }() // Release semaphore
+
 	geocodingResults, err := c.client.ReverseGeocode(context, request)
 	if err != nil {
 		return nil, err
@@ -102,6 +114,10 @@ func (c *MapsClient) Geocode(ctx context.Context, query *GeocodeQuery) (lat floa
 	if strings.TrimSpace(query.AdminAreaLevelOne) != "" {
 		req.Components[maps.ComponentAdministrativeArea] = strings.TrimSpace(query.AdminAreaLevelOne)
 	}
+
+	// Acquire semaphore for API rate limiting
+	c.apiSemaphore <- struct{}{}
+	defer func() { <-c.apiSemaphore }() // Release semaphore
 
 	resp, err := c.client.Geocode(ctx, req)
 	if err != nil {
