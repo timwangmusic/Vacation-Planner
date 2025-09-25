@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
@@ -242,11 +241,14 @@ func TestRedisClient_RevokePAT(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 
-				// Verify token validation fails (secure way to check revocation)
-				validToken, err := RedisClient.ValidatePAT(tt.args.ctx, tt.args.tokenId)
-				assert.Error(t, err)
-				assert.Equal(t, redis.Nil, err)
-				assert.Nil(t, validToken)
+				// Verify token is no longer in active metadata (secure way to check revocation)
+				metadata, err := RedisClient.ListUserPATMetadata(tt.args.ctx, tt.args.userId)
+				assert.NoError(t, err)
+				for _, tokenMeta := range metadata {
+					if tokenMeta.Id == tt.args.tokenId {
+						assert.False(t, tokenMeta.IsActive, "Token should be inactive after revocation")
+					}
+				}
 
 				// Verify token is removed from user's metadata list
 				userTokens, err := RedisClient.ListUserPATMetadata(tt.args.ctx, tt.args.userId)
@@ -274,7 +276,7 @@ func TestRedisClient_RevokePATByName(t *testing.T) {
 
 	// Create a token to revoke
 	tokenName := "test-token-to-revoke"
-	response, err := RedisClient.NewPAT(context.Background(), tokenName, createdUser.ID, "token_hash_123", 24*time.Hour)
+	_, err = RedisClient.NewPAT(context.Background(), tokenName, createdUser.ID, "token_hash_123", 24*time.Hour)
 	if err != nil {
 		t.Fatal("Failed to create test token:", err)
 	}
@@ -326,30 +328,25 @@ func TestRedisClient_RevokePATByName(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 
-				// Verify the token is revoked by trying to validate it
-				validatedToken, err := RedisClient.ValidatePAT(tt.args.ctx, response.TokenID)
-				assert.Error(t, err)
-				assert.Nil(t, validatedToken)
-
-				// Verify token is no longer in user's active metadata
+				// Verify the token is revoked by checking metadata
 				metadata, err := RedisClient.ListUserPATMetadata(tt.args.ctx, tt.args.userId)
 				assert.NoError(t, err)
-
 				for _, token := range metadata {
 					if token.Name == tt.args.tokenName {
 						assert.False(t, token.IsActive, "Token should be inactive after revocation")
 					}
 				}
+
 			}
 		})
 	}
 }
 
-func TestRedisClient_ValidatePAT(t *testing.T) {
-	// Setup: Create a test user
+func TestRedisClient_ValidatePATByHash(t *testing.T) {
+	// Setup: Create a test user and token
 	testUser := user.View{
-		Username: "validate_test_user",
-		Email:    "validate_test@example.com",
+		Username: "validate_by_hash_test_user",
+		Email:    "validate_by_hash_test@example.com",
 		Password: "test_password",
 	}
 	createdUser, err := RedisClient.CreateUser(RedisContext, testUser, false)
@@ -357,69 +354,65 @@ func TestRedisClient_ValidatePAT(t *testing.T) {
 		t.Fatal("Failed to create test user:", err)
 	}
 
-	// Create valid token
-	validResponse, err := RedisClient.NewPAT(RedisContext, "valid-token", createdUser.ID, "valid_hash", 24*time.Hour)
-	if err != nil {
-		t.Fatal("Failed to create valid token:", err)
-	}
-	validTokenId := validResponse.TokenID
+	// Create test tokens
+	activeTokenHash := "active_token_hash_123"
+	expiredTokenHash := "expired_token_hash_456"
 
-	// Create expired token
-	expiredResponse, err := RedisClient.NewPAT(RedisContext, "expired-token", createdUser.ID, "expired_hash", -1*time.Hour)
+	activeResponse, err := RedisClient.NewPAT(context.Background(), "active-token", createdUser.ID, activeTokenHash, 24*time.Hour)
 	if err != nil {
-		t.Fatal("Failed to create expired token:", err)
+		t.Fatal("Failed to create active test token:", err)
 	}
-	expiredTokenId := expiredResponse.TokenID
 
-	// Create and revoke token
-	revokedResponse, err := RedisClient.NewPAT(RedisContext, "revoked-token", createdUser.ID, "revoked_hash", 24*time.Hour)
+	_, err = RedisClient.NewPAT(context.Background(), "expired-token", createdUser.ID, expiredTokenHash, -1*time.Hour)
 	if err != nil {
-		t.Fatal("Failed to create revoked token:", err)
-	}
-	revokedTokenId := revokedResponse.TokenID
-	err = RedisClient.RevokePAT(RedisContext, createdUser.ID, revokedTokenId)
-	if err != nil {
-		t.Fatal("Failed to revoke token:", err)
+		t.Fatal("Failed to create expired test token:", err)
 	}
 
 	type args struct {
-		ctx     context.Context
-		tokenId string
+		ctx       context.Context
+		tokenHash string
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
+		checkFn func(*testing.T, *iowrappers.TokenRecord)
 	}{
 		{
-			name: "Should validate active token successfully",
+			name: "Should validate active token by hash successfully",
 			args: args{
-				ctx:     context.Background(),
-				tokenId: validTokenId,
+				ctx:       context.Background(),
+				tokenHash: activeTokenHash,
 			},
 			wantErr: false,
+			checkFn: func(t *testing.T, token *iowrappers.TokenRecord) {
+				assert.Equal(t, activeResponse.TokenID, token.Id)
+				assert.Equal(t, createdUser.ID, token.UserId)
+				assert.Equal(t, activeTokenHash, token.Hash)
+				assert.True(t, token.Valid())
+			},
 		},
 		{
-			name: "Should reject expired token",
+			name: "Should reject expired token by hash",
 			args: args{
-				ctx:     context.Background(),
-				tokenId: expiredTokenId,
+				ctx:       context.Background(),
+				tokenHash: expiredTokenHash,
 			},
 			wantErr: true,
 		},
 		{
-			name: "Should reject revoked token",
+			name: "Should reject non-existent token hash",
 			args: args{
-				ctx:     context.Background(),
-				tokenId: revokedTokenId,
+				ctx:       context.Background(),
+				tokenHash: "non_existent_hash",
 			},
 			wantErr: true,
 		},
 		{
-			name: "Should reject non-existent token",
+			name: "Should reject empty token hash",
 			args: args{
-				ctx:     context.Background(),
-				tokenId: "non-existent-token",
+				ctx:       context.Background(),
+				tokenHash: "",
 			},
 			wantErr: true,
 		},
@@ -427,16 +420,16 @@ func TestRedisClient_ValidatePAT(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			token, err := RedisClient.ValidatePAT(tt.args.ctx, tt.args.tokenId)
-
+			token, err := RedisClient.ValidatePATByHash(tt.args.ctx, tt.args.tokenHash)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, token)
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, token)
-				assert.True(t, token.Valid())
-				assert.Equal(t, tt.args.tokenId, token.Id)
+				if tt.checkFn != nil {
+					tt.checkFn(t, token)
+				}
 			}
 		})
 	}
@@ -638,8 +631,8 @@ func TestPATSecurity_TokenHashNotExposed(t *testing.T) {
 	})
 
 	t.Run("Token should only be retrievable for server-side validation", func(t *testing.T) {
-		// ValidatePAT is the only way to access token details (for server auth)
-		token, err := RedisClient.ValidatePAT(RedisContext, tokenId)
+		// ValidatePATByHash is the only way to access token details (for server auth)
+		token, err := RedisClient.ValidatePATByHash(RedisContext, secretHash)
 		assert.NoError(t, err)
 		assert.NotNil(t, token)
 		assert.Equal(t, secretHash, token.Hash) // Hash accessible only for validation
@@ -651,10 +644,9 @@ func TestPATSecurity_TokenHashNotExposed(t *testing.T) {
 		err := RedisClient.RevokePAT(RedisContext, createdUser.ID, tokenId)
 		assert.NoError(t, err)
 
-		// Should not be validatable
-		token, err := RedisClient.ValidatePAT(RedisContext, tokenId)
+		// Should not be validatable by hash
+		token, err := RedisClient.ValidatePATByHash(RedisContext, secretHash)
 		assert.Error(t, err)
-		assert.Equal(t, redis.Nil, err)
 		assert.Nil(t, token)
 
 		// Should not appear in metadata list

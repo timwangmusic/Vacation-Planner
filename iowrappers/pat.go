@@ -105,6 +105,8 @@ func (r *RedisClient) NewPAT(ctx context.Context, name, userId, token string, va
 	tokenKey := strings.Join([]string{"pat", record.Id}, ":")
 	// maps token name to ID
 	userTokensKey := strings.Join([]string{"user_pats", userId}, ":")
+	// maps token hash to ID for API authentication
+	hashKey := strings.Join([]string{"pat_hash", token}, ":")
 
 	save, err := json.Marshal(record)
 	if err != nil {
@@ -135,9 +137,14 @@ func (r *RedisClient) NewPAT(ctx context.Context, name, userId, token string, va
 			return err
 		}
 
-		// Add token ID to user's token set
+		// Store hash-to-ID mapping for API authentication
+		if err := tx.Set(ctx, hashKey, record.Id, 0).Err(); err != nil {
+			return err
+		}
+
+		// Add token name->ID mapping to user's hash
 		return tx.HSet(ctx, userTokensKey, name, record.Id).Err()
-	}, tokenKey, userTokensKey)
+	}, tokenKey, userTokensKey, hashKey)
 
 	if err != nil {
 		return nil, err
@@ -169,6 +176,9 @@ func (r *RedisClient) RevokePAT(ctx context.Context, userId, tokenId string) err
 		return err
 	}
 
+	// Also need to clean up hash mapping
+	hashKey := strings.Join([]string{"pat_hash", token.Hash}, ":")
+
 	if err = r.Get().Watch(ctx, func(tx *redis.Tx) error {
 		t := time.Now()
 		token.RevokedAt = &t
@@ -183,8 +193,14 @@ func (r *RedisClient) RevokePAT(ctx context.Context, userId, tokenId string) err
 			return err
 		}
 
+		// Remove hash-to-ID mapping
+		if err = tx.Del(ctx, hashKey).Err(); err != nil {
+			return err
+		}
+
+		// Remove from user's token name mapping
 		return tx.HDel(ctx, userTokensKey, token.Name).Err()
-	}, tokenKey, userTokensKey); err != nil {
+	}, tokenKey, userTokensKey, hashKey); err != nil {
 		return err
 	}
 	return nil
@@ -222,8 +238,18 @@ func (r *RedisClient) validatePATInternal(ctx context.Context, tokenId string) (
 	return &token, nil
 }
 
-// ValidatePAT validates a personal access token for authentication (server-side only)
-func (r *RedisClient) ValidatePAT(ctx context.Context, tokenId string) (*TokenRecord, error) {
+// ValidatePATByHash validates a personal access token by hash for API authentication
+func (r *RedisClient) ValidatePATByHash(ctx context.Context, tokenHash string) (*TokenRecord, error) {
+	// Get token ID from hash mapping
+	hashKey := strings.Join([]string{"pat_hash", tokenHash}, ":")
+	tokenId, err := r.Get().Get(ctx, hashKey).Result()
+	if errors.Is(err, redis.Nil) {
+		return nil, fmt.Errorf("invalid token")
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Get and validate the token record directly
 	token, err := r.validatePATInternal(ctx, tokenId)
 	if err != nil {
 		return nil, err
