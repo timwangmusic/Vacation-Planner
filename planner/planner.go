@@ -608,10 +608,16 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	ctx.Set(requestIdKey, requestId)
 
 	var userView user.View
-	var authenticationErr error
+	var authenticationErr *AuthError
 	userView, authenticationErr = p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
 		logger.Debug(authenticationErr)
+		if authenticationErr.IsTokenError() {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+			return
+		}
+
+		// for JWT-based authentications, redirect users to the login page
 		p.login(ctx)
 		return
 	}
@@ -1193,7 +1199,7 @@ type RevokeTokenInfo struct {
 func (p *MyPlanner) createNewPAT(ctx *gin.Context) {
 	userView, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
-		ctx.JSON(http.StatusUnauthorized, "please login with your credentials")
+		ctx.JSON(http.StatusUnauthorized, authenticationErr.GetErrorMessage())
 		return
 	}
 
@@ -1230,7 +1236,7 @@ func (p *MyPlanner) createNewPAT(ctx *gin.Context) {
 func (p *MyPlanner) RevokePAT(ctx *gin.Context) {
 	userView, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
-		ctx.JSON(http.StatusUnauthorized, "please login with your credentials")
+		ctx.JSON(http.StatusUnauthorized, authenticationErr.GetErrorMessage())
 		return
 	}
 
@@ -1260,7 +1266,7 @@ type PATView struct {
 func (p *MyPlanner) ListPATs(ctx *gin.Context) {
 	userView, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
-		ctx.JSON(http.StatusUnauthorized, "please login with your credentials")
+		ctx.JSON(http.StatusUnauthorized, authenticationErr.GetErrorMessage())
 		return
 	}
 

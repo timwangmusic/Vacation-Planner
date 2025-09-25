@@ -134,7 +134,45 @@ func (p *MyPlanner) loginHelper(ctx *gin.Context, c user.Credential, frontEndLog
 	return true
 }
 
-func (p *MyPlanner) UserAuthentication(ctx *gin.Context, minimumUserLevel user.Level) (user.View, error) {
+type AuthErrorType string
+
+const (
+	AuthErrorTypeToken  AuthErrorType = "token"
+	AuthErrorTypeCookie AuthErrorType = "cookie"
+)
+
+type AuthError struct {
+	ErrType AuthErrorType
+	ErrMsg  error
+}
+
+func (e *AuthError) Error() string {
+	return e.ErrMsg.Error()
+}
+
+// IsTokenError returns true if the auth error is related to PAT token authentication
+func (e *AuthError) IsTokenError() bool {
+	return e.ErrType == AuthErrorTypeToken
+}
+
+// IsCookieError returns true if the auth error is related to JWT cookie authentication
+func (e *AuthError) IsCookieError() bool {
+	return e.ErrType == AuthErrorTypeCookie
+}
+
+// GetErrorMessage returns a user-friendly error message based on the auth type
+func (e *AuthError) GetErrorMessage() string {
+	switch e.ErrType {
+	case AuthErrorTypeToken:
+		return "Invalid or expired access token. Please check your authorization header."
+	case AuthErrorTypeCookie:
+		return "Please login with your credentials"
+	default:
+		return "Authentication failed"
+	}
+}
+
+func (p *MyPlanner) UserAuthentication(ctx *gin.Context, minimumUserLevel user.Level) (user.View, *AuthError) {
 	request := ctx.Request
 
 	// Priority 1: Check for Personal Access Token (Authorization header)
@@ -148,36 +186,51 @@ func (p *MyPlanner) UserAuthentication(ctx *gin.Context, minimumUserLevel user.L
 }
 
 // authenticateWithPAT handles Personal Access Token authentication
-func (p *MyPlanner) authenticateWithPAT(ctx *gin.Context, authHeader string, minimumUserLevel user.Level) (user.View, error) {
+func (p *MyPlanner) authenticateWithPAT(ctx *gin.Context, authHeader string, minimumUserLevel user.Level) (user.View, *AuthError) {
 	var userView user.View
 
 	// Parse Authorization header: "Bearer pat_..."
 	const bearerPrefix = "Bearer "
 	if !strings.HasPrefix(authHeader, bearerPrefix) {
-		return userView, errors.New("authorization header must use Bearer scheme")
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeToken,
+			ErrMsg:  errors.New("authorization header must use Bearer scheme"),
+		}
 	}
 
 	tokenHash := strings.TrimPrefix(authHeader, bearerPrefix)
 	if tokenHash == "" {
-		return userView, errors.New("empty token in authorization header")
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeToken,
+			ErrMsg:  errors.New("empty token in authorization header"),
+		}
 	}
 
 	// Validate the PAT by hash
 	tokenRecord, err := p.RedisClient.ValidatePATByHash(ctx, tokenHash)
 	if err != nil {
 		iowrappers.Logger.Debugf("[request ID: %s] PAT validation failed: %v", ctx.Value(requestIdKey), err)
-		return userView, errors.New("invalid or expired personal access token")
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeToken,
+			ErrMsg:  errors.New("invalid or expired personal access token"),
+		}
 	}
 
 	// Get user by ID from token
 	userView, findUserErr := p.RedisClient.FindUser(ctx, iowrappers.FindUserByID, user.View{ID: tokenRecord.UserId})
 	if findUserErr != nil {
-		return userView, fmt.Errorf("user not found for token: %w", findUserErr)
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeToken,
+			ErrMsg:  fmt.Errorf("user not found for token: %w", findUserErr),
+		}
 	}
 
 	// Check user level
 	if err := p.checkUserLevel(userView, minimumUserLevel); err != nil {
-		return userView, err
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeToken,
+			ErrMsg:  err,
+		}
 	}
 
 	iowrappers.Logger.Debugf("[request ID: %s] User authenticated via PAT: %s", ctx.Value(requestIdKey), userView.Username)
@@ -185,13 +238,16 @@ func (p *MyPlanner) authenticateWithPAT(ctx *gin.Context, authHeader string, min
 }
 
 // authenticateWithJWT handles JWT cookie authentication (fallback)
-func (p *MyPlanner) authenticateWithJWT(ctx *gin.Context, minimumUserLevel user.Level) (user.View, error) {
+func (p *MyPlanner) authenticateWithJWT(ctx *gin.Context, minimumUserLevel user.Level) (user.View, *AuthError) {
 	request := ctx.Request
 	var userView user.View
 
 	cookie, cookieErr := request.Cookie("JWT")
 	if cookieErr != nil {
-		return userView, fmt.Errorf("no authentication provided: %w", cookieErr)
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeCookie,
+			ErrMsg:  fmt.Errorf("no authentication provided: %w", cookieErr),
+		}
 	}
 
 	jwtKey := []byte(os.Getenv("JWT_SIGNING_SECRET"))
@@ -200,28 +256,43 @@ func (p *MyPlanner) authenticateWithJWT(ctx *gin.Context, minimumUserLevel user.
 	})
 
 	if tokenErr != nil {
-		return userView, fmt.Errorf("invalid JWT token: %w", tokenErr)
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeCookie,
+			ErrMsg:  fmt.Errorf("invalid JWT token: %w", tokenErr),
+		}
 	}
 
 	if !token.Valid {
-		return userView, errors.New("invalid JWT token")
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeCookie,
+			ErrMsg:  errors.New("invalid JWT token"),
+		}
 	}
 
 	var username string
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		username = claims["username"].(string)
 	} else {
-		return userView, errors.New("failed to parse JWT claims")
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeCookie,
+			ErrMsg:  errors.New("failed to parse JWT claims"),
+		}
 	}
 
 	userView, findUserErr := p.RedisClient.FindUser(ctx, iowrappers.FindUserByName, user.View{Username: username})
 	if findUserErr != nil {
-		return userView, fmt.Errorf("user not found: %w", findUserErr)
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeCookie,
+			ErrMsg:  fmt.Errorf("user not found: %w", findUserErr),
+		}
 	}
 
 	// Check user level
 	if err := p.checkUserLevel(userView, minimumUserLevel); err != nil {
-		return userView, err
+		return userView, &AuthError{
+			ErrType: AuthErrorTypeCookie,
+			ErrMsg:  err,
+		}
 	}
 
 	iowrappers.Logger.Debugf("[request ID: %s] User authenticated via JWT: %s", ctx.Value(requestIdKey), username)
@@ -243,7 +314,6 @@ func (p *MyPlanner) checkUserLevel(userView user.View, minimumUserLevel user.Lev
 	}
 	return nil
 }
-
 
 func (p *MyPlanner) userSavedPlansPostHandler(ctx *gin.Context) {
 	var planView user.TravelPlanView
