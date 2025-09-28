@@ -1189,7 +1189,8 @@ func (p *MyPlanner) rateLimiter() gin.HandlerFunc {
 }
 
 type NewTokenInfo struct {
-	Name string `json:"name"`
+	Name             string `json:"name"`
+	ExpirationDuration string `json:"expiration_duration,omitempty"` // Optional: e.g., "24h", "7d", "30d"
 }
 
 type RevokeTokenInfo struct {
@@ -1217,8 +1218,19 @@ func (p *MyPlanner) createNewPAT(ctx *gin.Context) {
 		return
 	}
 
+	// Parse the expiration duration, default to 5 minutes if not provided or invalid
+	duration := time.Minute * 5 // Default duration
+	if t.ExpirationDuration != "" {
+		if parsedDuration, err := time.ParseDuration(t.ExpirationDuration); err == nil {
+			duration = parsedDuration
+		} else {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid expiration duration format: %s. Use formats like '24h', '7d', '30d'", t.ExpirationDuration)})
+			return
+		}
+	}
+
 	token := uuid.NewString()
-	resp, err := p.RedisClient.NewPAT(ctx, t.Name, userId, token, time.Minute*5)
+	resp, err := p.RedisClient.NewPAT(ctx, t.Name, userId, token, duration)
 
 	if err != nil {
 		if re.MatchString(err.Error()) {

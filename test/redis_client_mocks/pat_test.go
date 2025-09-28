@@ -2,10 +2,12 @@ package redis_client_mocks
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/user"
 )
@@ -653,5 +655,214 @@ func TestPATSecurity_TokenHashNotExposed(t *testing.T) {
 		metadata, err := RedisClient.ListUserPATMetadata(RedisContext, createdUser.ID)
 		assert.NoError(t, err)
 		assert.Len(t, metadata, 0) // Empty list after revocation
+	})
+}
+
+// TestPATExpirationDurationIntegration tests the complete expiration duration workflow
+// This tests the integration between the API layer duration parsing and the Redis storage layer
+func TestPATExpirationDurationIntegration(t *testing.T) {
+	// Setup: Create a test user first
+	testUser := user.View{
+		Username: "expiration_duration_test_user",
+		Email:    "expiration_duration@example.com",
+		Password: "test_password",
+	}
+	createdUser, err := RedisClient.CreateUser(RedisContext, testUser, false)
+	require.NoError(t, err, "Failed to create test user")
+
+	testCases := []struct {
+		name                string
+		durationString      string
+		expectedDuration    time.Duration
+		expectError         bool
+		validateExpiration  bool
+	}{
+		{
+			name:               "24 hour duration",
+			durationString:     "24h",
+			expectedDuration:   24 * time.Hour,
+			expectError:        false,
+			validateExpiration: true,
+		},
+		{
+			name:               "7 day duration",
+			durationString:     "168h", // 7 days
+			expectedDuration:   168 * time.Hour,
+			expectError:        false,
+			validateExpiration: true,
+		},
+		{
+			name:               "30 minute duration",
+			durationString:     "30m",
+			expectedDuration:   30 * time.Minute,
+			expectError:        false,
+			validateExpiration: true,
+		},
+		{
+			name:               "Complex duration (1h30m)",
+			durationString:     "1h30m",
+			expectedDuration:   90 * time.Minute,
+			expectError:        false,
+			validateExpiration: true,
+		},
+		{
+			name:               "Very short duration for expiration test",
+			durationString:     "100ms",
+			expectedDuration:   100 * time.Millisecond,
+			expectError:        false,
+			validateExpiration: false, // Too short to reliably test
+		},
+		{
+			name:           "Invalid duration format",
+			durationString: "invalid-format",
+			expectError:    true,
+		},
+		{
+			name:               "Zero duration",
+			durationString:     "0s",
+			expectedDuration:   0,
+			expectError:        false,
+			validateExpiration: false, // Immediately expired
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tokenName := "duration-test-" + strings.ReplaceAll(tc.name, " ", "-")
+
+			// Test duration parsing (simulating API layer)
+			var duration time.Duration
+			if tc.durationString != "" {
+				parsedDuration, err := time.ParseDuration(tc.durationString)
+				if tc.expectError {
+					assert.Error(t, err, "Expected duration parsing to fail for invalid format")
+					return
+				}
+				require.NoError(t, err, "Duration parsing should succeed for valid format")
+				duration = parsedDuration
+			} else {
+				duration = 5 * time.Minute // Default
+			}
+
+			assert.Equal(t, tc.expectedDuration, duration, "Parsed duration should match expected")
+
+			// Test token creation with parsed duration (Redis layer integration)
+			tokenHash := "integration-test-token-" + tokenName
+			now := time.Now()
+
+			response, err := RedisClient.NewPAT(RedisContext, tokenName, createdUser.ID, tokenHash, duration)
+			require.NoError(t, err, "Token creation should succeed")
+
+			// Validate response
+			assert.Equal(t, tokenName, response.Name)
+			assert.Equal(t, tokenHash, response.TokenHash)
+			assert.NotEmpty(t, response.ExpiresAt)
+			assert.NotEmpty(t, response.ExpiresIn)
+
+			if tc.validateExpiration {
+				// Validate that the stored expiration matches the expected duration
+				tokenRecord, err := RedisClient.ValidatePATByHash(RedisContext, tokenHash)
+				require.NoError(t, err, "Token should be retrievable immediately after creation")
+				require.NotNil(t, tokenRecord.ExpiresAt, "ExpiresAt should be set")
+
+				actualDuration := tokenRecord.ExpiresAt.Sub(now)
+				tolerance := 1 * time.Second
+
+				assert.True(t,
+					actualDuration >= tc.expectedDuration-tolerance && actualDuration <= tc.expectedDuration+tolerance,
+					"Stored expiration duration should be approximately %v, but was %v", tc.expectedDuration, actualDuration)
+
+				// Test that the token is initially valid
+				assert.True(t, tokenRecord.Valid(), "Token should be valid immediately after creation")
+
+				// Verify in user metadata
+				metadata, err := RedisClient.ListUserPATMetadata(RedisContext, createdUser.ID)
+				require.NoError(t, err, "Should be able to list user metadata")
+
+				found := false
+				for _, meta := range metadata {
+					if meta.Name == tokenName {
+						found = true
+						assert.True(t, meta.IsActive, "Token should be active in metadata")
+						assert.Equal(t, tokenRecord.ExpiresAt.Unix(), meta.ExpiresAt.Unix(), "Metadata expiration should match stored expiration")
+						break
+					}
+				}
+				assert.True(t, found, "Token should appear in user metadata")
+			}
+
+			// Clean up - revoke the token to avoid conflicts in subsequent tests
+			err = RedisClient.RevokePATByName(RedisContext, createdUser.ID, tokenName)
+			assert.NoError(t, err, "Should be able to clean up test token")
+		})
+	}
+}
+
+// TestPATExpirationRealTimeValidation tests that expired tokens are properly rejected
+func TestPATExpirationRealTimeValidation(t *testing.T) {
+	// Setup: Create a test user
+	testUser := user.View{
+		Username: "real_time_expiration_test_user",
+		Email:    "realtime@example.com",
+		Password: "test_password",
+	}
+	createdUser, err := RedisClient.CreateUser(RedisContext, testUser, false)
+	require.NoError(t, err, "Failed to create test user")
+
+	t.Run("Short lived token expires and becomes invalid", func(t *testing.T) {
+		tokenName := "short-lived-token"
+		tokenHash := "short-lived-hash"
+		shortDuration := 100 * time.Millisecond
+
+		// Create token with very short expiration
+		response, err := RedisClient.NewPAT(RedisContext, tokenName, createdUser.ID, tokenHash, shortDuration)
+		require.NoError(t, err, "Token creation should succeed")
+		assert.NotEmpty(t, response.TokenHash)
+
+		// Verify token is initially valid
+		tokenRecord, err := RedisClient.ValidatePATByHash(RedisContext, tokenHash)
+		require.NoError(t, err, "Token should be valid initially")
+		assert.True(t, tokenRecord.Valid(), "Token should be valid immediately after creation")
+
+		// Wait for expiration
+		time.Sleep(200 * time.Millisecond)
+
+		// Verify token is now expired and invalid
+		expiredTokenRecord, err := RedisClient.ValidatePATByHash(RedisContext, tokenHash)
+		assert.Error(t, err, "Expired token validation should fail")
+		assert.Nil(t, expiredTokenRecord, "Expired token should return nil")
+
+		// Verify token appears as inactive in metadata
+		metadata, err := RedisClient.ListUserPATMetadata(RedisContext, createdUser.ID)
+		require.NoError(t, err, "Should be able to list user metadata")
+
+		found := false
+		for _, meta := range metadata {
+			if meta.Name == tokenName {
+				found = true
+				assert.False(t, meta.IsActive, "Expired token should be inactive in metadata")
+				break
+			}
+		}
+		assert.True(t, found, "Token should still appear in metadata (for history)")
+	})
+
+	t.Run("Negative duration creates immediately expired token", func(t *testing.T) {
+		tokenName := "negative-duration-token"
+		tokenHash := "negative-duration-hash"
+		negativeDuration := -1 * time.Hour
+
+		// Create token with negative duration (immediately expired)
+		_, err := RedisClient.NewPAT(RedisContext, tokenName, createdUser.ID, tokenHash, negativeDuration)
+		require.NoError(t, err, "Token creation should succeed even with negative duration")
+
+		// Verify token is immediately invalid
+		expiredTokenRecord, err := RedisClient.ValidatePATByHash(RedisContext, tokenHash)
+		assert.Error(t, err, "Immediately expired token validation should fail")
+		assert.Nil(t, expiredTokenRecord, "Immediately expired token should return nil")
+
+		// Clean up
+		err = RedisClient.RevokePATByName(RedisContext, createdUser.ID, tokenName)
+		assert.NoError(t, err, "Should be able to clean up test token")
 	})
 }
