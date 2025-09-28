@@ -24,15 +24,14 @@ func (p *MyPlanner) announce(ctx *gin.Context) {
 	requestId := requestid.Get(ctx)
 	ctx.Set(requestIdKey, requestId)
 
-	adminView, err := p.UserAuthentication(ctx, user.LevelAdmin)
-	if err != nil {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": err})
+	adminView, authErr := p.UserAuthentication(ctx, user.LevelAdmin)
+	if authErr != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": authErr.GetErrorMessage()})
 		return
 	}
 
 	var announcement Announcement
-	err = ctx.ShouldBindJSON(&announcement)
-	if err != nil {
+	if err := ctx.ShouldBindJSON(&announcement); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -41,7 +40,7 @@ func (p *MyPlanner) announce(ctx *gin.Context) {
 	announcement.ID = uuid.NewString()
 	announcement.Timestamp = time.Now().Format(time.RFC3339)
 
-	if err = p.Mailer.Broadcast(ctx, announcement.Subject, announcement.Message, string(p.Environment)); err != nil {
+	if err := p.Mailer.Broadcast(ctx, announcement.Subject, announcement.Message, string(p.Environment)); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -52,8 +51,7 @@ func (p *MyPlanner) announce(ctx *gin.Context) {
 		return
 	}
 
-	err = p.RedisClient.SaveAnnouncement(ctx, announcement.ID, string(data))
-	if err != nil {
+	if err := p.RedisClient.SaveAnnouncement(ctx, announcement.ID, string(data)); err != nil {
 		iowrappers.Logger.Error(err)
 	}
 

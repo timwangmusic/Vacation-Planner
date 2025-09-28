@@ -20,6 +20,7 @@ const (
 	GoogleMapsSearchTimeout             = time.Second * 10
 	GoogleMapsSearchCallMaxCount        = 5
 	GoogleNearbySearchMaxRadiusInMeters = 50000
+	MaxConcurrentAPIRequests            = 5
 )
 
 type PlaceSearchRequest struct {
@@ -227,6 +228,11 @@ func PlaceDetailsSearchWrapper(context context.Context, mapsClient *MapsClient, 
 	if !toUpdate.Has(placeId) {
 		return
 	}
+
+	// Acquire semaphore (rate limiting)
+	mapsClient.apiSemaphore <- struct{}{}
+	defer func() { <-mapsClient.apiSemaphore }() // Release semaphore
+
 	searchRes, err := mapsClient.PlaceDetailedSearch(context, placeId, fields)
 	if err != nil {
 		Logger.Error(err)

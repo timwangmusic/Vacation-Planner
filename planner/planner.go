@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"github.com/ulule/limiter/v3"
 	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
 	awsinternal "github.com/weihesdlegend/Vacation-planner/aws"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
 	gogeonames "github.com/timwangmusic/go-geonames"
@@ -606,10 +608,16 @@ func (p *MyPlanner) getPlanningApi(ctx *gin.Context) {
 	ctx.Set(requestIdKey, requestId)
 
 	var userView user.View
-	var authenticationErr error
+	var authenticationErr *AuthError
 	userView, authenticationErr = p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {
 		logger.Debug(authenticationErr)
+		if authenticationErr.IsTokenError() {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+			return
+		}
+
+		// for JWT-based authentications, redirect users to the login page
 		p.login(ctx)
 		return
 	}
@@ -1180,6 +1188,116 @@ func (p *MyPlanner) rateLimiter() gin.HandlerFunc {
 	return mgin.NewMiddleware(limiter.New(store, rate))
 }
 
+type NewTokenInfo struct {
+	Name               string `json:"name"`
+	ExpirationDuration string `json:"expiration_duration,omitempty"` // Optional: e.g., "24h", "7d", "30d"
+}
+
+type RevokeTokenInfo struct {
+	Name string `json:"name"`
+}
+
+func (p *MyPlanner) createNewPAT(ctx *gin.Context) {
+	userView, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
+	if authenticationErr != nil {
+		ctx.JSON(http.StatusUnauthorized, authenticationErr.GetErrorMessage())
+		return
+	}
+
+	userId := userView.ID
+	t := &NewTokenInfo{}
+
+	if err := ctx.ShouldBindJSON(t); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	re, err := regexp.Compile("^personal access token with same name (.+) already exists$")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create new token at this time, please try again later."})
+		return
+	}
+
+	// Parse the expiration duration, default to 5 minutes if not provided or invalid
+	duration := time.Minute * 5 // Default duration
+	if t.ExpirationDuration != "" {
+		if parsedDuration, err := time.ParseDuration(t.ExpirationDuration); err == nil {
+			duration = parsedDuration
+		} else {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid expiration duration format: %s. Use formats like '24h', '7d', '30d'", t.ExpirationDuration)})
+			return
+		}
+	}
+
+	token := uuid.NewString()
+	resp, err := p.RedisClient.NewPAT(ctx, t.Name, userId, token, duration)
+
+	if err != nil {
+		if re.MatchString(err.Error()) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"name": resp.Name, "token": resp.TokenHash, "expiresAt": resp.ExpiresAt})
+}
+
+func (p *MyPlanner) RevokePAT(ctx *gin.Context) {
+	userView, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
+	if authenticationErr != nil {
+		ctx.JSON(http.StatusUnauthorized, authenticationErr.GetErrorMessage())
+		return
+	}
+
+	userId := userView.ID
+	t := &RevokeTokenInfo{}
+
+	if err := ctx.ShouldBindJSON(t); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := p.RedisClient.RevokePATByName(ctx, userId, t.Name); err != nil {
+		iowrappers.Logger.Error("failed to revoke token", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to revoke token '%s'", t.Name)})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "token revoked successfully"})
+}
+
+type PATView struct {
+	Name      string `json:"name"`
+	Id        string `json:"id"`
+	ExpiresAt string `json:"expiresAt"`
+}
+
+func (p *MyPlanner) ListPATs(ctx *gin.Context) {
+	userView, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
+	if authenticationErr != nil {
+		ctx.JSON(http.StatusUnauthorized, authenticationErr.GetErrorMessage())
+		return
+	}
+
+	userId := userView.ID
+	info, err := p.RedisClient.ListUserPATMetadata(ctx, userId)
+	if err != nil {
+		iowrappers.Logger.Error("failed to list user metadata", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list user metadata"})
+		return
+	}
+
+	tokens := make([]PATView, len(info))
+	for idx, info := range info {
+		tokens[idx] = toPATView(info)
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"pats": tokens})
+}
+
 func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	if p.Environment == "debug" {
@@ -1232,6 +1350,9 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
 		v1.POST("/nearby-cities", p.getNearbyCities)
 		v1.POST("/optimal-plan", p.getOptimalPlan)
+		v1.POST("/create-token", p.createNewPAT)
+		v1.DELETE("/revoke-token", p.RevokePAT)
+		v1.GET("/list-tokens", p.ListPATs)
 		migrations := v1.Group("/migrate")
 		{
 			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)
