@@ -1189,7 +1189,7 @@ func (p *MyPlanner) rateLimiter() gin.HandlerFunc {
 }
 
 type NewTokenInfo struct {
-	Name             string `json:"name"`
+	Name               string `json:"name"`
 	ExpirationDuration string `json:"expiration_duration,omitempty"` // Optional: e.g., "24h", "7d", "30d"
 }
 

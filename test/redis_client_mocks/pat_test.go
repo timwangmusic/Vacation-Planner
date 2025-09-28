@@ -671,11 +671,11 @@ func TestPATExpirationDurationIntegration(t *testing.T) {
 	require.NoError(t, err, "Failed to create test user")
 
 	testCases := []struct {
-		name                string
-		durationString      string
-		expectedDuration    time.Duration
-		expectError         bool
-		validateExpiration  bool
+		name               string
+		durationString     string
+		expectedDuration   time.Duration
+		expectError        bool
+		validateExpiration bool
 	}{
 		{
 			name:               "24 hour duration",
