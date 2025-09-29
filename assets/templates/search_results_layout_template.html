@@ -251,17 +251,25 @@
         </div>
         {{end}}
       </div>
-      <span
-        class="d-inline-block float-end"
-        data-bs-toggle="tooltip"
-        data-bs-placement="left"
-        title="Scroll to top"
-      >
-        <button class="btn btn-outline-info" id="scroll-to-top" type="button">
-          <i class="fa-solid fa-angles-up"></i>
+      <div class="text-center my-3">
+        <button class="btn btn-primary" id="load-more-btn" type="button">
+          Load More...
         </button>
-      </span>
+      </div>
     </div>
+
+    <!-- Fixed position scroll to top button -->
+    <button
+      class="btn btn-outline-info"
+      id="scroll-to-top"
+      type="button"
+      style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;"
+      data-bs-toggle="tooltip"
+      data-bs-placement="left"
+      title="Scroll to top"
+    >
+      <i class="fa-solid fa-angles-up"></i>
+    </button>
 
     <script type="module" src="assets/js/user.js"></script>
     <script type="module" src="assets/js/search_results.js"></script>
