@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/weihesdlegend/Vacation-planner/user"
@@ -360,8 +360,9 @@ func (r *RedisClient) Authenticate(context context.Context, credential user.Cred
 	jwtSigningSecret := os.Getenv("JWT_SIGNING_SECRET")
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username":       u.Username,
-		"StandardClaims": jwt.StandardClaims{ExpiresAt: expiresAt},
+		"username": u.Username,
+		"iat":      lastLoginTime.Unix(),
+		"exp":      expiresAt,
 	})
 
 	token, jwtSignErr := jwtToken.SignedString([]byte(jwtSigningSecret))
