@@ -3,12 +3,21 @@ import { Place, View } from "./place.js";
 import { capitalizeFirstChar } from "./utils.js";
 import { updateUsername } from "./user.js";
 
-let numberOfPlans = 5;
+const plansPerPage = 5; // Number of plans to show on each "load more" click
 const username = updateUsername();
 let plansData = null;
+let numberOfPlans = 5;
+let displayedPlans = 5;
 
-async function getPlans() {
-  const plansUrl = document.URL + "&json_only=true";
+async function getPlans(numResults = null) {
+  let plansUrl = document.URL + "&json_only=true";
+
+  // If numResults is specified, override the URL parameter
+  if (numResults !== null) {
+    const url = new URL(plansUrl);
+    url.searchParams.set("numberResults", numResults);
+    plansUrl = url.toString();
+  }
 
   return await fetch(plansUrl, {
     method: "GET",
@@ -263,14 +272,279 @@ rollUpButton.addEventListener("click", () => {
   });
 });
 
+// Function to attach event listeners to a specific plan
+function attachPlanEventListeners(planIndex) {
+  $(`#save-${planIndex}`).off("click").click(postPlanForUser);
+  $(`#gen-summary-${planIndex}`).off("click").click(async () => {
+    console.log("generating plan summary...");
+    $(`#gen-summary-${planIndex}`).prop("disabled", true);
+    const resp = await getPlanSummaryResponse(planIndex);
+    $(`#modal-body-${planIndex}`).html(summaryToHTML(resp.message));
+    $(`#gen-summary-${planIndex}`)
+      .prop("disabled", false)
+      .text("regenerate summary");
+  });
+
+  $(`#like-${planIndex}`).off("click").click(handleUserLike);
+  $(`#dislike-${planIndex}`).off("click").click(handleUserDislike);
+  $(`#refresh-${planIndex}`).off("click").click(() => location.reload());
+}
+
+// Function to render a single plan as HTML
+function renderPlanHTML(plan, planIndex, detailsURL) {
+  const placeRows = plan.places.map(place => `
+    <tr>
+      <td class="col-3" style="color: darkcyan">
+        <div class="d-flex flex-row">
+          <span class="material-icons">${place.place_icon_css_class}</span>
+          <span class="mx-2" id="interval-${planIndex}">${place.start_time} - ${place.end_time}</span>
+        </div>
+      </td>
+      <td class="col-4 col-md-3">
+        <a href="${place.url}">${place.place_name}</a>
+      </td>
+      <td class="d-none d-md-block" style="color: #0d6efd">
+        ${place.address}
+      </td>
+    </tr>
+  `).join('');
+
+  return `
+    <div class="accordion-item" id="plan-accordion-${planIndex}">
+      <h2 class="accordion-header border">
+        <button
+          class="accordion-button"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#plan-${planIndex}"
+          aria-expanded="true"
+          aria-controls="plan-${planIndex}"
+          style="color: #24c1e0"
+        >
+          One-Day Travel Plan
+        </button>
+      </h2>
+      <div
+        id="plan-${planIndex}"
+        class="accordion-collapse collapse show"
+        data-bs-parent="#accordionSetParent"
+      >
+        <div class="accordion-body">
+          <div class="btn-group" role="group">
+            <button id="like-${planIndex}" class="btn btn-sm btn-outline-primary">
+              <i class="fa fa-thumbs-o-up"></i>
+            </button>
+
+            <button
+              id="dislike-${planIndex}"
+              class="btn btn-sm btn-outline-primary"
+            >
+              <i class="fa fa-thumbs-o-down"></i>
+            </button>
+
+            <button
+              id="refresh-${planIndex}"
+              class="reload-btn btn btn-sm btn-outline-success"
+            >
+              <i class="fa fa-refresh fa-spin"></i>
+            </button>
+          </div>
+
+          <span
+            class="d-inline-block float-end"
+            tabindex="0"
+            data-bs-toggle="tooltip"
+            data-bs-placement="left"
+            title="Save to profile"
+          >
+            <button
+              id="save-${planIndex}"
+              type="button"
+              class="btn btn-sm btn-outline-primary m-1"
+              ${plan.saved ? 'disabled' : ''}
+            >
+              save
+            </button>
+          </span>
+          <a
+            class="btn btn-sm btn-outline-primary m-1 float-end"
+            href="${detailsURL}"
+            >show</a
+          >
+
+          <span class="d-inline-block float-end">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary m-1"
+              data-bs-toggle="modal"
+              data-bs-target="#modal-${planIndex}"
+            >
+              summary
+            </button>
+          </span>
+
+          <!-- Modal -->
+          <div
+            class="modal fade"
+            id="modal-${planIndex}"
+            tabindex="-1"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h1
+                    class="modal-title fs-5"
+                    style="background-color: white"
+                  >
+                    Travel Plan Summary
+                  </h1>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div class="modal-body" id="modal-body-${planIndex}">...</div>
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="gen-summary-${planIndex}"
+                  >
+                    Generate Summary
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <table
+            id="plan-table-${planIndex}"
+            class="table table-bordered table-striped table-hover"
+            style="table-layout: fixed"
+          >
+            <thead>
+              <tr>
+                <th class="col-3">Time</th>
+                <th class="col-4 col-md-3">Place Name</th>
+                <th class="d-none d-md-block">Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${placeRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Function to handle loading more plans
+async function loadMorePlans() {
+  const loadMoreBtn = $("#load-more-btn");
+  const loadMoreContainer = loadMoreBtn.parent();
+  loadMoreBtn.prop("disabled", true).text("Loading...");
+
+  // Check if we have more plans in the already fetched data
+  if (displayedPlans < plansData.travel_plans.length) {
+    // Show plans from existing data
+    const endIndex = Math.min(displayedPlans + plansPerPage, plansData.travel_plans.length);
+
+    for (let i = displayedPlans; i < endIndex; i++) {
+      const plan = plansData.travel_plans[i];
+      const detailsURL = plansData.trip_details_url[i];
+      const planHTML = renderPlanHTML(plan, i, detailsURL);
+      // Insert before the load more button container
+      loadMoreContainer.before(planHTML);
+      attachPlanEventListeners(i);
+    }
+
+    displayedPlans = endIndex;
+  } else {
+    // Need to fetch more plans from the API
+    const url = new URL(window.location.href);
+    const currentResults = parseInt(url.searchParams.get("numberResults") || "5");
+    const newNumberResults = currentResults + plansPerPage;
+
+    url.searchParams.set("numberResults", newNumberResults);
+    url.searchParams.set("json_only", "true");
+
+    try {
+      const response = await fetch(url.toString());
+      const newData = await response.json();
+
+      if (newData.travel_plans && newData.travel_plans.length > plansData.travel_plans.length) {
+        // Render only the new plans
+        for (let i = plansData.travel_plans.length; i < newData.travel_plans.length; i++) {
+          const plan = newData.travel_plans[i];
+          const detailsURL = newData.trip_details_url[i];
+          const planHTML = renderPlanHTML(plan, i, detailsURL);
+          // Insert before the load more button container
+          loadMoreContainer.before(planHTML);
+          attachPlanEventListeners(i);
+        }
+
+        plansData = newData;
+        displayedPlans = newData.travel_plans.length;
+      }
+    } catch (err) {
+      console.error("Failed to fetch more plans:", err);
+    }
+  }
+
+  // Update button state
+  if (displayedPlans >= plansData.travel_plans.length) {
+    // Hide button when all plans are shown
+    loadMoreBtn.hide();
+  } else {
+    // Re-enable button for next click
+    loadMoreBtn.text("Load More...").prop("disabled", false);
+  }
+}
+
 $(document).ready(async function () {
   {
-    plansData = await getPlans();
+    // Count how many plans are actually in the DOM (server-side rendered)
+    displayedPlans = $(".accordion-item").length;
+
+    // Get the current numberResults from URL, or use the displayedPlans count
+    const url = new URL(window.location.href);
+    const urlNumberResults = parseInt(url.searchParams.get("numberResults") || displayedPlans.toString());
+
+    // Fetch plans with a higher number to pre-load more results
+    // Use max of (URL param + 10) or 15 to ensure we have extra plans
+    const fetchCount = Math.max(urlNumberResults + 10, 15);
+    plansData = await getPlans(fetchCount);
+    numberOfPlans = plansData.travel_plans.length;
+
     for (let idx = 0; idx < plansData.travel_plans.length; idx++) {
       let btn = document.getElementById("save-" + idx);
       if (btn != null && plansData.travel_plans[idx].saved) {
         btn.disabled = true;
       }
+    }
+
+    // Attach event listeners to initially displayed plans
+    for (let idx = 0; idx < displayedPlans; idx++) {
+      attachPlanEventListeners(idx);
+    }
+
+    // Setup load more button
+    $("#load-more-btn").click(loadMorePlans);
+
+    // Hide load more button if all plans are already displayed
+    if (displayedPlans >= numberOfPlans) {
+      $("#load-more-btn").hide();
     }
 
     await getImageForLocation();
