@@ -582,6 +582,11 @@ html body footer.footer {
     background-color: var(--page-bg);
     color: var(--primary-text);
   };
+  /*handle signup form*/
+  .container.mt-3 form#signup-form * {
+    background-color: var(--page-bg);
+    color: var(--primary-text);
+  };
   /*handle plan details*/
   .container.d-flex.flex-column.align-items-center.justify-content-center.mt-4 > *:not(.card.shadow-sm.border.rounded.mt-2) {
     background-color: var(--page-bg);
