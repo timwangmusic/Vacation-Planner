@@ -1,8 +1,6 @@
 module github.com/weihesdlegend/Vacation-planner
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.24.0
 
 require (
 	github.com/alicebob/miniredis/v2 v2.34.0
@@ -30,11 +28,11 @@ require (
 	github.com/ulule/limiter/v3 v3.11.2
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.36.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
-	golang.org/x/net v0.38.0
+	golang.org/x/net v0.47.0
 	golang.org/x/oauth2 v0.28.0
-	golang.org/x/text v0.23.0
+	golang.org/x/text v0.31.0
 	gonum.org/v1/gonum v0.16.0
 	googlemaps.github.io/maps v1.7.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -90,7 +88,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.15.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
