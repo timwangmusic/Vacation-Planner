@@ -1,16 +1,37 @@
 /**
  * Run in the script mode by trip_plan_details_template.html.
- * Display and hide corresponding location info in carousel's cardBodies.
+ * Initialize Swiper for trip plan details with overlapping cards effect.
  * Define a function "getTravelPlan" to get plan data in JSON format.
  */
 
-// Control display and hide of location to match photos in slides
-const cardBodies = document.querySelectorAll("div.card div.card-body");
-const myCarousel = document.querySelector("#carouselExampleIndicators");
+// Initialize Swiper
+const swiper = new Swiper('#tripSwiper', {
+  // Swiper configuration
+  effect: 'slide',
+  slidesPerView: 'auto',
+  centeredSlides: true,
+  spaceBetween: 30,
 
-myCarousel.addEventListener("slide.bs.carousel", function (evt) {
-  cardBodies[evt.from].classList.add("d-none");
-  cardBodies[evt.to].classList.remove("d-none");
+  // Navigation arrows
+  navigation: {
+    nextEl: '.swiper-button-next',
+    prevEl: '.swiper-button-prev',
+  },
+
+  // Pagination bullets
+  pagination: {
+    el: '.swiper-pagination',
+    clickable: true,
+  },
+
+  // Keyboard control
+  keyboard: {
+    enabled: true,
+  },
+
+  // Touch/swipe settings
+  touchRatio: 1,
+  grabCursor: true,
 });
 
 // Get plan JSON data
