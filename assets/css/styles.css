@@ -96,16 +96,16 @@
 
   --plan-template-nav-bar: var(--plan-template-nav-bar);
 
-  --gsi-material-bg: var(--page-bg);
-  --gsi-material-button: rgba(0, 0, 0, 0.25);
-  --gsi-material-button-general: #1f1f1f;
+  --gsi-material-bg: #0a3f4d;
+  --gsi-material-button: rgba(255, 255, 255, 0.2);
+  --gsi-material-button-general: #F5F5F6;
   --gsi-material-button-disabled-bg: #ffffff61;
   --gsi-material-button-disabled-border-color: #1f1f1f1f;
-  --gsi-material-button-state-bg: #303030;
-  --gsi-material-button-state-hover-wk-box-shadow1: rgba(60, 64, 67, 0.3);
-  --gsi-material-button-state-hover-wk-box-shadow2: rgba(60, 64, 67, 0.15);
-  --gsi-material-button-state-hover-box-shadow1: rgba(60, 64, 67, 0.3);
-  --gsi-material-button-state-hover-box-shadow2: rgba(60, 64, 67, 0.15);
+  --gsi-material-button-state-bg: #ffffff;
+  --gsi-material-button-state-hover-wk-box-shadow1: rgba(255, 255, 255, 0.3);
+  --gsi-material-button-state-hover-wk-box-shadow2: rgba(255, 255, 255, 0.15);
+  --gsi-material-button-state-hover-box-shadow1: rgba(255, 255, 255, 0.3);
+  --gsi-material-button-state-hover-box-shadow2: rgba(255, 255, 255, 0.15);
 
   --logo-fill: var(--primary-text);
 
@@ -329,6 +329,17 @@ tr:nth-child(even) {
   }
 }
 [data-theme="dark"] {
+  .gsi-material-button {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1), 0 4px 8px rgba(255, 255, 255, 0.05);
+  }
+
+  .gsi-material-button:not(:disabled):hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2), 0 6px 12px rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+
   .gsi-material-button .gsi-material-button-contents {
     -webkit-flex-grow: 1;
     flex-grow: 1;
@@ -337,7 +348,7 @@ tr:nth-child(even) {
     overflow: hidden;
     text-overflow: ellipsis;
     vertical-align: top;
-    color: rebeccapurple;
+    color: #F5F5F6;
   }
 }
 
