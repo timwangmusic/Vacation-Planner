@@ -70,28 +70,21 @@
         </div>
       </nav>
 
-      <h1>Plan Details</h1>
+      <h1>Plan Details - {{.TravelDestination}}</h1>
     </div>
     <div
       class="container d-flex flex-column align-items-center justify-content-center mt-4"
     >
-      <div
-        class="card shadow-sm border rounded"
-        style="width: 95vw; max-width: 25rem"
+      <!-- Save Plan Button -->
+      <button
+        id="savePlanBtn"
+        class="btn btn-outline-primary"
       >
-        <div
-          class="card-header d-flex align-items-center justify-content-between"
-        >
-          <span class="fs-4 fw-bold"> {{.TravelDestination}} </span>
-          <div>
-            <i
-              id="planSaveIcon"
-              class="bi bi-bookmark fs-4"
-              data-bs-toggle="tooltip"
-              data-bs-original-title="Save"
-            ></i>
-          </div>
-        </div>
+        <i class="bi bi-bookmark me-1"></i>Save Plan
+      </button>
+
+      <!-- Swiper Slider -->
+      <div style="width: 95vw; max-width: 50rem">
         <div class="swiper-container" id="tripSwiper">
           <div class="swiper-wrapper">
             {{range $i, $p := .PlaceDetails}}
@@ -125,7 +118,7 @@
 
       <div
         class="card shadow-sm border rounded mt-2"
-        style="height: 25rem; width: 95vw; max-width: 25rem"
+        style="height: 25rem; width: 95vw; max-width: 50rem"
       >
         <div class="card-header d-flex justify-content-between">
           Mini Map

@@ -4,13 +4,22 @@
  * Define a function "getTravelPlan" to get plan data in JSON format.
  */
 
-// Initialize Swiper
+// Initialize Swiper with card stack effect
 const swiper = new Swiper('#tripSwiper', {
-  // Swiper configuration
-  effect: 'slide',
-  slidesPerView: 'auto',
+  // Effect configuration for card stack
+  effect: 'coverflow',
+  grabCursor: true,
   centeredSlides: true,
-  spaceBetween: 30,
+  slidesPerView: 'auto',
+
+  // Coverflow effect parameters
+  coverflowEffect: {
+    rotate: 0,
+    stretch: 0,
+    depth: 100,
+    modifier: 1.5,
+    slideShadows: false,
+  },
 
   // Navigation arrows
   navigation: {
@@ -29,9 +38,11 @@ const swiper = new Swiper('#tripSwiper', {
     enabled: true,
   },
 
-  // Touch/swipe settings
-  touchRatio: 1,
-  grabCursor: true,
+  // Loop mode for better UX
+  loop: false,
+
+  // Speed of transition
+  speed: 400,
 });
 
 // Get plan JSON data
