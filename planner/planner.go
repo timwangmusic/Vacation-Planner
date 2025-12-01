@@ -1317,12 +1317,16 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 	myRouter.Use(requestid.New())
 	myRouter.NoRoute(p.fourZeroFourPage)
 
-	middleware := p.rateLimiter()
 	// cors settings
 	// TODO: change to front-end domain once front-end server is deployed
 	myRouter.ForwardedByClientIP = true
 	myRouter.Use(cors.Default())
-	myRouter.Use(middleware)
+
+	// Only apply rate limiting in non-development environments
+	if p.Environment != DevelopmentEnvironment {
+		middleware := p.rateLimiter()
+		myRouter.Use(middleware)
+	}
 
 	myRouter.GET("/", p.homePageHandler)
 

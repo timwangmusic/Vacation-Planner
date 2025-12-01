@@ -22,6 +22,11 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.6.0/font/bootstrap-icons.css"
     />
+    <!-- Swiper CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
     <!-- Customized style -->
     <link rel="stylesheet" href="/v1/assets/css/styles.css" />
     <!--Google Font Icon CSS-->
@@ -65,112 +70,55 @@
         </div>
       </nav>
 
-      <h1>Plan Details</h1>
+      <h1>Plan Details - {{.TravelDestination}}</h1>
     </div>
     <div
       class="container d-flex flex-column align-items-center justify-content-center mt-4"
     >
-      <div
-        class="card shadow-sm border rounded"
-        style="width: 95vw; max-width: 25rem"
+      <!-- Save Plan Button -->
+      <button
+        id="savePlanBtn"
+        class="btn btn-outline-primary"
       >
-        <div
-          class="card-header d-flex align-items-center justify-content-between"
-        >
-          <span class="fs-4 fw-bold"> {{.TravelDestination}} </span>
-          <div>
-            <i
-              id="planSaveIcon"
-              class="bi bi-bookmark fs-4"
-              data-bs-toggle="tooltip"
-              data-bs-original-title="Save"
-            ></i>
-          </div>
-        </div>
-        <div
-          id="carouselExampleIndicators"
-          class="carousel slide card-img-top carousel-dark"
-          data-bs-ride="carousel"
-        >
-          <ol class="carousel-indicators">
-            {{range $i, $p := .PlaceDetails}}
-            <button
-              type="button"
-              data-bs-target="#carouselExampleIndicators"
-              data-bs-slide-to="{{$i}}"
-              class="active"
-              aria-current="true"
-              aria-label="Slide-{{$i}}"
-            ></button>
-            {{end}}
-          </ol>
+        <i class="bi bi-bookmark me-1"></i>Save Plan
+      </button>
 
-          <div
-            id="tripCarousel"
-            class="carousel-inner d-flex align-items-center"
-          >
-            {{$active := .ShownActive}} {{range $i, $p := .PlaceDetails}}
-            <div
-              {{if
-              index
-              $active
-              $i}}
-              class="carousel-item active"
-              {{else}}
-              class="carousel-item"
-              {{end}}
-            >
-              <img
-                src="data:image/jpg;base64,{{.PhotoURL}}"
-                class="d-block w-100"
-                alt="..."
-              />
+      <!-- Swiper Slider -->
+      <div style="width: 95vw; max-width: 50rem">
+        <div class="swiper-container" id="tripSwiper">
+          <div class="swiper-wrapper">
+            {{range $i, $p := .PlaceDetails}}
+            <div class="swiper-slide">
+              <div class="swiper-slide-inner">
+                <div class="swiper-slide-image">
+                  <img
+                    src="data:image/jpg;base64,{{.PhotoURL}}"
+                    class="d-block w-100"
+                    alt="{{.Name}}"
+                  />
+                </div>
+                <div class="card-body">
+                  <h5 class="card-title">{{ .Name }}</h5>
+                  <p class="card-text">{{.Summary}}</p>
+                  <a class="card-link" href="{{.URL}}">{{ .FormattedAddress }}</a>
+                </div>
+              </div>
             </div>
             {{end}}
           </div>
 
-          <button
-            class="carousel-control-prev"
-            type="button"
-            data-bs-target="#carouselExampleIndicators"
-            data-bs-slide="prev"
-          >
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-          </button>
-          <button
-            class="carousel-control-next"
-            type="button"
-            data-bs-target="#carouselExampleIndicators"
-            data-bs-slide="next"
-          >
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-          </button>
-        </div>
+          <!-- Swiper Pagination -->
+          <div class="swiper-pagination"></div>
 
-        {{$active := .ShownActive}} {{range $i, $p := .PlaceDetails}}
-        <div
-          {{
-          if
-          index
-          $active
-          $i}}
-          class="card-body"
-          {{else}}
-          class="card-body d-none"
-          {{end}}
-        >
-          <h5 class="card-title">{{ .Name }}</h5>
-          <p class="card-text">{{.Summary}}</p>
-          <a class="card-link" href="{{.URL}}">{{ .FormattedAddress }}</a>
+          <!-- Swiper Navigation -->
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-button-next"></div>
         </div>
-        {{end}}
       </div>
 
       <div
         class="card shadow-sm border rounded mt-2"
-        style="height: 25rem; width: 95vw; max-width: 25rem"
+        style="height: 25rem; width: 95vw; max-width: 50rem"
       >
         <div class="card-header d-flex justify-content-between">
           Mini Map
@@ -187,6 +135,8 @@
       crossorigin="anonymous"
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="/v1/assets/js/show-trip-script.js"></script>
     <script src="/v1/assets/js/google_map.js"></script>
     <script

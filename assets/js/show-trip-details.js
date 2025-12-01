@@ -2,14 +2,14 @@ import { Place, View } from "./place.js";
 
 import { updateUsername } from "./user.js";
 
-const saveIcon = document.querySelector("i.bi-bookmark");
-const saveTooltip = new bootstrap.Tooltip(saveIcon);
+const saveBtn = document.getElementById("savePlanBtn");
 const profile = document.getElementById("profile");
 const username = updateUsername();
 
-// save bookmark tooltip
-saveTooltip.disable();
-saveIcon.addEventListener("click", postPlanForUser);
+// save plan button click handler
+if (saveBtn) {
+  saveBtn.addEventListener("click", postPlanForUser);
+}
 
 async function postPlanForUser() {
   const url = `/v1/users/${username}/plans`;
@@ -29,12 +29,14 @@ async function postPlanForUser() {
     return;
   }
 
-  this.classList.remove("bi-bookmark");
-  this.classList.add("bi-bookmark-check-fill");
-  this.setAttribute("data-bs-original-title", "Saved!");
-  let saveTooltip = new bootstrap.Tooltip(this);
-  saveTooltip.enable();
-  saveTooltip.show();
+  // Update button to show saved state
+  const icon = this.querySelector("i");
+  icon.classList.remove("bi-bookmark");
+  icon.classList.add("bi-bookmark-check-fill");
+  this.innerHTML = '<i class="bi bi-bookmark-check-fill me-1"></i>Saved!';
+  this.classList.remove("btn-outline-primary");
+  this.classList.add("btn-success");
+  this.disabled = true;
 }
 
 function planToView(plan) {
