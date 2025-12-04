@@ -40,12 +40,6 @@ const (
 	PlaceDetailsRedisKeyPrefix = "place_details:place_ID:"
 )
 
-var RedisClientDefaultBlankContext context.Context
-
-func init() {
-	RedisClientDefaultBlankContext = context.Background()
-}
-
 type RedisClient struct {
 	client redis.Client
 }
@@ -65,51 +59,52 @@ func (r *RedisClient) Destroy() {
 func CreateRedisClient(url *url.URL) *RedisClient {
 	password, _ := url.User.Password()
 	return &RedisClient{client: *redis.NewClient(&redis.Options{
-		Addr:     url.Host,
-		Password: password,
+		Addr:         url.Host,
+		Password:     password,
+		PoolSize:     20,              // Max number of socket connections
+		MinIdleConns: 5,               // Minimum number of idle connections to maintain
+		MaxRetries:   3,               // Max number of retries before giving up
+		DialTimeout:  5 * time.Second, // Timeout for establishing new connections
+		ReadTimeout:  3 * time.Second, // Timeout for socket reads
+		WriteTimeout: 3 * time.Second, // Timeout for socket writes
+		PoolTimeout:  4 * time.Second, // Amount of time client waits for connection if all connections are busy
 	})}
 }
 
 // CollectPlanningAPIStats updates the number of calls to the planning APIs per hour.
 // It also updates API call stats for each city per hour.
 // These keys expire after 30 days.
-func (r *RedisClient) CollectPlanningAPIStats(event PlanningEvent, workerIdx int) {
-	c := r.client
-
-	pipeline := c.Pipeline()
-
+func (r *RedisClient) CollectPlanningAPIStats(ctx context.Context, event PlanningEvent, workerIdx int) {
 	bucketIdx, err := hourBucketIndex(event.Timestamp)
 	if err != nil {
 		Logger.Debugf("failed to collect API stat %+v", event)
 		return
 	}
 
-	ctx := context.Background()
 	totalVisitorsKey := strings.Join([]string{NumVisitorsPlanningAPI, bucketIdx}, ":")
-	if exists, err := r.client.Exists(ctx, totalVisitorsKey).Result(); err != nil {
-		Logger.Errorf("failed to check Redis %s for key %s existence", err.Error(), totalVisitorsKey)
-		return
-	} else if exists == 0 {
-		pipeline.Set(ctx, totalVisitorsKey, 0, time.Hour*24*30)
-	}
-	pipeline.Incr(ctx, totalVisitorsKey)
 
 	location := strings.ReplaceAll(strings.Join([]string{event.City, event.Country}, ":"), " ", "_")
 	if event.AdminAreaLevelOne != "" {
 		location = strings.ReplaceAll(strings.Join([]string{event.City, event.AdminAreaLevelOne, event.Country}, ":"), " ", "_")
 	}
 	location = strings.ToLower(location)
+	locationKey := strings.Join([]string{NumVisitorsPlanningAPI, location, bucketIdx}, ":")
 
-	redisKey := strings.Join([]string{NumVisitorsPlanningAPI, location, bucketIdx}, ":")
-	if exists, err := r.client.Exists(ctx, redisKey).Result(); err != nil {
-		Logger.Errorf("failed to check Redis %s for key %s existence", err.Error(), redisKey)
-		return
-	} else if exists == 0 {
-		pipeline.Set(ctx, redisKey, 0, time.Hour*24*30)
-	}
-	pipeline.Incr(ctx, redisKey)
+	// Use pipeline for all operations, including initial SET NX
+	_, err = r.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		// SET NX with expiration - only sets if key doesn't exist, then increment
+		pipe.SetNX(ctx, totalVisitorsKey, 0, time.Hour*24*30)
+		pipe.Incr(ctx, totalVisitorsKey)
+		pipe.Expire(ctx, totalVisitorsKey, time.Hour*24*30) // Ensure TTL is refreshed
 
-	if _, err = pipeline.Exec(ctx); err != nil {
+		pipe.SetNX(ctx, locationKey, 0, time.Hour*24*30)
+		pipe.Incr(ctx, locationKey)
+		pipe.Expire(ctx, locationKey, time.Hour*24*30) // Ensure TTL is refreshed
+
+		return nil
+	})
+
+	if err != nil {
 		Logger.Debugf("failed to collect API stats %+v: %s", event, err.Error())
 	}
 	Logger.Debugf("API event worker %d successfully handled job", workerIdx)
@@ -134,15 +129,14 @@ func (r *RedisClient) RemoveKeys(context context.Context, keys []string) (err er
 }
 
 // serialize place using JSON and store in Redis with key place_details:place_ID:placeID
-func (r *RedisClient) setPlace(context context.Context, place POI.Place, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (r *RedisClient) setPlace(context context.Context, place POI.Place) error {
 	json_, err := json.Marshal(place)
-	utils.LogErrorWithLevel(err, utils.LogError)
+	if err != nil {
+		return err
+	}
 
 	_, err = r.client.Set(context, PlaceDetailsRedisKeyPrefix+place.ID, json_, 0).Result()
-	if err != nil {
-		Logger.Error(err)
-	}
+	return err
 }
 
 func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel) (lastSearchTime time.Time, err error) {
@@ -183,8 +177,6 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	client := r.client
 	latLng, _ := utils.ParseLocation(geocodeInString)
 	lat, lng := latLng[0], latLng[1]
-	wg := &sync.WaitGroup{}
-	wg.Add(len(places))
 	for _, place := range places {
 		sortedSetKey := strings.Join([]string{geocodeInString, string(POI.GetPlaceCategory(place.LocationType))}, "_")
 		dist := utils.HaversineDist([]float64{lat, lng}, []float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
@@ -192,40 +184,63 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 		if err != nil {
 			return err
 		}
-		r.setPlace(context, place, wg)
+		if err := r.setPlace(context, place); err != nil {
+			return err
+		}
 	}
-	wg.Wait()
 	return nil
 }
 
 // SetPlacesAddGeoLocations stores two types of information in redis
 // 1. key-value pair, {placeID: POI.place}
 // 2. add place to the correct bucket in geohashing for nearby search
+// Batches places into groups to reduce goroutine overhead
 func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.Place) {
+	if len(places) == 0 {
+		return
+	}
+
+	const batchSize = 100 // Process 100 places per pipeline
+	numBatches := (len(places) + batchSize - 1) / batchSize
+
 	wg := &sync.WaitGroup{}
-	wg.Add(len(places))
-	for _, place := range places {
-		go func(place POI.Place) {
+	wg.Add(numBatches)
+
+	for i := 0; i < numBatches; i++ {
+		start := i * batchSize
+		end := start + batchSize
+		if end > len(places) {
+			end = len(places)
+		}
+		batch := places[start:end]
+
+		go func(placeBatch []POI.Place) {
 			defer wg.Done()
 			_, err := r.Get().Pipelined(c, func(pipe redis.Pipeliner) error {
-				placeCategory := POI.GetPlaceCategory(place.LocationType)
-				geoLocation := &redis.GeoLocation{
-					Name:      place.ID,
-					Latitude:  place.GetLocation().Latitude,
-					Longitude: place.GetLocation().Longitude,
+				for _, place := range placeBatch {
+					placeCategory := POI.GetPlaceCategory(place.LocationType)
+					geoLocation := &redis.GeoLocation{
+						Name:      place.ID,
+						Latitude:  place.GetLocation().Latitude,
+						Longitude: place.GetLocation().Longitude,
+					}
+
+					redisKey := POI.EncodeNearbySearchRedisKey(placeCategory, place.PriceLevel)
+					pipe.GeoAdd(c, redisKey, geoLocation)
+
+					json_, err := json.Marshal(place)
+					if err != nil {
+						Logger.Error(err)
+						continue
+					}
+					pipe.Set(c, PlaceDetailsRedisKeyPrefix+place.ID, json_, 0)
 				}
-
-				redisKey := POI.EncodeNearbySearchRedisKey(placeCategory, place.PriceLevel)
-				pipe.GeoAdd(c, redisKey, geoLocation)
-
-				json_, err := json.Marshal(place)
-				pipe.Set(c, PlaceDetailsRedisKeyPrefix+place.ID, json_, 0)
-				return err
+				return nil
 			})
 			if err != nil {
 				Logger.Error(err)
 			}
-		}(place)
+		}(batch)
 	}
 	wg.Wait()
 }
@@ -246,11 +261,7 @@ func (r *RedisClient) UpdatePlace(ctx context.Context, id string, data map[strin
 		}
 	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	r.setPlace(ctx, p, wg)
-	wg.Wait()
-	return nil
+	return r.setPlace(ctx, p)
 }
 
 func updateCity(ctx context.Context, pipe redis.Pipeliner, city *City) error {
@@ -523,14 +534,14 @@ func (r *RedisClient) SetGeocode(context context.Context, query GeocodeQuery, la
 }
 
 // StreamsLogging returns redis streams ID if XADD command execution is successful
-func (r *RedisClient) StreamsLogging(streamName string, data map[string]string) string {
+func (r *RedisClient) StreamsLogging(ctx context.Context, streamName string, data map[string]string) string {
 	xArgs := redis.XAddArgs{Stream: streamName}
 	keyValues := make([]string, 0)
 	for key, val := range data {
 		keyValues = append(keyValues, []string{key, val}...)
 	}
 	xArgs.Values = keyValues
-	streamsId, err := r.client.XAdd(RedisClientDefaultBlankContext, &xArgs).Result()
+	streamsId, err := r.client.XAdd(ctx, &xArgs).Result()
 	if err != nil {
 		Logger.Error(err)
 	}
