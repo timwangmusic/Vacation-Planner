@@ -33,13 +33,14 @@ func (r *RedisClient) CreateReverseIndex(ctx context.Context, index *ReverseInde
 		return errors.New("the number of scores and places should be the same")
 	}
 	redisKey := reverseIndexKey(index.Metadata)
+
+	// Batch all ZAdd operations into a single call
+	members := make([]redis.Z, len(index.PlaceIDs))
 	for idx, id := range index.PlaceIDs {
-		err := r.Get().ZAdd(ctx, redisKey, redis.Z{Score: index.Scores[idx], Member: id}).Err()
-		if err != nil {
-			return err
-		}
+		members[idx] = redis.Z{Score: index.Scores[idx], Member: id}
 	}
-	return nil
+
+	return r.Get().ZAdd(ctx, redisKey, members...).Err()
 }
 
 func (r *RedisClient) RetrieveReverseIndex(ctx context.Context, metadata *IndexMetadata, count int64) (*ReverseIndex, error) {

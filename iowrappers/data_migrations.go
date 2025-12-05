@@ -167,17 +167,23 @@ func (s *PoiSearcher) AddUserRatingsTotal(context context.Context) error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(placeIdToDetailedSearchResults))
 	for placeId, detailedResult := range placeIdToDetailedSearchResults {
-		place, err := redisClient.getPlace(context, placeId)
-		if err != nil {
-			continue
-		}
-		// FIXME: figure out the reason for maps client return null pointer as result
-		if reflect.ValueOf(detailedResult.res).IsNil() {
-			place.SetUserRatingsTotal(0)
-		} else {
-			place.SetUserRatingsTotal(detailedResult.res.UserRatingsTotal)
-		}
-		go redisClient.setPlace(context, place, &wg)
+		go func(pid string, result PlaceDetailsSearchResult) {
+			defer wg.Done()
+			place, err := redisClient.getPlace(context, pid)
+			if err != nil {
+				Logger.Error(err)
+				return
+			}
+			// FIXME: figure out the reason for maps client return null pointer as result
+			if reflect.ValueOf(result.res).IsNil() {
+				place.SetUserRatingsTotal(0)
+			} else {
+				place.SetUserRatingsTotal(result.res.UserRatingsTotal)
+			}
+			if err := redisClient.setPlace(context, place); err != nil {
+				Logger.Error(err)
+			}
+		}(placeId, detailedResult)
 	}
 	wg.Wait()
 	return nil
@@ -193,17 +199,23 @@ func (s *PoiSearcher) AddUrl(context context.Context) error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(placeIdToDetailedSearchResults))
 	for placeId, detailedResult := range placeIdToDetailedSearchResults {
-		place, err := redisClient.getPlace(context, placeId)
-		if err != nil {
-			continue
-		}
-		// FIXME: figure out the reason for maps client return null pointer as result
-		if reflect.ValueOf(detailedResult.res).IsNil() {
-			place.SetURL("")
-		} else {
-			place.SetURL(detailedResult.res.URL)
-		}
-		go redisClient.setPlace(context, place, &wg)
+		go func(pid string, result PlaceDetailsSearchResult) {
+			defer wg.Done()
+			place, err := redisClient.getPlace(context, pid)
+			if err != nil {
+				Logger.Error(err)
+				return
+			}
+			// FIXME: figure out the reason for maps client return null pointer as result
+			if reflect.ValueOf(result.res).IsNil() {
+				place.SetURL("")
+			} else {
+				place.SetURL(result.res.URL)
+			}
+			if err := redisClient.setPlace(context, place); err != nil {
+				Logger.Error(err)
+			}
+		}(placeId, detailedResult)
 	}
 	wg.Wait()
 	return nil
