@@ -208,9 +208,36 @@ All improvements have been implemented with a clean, simplified structure:
 3. ✅ **Phase 3 Complete:** Migrated to `GenericWorker` (old `PlanningSolutionsWorker` removed)
 4. ⏸️ **Phase 4 Future:** Add job cancellation, progress tracking, timeouts
 
-## Testing Priority Queue
+## Testing
 
-### Test Scenario:
+### Test Coverage ✅
+
+The priority queue has **10 comprehensive tests** in `priority_queue_test.go`:
+
+1. **TestPriorityJobQueue_BasicEnqueueDequeue** - Basic functionality
+2. **TestPriorityJobQueue_PriorityOrdering** - Verifies HIGH > NORMAL > LOW ordering
+3. **TestPriorityJobQueue_MultipleSamePriority** - FIFO within same priority
+4. **TestPriorityJobQueue_Stats** - Queue length and per-priority stats
+5. **TestPriorityJobQueue_EmptyQueueDequeue** - Handles empty queue gracefully
+6. **TestPriorityJobQueue_EnqueueAfterClose** - Rejects jobs after closure
+7. **TestPriorityJobQueue_ConcurrentEnqueueDequeue** - Thread safety
+8. **TestPriorityJobQueue_MixedPriorityScenario** - Realistic /planning endpoint scenario
+9. **TestPriorityJobQueue_BufferCapacity** - Buffer limits
+10. **TestPriorityJobQueue_DefaultPriority** - Default priority handling
+
+**All tests pass:** ✅
+```bash
+$ go test -v ./planner -run TestPriorityJobQueue
+=== RUN   TestPriorityJobQueue_BasicEnqueueDequeue
+--- PASS: TestPriorityJobQueue_BasicEnqueueDequeue (0.00s)
+=== RUN   TestPriorityJobQueue_PriorityOrdering
+--- PASS: TestPriorityJobQueue_PriorityOrdering (0.00s)
+...
+PASS
+ok  	github.com/weihesdlegend/Vacation-planner/planner	0.241s
+```
+
+### Realistic Test Scenario:
 ```go
 // User requests planning for price level 2
 planningReq := &PlanningRequest{
@@ -225,6 +252,8 @@ planningReq := &PlanningRequest{
 // Workers process HIGH priority job first
 // User gets faster response for their requested price level
 ```
+
+This scenario is tested in `TestPriorityJobQueue_MixedPriorityScenario`.
 
 ## Configuration
 
