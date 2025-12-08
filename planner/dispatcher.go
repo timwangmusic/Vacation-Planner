@@ -16,8 +16,8 @@ type JobStore struct {
 }
 
 type Dispatcher struct {
-	JobQueue chan *iowrappers.Job
-	workers  []*PlanningSolutionsWorker
+	JobQueue *PriorityJobQueue
+	workers  []*GenericWorker
 	solver   *Solver
 	c        *iowrappers.RedisClient
 	wg       *sync.WaitGroup
@@ -25,8 +25,8 @@ type Dispatcher struct {
 
 func NewDispatcher(s *Solver, c *iowrappers.RedisClient) *Dispatcher {
 	return &Dispatcher{
-		JobQueue: make(chan *iowrappers.Job),
-		workers:  make([]*PlanningSolutionsWorker, 0),
+		JobQueue: NewPriorityJobQueue(1000), // Buffer of 1000 per priority level
+		workers:  make([]*GenericWorker, 0),
 		solver:   s,
 		c:        c,
 		wg:       &sync.WaitGroup{},
@@ -39,19 +39,19 @@ func (d *Dispatcher) Run(ctx context.Context) {
 		execs: make(map[string]*iowrappers.JobExecution),
 	}
 
+	// Create job handlers
+	planningHandler := NewPlanningJobHandler(d.solver, store, d.c)
+
 	ctx = context.WithValue(ctx, iowrappers.ContextRequestUserId, "worker")
 	d.wg.Add(NumWorkers)
-	for i := 0; i < NumWorkers; i++ {
-		w := &PlanningSolutionsWorker{
-			idx:      i,
-			s:        d.solver,
-			c:        d.c,
-			jobQueue: d.JobQueue,
-			wg:       d.wg,
-			store:    store,
-		}
-		d.workers = append(d.workers, w)
-		w.Run(ctx)
+	for i := range NumWorkers {
+		worker := NewGenericWorker(i, d.JobQueue, d.wg)
+
+		// Register job handlers
+		worker.RegisterHandler(planningHandler)
+
+		d.workers = append(d.workers, worker)
+		worker.Run(ctx)
 	}
 }
 
@@ -61,6 +61,6 @@ func (d *Dispatcher) Wait() {
 
 func (d *Dispatcher) Stop() {
 	go func() {
-		close(d.JobQueue)
+		d.JobQueue.Close()
 	}()
 }

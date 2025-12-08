@@ -24,12 +24,21 @@ const (
 	JobExpirationTime = 24 * time.Hour
 )
 
+type JobPriority int
+
+const (
+	JobPriorityLow    JobPriority = 0
+	JobPriorityNormal JobPriority = 1
+	JobPriorityHigh   JobPriority = 2
+)
+
 type Job struct {
 	ID          string      `json:"id"`
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
 	Parameters  interface{} `json:"parameters"`
 	Status      JobStatus   `json:"status"`
+	Priority    JobPriority `json:"priority"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`
 }

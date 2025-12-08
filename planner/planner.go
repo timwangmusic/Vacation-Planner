@@ -588,14 +588,25 @@ func (p *MyPlanner) queuePlanningJobsForAllPriceLevels(req *PlanningRequest) err
 		newReq := *req
 		newReq.PriceLevel = POI.PriceLevel(l)
 
-		p.Dispatcher.JobQueue <- &iowrappers.Job{
+		// Prioritize user-requested price level, background compute others
+		priority := iowrappers.JobPriorityLow
+		if POI.PriceLevel(l) == req.PriceLevel {
+			priority = iowrappers.JobPriorityHigh
+		}
+
+		job := &iowrappers.Job{
 			ID:          uuid.New().String(),
 			Name:        "Planning",
 			Description: "Compute Planning Solutions",
 			Parameters:  &newReq,
 			Status:      iowrappers.JobStatusNew,
+			Priority:    priority,
 			CreatedAt:   curTime,
 			UpdatedAt:   curTime,
+		}
+
+		if !p.Dispatcher.JobQueue.Enqueue(job) {
+			return fmt.Errorf("failed to enqueue job %s: queue is closed", job.ID)
 		}
 	}
 	return nil
