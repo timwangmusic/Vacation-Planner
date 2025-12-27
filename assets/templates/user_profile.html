@@ -17,6 +17,11 @@
       integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
       crossorigin="anonymous"
     />
+    <!-- Swiper CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
     <link rel="stylesheet" href="assets/css/styles.css" />
 
     <title>profile</title>
@@ -33,29 +38,19 @@
     </nav>
     <h1>Profile</h1>
     <br />
-    <div class="container" id="user-profile-container">
-      <div class="row row-cols-md-2">
-        <div class="col">
-          <h4>Saved Travel Plans</h4>
-          <div id="cards"></div>
-          <button
-            type="button"
-            class="btn btn-outline-primary"
-            id="load-more-plans-btn"
-            style="display: none"
-          >
-            Load more
-          </button>
+    <div class="container d-flex flex-column align-items-center justify-content-center mt-4" id="user-profile-container">
+      <!-- Swiper Slider (Vertical Timeline) -->
+      <div class="swiper-container" id="profileSwiper">
+        <div class="swiper-wrapper" id="profile-swiper-wrapper">
+          <!-- Slides will be dynamically inserted here -->
         </div>
-        <div class="col">
-          <h4>Personal Favorites</h4>
-          <div class="card" id="most-searched-place">
-            <div class="card-body">
-              <h5 class="card-title">Most Searched Place</h5>
-              <p class="card-text">My Hometown</p>
-            </div>
-          </div>
-        </div>
+
+        <!-- Swiper Pagination -->
+        <div class="swiper-pagination"></div>
+
+        <!-- Swiper Navigation -->
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
       </div>
     </div>
 
@@ -67,7 +62,9 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-    <script type="module" src="assets/js/user.js"></script>
-    <script type="module" src="assets/js/user_profile.js"></script>
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script type="module" src="assets/js/user.js?v=2"></script>
+    <script type="module" src="assets/js/user_profile.js?v=2"></script>
   </body>
 </html>

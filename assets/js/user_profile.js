@@ -1,8 +1,7 @@
 import { updateUsername } from "./user.js";
 
 const username = updateUsername();
-const initNumPlansShown = 3;
-let numPlansShown = initNumPlansShown;
+let profileSwiper = null;
 
 async function deleteUserPlan() {
   const username = this.dataset.user;
@@ -18,56 +17,76 @@ async function deleteUserPlan() {
     .catch((err) => console.error(err));
 }
 
-function renderCard(plan, idx) {
-  const cards = $("#cards");
-  let card = $("<div>").addClass("card rounded mb-2").css("max-width", "350px");
-  if (idx >= numPlansShown) {
-    card.css("display", "none");
-  }
-  let cardBody = $("<div>").addClass("card-body");
-  cardBody.append($("<h5>").addClass("card-title").text(plan.destination));
-  cardBody.append($("<h6>").addClass("card-subtitle").text(plan.travel_date));
-  let placeList = $("<ul>").addClass("list-group list-group-flush");
+function createFavoritesSlide(favorites) {
+  const wrapper = $("#profile-swiper-wrapper");
+
+  const slide = $("<div>").addClass("swiper-slide");
+  const slideInner = $("<div>").addClass("swiper-slide-inner profile-favorites-slide");
+
+  const cardBody = $("<div>").addClass("card-body p-4");
+  cardBody.append($("<h3>").addClass("card-title text-center mb-4").text("Personal Favorites"));
+
+  const mostSearchedDiv = $("<div>").addClass("favorites-content text-center");
+  mostSearchedDiv.append($("<h5>").addClass("mb-3").text("Most Searched Place"));
+
+  const locationText = favorites.most_frequent_search?.length > 0
+    ? favorites.most_frequent_search
+    : "No searches yet";
+  mostSearchedDiv.append($("<p>").addClass("fs-4").text(locationText));
+
+  cardBody.append(mostSearchedDiv);
+  slideInner.append(cardBody);
+  slide.append(slideInner);
+  wrapper.append(slide);
+}
+
+function createPlanSlide(plan) {
+  const wrapper = $("#profile-swiper-wrapper");
+
+  const slide = $("<div>").addClass("swiper-slide");
+  const slideInner = $("<div>").addClass("swiper-slide-inner profile-plan-slide");
+
+  const cardBody = $("<div>").addClass("card-body p-4");
+  cardBody.append($("<h4>").addClass("card-title").text(plan.destination));
+  cardBody.append($("<h6>").addClass("card-subtitle mb-3 text-muted").text(plan.travel_date));
+
+  const placeList = $("<ul>").addClass("list-group list-group-flush mb-3");
   plan.places.forEach((place) => {
     let p = $("<li>").addClass("list-group-item");
     p.append(
       $("<a>")
         .addClass("card-link")
         .attr("href", place.url)
+        .attr("target", "_blank")
         .text(place.place_name)
     );
     placeList.append(p);
   });
   cardBody.append(placeList);
+
+  const buttonGroup = $("<div>").addClass("d-flex justify-content-end gap-2 mt-3");
+
   let deleteButton = $("<button>")
-    .addClass("btn btn-outline-warning m-1 float-end")
+    .addClass("btn btn-outline-warning")
     .attr("type", "button")
     .attr("data-planid", `${plan.id}`)
     .attr("data-user", `${username}`)
     .text("delete");
   deleteButton.click(deleteUserPlan);
-  cardBody.append(deleteButton);
+  buttonGroup.append(deleteButton);
 
   let showDetailsButton = $("<button>")
-    .addClass("btn btn-outline-info float-end m-1")
+    .addClass("btn btn-outline-info")
     .attr("type", "button")
     .attr("data-planid", `${plan.id}`)
     .text("details");
   showDetailsButton.click(showPlanDetails);
-  cardBody.append(showDetailsButton);
+  buttonGroup.append(showDetailsButton);
 
-  card.append(cardBody);
-  cards.append(card);
-}
-
-function renderFavorites(favorites) {
-  document.getElementById("most-searched-place").style.maxWidth = "350px";
-  const mostSearchedPlace = document.querySelector(
-    "#most-searched-place .card-body .card-text"
-  );
-  if (favorites.most_frequent_search?.length > 0) {
-    mostSearchedPlace.innerText = favorites.most_frequent_search;
-  } 
+  cardBody.append(buttonGroup);
+  slideInner.append(cardBody);
+  slide.append(slideInner);
+  wrapper.append(slide);
 }
 
 function showPlanDetails() {
@@ -82,16 +101,12 @@ function getUserPlans() {
     .then((response) => {
       const data = response.data;
       const plans = data["travel_plans"];
-      if (plans.length > 0) {
-        for (let i = 0; i < plans.length; i++) {
-          renderCard(plans[i], i);
-        }
-        if (plans.length > initNumPlansShown) {
-          $("#load-more-plans-btn").css("display", "");
-        }
-      }
+      return plans || [];
     })
-    .catch((err) => console.error(err));
+    .catch((err) => {
+      console.error(err);
+      return [];
+    });
 }
 
 function getUserFavorites() {
@@ -99,31 +114,72 @@ function getUserFavorites() {
   return axios
     .get(favoritesUrl)
     .then((response) => {
-      const favorites = response.data;
-      renderFavorites(favorites);
+      return response.data;
     })
-    .catch((err) => console.error(err));
+    .catch((err) => {
+      console.error(err);
+      return {};
+    });
+}
+
+function initializeSwiper() {
+  profileSwiper = new Swiper('#profileSwiper', {
+    // Vertical direction for timeline effect
+    direction: 'vertical',
+
+    // Effect configuration for card stack
+    effect: 'slide',
+    grabCursor: true,
+    centeredSlides: true,
+    slidesPerView: 'auto',
+
+    // Navigation arrows
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+
+    // Pagination bullets
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+
+    // Keyboard control
+    keyboard: {
+      enabled: true,
+    },
+
+    // Mouse wheel control for vertical scrolling
+    mousewheel: {
+      enabled: true,
+      forceToAxis: true,
+    },
+
+    // Loop mode
+    loop: false,
+
+    // Speed of transition
+    speed: 400,
+
+    // Space between slides
+    spaceBetween: 30,
+  });
 }
 
 async function renderUserProfile() {
-  await Promise.all([getUserPlans(), getUserFavorites()]);
-}
+  const [plans, favorites] = await Promise.all([getUserPlans(), getUserFavorites()]);
 
-$("#load-more-plans-btn").on("click", () => {
-  numPlansShown = numPlansShown + 3;
-  $("#cards")
-    .children()
-    .each((idx, card) => {
-      if (idx >= numPlansShown) {
-        card.style.display = "none";
-      } else {
-        card.style.display = "";
-      }
-    });
-  // hide the load more button when all plans are shown
-  if (numPlansShown >= $("#cards").children().length) {
-    $("#load-more-plans-btn").css("display", "none");
+  // Create favorites slide first
+  createFavoritesSlide(favorites);
+
+  // Create plan slides
+  if (plans.length > 0) {
+    plans.forEach(plan => createPlanSlide(plan));
   }
-});
+
+  // Initialize Swiper after all slides are added
+  initializeSwiper();
+}
 
 renderUserProfile().then(() => console.log("user profile is loaded"));

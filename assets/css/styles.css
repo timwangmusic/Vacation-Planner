@@ -372,6 +372,83 @@ tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* User Profile Swiper Styles */
+#profileSwiper {
+  height: 600px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+#profileSwiper .swiper-slide {
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#profileSwiper .swiper-slide-inner {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 100%;
+  max-width: 500px;
+  min-height: 300px;
+}
+
+[data-theme="dark"] #profileSwiper .swiper-slide-inner {
+  background: #1a1a1a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.profile-favorites-slide {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+[data-theme="dark"] .profile-favorites-slide {
+  background: linear-gradient(135deg, #434343 0%, #000000 100%);
+}
+
+.profile-favorites-slide .card-body {
+  color: white;
+}
+
+.profile-favorites-slide .card-title {
+  color: white !important;
+  font-weight: 700;
+}
+
+.profile-plan-slide {
+  min-height: 400px;
+}
+
+.profile-plan-slide .list-group-item {
+  background: transparent;
+  border-color: rgba(0, 0, 0, 0.125);
+  padding: 0.5rem 0;
+}
+
+[data-theme="dark"] .profile-plan-slide .list-group-item {
+  border-color: rgba(255, 255, 255, 0.125);
+}
+
+.profile-plan-slide .card-link {
+  color: #24c1e0;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.profile-plan-slide .card-link:hover {
+  text-decoration: underline;
+}
+
 @media only screen and (min-width: 576px) {
   #dateDiv {
     max-width: 11em;
