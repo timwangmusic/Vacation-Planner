@@ -124,25 +124,25 @@ type PlanningPostRequest struct {
 
 // TODO: deprecate Score and ScoreOld fields
 type TripDetailResp struct {
-	OriginalPlanID    string
-	LatLongs          [][2]float64
-	PlaceCategories   []POI.PlaceCategory
-	PlaceDetails      []PlaceDetailsResp
-	ShownActive       []bool
-	TravelDestination string
-	TravelDate        string
-	Score             float64
-	ScoreOld          float64
-	ApiKey            string
+	OriginalPlanID    string              `json:"original_plan_id"`
+	LatLongs          [][2]float64        `json:"lat_longs"`
+	PlaceCategories   []POI.PlaceCategory `json:"place_categories"`
+	PlaceDetails      []PlaceDetailsResp  `json:"place_details"`
+	ShownActive       []bool              `json:"shown_active"`
+	TravelDestination string              `json:"travel_destination"`
+	TravelDate        string              `json:"travel_date"`
+	Score             float64             `json:"score"`
+	ScoreOld          float64             `json:"score_old"`
+	ApiKey            string              `json:"-"`
 }
 
 type PlaceDetailsResp struct {
-	ID               string
-	Name             string
-	URL              string
-	FormattedAddress string
-	PhotoURL         string
-	Summary          string
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	URL              string `json:"url"`
+	FormattedAddress string `json:"formatted_address"`
+	PhotoURL         string `json:"photo_url"`
+	Summary          string `json:"summary"`
 }
 
 type RequestIdKey string
