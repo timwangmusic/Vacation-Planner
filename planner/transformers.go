@@ -124,7 +124,6 @@ func toPlanningSolutionRecord(request *PlanningRequest, solution PlanningSolutio
 		ID:              solution.ID,
 		PlaceIDs:        solution.PlaceIDS,
 		Score:           solution.Score,
-		ScoreOld:        solution.ScoreOld,
 		PlaceNames:      solution.PlaceNames,
 		PlaceLocations:  solution.PlaceLocations,
 		PlaceAddresses:  solution.PlaceAddresses,

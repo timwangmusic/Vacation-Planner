@@ -64,10 +64,36 @@ func (place *Place) SetCategory(category POI.PlaceCategory) {
 }
 
 func (place *Place) IsOpenBetween(interval TimeInterval, stayingDurationInHour uint8) bool {
-	//TODO: Query whither this place is open at this period in the future after POI.PLACE contains open hour.
-	//Dummy implementation, only checks if the time period is valid
+	if interval.StartHour+stayingDurationInHour > interval.EndHour {
+		return false
+	}
 
-	return interval.StartHour+stayingDurationInHour <= interval.EndHour
+	hours := place.Hours()
+	if int(interval.Day) >= len(hours) {
+		return false
+	}
+
+	openingHour := hours[interval.Day]
+	if openingHour == "" {
+		// No hours data available; assume open to avoid false negatives
+		return true
+	}
+
+	placeInterval, err := POI.ParseTimeInterval(openingHour)
+	if err != nil {
+		return false
+	}
+
+	// Closed marker (ParseTimeInterval returns 255,255 for "Closed")
+	if placeInterval.Start == 255 && placeInterval.End == 255 {
+		return false
+	}
+
+	requestedSlot := POI.TimeInterval{
+		Start: POI.Hour(interval.StartHour),
+		End:   POI.Hour(interval.StartHour + stayingDurationInHour),
+	}
+	return placeInterval.Inclusive(&requestedSlot)
 }
 
 func CreatePlace(place POI.Place, category POI.PlaceCategory) Place {

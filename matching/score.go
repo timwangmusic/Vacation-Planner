@@ -5,27 +5,12 @@ import (
 	"math"
 
 	"github.com/weihesdlegend/Vacation-planner/utils"
-	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/stat"
 )
 
 const (
 	MaxPlaceRating = 5.0
 )
-
-// OLD plan scoring method, use maxDist as the normalisation factor
-// TODO, RW: remove in the future
-func ScoreOld(places []Place) float64 {
-	if len(places) == 1 {
-		return PlaceScore(places[0])
-	}
-	distances := calDistances(places)                     // Haversine distances
-	maxDist := math.Max(0.001, calMaxDistance(distances)) // protect against maximum distance being zero
-	avgDistance := stat.Mean(distances, nil) / maxDist    // normalized average distance
-	avgScore := avgPlacesScore(places)
-
-	return avgScore - avgDistance
-}
 
 // Score uses constant distance normalisation factor
 func Score(places []Place, distNorm int) float64 {
@@ -59,10 +44,6 @@ func calDistances(places []Place) []float64 {
 		distances[i] = utils.HaversineDist([]float64{locationX.Latitude, locationX.Longitude}, []float64{locationY.Latitude, locationY.Longitude})
 	}
 	return distances
-}
-
-func calMaxDistance(distances []float64) float64 {
-	return floats.Max(distances)
 }
 
 // calculate normalized average rating to price ratio

@@ -39,7 +39,6 @@ type PlanningSolution struct {
 	PlaceURLs       []string            `json:"place_urls"`
 	PlaceCategories []POI.PlaceCategory `json:"place_categories"`
 	Score           float64             `json:"score"`
-	ScoreOld        float64             `json:"score_old"`
 	PlanSpec        string              `json:"plan_spec"`
 }
 
@@ -262,7 +261,6 @@ func (s *Solver) Solve(ctx context.Context, req *PlanningRequest) *PlanningResp 
 			PlaceURLs:       candidate.PlaceURLs,
 			PlaceCategories: candidate.PlaceCategories,
 			Score:           candidate.Score,
-			ScoreOld:        candidate.ScoreOld,
 			PlanSpec:        req.spec,
 		}
 		resp.Solutions = append(resp.Solutions, planningSolution)
@@ -345,7 +343,6 @@ func createPlanningSolutionCandidate(placeIndexes []int, placeClusters [][]match
 	}
 
 	res.Score = matching.Score(places, int(radius))
-	res.ScoreOld = matching.ScoreOld(places)
 	res.ID = uuid.NewString()
 	res.PlanSpec = spec
 	return res, nil
