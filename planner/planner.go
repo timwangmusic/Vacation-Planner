@@ -122,7 +122,6 @@ type PlanningPostRequest struct {
 	NumEatery uint        `json:"num_eatery"`
 }
 
-// TODO: deprecate Score and ScoreOld fields
 type TripDetailResp struct {
 	OriginalPlanID    string
 	LatLongs          [][2]float64
@@ -132,7 +131,6 @@ type TripDetailResp struct {
 	TravelDestination string
 	TravelDate        string
 	Score             float64
-	ScoreOld          float64
 	ApiKey            string
 }
 
@@ -797,13 +795,14 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 	}
 
 	const fixedPlaceKeyPrefix = "place_details:place_ID:"
+	errs := make([]error, placesCount)
 	for idx, view := range planDetails.Places {
 		go func(i int, v user.TravelPlaceView) {
 			defer wg.Done()
 			placeRedisKey := fixedPlaceKeyPrefix + v.ID
 			var place POI.Place
 			if err := p.RedisClient.FetchSingleRecord(ctx, placeRedisKey, &place); err != nil {
-				logger.Error(err)
+				errs[i] = fmt.Errorf("failed to fetch place %s: %w", v.ID, err)
 				return
 			}
 			resp.LatLongs[i] = [2]float64{place.Location.Latitude, place.Location.Longitude}
@@ -812,7 +811,7 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 
 			details, err := p.placeDetailsResp(ctx, place)
 			if err != nil {
-				logger.Error(err)
+				errs[i] = fmt.Errorf("failed to get details for place %s: %w", v.ID, err)
 				return
 			}
 			resp.PlaceDetails[i] = details
@@ -820,6 +819,14 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 	}
 
 	wg.Wait()
+
+	for _, err := range errs {
+		if err != nil {
+			logger.Error(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch details for one or more places in the plan"})
+			return
+		}
+	}
 
 	resp.ApiKey = p.MapsClientApiKey
 	jsonOnly, _ := strconv.ParseBool(strings.ToLower(ctx.DefaultQuery("json_only", "false")))
@@ -865,26 +872,37 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 		TravelDestination: destination,
 		TravelDate:        travelDate,
 		Score:             record.Score,
-		ScoreOld:          record.ScoreOld,
 		ApiKey:            p.MapsClientApiKey,
 	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(record.PlaceIDs))
+	errs := make([]error, len(record.PlaceIDs))
 	for idx, placeId := range record.PlaceIDs {
 		placeKey = fixedPlaceKeyPrefix + placeId
 		var place POI.Place
 		cacheErr = p.RedisClient.FetchSingleRecord(ctx, placeKey, &place)
 		if cacheErr != nil {
-			logger.Error(cacheErr)
+			logger.Errorf("failed to fetch place %s: %v", placeId, cacheErr)
+			errs[idx] = cacheErr
+			wg.Done()
+			tripResp.ShownActive = append(tripResp.ShownActive, idx == 0)
+			continue
 		}
 
 		// Show the first place by default
 		tripResp.ShownActive = append(tripResp.ShownActive, idx == 0)
 
-		go p.asyncGetTripRespPlaceDetails(ctx, &wg, &tripResp.PlaceDetails[idx], place)
+		go p.asyncGetTripRespPlaceDetails(ctx, &wg, &tripResp.PlaceDetails[idx], place, &errs[idx])
 	}
 	wg.Wait()
+
+	for _, err := range errs {
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch details for one or more places in the plan"})
+			return
+		}
+	}
 
 	jsonOnly, _ := strconv.ParseBool(strings.ToLower(ctx.DefaultQuery("json_only", "false")))
 	if jsonOnly {
@@ -896,13 +914,14 @@ func (p *MyPlanner) getPlanDetails(ctx *gin.Context) {
 	utils.LogErrorWithLevel(p.TripHTMLTemplate.Execute(ctx.Writer, tripResp), utils.LogError)
 }
 
-func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place) {
+func (p *MyPlanner) asyncGetTripRespPlaceDetails(ctx context.Context, wg *sync.WaitGroup, resp *PlaceDetailsResp, place POI.Place, errOut *error) {
+	defer wg.Done()
 	var err error
 	*resp, err = p.placeDetailsResp(ctx, place)
 	if err != nil {
 		iowrappers.Logger.Error(err)
+		*errOut = err
 	}
-	wg.Done()
 }
 
 func (p *MyPlanner) placeDetailsResp(ctx context.Context, place POI.Place) (PlaceDetailsResp, error) {
