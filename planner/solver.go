@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"slices"
 	"sort"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/weihesdlegend/Vacation-planner/POI"
 	"github.com/weihesdlegend/Vacation-planner/iowrappers"
 	"github.com/weihesdlegend/Vacation-planner/matching"
+	"github.com/weihesdlegend/Vacation-planner/utils"
 	"golang.org/x/exp/maps"
 )
 
@@ -25,6 +27,7 @@ const (
 	TopSolutionsCountDefault              = 5
 	DefaultPlaceSearchRadius              = 20000 // default to 20km (~12.43 miles)
 	MaxSolutionsToSaveCount               = 100
+	MaxPlacesPerSlot                      = 30
 	CategorizedPlaceIterInitFailureErrMsg = "categorized places iterator init failure"
 	ErrMsgMismatchIterAndPlace            = "mismatch in iterator status vector length"
 	ErrMsgRepeatedPlaceInSameTrip         = "repeated places in the same trip"
@@ -548,6 +551,10 @@ func (s *Solver) generatePlacesForSlots(ctx context.Context, req *PlanningReques
 		}
 		// sort places by score descending so the solver checks places with higher score first
 		slices.SortFunc(places, func(a, b matching.Place) int { return cmp.Compare(matching.PlaceScore(b), matching.PlaceScore(a)) })
+		// truncate to top candidates to reduce search space
+		if len(places) > MaxPlacesPerSlot {
+			places = places[:MaxPlacesPerSlot]
+		}
 		placeClusters = append(placeClusters, places)
 	}
 	return placeClusters, nil
@@ -582,14 +589,152 @@ func (s *Solver) generateSolutions(ctx context.Context, req *PlanningRequest) (r
 
 	placeCategories := toPlaceCategories(req.Slots)
 
-	mdIter := &MultiDimIterator{}
-	if err = mdIter.Init(placeCategories, placeClusters); err != nil {
-		resp.ErrorCode = NoValidSolution
-		resp.Err = err
-		return
+	// group each slot's places into spatial clusters
+	spatialGroups := groupPlacesBySpatialClusters(placeClusters, req.SearchRadius)
+
+	// run solver on each spatial group and merge results
+	pq := &MinPriorityQueue[Vertex]{}
+	includedPlaces := make(map[string]int8)
+	for _, group := range spatialGroups {
+		mdIter := &MultiDimIterator{}
+		if err = mdIter.Init(placeCategories, group); err != nil {
+			continue
+		}
+		groupResp := s.FindBestPlanningSolutions(ctx, group, MaxSolutionsToSaveCount, mdIter, req.SearchRadius, req.spec)
+		for _, sol := range groupResp.Solutions {
+			if s.isPlanDuplicate(includedPlaces, sol) {
+				continue
+			}
+			v := Vertex{Name: sol.ID, K: sol.Score, Object: sol}
+			if pq.Len() >= MaxSolutionsToSaveCount {
+				if pq.items[0].Key() < v.Key() {
+					top := heap.Pop(pq).(Vertex)
+					removePlaces(includedPlaces, top.Object.(PlanningSolution))
+					heap.Push(pq, v)
+				}
+			} else {
+				heap.Push(pq, v)
+			}
+		}
 	}
 
-	return s.FindBestPlanningSolutions(ctx, placeClusters, MaxSolutionsToSaveCount, mdIter, req.SearchRadius, req.spec)
+	if pq.Len() == 0 {
+		// fall back to non-clustered approach
+		mdIter := &MultiDimIterator{}
+		if err = mdIter.Init(placeCategories, placeClusters); err != nil {
+			resp.ErrorCode = NoValidSolution
+			resp.Err = err
+			return
+		}
+		return s.FindBestPlanningSolutions(ctx, placeClusters, MaxSolutionsToSaveCount, mdIter, req.SearchRadius, req.spec)
+	}
+
+	return &PlanningResp{Solutions: solutions(pq)}
+}
+
+// groupPlacesBySpatialClusters divides places across slots into groups where places
+// within each group are geographically close to each other. This produces plans
+// with places that are near each other, reducing travel time.
+func groupPlacesBySpatialClusters(placeClusters [][]matching.Place, searchRadius uint) [][][]matching.Place {
+	if len(placeClusters) == 0 {
+		return nil
+	}
+
+	// use the first slot's places as cluster anchors
+	// cluster radius is a fraction of the search radius to create tight geographic groups
+	// floor at 3km to avoid over-fragmentation with small search radii
+	clusterRadius := math.Max(float64(searchRadius)/3.0, 3000.0)
+
+	// find cluster centers from the first slot
+	type spatialCluster struct {
+		centerLat, centerLng float64
+	}
+
+	var clusters []spatialCluster
+	// track which places belong to each cluster so we can recompute centers
+	clusterMembers := make(map[int][][2]float64)
+	for _, place := range placeClusters[0] {
+		loc := place.Location()
+		assigned := -1
+		for ci, c := range clusters {
+			dist := utils.HaversineDist(
+				[]float64{loc.Latitude, loc.Longitude},
+				[]float64{c.centerLat, c.centerLng},
+			)
+			if dist < clusterRadius {
+				assigned = ci
+				break
+			}
+		}
+		if assigned == -1 {
+			assigned = len(clusters)
+			clusters = append(clusters, spatialCluster{centerLat: loc.Latitude, centerLng: loc.Longitude})
+		}
+		clusterMembers[assigned] = append(clusterMembers[assigned], [2]float64{loc.Latitude, loc.Longitude})
+	}
+
+	// recompute cluster centers as the mean of their members
+	for ci, members := range clusterMembers {
+		var sumLat, sumLng float64
+		for _, m := range members {
+			sumLat += m[0]
+			sumLng += m[1]
+		}
+		n := float64(len(members))
+		clusters[ci] = spatialCluster{centerLat: sumLat / n, centerLng: sumLng / n}
+	}
+
+	// if there's only one cluster, no benefit from splitting
+	if len(clusters) <= 1 {
+		return [][][]matching.Place{placeClusters}
+	}
+
+	// assign each slot's places to the nearest cluster center
+	groups := make([][][]matching.Place, len(clusters))
+	for i := range groups {
+		groups[i] = make([][]matching.Place, len(placeClusters))
+	}
+
+	for slotIdx, places := range placeClusters {
+		for _, place := range places {
+			loc := place.Location()
+			bestCluster := 0
+			bestDist := math.MaxFloat64
+			for ci, c := range clusters {
+				dist := utils.HaversineDist(
+					[]float64{loc.Latitude, loc.Longitude},
+					[]float64{c.centerLat, c.centerLng},
+				)
+				if dist < bestDist {
+					bestDist = dist
+					bestCluster = ci
+				}
+			}
+			groups[bestCluster][slotIdx] = append(groups[bestCluster][slotIdx], place)
+		}
+	}
+
+	// filter out groups that have empty slots (can't form valid plans)
+	var result [][][]matching.Place
+	for _, group := range groups {
+		valid := true
+		for _, slotPlaces := range group {
+			if len(slotPlaces) == 0 {
+				valid = false
+				break
+			}
+		}
+		if valid {
+			result = append(result, group)
+		}
+	}
+
+	// if no valid groups, return original as single group
+	if len(result) == 0 {
+		return [][][]matching.Place{placeClusters}
+	}
+
+	return result
 }
 
 func saveSolutions(ctx context.Context, c *iowrappers.RedisClient, req *PlanningRequest, solutions []PlanningSolution) error {
