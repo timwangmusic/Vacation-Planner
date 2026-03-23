@@ -1,6 +1,6 @@
 # Unwind
 
-+ Website: www.unwind.dev
++ Website: [unwind.dev](https://unwind.dev/)
 
 ![Unwind Logo](assets/public/logo.png)
 
