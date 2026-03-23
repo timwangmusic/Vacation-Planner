@@ -642,7 +642,8 @@ func groupPlacesBySpatialClusters(placeClusters [][]matching.Place, searchRadius
 
 	// use the first slot's places as cluster anchors
 	// cluster radius is a fraction of the search radius to create tight geographic groups
-	clusterRadius := float64(searchRadius) / 3.0
+	// floor at 3km to avoid over-fragmentation with small search radii
+	clusterRadius := math.Max(float64(searchRadius)/3.0, 3000.0)
 
 	// find cluster centers from the first slot
 	type spatialCluster struct {
@@ -650,22 +651,37 @@ func groupPlacesBySpatialClusters(placeClusters [][]matching.Place, searchRadius
 	}
 
 	var clusters []spatialCluster
+	// track which places belong to each cluster so we can recompute centers
+	clusterMembers := make(map[int][][2]float64)
 	for _, place := range placeClusters[0] {
 		loc := place.Location()
-		isNew := true
-		for _, c := range clusters {
+		assigned := -1
+		for ci, c := range clusters {
 			dist := utils.HaversineDist(
 				[]float64{loc.Latitude, loc.Longitude},
 				[]float64{c.centerLat, c.centerLng},
 			)
 			if dist < clusterRadius {
-				isNew = false
+				assigned = ci
 				break
 			}
 		}
-		if isNew {
+		if assigned == -1 {
+			assigned = len(clusters)
 			clusters = append(clusters, spatialCluster{centerLat: loc.Latitude, centerLng: loc.Longitude})
 		}
+		clusterMembers[assigned] = append(clusterMembers[assigned], [2]float64{loc.Latitude, loc.Longitude})
+	}
+
+	// recompute cluster centers as the mean of their members
+	for ci, members := range clusterMembers {
+		var sumLat, sumLng float64
+		for _, m := range members {
+			sumLat += m[0]
+			sumLng += m[1]
+		}
+		n := float64(len(members))
+		clusters[ci] = spatialCluster{centerLat: sumLat / n, centerLng: sumLng / n}
 	}
 
 	// if there's only one cluster, no benefit from splitting
