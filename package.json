@@ -21,6 +21,6 @@
   },
   "homepage": "https://github.com/weihesdlegend/Vacation-Planner#readme",
   "devDependencies": {
-    "jest": "^27.5.1"
+    "jest": "^30.2.0"
   }
 }
