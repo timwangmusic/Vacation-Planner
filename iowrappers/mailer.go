@@ -86,10 +86,11 @@ func (m *Mailer) Send(ctx context.Context, t EmailType, recipient user.View, env
 		if err != nil {
 			return err
 		}
-		htmlContent := fmt.Sprintf("<p>please follow the <a href=https://www.unwind.dev/v1/verify?code=%s>link</a> to verify your email address. </p>", code)
-		if environment == "testing" {
-			htmlContent = fmt.Sprintf("<p>please follow the <a href=https://testing-vp.herokuapp.com/v1/verify?code=%s>link</a> to verify your email address. </p>", code)
+		domain := os.Getenv("DOMAIN")
+		if domain == "" {
+			domain = "http://localhost:10000"
 		}
+		htmlContent := fmt.Sprintf("<p>please follow the <a href=%s/v1/verify?code=%s>link</a> to verify your email address. </p>", domain, code)
 		message := mail.NewSingleEmail(from, subject, to, "", htmlContent)
 		resp, err := m.client.Send(message)
 		if err != nil {
@@ -107,10 +108,11 @@ func (m *Mailer) Send(ctx context.Context, t EmailType, recipient user.View, env
 		if err != nil {
 			return err
 		}
-		htmlContent := fmt.Sprintf("<p>please follow the <a href=https://www.unwind.dev/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", recipient.Email, code)
-		if environment == "testing" {
-			htmlContent = fmt.Sprintf("<p>please follow the <a href=https://testing-vp.herokuapp.com/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", recipient.Email, code)
+		domain := os.Getenv("DOMAIN")
+		if domain == "" {
+			domain = "http://localhost:10000"
 		}
+		htmlContent := fmt.Sprintf("<p>please follow the <a href=%s/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", domain, recipient.Email, code)
 		message := mail.NewSingleEmail(from, subject, to, "", htmlContent)
 		resp, err := m.client.Send(message)
 		if err != nil {
