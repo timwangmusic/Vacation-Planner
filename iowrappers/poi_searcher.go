@@ -18,7 +18,8 @@ import (
 type ContextKey string
 
 const (
-	MaxSearchRadius              = 16000               // 10 miles
+	MaxSearchRadius              = 16000               // 10 miles, upper bound for radius requested by callers
+	ColdStartSearchRadius        = 8000                // 5 miles, radius used for external maps searches that populate the cache
 	MinMapsResultRefreshDuration = time.Hour * 24 * 14 // 14 days
 	GoogleSearchHomePageURL      = "https://www.google.com/"
 	ContextRequestIdKey          = ContextKey("request_id")
@@ -250,8 +251,9 @@ func (s *PoiSearcher) processLocation(ctx context.Context, req *PlaceSearchReque
 func (s *PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
 	originalRadius := req.Radius
 
-	// use a large search radius whenever we call external maps services
-	req.Radius = MaxSearchRadius
+	// use a larger-than-requested search radius whenever we call external maps services,
+	// so one API spend populates the cache for a whole area
+	req.Radius = ColdStartSearchRadius
 
 	places, err := s.GetMapsClient().NearbySearch(ctx, req)
 
