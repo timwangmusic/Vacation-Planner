@@ -245,6 +245,64 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 	wg.Wait()
 }
 
+// SetPlacesAddGeoLocationsForBrand stores place details and adds places to a brand-scoped
+// geo index (placeIDs:brand:{brandKey}) so cached brand searches stay brand-pure.
+// Brand result sets are small, so a single pipeline is used without batching.
+func (r *RedisClient) SetPlacesAddGeoLocationsForBrand(c context.Context, keyword string, places []POI.Place) {
+	if len(places) == 0 || keyword == "" {
+		return
+	}
+
+	redisKey := POI.EncodeBrandNearbySearchRedisKey(keyword)
+	_, err := r.Get().Pipelined(c, func(pipe redis.Pipeliner) error {
+		for _, place := range places {
+			geoLocation := &redis.GeoLocation{
+				Name:      place.ID,
+				Latitude:  place.GetLocation().Latitude,
+				Longitude: place.GetLocation().Longitude,
+			}
+			pipe.GeoAdd(c, redisKey, geoLocation)
+
+			json_, err := json.Marshal(place)
+			if err != nil {
+				Logger.Error(err)
+				continue
+			}
+			pipe.Set(c, PlaceDetailsRedisKeyPrefix+place.ID, json_, 0)
+		}
+		return nil
+	})
+	if err != nil {
+		Logger.Error(err)
+	}
+}
+
+func brandLastSearchTimeRedisField(location POI.Location, keyword string) string {
+	return strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, "brand", POI.NormalizeBrandKey(keyword)}, ":"))
+}
+
+// GetBrandMapsLastSearchTime returns the last time an external maps search ran for a brand keyword in a city
+func (r *RedisClient) GetBrandMapsLastSearchTime(context context.Context, location POI.Location, keyword string) (lastSearchTime time.Time, err error) {
+	lst, cacheErr := r.client.HGet(context, MapsLastSearchTimeRedisKey, brandLastSearchTimeRedisField(location, keyword)).Result()
+	if cacheErr != nil {
+		err = cacheErr
+		return
+	}
+
+	parsedLastSearchTime, timeParsingErr := time.Parse(time.RFC3339, lst)
+	if timeParsingErr != nil {
+		utils.LogErrorWithLevel(timeParsingErr, utils.LogError)
+	}
+	lastSearchTime = parsedLastSearchTime
+	return
+}
+
+// SetBrandMapsLastSearchTime records the last time an external maps search ran for a brand keyword in a city
+func (r *RedisClient) SetBrandMapsLastSearchTime(context context.Context, location POI.Location, keyword string, requestTime string) (err error) {
+	_, err = r.client.HSet(context, MapsLastSearchTimeRedisKey, brandLastSearchTimeRedisField(location, keyword), requestTime).Result()
+	return
+}
+
 func (r *RedisClient) UpdatePlace(ctx context.Context, id string, data map[string]interface{}) error {
 	var p POI.Place
 	err := r.FetchSingleRecord(ctx, PlaceDetailsRedisKeyPrefix+id, &p)
@@ -387,6 +445,9 @@ func (r *RedisClient) getPlace(context context.Context, placeId string) (place P
 
 func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
 	redisKey := POI.EncodeNearbySearchRedisKey(req.PlaceCat, req.PriceLevel)
+	if req.Keyword != "" {
+		redisKey = POI.EncodeBrandNearbySearchRedisKey(req.Keyword)
+	}
 	requestLat, requestLng := req.Location.Latitude, req.Location.Longitude
 	searchRadius := req.Radius
 

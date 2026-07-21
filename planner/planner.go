@@ -1165,6 +1165,107 @@ func (p *MyPlanner) getNearbyCities(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"cities": resp.Cities})
 }
 
+type nearbyPlacesRequest struct {
+	// brand or merchant keywords to search for, e.g. ["Dunkin'", "Saks Fifth Avenue"]
+	Brands   []string     `json:"brands" binding:"required,min=1,max=25"`
+	Location POI.Location `json:"location"`
+	// search radius in meters; defaults to the maximum search radius when zero
+	Radius uint `json:"radius"`
+	// maximum number of places returned per brand
+	Limit int `json:"limit"`
+	// optional RFC3339 timestamp representing local time at the searched location
+	// (e.g. "2026-07-21T13:00:00-07:00"); places whose hours mark them closed on that
+	// weekday are excluded. Defaults to server time when empty.
+	LocalTime string `json:"localTime"`
+}
+
+type nearbyPlacesBrandResult struct {
+	Brand  string      `json:"brand"`
+	Places []POI.Place `json:"places"`
+	Error  string      `json:"error,omitempty"`
+}
+
+// getNearbyPlaces returns operational places for each requested brand keyword around a coordinate.
+// Results are served from the brand-scoped Redis geo index when fresh, falling back to Google Maps.
+func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
+	req := &nearbyPlacesRequest{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.Location.Latitude == 0 && req.Location.Longitude == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "location with latitude and longitude is required"})
+		return
+	}
+
+	radius := req.Radius
+	if radius == 0 || radius > iowrappers.MaxSearchRadius {
+		radius = iowrappers.MaxSearchRadius
+	}
+	limit := req.Limit
+	if limit <= 0 || limit > 20 {
+		limit = 5
+	}
+	day := POI.WeekdayFromTime(time.Now().Weekday())
+	if req.LocalTime != "" {
+		localTime, parseErr := time.Parse(time.RFC3339, req.LocalTime)
+		if parseErr != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "localTime must be an RFC3339 timestamp"})
+			return
+		}
+		day = POI.WeekdayFromTime(localTime.Weekday())
+	}
+
+	requestId := requestid.Get(ctx)
+	searchContext := context.WithValue(ctx.Request.Context(), iowrappers.ContextRequestIdKey, requestId)
+
+	// resolve city-level info once so the per-brand searches skip geocoding
+	geoQuery, err := p.Solver.Searcher.ReverseGeocode(searchContext, req.Location.Latitude, req.Location.Longitude)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	location := req.Location
+	location.City = geoQuery.City
+	location.AdminAreaLevelOne = geoQuery.AdminAreaLevelOne
+	location.Country = geoQuery.Country
+
+	results := make([]nearbyPlacesBrandResult, len(req.Brands))
+	wg := &sync.WaitGroup{}
+	wg.Add(len(req.Brands))
+	for i, brand := range req.Brands {
+		go func(idx int, keyword string) {
+			defer wg.Done()
+			searchReq := &iowrappers.PlaceSearchRequest{
+				Keyword:         keyword,
+				StrictNameMatch: true,
+				Location:        location,
+				Radius:          radius,
+				MinNumResults:   uint(limit),
+				DetailsLimit:    limit,
+				BusinessStatus:  POI.Operational,
+			}
+			result := nearbyPlacesBrandResult{Brand: keyword, Places: []POI.Place{}}
+			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
+			if searchErr != nil {
+				result.Error = searchErr.Error()
+			} else if len(places) > 0 {
+				// drop places explicitly marked closed on the requested day
+				places = iowrappers.Filter(places, func(place POI.Place) bool { return !place.KnownClosedOnDay(day) })
+				// Redis results are sorted by distance ascending; keep the nearest ones
+				if len(places) > limit {
+					places = places[:limit]
+				}
+				result.Places = places
+			}
+			results[idx] = result
+		}(i, brand)
+	}
+	wg.Wait()
+
+	ctx.JSON(http.StatusOK, gin.H{"results": results})
+}
+
 func (p *MyPlanner) GetPlaceDetails(ctx *gin.Context) {
 	id := ctx.Param("id")
 	if id == "" {
@@ -1412,6 +1513,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/about", p.aboutPage)
 		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
 		v1.POST("/nearby-cities", p.getNearbyCities)
+		v1.POST("/nearby-places", p.getNearbyPlaces)
 		v1.POST("/optimal-plan", p.getOptimalPlan)
 		v1.POST("/create-token", p.createNewPAT)
 		v1.DELETE("/revoke-token", p.RevokePAT)

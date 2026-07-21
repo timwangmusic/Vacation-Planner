@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -39,6 +40,29 @@ type PlaceSearchRequest struct {
 	UsePreciseLocation bool
 
 	PriceLevel POI.PriceLevel
+
+	// Keyword is a brand or merchant keyword (e.g. "Dunkin'"). When set, the search is
+	// keyword-based instead of place-type-based, and results are cached under a
+	// brand-scoped Redis key (see POI.EncodeBrandNearbySearchRedisKey).
+	Keyword string
+
+	// StrictNameMatch only keeps results whose names match Keyword (after normalization).
+	// It applies before results are cached so brand-scoped Redis buckets stay brand-pure.
+	StrictNameMatch bool
+
+	// DetailsLimit caps how many places get the expensive Place Details API call, chosen
+	// by proximity to the request location. Zero means no cap (previous behavior).
+	DetailsLimit int
+}
+
+// MatchesBrandName reports whether a place name matches a brand keyword after normalization,
+// e.g. "Dunkin' Donuts #1234" matches keyword "Dunkin'"
+func MatchesBrandName(placeName, keyword string) bool {
+	normalizedKeyword := POI.NormalizeBrandKey(keyword)
+	if normalizedKeyword == "" {
+		return false
+	}
+	return strings.Contains(POI.NormalizeBrandKey(placeName), normalizedKeyword)
 }
 
 // CreateMapSearchRequest creates a NearbySearchRequest for maps NearbySearch, adjust key settings such as radius and price levels
@@ -59,6 +83,7 @@ func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationTyp
 			Lat: reqIn.Location.Latitude,
 			Lng: reqIn.Location.Longitude,
 		},
+		Keyword:   reqIn.Keyword,
 		Radius:    radius,
 		PageToken: token,
 		RankBy:    maps.RankBy("prominence"),
@@ -92,6 +117,11 @@ func (c *MapsClient) NearbySearch(ctx context.Context, request *PlaceSearchReque
 func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes uint, request *PlaceSearchRequest, places *[]POI.Place, done chan bool) {
 	searchStartTime := time.Now()
 	placeTypes := POI.GetPlaceTypes(request.PlaceCat) // get place types in a category
+	if request.Keyword != "" {
+		// keyword (brand) searches leave the place type unset so Google Maps matches the
+		// keyword across all place types in a single search
+		placeTypes = []POI.LocationType{POI.LocationTypeAny}
+	}
 
 	nextPageTokenMap := make(map[POI.LocationType]string) // map of place types to search token
 	placeCountPerPlaceType := make(map[POI.LocationType]int)
@@ -111,6 +141,7 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 
 	var err error
 	var mapsFailuresCount uint = 0
+	detailsBudget := request.DetailsLimit // remaining Place Details calls across all pages; only enforced when DetailsLimit > 0
 outer:
 	for totalPlaceCount < request.MinNumResults {
 		reqTimes++
@@ -138,12 +169,7 @@ outer:
 			// places for Google Maps place details search (https://developers.google.com/maps/documentation/places/web-service/details)
 			// the original purpose of doing a details search is getting opening hours info
 			// later on we added more fields of interest as specified in the config/config.yaml file
-			placeIdMap := make(map[int]string)
-			for k, res := range searchResp.Results {
-				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
-					placeIdMap[k] = res.PlaceID
-				}
-			}
+			placeIdMap := selectPlacesForDetails(request, &searchResp, &detailsBudget)
 
 			// placeholder for filtering places that do no need updates
 			placesToUpdate := set.Of[string]{}
@@ -180,6 +206,44 @@ outer:
 	done <- true
 }
 
+// selectPlacesForDetails picks the search results worth a Place Details API call: places
+// missing opening hours, excluding results a strict brand-name match would later drop
+// (details on those are wasted spend), and — when the request sets DetailsLimit — capped
+// to the remaining budget by proximity to the request location.
+func selectPlacesForDetails(request *PlaceSearchRequest, searchResp *maps.PlacesSearchResponse, detailsBudget *int) map[int]string {
+	type candidate struct {
+		idx  int
+		dist float64
+	}
+	candidates := make([]candidate, 0, len(searchResp.Results))
+	for k, res := range searchResp.Results {
+		if res.OpeningHours != nil && res.OpeningHours.WeekdayText != nil {
+			continue
+		}
+		if request.Keyword != "" && request.StrictNameMatch && !MatchesBrandName(res.Name, request.Keyword) {
+			continue
+		}
+		dist := utils.HaversineDist(
+			[]float64{request.Location.Latitude, request.Location.Longitude},
+			[]float64{res.Geometry.Location.Lat, res.Geometry.Location.Lng})
+		candidates = append(candidates, candidate{idx: k, dist: dist})
+	}
+
+	if request.DetailsLimit > 0 {
+		sort.Slice(candidates, func(i, j int) bool { return candidates[i].dist < candidates[j].dist })
+		if len(candidates) > *detailsBudget {
+			candidates = candidates[:*detailsBudget]
+		}
+		*detailsBudget -= len(candidates)
+	}
+
+	placeIdMap := make(map[int]string)
+	for _, cand := range candidates {
+		placeIdMap[cand.idx] = searchResp.Results[cand.idx].PlaceID
+	}
+	return placeIdMap
+}
+
 func (c *MapsClient) searchPlaceDetails(
 	ctx context.Context,
 	placeIdMap map[int]string,
@@ -191,14 +255,23 @@ func (c *MapsClient) searchPlaceDetails(
 	detailsSearchResults := make([]PlaceDetailsSearchResult, len(placeIdMap))
 	var wg sync.WaitGroup
 	wg.Add(len(placeIdMap))
+	// placeIdMap keys are indices into searchResp.Results and may be sparse (e.g. when a
+	// details budget filters candidates), so each goroutine gets its own compact slot and
+	// records the result index in PlaceDetailsSearchResult.idx
+	slot := 0
 	for idx, placeId := range placeIdMap {
-		go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailsSearchResults[idx], &wg, placesToUpdate)
+		go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailsSearchResults[slot], &wg, placesToUpdate)
+		slot++
 	}
 	wg.Wait()
 	searchDuration := time.Since(singlePlaceTypeSearchStartTime)
 
 	// fill fields from detail search results to nearby search results
 	for _, placeDetails := range detailsSearchResults {
+		if placeDetails.res == nil {
+			// the details lookup failed or was skipped; leave the nearby-search data as is
+			continue
+		}
 		idx := placeDetails.idx
 		placeId := searchResp.Results[idx].PlaceID
 		if !placesToUpdate.Has(placeId) {
