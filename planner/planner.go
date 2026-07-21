@@ -1235,7 +1235,7 @@ func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
 			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
 			if searchErr != nil {
 				result.Error = searchErr.Error()
-			} else {
+			} else if len(places) > 0 {
 				// Redis results are sorted by distance ascending; keep the nearest ones
 				if len(places) > limit {
 					places = places[:limit]
