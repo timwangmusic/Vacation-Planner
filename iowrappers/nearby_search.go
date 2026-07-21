@@ -255,14 +255,23 @@ func (c *MapsClient) searchPlaceDetails(
 	detailsSearchResults := make([]PlaceDetailsSearchResult, len(placeIdMap))
 	var wg sync.WaitGroup
 	wg.Add(len(placeIdMap))
+	// placeIdMap keys are indices into searchResp.Results and may be sparse (e.g. when a
+	// details budget filters candidates), so each goroutine gets its own compact slot and
+	// records the result index in PlaceDetailsSearchResult.idx
+	slot := 0
 	for idx, placeId := range placeIdMap {
-		go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailsSearchResults[idx], &wg, placesToUpdate)
+		go PlaceDetailsSearchWrapper(ctx, c, idx, placeId, c.DetailedSearchFields, &detailsSearchResults[slot], &wg, placesToUpdate)
+		slot++
 	}
 	wg.Wait()
 	searchDuration := time.Since(singlePlaceTypeSearchStartTime)
 
 	// fill fields from detail search results to nearby search results
 	for _, placeDetails := range detailsSearchResults {
+		if placeDetails.res == nil {
+			// the details lookup failed or was skipped; leave the nearby-search data as is
+			continue
+		}
 		idx := placeDetails.idx
 		placeId := searchResp.Results[idx].PlaceID
 		if !placesToUpdate.Has(placeId) {
