@@ -1229,6 +1229,7 @@ func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
 				Location:        location,
 				Radius:          radius,
 				MinNumResults:   uint(limit),
+				DetailsLimit:    limit,
 				BusinessStatus:  POI.Operational,
 			}
 			result := nearbyPlacesBrandResult{Brand: keyword, Places: []POI.Place{}}

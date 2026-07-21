@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -48,6 +49,10 @@ type PlaceSearchRequest struct {
 	// StrictNameMatch only keeps results whose names match Keyword (after normalization).
 	// It applies before results are cached so brand-scoped Redis buckets stay brand-pure.
 	StrictNameMatch bool
+
+	// DetailsLimit caps how many places get the expensive Place Details API call, chosen
+	// by proximity to the request location. Zero means no cap (previous behavior).
+	DetailsLimit int
 }
 
 // MatchesBrandName reports whether a place name matches a brand keyword after normalization,
@@ -136,6 +141,7 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 
 	var err error
 	var mapsFailuresCount uint = 0
+	detailsBudget := request.DetailsLimit // remaining Place Details calls across all pages; only enforced when DetailsLimit > 0
 outer:
 	for totalPlaceCount < request.MinNumResults {
 		reqTimes++
@@ -163,12 +169,7 @@ outer:
 			// places for Google Maps place details search (https://developers.google.com/maps/documentation/places/web-service/details)
 			// the original purpose of doing a details search is getting opening hours info
 			// later on we added more fields of interest as specified in the config/config.yaml file
-			placeIdMap := make(map[int]string)
-			for k, res := range searchResp.Results {
-				if res.OpeningHours == nil || res.OpeningHours.WeekdayText == nil {
-					placeIdMap[k] = res.PlaceID
-				}
-			}
+			placeIdMap := selectPlacesForDetails(request, &searchResp, &detailsBudget)
 
 			// placeholder for filtering places that do no need updates
 			placesToUpdate := set.Of[string]{}
@@ -203,6 +204,44 @@ outer:
 		"total processing time", time.Since(searchStartTime),
 	)
 	done <- true
+}
+
+// selectPlacesForDetails picks the search results worth a Place Details API call: places
+// missing opening hours, excluding results a strict brand-name match would later drop
+// (details on those are wasted spend), and — when the request sets DetailsLimit — capped
+// to the remaining budget by proximity to the request location.
+func selectPlacesForDetails(request *PlaceSearchRequest, searchResp *maps.PlacesSearchResponse, detailsBudget *int) map[int]string {
+	type candidate struct {
+		idx  int
+		dist float64
+	}
+	candidates := make([]candidate, 0, len(searchResp.Results))
+	for k, res := range searchResp.Results {
+		if res.OpeningHours != nil && res.OpeningHours.WeekdayText != nil {
+			continue
+		}
+		if request.Keyword != "" && request.StrictNameMatch && !MatchesBrandName(res.Name, request.Keyword) {
+			continue
+		}
+		dist := utils.HaversineDist(
+			[]float64{request.Location.Latitude, request.Location.Longitude},
+			[]float64{res.Geometry.Location.Lat, res.Geometry.Location.Lng})
+		candidates = append(candidates, candidate{idx: k, dist: dist})
+	}
+
+	if request.DetailsLimit > 0 {
+		sort.Slice(candidates, func(i, j int) bool { return candidates[i].dist < candidates[j].dist })
+		if len(candidates) > *detailsBudget {
+			candidates = candidates[:*detailsBudget]
+		}
+		*detailsBudget -= len(candidates)
+	}
+
+	placeIdMap := make(map[int]string)
+	for _, cand := range candidates {
+		placeIdMap[cand.idx] = searchResp.Results[cand.idx].PlaceID
+	}
+	return placeIdMap
 }
 
 func (c *MapsClient) searchPlaceDetails(
