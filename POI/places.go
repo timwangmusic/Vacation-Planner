@@ -43,6 +43,11 @@ func (w Weekday) Name() string {
 	return mapping[w]
 }
 
+// WeekdayFromTime converts Go's time.Weekday (Sunday=0) to POI's Weekday (Monday=0)
+func WeekdayFromTime(day time.Weekday) Weekday {
+	return Weekday((int(day) + 6) % 7)
+}
+
 type PlacePhoto struct {
 	// reference from Google Images
 	Reference string `bson:"reference"`
@@ -146,6 +151,13 @@ func (place *Place) GetStatus() BusinessStatus {
 
 func (place *Place) GetHour(day Weekday) string {
 	return place.Hours[day]
+}
+
+// KnownClosedOnDay reports whether the place's cached hours explicitly mark it closed on
+// the given weekday, e.g. "Sunday: Closed". Places with unknown or default hours return
+// false — absence of data is not treated as closed.
+func (place *Place) KnownClosedOnDay(day Weekday) bool {
+	return strings.Contains(strings.ToLower(place.GetHour(day)), "closed")
 }
 
 func (place *Place) GetID() string {

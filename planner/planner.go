@@ -1173,6 +1173,10 @@ type nearbyPlacesRequest struct {
 	Radius uint `json:"radius"`
 	// maximum number of places returned per brand
 	Limit int `json:"limit"`
+	// optional RFC3339 timestamp representing local time at the searched location
+	// (e.g. "2026-07-21T13:00:00-07:00"); places whose hours mark them closed on that
+	// weekday are excluded. Defaults to server time when empty.
+	LocalTime string `json:"localTime"`
 }
 
 type nearbyPlacesBrandResult struct {
@@ -1201,6 +1205,15 @@ func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
 	limit := req.Limit
 	if limit <= 0 || limit > 20 {
 		limit = 5
+	}
+	day := POI.WeekdayFromTime(time.Now().Weekday())
+	if req.LocalTime != "" {
+		localTime, parseErr := time.Parse(time.RFC3339, req.LocalTime)
+		if parseErr != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "localTime must be an RFC3339 timestamp"})
+			return
+		}
+		day = POI.WeekdayFromTime(localTime.Weekday())
 	}
 
 	requestId := requestid.Get(ctx)
@@ -1237,6 +1250,8 @@ func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
 			if searchErr != nil {
 				result.Error = searchErr.Error()
 			} else if len(places) > 0 {
+				// drop places explicitly marked closed on the requested day
+				places = iowrappers.Filter(places, func(place POI.Place) bool { return !place.KnownClosedOnDay(day) })
 				// Redis results are sorted by distance ascending; keep the nearest ones
 				if len(places) > limit {
 					places = places[:limit]
