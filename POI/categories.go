@@ -23,6 +23,8 @@ const (
 type LocationType string
 
 const (
+	// LocationTypeAny leaves the Google Maps place type unset, used by keyword (brand) searches
+	LocationTypeAny           = LocationType("")
 	LocationTypeCafe          = LocationType("cafe")
 	LocationTypeRestaurant    = LocationType("restaurant")
 	LocationTypeMuseum        = LocationType("museum")
@@ -70,6 +72,31 @@ func EncodeNearbySearchRedisKey(placeCategory PlaceCategory, level PriceLevel) s
 		keys = append(keys, fmt.Sprintf("level%d", level))
 	}
 	return strings.Join(keys, ":")
+}
+
+// NormalizeBrandKey converts a brand keyword into a stable slug used in Redis keys and
+// name matching, e.g. "Dunkin' Donuts" -> "dunkin-donuts"
+func NormalizeBrandKey(keyword string) string {
+	var b strings.Builder
+	pendingDash := false
+	for _, r := range strings.ToLower(strings.TrimSpace(keyword)) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			if pendingDash && b.Len() > 0 {
+				b.WriteRune('-')
+			}
+			b.WriteRune(r)
+			pendingDash = false
+		} else {
+			pendingDash = true
+		}
+	}
+	return b.String()
+}
+
+// EncodeBrandNearbySearchRedisKey generates a Redis key for brand-scoped nearby search,
+// keeping brand search results in buckets separate from category-based searches
+func EncodeBrandNearbySearchRedisKey(keyword string) string {
+	return strings.Join([]string{"placeIDs", "brand", NormalizeBrandKey(keyword)}, ":")
 }
 
 type StayingTime uint8

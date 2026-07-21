@@ -154,7 +154,13 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 	Logger.Debugf("(PoiSearcher)NearbySearch: [request_id: %s] the number of results from redis is %d", context.Value(ContextRequestIdKey), len(savedPlaces))
 
 	// update last search time for the city
-	lastSearchTime, lastSearchTimeMiss := s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel)
+	var lastSearchTime time.Time
+	var lastSearchTimeMiss error
+	if request.Keyword != "" {
+		lastSearchTime, lastSearchTimeMiss = s.redisClient.GetBrandMapsLastSearchTime(context, location, request.Keyword)
+	} else {
+		lastSearchTime, lastSearchTimeMiss = s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel)
+	}
 
 	currentTime := time.Now()
 
@@ -163,16 +169,21 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 	}
 	// use place data from the database if it is fresh and at least one saved place satisfies the request
 	if isSavedPlacesFresh() && placesErr == nil && len(savedPlaces) > 0 {
-		Logger.Infof("(PoiSearcher)NearbySearch: [request_id: %s] Using Redis to fulfill request for location %+v with category %s and price level %d",
+		Logger.Infof("(PoiSearcher)NearbySearch: [request_id: %s] Using Redis to fulfill request for location %+v with category %s, keyword %q and price level %d",
 			context.Value(ContextRequestIdKey),
 			request.Location,
 			request.PlaceCat,
+			request.Keyword,
 			request.PriceLevel)
 		places = append(places, savedPlaces...)
 		return places, nil
 	}
 
-	utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel, currentTime.Format(time.RFC3339)), utils.LogError)
+	if request.Keyword != "" {
+		utils.LogErrorWithLevel(s.redisClient.SetBrandMapsLastSearchTime(context, location, request.Keyword, currentTime.Format(time.RFC3339)), utils.LogError)
+	} else {
+		utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel, currentTime.Format(time.RFC3339)), utils.LogError)
+	}
 
 	// initiate a new external search
 	newPlaces, searchErr := s.searchPlacesWithMaps(context, request)
@@ -180,10 +191,21 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 		return nil, searchErr
 	}
 
+	if request.Keyword != "" && request.StrictNameMatch {
+		// drop keyword-search results that are merely related to the brand (Google Maps
+		// matches keywords against reviews and other content, not just names) before they
+		// reach the brand-scoped cache
+		newPlaces = Filter(newPlaces, func(place POI.Place) bool { return MatchesBrandName(place.Name, request.Keyword) })
+	}
+
 	// safeguard on accessing elements in a nil slice
 	if len(newPlaces) > 0 {
 		// update Redis with all the new places obtained
-		s.UpdateRedis(context, newPlaces)
+		if request.Keyword != "" {
+			s.redisClient.SetPlacesAddGeoLocationsForBrand(context, request.Keyword, newPlaces)
+		} else {
+			s.UpdateRedis(context, newPlaces)
+		}
 
 		// include places from cache in the result
 		places = append(places, newPlaces...)
@@ -195,6 +217,11 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 // processLocation performs reverse geocoding for precise location to find city-level information and performs geocoding to find precise latitude and longitude values
 func (s *PoiSearcher) processLocation(ctx context.Context, req *PlaceSearchRequest) error {
 	location := &req.Location
+	// the location is already fully resolved (precise coordinates plus city-level info);
+	// callers fanning out multiple searches around one coordinate resolve it once up front
+	if !req.UsePreciseLocation && location.City != "" && (location.Latitude != 0 || location.Longitude != 0) {
+		return nil
+	}
 	if req.UsePreciseLocation {
 		Logger.Debugf("->NearbySearch: using precise location")
 		geoQuery, err := s.GetMapsClient().ReverseGeocode(ctx, req.Location.Latitude, req.Location.Longitude)

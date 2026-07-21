@@ -39,6 +39,25 @@ type PlaceSearchRequest struct {
 	UsePreciseLocation bool
 
 	PriceLevel POI.PriceLevel
+
+	// Keyword is a brand or merchant keyword (e.g. "Dunkin'"). When set, the search is
+	// keyword-based instead of place-type-based, and results are cached under a
+	// brand-scoped Redis key (see POI.EncodeBrandNearbySearchRedisKey).
+	Keyword string
+
+	// StrictNameMatch only keeps results whose names match Keyword (after normalization).
+	// It applies before results are cached so brand-scoped Redis buckets stay brand-pure.
+	StrictNameMatch bool
+}
+
+// MatchesBrandName reports whether a place name matches a brand keyword after normalization,
+// e.g. "Dunkin' Donuts #1234" matches keyword "Dunkin'"
+func MatchesBrandName(placeName, keyword string) bool {
+	normalizedKeyword := POI.NormalizeBrandKey(keyword)
+	if normalizedKeyword == "" {
+		return false
+	}
+	return strings.Contains(POI.NormalizeBrandKey(placeName), normalizedKeyword)
 }
 
 // CreateMapSearchRequest creates a NearbySearchRequest for maps NearbySearch, adjust key settings such as radius and price levels
@@ -59,6 +78,7 @@ func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationTyp
 			Lat: reqIn.Location.Latitude,
 			Lng: reqIn.Location.Longitude,
 		},
+		Keyword:   reqIn.Keyword,
 		Radius:    radius,
 		PageToken: token,
 		RankBy:    maps.RankBy("prominence"),
@@ -92,6 +112,11 @@ func (c *MapsClient) NearbySearch(ctx context.Context, request *PlaceSearchReque
 func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes uint, request *PlaceSearchRequest, places *[]POI.Place, done chan bool) {
 	searchStartTime := time.Now()
 	placeTypes := POI.GetPlaceTypes(request.PlaceCat) // get place types in a category
+	if request.Keyword != "" {
+		// keyword (brand) searches leave the place type unset so Google Maps matches the
+		// keyword across all place types in a single search
+		placeTypes = []POI.LocationType{POI.LocationTypeAny}
+	}
 
 	nextPageTokenMap := make(map[POI.LocationType]string) // map of place types to search token
 	placeCountPerPlaceType := make(map[POI.LocationType]int)
