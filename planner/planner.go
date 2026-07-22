@@ -1187,7 +1187,14 @@ type nearbyPlacesBrandResult struct {
 
 // getNearbyPlaces returns operational places for each requested brand keyword around a coordinate.
 // Results are served from the brand-scoped Redis geo index when fresh, falling back to Google Maps.
+// Requires authentication (PAT Bearer header or JWT cookie): each request can fan out up to 25
+// Google Maps searches on a cold cache, so the endpoint must not be open.
 func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
+	if _, authErr := p.UserAuthentication(ctx, user.LevelRegular); authErr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authErr.GetErrorMessage()})
+		return
+	}
+
 	req := &nearbyPlacesRequest{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
