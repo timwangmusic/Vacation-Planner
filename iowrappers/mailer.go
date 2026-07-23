@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -23,6 +24,23 @@ type EmailType string
 
 const EmailVerification EmailType = "Email Verification"
 const PasswordReset EmailType = "Password Reset"
+
+// backendBaseURL returns the base URL of the backend service that serves the
+// email verification and password reset handlers (GET /v1/verify and
+// GET /v1/reset-password). Links in outgoing emails MUST point at the backend
+// host, not the frontend host: the frontend (e.g. the Vercel deployment at
+// www.unwind.dev) does not expose these /v1 routes, so pointing there leaves
+// the code unverified. The host is configurable via the BACKEND_URL env var so
+// it does not have to be hard-coded per environment.
+func backendBaseURL(environment string) string {
+	if url := strings.TrimRight(os.Getenv("BACKEND_URL"), "/"); url != "" {
+		return url
+	}
+	if environment == "testing" {
+		return "https://testing-vp.herokuapp.com"
+	}
+	return "https://best-vacation-planner.herokuapp.com"
+}
 
 func (m *Mailer) Init(redisClient *RedisClient) error {
 	if os.Getenv("SENDGRID_API_KEY") == "" {
@@ -86,10 +104,7 @@ func (m *Mailer) Send(ctx context.Context, t EmailType, recipient user.View, env
 		if err != nil {
 			return err
 		}
-		htmlContent := fmt.Sprintf("<p>please follow the <a href=https://www.unwind.dev/v1/verify?code=%s>link</a> to verify your email address. </p>", code)
-		if environment == "testing" {
-			htmlContent = fmt.Sprintf("<p>please follow the <a href=https://testing-vp.herokuapp.com/v1/verify?code=%s>link</a> to verify your email address. </p>", code)
-		}
+		htmlContent := fmt.Sprintf("<p>please follow the <a href=%s/v1/verify?code=%s>link</a> to verify your email address. </p>", backendBaseURL(environment), code)
 		message := mail.NewSingleEmail(from, subject, to, "", htmlContent)
 		resp, err := m.client.Send(message)
 		if err != nil {
@@ -107,10 +122,7 @@ func (m *Mailer) Send(ctx context.Context, t EmailType, recipient user.View, env
 		if err != nil {
 			return err
 		}
-		htmlContent := fmt.Sprintf("<p>please follow the <a href=https://www.unwind.dev/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", recipient.Email, code)
-		if environment == "testing" {
-			htmlContent = fmt.Sprintf("<p>please follow the <a href=https://testing-vp.herokuapp.com/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", recipient.Email, code)
-		}
+		htmlContent := fmt.Sprintf("<p>please follow the <a href=%s/v1/reset-password?email=%s&code=%s>link</a> to reset your password. </p>", backendBaseURL(environment), recipient.Email, code)
 		message := mail.NewSingleEmail(from, subject, to, "", htmlContent)
 		resp, err := m.client.Send(message)
 		if err != nil {
