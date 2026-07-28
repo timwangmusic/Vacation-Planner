@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -443,11 +444,27 @@ func (r *RedisClient) getPlace(context context.Context, placeId string) (place P
 	return
 }
 
-func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
-	redisKey := POI.EncodeNearbySearchRedisKey(req.PlaceCat, req.PriceLevel)
+// nearbySearchRedisKeys returns the geo-index keys a nearby search reads. Usually
+// one key, but an Eatery search with AllPriceLevels set unions every price bucket
+// (placeIDs:eatery:level0..4). Eateries are partitioned by price on write, so a
+// category/merchant search that has no price preference must read them all or it
+// only sees the tier named by req.PriceLevel (e.g. only price-unknown eateries).
+func nearbySearchRedisKeys(req *PlaceSearchRequest) []string {
 	if req.Keyword != "" {
-		redisKey = POI.EncodeBrandNearbySearchRedisKey(req.Keyword)
+		return []string{POI.EncodeBrandNearbySearchRedisKey(req.Keyword)}
 	}
+	if req.AllPriceLevels && req.PlaceCat == POI.PlaceCategoryEatery {
+		keys := make([]string, 0, len(POI.AllPriceLevels))
+		for _, lvl := range POI.AllPriceLevels {
+			keys = append(keys, POI.EncodeNearbySearchRedisKey(req.PlaceCat, lvl))
+		}
+		return keys
+	}
+	return []string{POI.EncodeNearbySearchRedisKey(req.PlaceCat, req.PriceLevel)}
+}
+
+func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
+	redisKeys := nearbySearchRedisKeys(req)
 	requestLat, requestLng := req.Location.Latitude, req.Location.Longitude
 	searchRadius := req.Radius
 
@@ -455,19 +472,51 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 		searchRadius = MaxSearchRadius
 	}
 
+	// The multi-key union path (WithDist merge-sort) is used ONLY when reading more
+	// than one bucket — i.e. an AllPriceLevels eatery category search. The common
+	// single-key path (plan generation, non-eatery categories, brand searches) is
+	// left exactly as it was: one GeoRadius call, its native ASC order, no re-sort.
+	singleKey := len(redisKeys) == 1
+
 	var cachedQualifiedPlaces []redis.GeoLocation
 	for searchRadius <= MaxSearchRadius {
 		Logger.Debugf("[request_id: %s] Redis geo radius is using search radius of %d meters", ctx.Value(ContextRequestIdKey), searchRadius)
 		geoQuery := &redis.GeoRadiusQuery{
-			Radius: float64(searchRadius),
-			Unit:   "m",
-			Sort:   "ASC", // sort ascending
+			Radius:   float64(searchRadius),
+			Unit:     "m",
+			Sort:     "ASC",      // sort ascending
+			WithDist: !singleKey, // only needed to merge-sort across multiple buckets
 		}
 
-		var err error
-		if cachedQualifiedPlaces, err = r.client.GeoRadius(ctx, redisKey, requestLng, requestLat, geoQuery).Result(); err != nil {
-			return nil, err
+		if singleKey {
+			var err error
+			if cachedQualifiedPlaces, err = r.client.GeoRadius(ctx, redisKeys[0], requestLng, requestLat, geoQuery).Result(); err != nil {
+				return nil, err
+			}
+		} else {
+			// Union across buckets by member, keeping the nearest sighting of a place
+			// that appears in more than one, then merge-sort by distance.
+			merged := make(map[string]redis.GeoLocation)
+			for _, key := range redisKeys {
+				locs, err := r.client.GeoRadius(ctx, key, requestLng, requestLat, geoQuery).Result()
+				if err != nil {
+					return nil, err
+				}
+				for _, loc := range locs {
+					if existing, seen := merged[loc.Name]; !seen || loc.Dist < existing.Dist {
+						merged[loc.Name] = loc
+					}
+				}
+			}
+			cachedQualifiedPlaces = make([]redis.GeoLocation, 0, len(merged))
+			for _, loc := range merged {
+				cachedQualifiedPlaces = append(cachedQualifiedPlaces, loc)
+			}
+			sort.SliceStable(cachedQualifiedPlaces, func(i, j int) bool {
+				return cachedQualifiedPlaces[i].Dist < cachedQualifiedPlaces[j].Dist
+			})
 		}
+
 		if len(cachedQualifiedPlaces) >= int(req.MinNumResults) {
 			break
 		}

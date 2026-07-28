@@ -53,6 +53,13 @@ type PlaceSearchRequest struct {
 	// DetailsLimit caps how many places get the expensive Place Details API call, chosen
 	// by proximity to the request location. Zero means no cap (previous behavior).
 	DetailsLimit int
+
+	// AllPriceLevels, for an Eatery search with no price preference (merchant /
+	// category endpoint), unions every price bucket on read. Eateries are
+	// partitioned by price in the geo index, so without this a category read only
+	// returns the single PriceLevel bucket named by the request. No effect on
+	// non-Eatery categories (they are not price-partitioned) or keyword searches.
+	AllPriceLevels bool
 }
 
 // MatchesBrandName reports whether a place name matches a brand keyword after normalization,
