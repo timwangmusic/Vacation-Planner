@@ -67,21 +67,28 @@ const (
 )
 
 type Place struct {
-	ID               string         `bson:"_id"`
-	Name             string         `bson:"name"`
-	Status           BusinessStatus `bson:"status"`
-	LocationType     LocationType   `bson:"location_type"`
-	Address          Address        `bson:"address"`
-	FormattedAddress string         `bson:"formatted_address"`
-	Location         Location       `bson:"location"`
-	PriceLevel       PriceLevel     `bson:"price_level"`
-	Rating           float32        `bson:"rating"`
-	Hours            [7]string      `bson:"hours"`
-	URL              string         `bson:"url"`
-	Photo            PlacePhoto     `bson:"photo"`
-	UserRatingsTotal int            `bson:"user_ratings_total"`
-	Summary          string         `bson:"summary"`
-	LastUpdatedAt    string         `bson:"last_updated_at"`
+	ID           string         `bson:"_id"`
+	Name         string         `bson:"name"`
+	Status       BusinessStatus `bson:"status"`
+	LocationType LocationType   `bson:"location_type"`
+	// Types is the full Google Maps feature-type list for the place (primary type
+	// first), e.g. ["supermarket","grocery_or_supermarket","food",...]. LocationType
+	// above is the single type a search tagged the place with (often the SEARCHED
+	// type, not the actual one); Types preserves the truth so callers can classify
+	// a place by its primary function. Populated on nearby search; may be empty on
+	// older cached records.
+	Types            []string   `bson:"types"`
+	Address          Address    `bson:"address"`
+	FormattedAddress string     `bson:"formatted_address"`
+	Location         Location   `bson:"location"`
+	PriceLevel       PriceLevel `bson:"price_level"`
+	Rating           float32    `bson:"rating"`
+	Hours            [7]string  `bson:"hours"`
+	URL              string     `bson:"url"`
+	Photo            PlacePhoto `bson:"photo"`
+	UserRatingsTotal int        `bson:"user_ratings_total"`
+	Summary          string     `bson:"summary"`
+	LastUpdatedAt    string     `bson:"last_updated_at"`
 }
 
 type Location struct {
