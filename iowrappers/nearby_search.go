@@ -146,25 +146,59 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 	urlMap := make(map[string]string)       // map place ID to url
 	summaryMap := make(map[string]string)   // map place ID to summary
 
-	var err error
 	var mapsFailuresCount uint = 0
 	detailsBudget := request.DetailsLimit // remaining Place Details calls across all pages; only enforced when DetailsLimit > 0
+
+	// One place type's Nearby Search HTTP result (Phase A). Holds no shared state,
+	// so goroutines can fill it by index without synchronization.
+	type fetchResult struct {
+		resp maps.PlacesSearchResponse
+		err  error
+		skip bool // this place type had no more pages this pass
+	}
 outer:
 	for totalPlaceCount < request.MinNumResults {
 		reqTimes++
-		for _, placeType := range placeTypes {
-			if reqTimes > 1 && nextPageTokenMap[placeType] == "" { // no more result for this location type
+
+		// Phase A — fetch every eligible place type's Nearby Search CONCURRENTLY.
+		// These are independent, slow HTTP calls and the dominant cold-cache cost;
+		// running them in parallel (bounded by the shared API semaphore) collapses a
+		// category's N serial searches into one round. Each goroutine writes only its
+		// own fetched[i], so no shared state is touched here.
+		fetched := make([]fetchResult, len(placeTypes))
+		var wg sync.WaitGroup
+		for i, placeType := range placeTypes {
+			if reqTimes > 1 && nextPageTokenMap[placeType] == "" { // no more results for this type
+				fetched[i].skip = true
 				continue
 			}
+			wg.Add(1)
+			go func(i int, placeType POI.LocationType, token string) {
+				defer wg.Done()
+				searchReq := CreateMapSearchRequest(request, placeType, token)
+				select {
+				case c.apiSemaphore <- struct{}{}:
+					defer func() { <-c.apiSemaphore }()
+				case <-ctx.Done():
+					fetched[i].err = ctx.Err()
+					return
+				}
+				fetched[i].resp, fetched[i].err = c.GoogleMapsNearbySearchWrapper(ctx, searchReq)
+			}(i, placeType, nextPageTokenMap[placeType])
+		}
+		wg.Wait()
 
-			singlePlaceTypeSearchStartTime := time.Now()
-			nextPageToken := nextPageTokenMap[placeType]
-			var searchReq = CreateMapSearchRequest(request, placeType, nextPageToken)
-			var searchResp maps.PlacesSearchResponse
-			searchResp, err = c.GoogleMapsNearbySearchWrapper(ctx, searchReq)
-			if err != nil {
+		// Phase B — process the fetched responses SEQUENTIALLY in placeTypes order.
+		// This is the original per-type body, so cross-type dedup (placeMap), the
+		// shared Place Details budget, and the output order are all identical to the
+		// previous sequential implementation.
+		for i, placeType := range placeTypes {
+			if fetched[i].skip {
+				continue
+			}
+			if fetched[i].err != nil {
 				Logger.Error(fmt.Errorf("places nearby search with Maps failed for place type %s with error: %w",
-					placeType, err))
+					placeType, fetched[i].err))
 				mapsFailuresCount++
 				if mapsFailuresCount == maxRetries {
 					break outer
@@ -172,6 +206,9 @@ outer:
 				// we should still retry for the next place type if the number of failures is below maxRetries
 				continue
 			}
+
+			processingStartTime := time.Now()
+			searchResp := fetched[i].resp
 
 			// places for Google Maps place details search (https://developers.google.com/maps/documentation/places/web-service/details)
 			// the original purpose of doing a details search is getting opening hours info
@@ -183,7 +220,7 @@ outer:
 			for _, placeId := range placeIdMap {
 				placesToUpdate.Add(placeId)
 			}
-			searchDuration := c.searchPlaceDetails(ctx, placeIdMap, singlePlaceTypeSearchStartTime, &searchResp, summaryMap, microAddrMap, urlMap, placesToUpdate)
+			searchDuration := c.searchPlaceDetails(ctx, placeIdMap, processingStartTime, &searchResp, summaryMap, microAddrMap, urlMap, placesToUpdate)
 
 			*places = append(*places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap, summaryMap)...)
 			totalPlaceCount += uint(len(searchResp.Results))
