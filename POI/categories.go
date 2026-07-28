@@ -10,14 +10,22 @@ type PlaceCategory string
 const (
 	PlaceCategoryVisit  = PlaceCategory("Visit")
 	PlaceCategoryEatery = PlaceCategory("Eatery")
+	// Categories below back the merchant/best-card nearby endpoint. They are not used by
+	// trip planning, which only slots Visit/Eatery places.
+	PlaceCategoryShopping = PlaceCategory("Shopping")
+	PlaceCategoryLodging  = PlaceCategory("Lodging")
+	PlaceCategoryWellness = PlaceCategory("Wellness")
 )
 
 type PlaceIcon string
 
 const (
-	PlaceIconVisit  = PlaceIcon("attractions")
-	PlaceIconEatery = PlaceIcon("restaurant")
-	PlaceIconEmpty  = PlaceIcon("")
+	PlaceIconVisit    = PlaceIcon("attractions")
+	PlaceIconEatery   = PlaceIcon("restaurant")
+	PlaceIconShopping = PlaceIcon("shopping_bag")
+	PlaceIconLodging  = PlaceIcon("hotel")
+	PlaceIconWellness = PlaceIcon("spa")
+	PlaceIconEmpty    = PlaceIcon("")
 )
 
 type LocationType string
@@ -31,14 +39,36 @@ const (
 	LocationTypeGallery       = LocationType("art_gallery")
 	LocationTypeAmusementPark = LocationType("amusement_park")
 	LocationTypePark          = LocationType("park")
+	// Shopping place types
+	LocationTypeShoppingMall    = LocationType("shopping_mall")
+	LocationTypeDepartmentStore = LocationType("department_store")
+	LocationTypeSupermarket     = LocationType("supermarket")
+	LocationTypeClothingStore   = LocationType("clothing_store")
+	LocationTypeStore           = LocationType("store")
+	// Lodging place types
+	LocationTypeLodging = LocationType("lodging")
+	// Wellness place types
+	LocationTypeGym      = LocationType("gym")
+	LocationTypeSpa      = LocationType("spa")
+	LocationTypePharmacy = LocationType("pharmacy")
 )
 
+// GetPlaceCategory maps a Google Maps place type back to its category. It is the inverse of
+// GetPlaceTypes and MUST stay consistent with it: the nearby-search cache writes each place
+// under EncodeNearbySearchRedisKey(GetPlaceCategory(place.LocationType), ...), so a type that
+// resolves to a different category than the one it was searched under would never cache-hit.
 func GetPlaceCategory(placeType LocationType) (placeCategory PlaceCategory) {
 	switch placeType {
 	case LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum:
 		placeCategory = PlaceCategoryVisit
 	case LocationTypeCafe, LocationTypeRestaurant:
 		placeCategory = PlaceCategoryEatery
+	case LocationTypeShoppingMall, LocationTypeDepartmentStore, LocationTypeSupermarket, LocationTypeClothingStore, LocationTypeStore:
+		placeCategory = PlaceCategoryShopping
+	case LocationTypeLodging:
+		placeCategory = PlaceCategoryLodging
+	case LocationTypeGym, LocationTypeSpa, LocationTypePharmacy:
+		placeCategory = PlaceCategoryWellness
 	default:
 		placeCategory = PlaceCategoryEatery
 	}
@@ -54,8 +84,29 @@ func GetPlaceTypes(placeCat PlaceCategory) (placeTypes []LocationType) {
 	case PlaceCategoryEatery:
 		placeTypes = append(placeTypes,
 			[]LocationType{LocationTypeCafe, LocationTypeRestaurant}...)
+	case PlaceCategoryShopping:
+		placeTypes = append(placeTypes,
+			[]LocationType{LocationTypeShoppingMall, LocationTypeDepartmentStore, LocationTypeSupermarket, LocationTypeClothingStore, LocationTypeStore}...)
+	case PlaceCategoryLodging:
+		placeTypes = append(placeTypes,
+			[]LocationType{LocationTypeLodging}...)
+	case PlaceCategoryWellness:
+		placeTypes = append(placeTypes,
+			[]LocationType{LocationTypeGym, LocationTypeSpa, LocationTypePharmacy}...)
 	}
 	return
+}
+
+// ParsePlaceCategory converts a category string (e.g. from an API request) into a known
+// PlaceCategory, reporting whether it matched. Matching is exact against the canonical
+// category names ("Eatery", "Shopping", "Lodging", "Wellness", "Visit").
+func ParsePlaceCategory(s string) (PlaceCategory, bool) {
+	switch PlaceCategory(s) {
+	case PlaceCategoryVisit, PlaceCategoryEatery, PlaceCategoryShopping, PlaceCategoryLodging, PlaceCategoryWellness:
+		return PlaceCategory(s), true
+	default:
+		return PlaceCategory(""), false
+	}
 }
 
 // PriceyEatery returns whether a eatery place is expensive based on its price level

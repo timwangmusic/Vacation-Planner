@@ -1273,6 +1273,127 @@ func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"results": results})
 }
 
+type nearbyPlacesByCategoryRequest struct {
+	// place categories to search for, e.g. ["Eatery", "Shopping", "Lodging", "Wellness"].
+	// Each must be a known POI.PlaceCategory; unknown categories are rejected.
+	Categories []string     `json:"categories" binding:"required,min=1,max=10"`
+	Location   POI.Location `json:"location"`
+	// search radius in meters; defaults to the maximum search radius when zero
+	Radius uint `json:"radius"`
+	// maximum number of places returned per category
+	Limit int `json:"limit"`
+	// optional RFC3339 timestamp representing local time at the searched location
+	// (e.g. "2026-07-21T13:00:00-07:00"); places whose hours mark them closed on that
+	// weekday are excluded. Defaults to server time when empty.
+	LocalTime string `json:"localTime"`
+}
+
+type nearbyPlacesByCategoryResult struct {
+	Category string      `json:"category"`
+	Places   []POI.Place `json:"places"`
+	Error    string      `json:"error,omitempty"`
+}
+
+// getNearbyPlacesByCategory returns operational places for each requested place category
+// (Eatery, Shopping, Lodging, Wellness, ...) around a coordinate, using place-type search.
+// Results are served from the category-scoped Redis geo index when fresh, falling back to
+// Google Maps. Requires authentication (PAT Bearer header or JWT cookie): each request can
+// fan out several Google Maps searches on a cold cache, so the endpoint must not be open.
+func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
+	if _, authErr := p.UserAuthentication(ctx, user.LevelRegular); authErr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authErr.GetErrorMessage()})
+		return
+	}
+
+	req := &nearbyPlacesByCategoryRequest{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.Location.Latitude == 0 && req.Location.Longitude == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "location with latitude and longitude is required"})
+		return
+	}
+
+	// validate categories up front so a single bad value fails the whole request loudly
+	// rather than silently returning empty results for it
+	categories := make([]POI.PlaceCategory, len(req.Categories))
+	for i, c := range req.Categories {
+		parsed, ok := POI.ParsePlaceCategory(c)
+		if !ok {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("unknown place category %q", c)})
+			return
+		}
+		categories[i] = parsed
+	}
+
+	radius := req.Radius
+	if radius == 0 || radius > iowrappers.MaxSearchRadius {
+		radius = iowrappers.MaxSearchRadius
+	}
+	limit := req.Limit
+	if limit <= 0 || limit > 20 {
+		limit = 5
+	}
+	day := POI.WeekdayFromTime(time.Now().Weekday())
+	if req.LocalTime != "" {
+		localTime, parseErr := time.Parse(time.RFC3339, req.LocalTime)
+		if parseErr != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "localTime must be an RFC3339 timestamp"})
+			return
+		}
+		day = POI.WeekdayFromTime(localTime.Weekday())
+	}
+
+	requestId := requestid.Get(ctx)
+	searchContext := context.WithValue(ctx.Request.Context(), iowrappers.ContextRequestIdKey, requestId)
+
+	// resolve city-level info once so the per-category searches skip geocoding
+	geoQuery, err := p.Solver.Searcher.ReverseGeocode(searchContext, req.Location.Latitude, req.Location.Longitude)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	location := req.Location
+	location.City = geoQuery.City
+	location.AdminAreaLevelOne = geoQuery.AdminAreaLevelOne
+	location.Country = geoQuery.Country
+
+	results := make([]nearbyPlacesByCategoryResult, len(categories))
+	wg := &sync.WaitGroup{}
+	wg.Add(len(categories))
+	for i, category := range categories {
+		go func(idx int, placeCat POI.PlaceCategory) {
+			defer wg.Done()
+			searchReq := &iowrappers.PlaceSearchRequest{
+				PlaceCat:       placeCat,
+				Location:       location,
+				Radius:         radius,
+				MinNumResults:  uint(limit),
+				DetailsLimit:   limit,
+				BusinessStatus: POI.Operational,
+			}
+			result := nearbyPlacesByCategoryResult{Category: string(placeCat), Places: []POI.Place{}}
+			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
+			if searchErr != nil {
+				result.Error = searchErr.Error()
+			} else if len(places) > 0 {
+				// drop places explicitly marked closed on the requested day
+				places = iowrappers.Filter(places, func(place POI.Place) bool { return !place.KnownClosedOnDay(day) })
+				// Redis results are sorted by distance ascending; keep the nearest ones
+				if len(places) > limit {
+					places = places[:limit]
+				}
+				result.Places = places
+			}
+			results[idx] = result
+		}(i, category)
+	}
+	wg.Wait()
+
+	ctx.JSON(http.StatusOK, gin.H{"results": results})
+}
+
 func (p *MyPlanner) GetPlaceDetails(ctx *gin.Context) {
 	id := ctx.Param("id")
 	if id == "" {
@@ -1521,6 +1642,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.GET("/send-password-reset-email", p.resetPasswordHandler)
 		v1.POST("/nearby-cities", p.getNearbyCities)
 		v1.POST("/nearby-places", p.getNearbyPlaces)
+		v1.POST("/nearby-places-by-category", p.getNearbyPlacesByCategory)
 		v1.POST("/optimal-plan", p.getOptimalPlan)
 		v1.POST("/create-token", p.createNewPAT)
 		v1.DELETE("/revoke-token", p.RevokePAT)
