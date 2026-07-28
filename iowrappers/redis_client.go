@@ -472,38 +472,51 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 		searchRadius = MaxSearchRadius
 	}
 
+	// The multi-key union path (WithDist merge-sort) is used ONLY when reading more
+	// than one bucket — i.e. an AllPriceLevels eatery category search. The common
+	// single-key path (plan generation, non-eatery categories, brand searches) is
+	// left exactly as it was: one GeoRadius call, its native ASC order, no re-sort.
+	singleKey := len(redisKeys) == 1
+
 	var cachedQualifiedPlaces []redis.GeoLocation
 	for searchRadius <= MaxSearchRadius {
 		Logger.Debugf("[request_id: %s] Redis geo radius is using search radius of %d meters", ctx.Value(ContextRequestIdKey), searchRadius)
 		geoQuery := &redis.GeoRadiusQuery{
 			Radius:   float64(searchRadius),
 			Unit:     "m",
-			Sort:     "ASC", // sort ascending
-			WithDist: true,   // needed to merge-sort across multiple buckets
+			Sort:     "ASC",      // sort ascending
+			WithDist: !singleKey, // only needed to merge-sort across multiple buckets
 		}
 
-		// Query each key and union by member, keeping the nearest sighting of a
-		// place that appears in more than one bucket. For the common single-key
-		// case this is one GeoRadius call, unchanged in behavior.
-		merged := make(map[string]redis.GeoLocation)
-		for _, key := range redisKeys {
-			locs, err := r.client.GeoRadius(ctx, key, requestLng, requestLat, geoQuery).Result()
-			if err != nil {
+		if singleKey {
+			var err error
+			if cachedQualifiedPlaces, err = r.client.GeoRadius(ctx, redisKeys[0], requestLng, requestLat, geoQuery).Result(); err != nil {
 				return nil, err
 			}
-			for _, loc := range locs {
-				if existing, seen := merged[loc.Name]; !seen || loc.Dist < existing.Dist {
-					merged[loc.Name] = loc
+		} else {
+			// Union across buckets by member, keeping the nearest sighting of a place
+			// that appears in more than one, then merge-sort by distance.
+			merged := make(map[string]redis.GeoLocation)
+			for _, key := range redisKeys {
+				locs, err := r.client.GeoRadius(ctx, key, requestLng, requestLat, geoQuery).Result()
+				if err != nil {
+					return nil, err
+				}
+				for _, loc := range locs {
+					if existing, seen := merged[loc.Name]; !seen || loc.Dist < existing.Dist {
+						merged[loc.Name] = loc
+					}
 				}
 			}
+			cachedQualifiedPlaces = make([]redis.GeoLocation, 0, len(merged))
+			for _, loc := range merged {
+				cachedQualifiedPlaces = append(cachedQualifiedPlaces, loc)
+			}
+			sort.SliceStable(cachedQualifiedPlaces, func(i, j int) bool {
+				return cachedQualifiedPlaces[i].Dist < cachedQualifiedPlaces[j].Dist
+			})
 		}
-		cachedQualifiedPlaces = make([]redis.GeoLocation, 0, len(merged))
-		for _, loc := range merged {
-			cachedQualifiedPlaces = append(cachedQualifiedPlaces, loc)
-		}
-		sort.Slice(cachedQualifiedPlaces, func(i, j int) bool {
-			return cachedQualifiedPlaces[i].Dist < cachedQualifiedPlaces[j].Dist
-		})
+
 		if len(cachedQualifiedPlaces) >= int(req.MinNumResults) {
 			break
 		}
