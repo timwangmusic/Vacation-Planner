@@ -137,6 +137,15 @@ const (
 	PriceLevelDefault = 2
 )
 
+// AllPriceLevels enumerates the distinct price buckets an eatery can be filed
+// under. Eateries are partitioned by price on write (EncodeNearbySearchRedisKey
+// appends the level only for the Eatery category), so a merchant/category eatery
+// search — which has no price preference — must union across all of these or it
+// only sees one price tier. Other categories are single-bucket.
+var AllPriceLevels = []PriceLevel{
+	PriceLevelZero, PriceLevelOne, PriceLevelTwo, PriceLevelThree, PriceLevelFour,
+}
+
 func (place *Place) GetName() string {
 	return place.Name
 }

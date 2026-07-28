@@ -1372,6 +1372,9 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 				MinNumResults:  uint(limit),
 				DetailsLimit:   limit,
 				BusinessStatus: POI.Operational,
+				// Merchant search has no price preference: union all eatery price
+				// buckets so the food category isn't limited to one price tier.
+				AllPriceLevels: true,
 			}
 			result := nearbyPlacesByCategoryResult{Category: string(placeCat), Places: []POI.Place{}}
 			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
