@@ -378,7 +378,11 @@ func parsePlacesSearchResponse(resp maps.PlacesSearchResponse, locationType POI.
 			placeSummary = &summary
 		}
 
-		places = append(places, POI.CreatePlace(name, addr, res.FormattedAddress, res.BusinessStatus, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal, latitude, longitude, placeSummary))
+		place := POI.CreatePlace(name, addr, res.FormattedAddress, res.BusinessStatus, locationType, h, id, priceLevel, rating, url, photo, userRatingsTotal, latitude, longitude, placeSummary)
+		// Preserve Google's actual feature types so callers can classify the place by
+		// its primary function, not the type this search happened to query for.
+		place.Types = res.Types
+		places = append(places, place)
 	}
 	return
 }

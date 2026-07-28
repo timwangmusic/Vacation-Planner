@@ -1381,6 +1381,19 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 			if searchErr != nil {
 				result.Error = searchErr.Error()
 			} else if len(places) > 0 {
+				// Classify each result by its PRIMARY Google type, not the type this
+				// search queried for: a place-type search also matches places with the
+				// type as a secondary attribute (a supermarket with a deli matches a
+				// restaurant search). Drop places whose main function isn't this
+				// category — they surface under their own category's search instead —
+				// and re-tag the rest with their true type so card rewards are correct.
+				reclassified := make([]POI.Place, 0, len(places))
+				for _, place := range places {
+					if rp, keep := POI.ReclassifyForCategory(place, placeCat); keep {
+						reclassified = append(reclassified, rp)
+					}
+				}
+				places = reclassified
 				// drop places explicitly marked closed on the requested day
 				places = iowrappers.Filter(places, func(place POI.Place) bool { return !place.KnownClosedOnDay(day) })
 				// Redis results are sorted by distance ascending; keep the nearest ones

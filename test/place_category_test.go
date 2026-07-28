@@ -78,3 +78,72 @@ func TestEncodeNearbySearchRedisKeyDistinct(t *testing.T) {
 		seen[key] = category
 	}
 }
+
+func TestPrimaryLocationType(t *testing.T) {
+	cases := []struct {
+		name  string
+		types []string
+		want  POI.LocationType
+	}{
+		{"restaurant first", []string{"restaurant", "food", "point_of_interest", "establishment"}, POI.LocationTypeRestaurant},
+		{"supermarket before secondary restaurant", []string{"supermarket", "grocery_or_supermarket", "food", "store", "point_of_interest"}, POI.LocationTypeSupermarket},
+		{"skips leading umbrella types", []string{"food", "point_of_interest", "cafe", "establishment"}, POI.LocationTypeCafe},
+		{"cinema", []string{"movie_theater", "point_of_interest", "establishment"}, POI.LocationType("movie_theater")},
+		{"empty -> unknown", nil, POI.LocationType("")},
+		{"all umbrella -> unknown", []string{"point_of_interest", "establishment"}, POI.LocationType("")},
+	}
+	for _, tc := range cases {
+		if got := POI.PrimaryLocationType(tc.types); got != tc.want {
+			t.Errorf("%s: PrimaryLocationType(%v) = %q, want %q", tc.name, tc.types, got, tc.want)
+		}
+	}
+}
+
+func TestReclassifyForCategory(t *testing.T) {
+	t.Run("supermarket returned by the food search is dropped from Eatery", func(t *testing.T) {
+		p := POI.Place{LocationType: POI.LocationTypeRestaurant, Types: []string{"supermarket", "grocery_or_supermarket", "food", "store"}}
+		if _, keep := POI.ReclassifyForCategory(p, POI.PlaceCategoryEatery); keep {
+			t.Error("expected a supermarket to be dropped from the Eatery category")
+		}
+	})
+
+	t.Run("same supermarket is kept under Shopping, tagged supermarket", func(t *testing.T) {
+		p := POI.Place{LocationType: POI.LocationTypeSupermarket, Types: []string{"supermarket", "grocery_or_supermarket", "food", "store"}}
+		rp, keep := POI.ReclassifyForCategory(p, POI.PlaceCategoryShopping)
+		if !keep {
+			t.Fatal("expected a supermarket to be kept under Shopping")
+		}
+		if rp.LocationType != POI.LocationTypeSupermarket {
+			t.Errorf("LocationType = %q, want supermarket", rp.LocationType)
+		}
+	})
+
+	t.Run("real restaurant found via cafe search is re-tagged restaurant and kept", func(t *testing.T) {
+		p := POI.Place{LocationType: POI.LocationTypeCafe, Types: []string{"restaurant", "food", "point_of_interest"}}
+		rp, keep := POI.ReclassifyForCategory(p, POI.PlaceCategoryEatery)
+		if !keep {
+			t.Fatal("expected a restaurant to be kept in Eatery")
+		}
+		if rp.LocationType != POI.LocationTypeRestaurant {
+			t.Errorf("LocationType = %q, want restaurant", rp.LocationType)
+		}
+	})
+
+	t.Run("cinema is dropped from Eatery (no matching category type)", func(t *testing.T) {
+		p := POI.Place{LocationType: POI.LocationTypeRestaurant, Types: []string{"movie_theater", "point_of_interest", "establishment"}}
+		if _, keep := POI.ReclassifyForCategory(p, POI.PlaceCategoryEatery); keep {
+			t.Error("expected a cinema to be dropped from the Eatery category")
+		}
+	})
+
+	t.Run("place with no Types is kept unchanged (older cache records)", func(t *testing.T) {
+		p := POI.Place{LocationType: POI.LocationTypeRestaurant}
+		rp, keep := POI.ReclassifyForCategory(p, POI.PlaceCategoryEatery)
+		if !keep {
+			t.Fatal("expected a Types-less place to be kept")
+		}
+		if rp.LocationType != POI.LocationTypeRestaurant {
+			t.Errorf("LocationType = %q, want restaurant (unchanged)", rp.LocationType)
+		}
+	})
+}

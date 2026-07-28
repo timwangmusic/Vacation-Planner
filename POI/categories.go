@@ -109,6 +109,57 @@ func ParsePlaceCategory(s string) (PlaceCategory, bool) {
 	}
 }
 
+// umbrellaLocationTypes are Google's generic feature types that describe almost
+// every place and say nothing about its primary function. They are skipped when
+// picking a place's primary type.
+// Note: "store" is intentionally NOT here — it is a meaningful Shopping type.
+var umbrellaLocationTypes = map[LocationType]bool{
+	LocationType("food"):              true,
+	LocationType("point_of_interest"): true,
+	LocationType("establishment"):     true,
+	LocationType("premise"):           true,
+	LocationType("geocode"):           true,
+	LocationType("political"):         true,
+}
+
+// PrimaryLocationType returns a place's primary Google feature type: the first
+// entry in its Types list that isn't a generic umbrella (food, point_of_interest,
+// …). Google lists the most specific type first, so this is the place's real
+// function (e.g. "supermarket" for a store the restaurant search also matched).
+// Returns "" when there is no meaningful type (empty/unknown Types).
+func PrimaryLocationType(types []string) LocationType {
+	for _, t := range types {
+		lt := LocationType(t)
+		if !umbrellaLocationTypes[lt] {
+			return lt
+		}
+	}
+	return LocationType("")
+}
+
+// ReclassifyForCategory decides whether a place belongs in cat based on its
+// PRIMARY function, and returns the place re-tagged with that primary type.
+//
+//   - primary type is one of cat's search types  → keep, LocationType := primary
+//     (e.g. a "cafe"-searched result that is really a restaurant is re-tagged).
+//   - primary type is known but NOT in cat        → drop (keep=false): its main
+//     function is something else (a supermarket the food search returned).
+//   - no Types on the place (older cached records) → keep unchanged, so coverage
+//     never regresses on data written before Types was captured.
+func ReclassifyForCategory(place Place, cat PlaceCategory) (Place, bool) {
+	primary := PrimaryLocationType(place.Types)
+	if primary == LocationType("") {
+		return place, true
+	}
+	for _, t := range GetPlaceTypes(cat) {
+		if t == primary {
+			place.LocationType = primary
+			return place, true
+		}
+	}
+	return place, false
+}
+
 // PriceyEatery returns whether a eatery place is expensive based on its price level
 func PriceyEatery(placeCategory PlaceCategory, priceLevel PriceLevel) bool {
 	return (placeCategory == PlaceCategoryEatery) && (priceLevel >= PriceLevelThree)
