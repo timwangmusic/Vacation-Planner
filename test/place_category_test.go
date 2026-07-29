@@ -9,7 +9,10 @@ import (
 // TestGetPlaceTypesByCategory pins the Google Maps place types each category expands to.
 func TestGetPlaceTypesByCategory(t *testing.T) {
 	cases := map[POI.PlaceCategory][]POI.LocationType{
-		POI.PlaceCategoryEatery: {POI.LocationTypeCafe, POI.LocationTypeRestaurant},
+		POI.PlaceCategoryEatery: {
+			POI.LocationTypeCafe, POI.LocationTypeRestaurant,
+			POI.LocationTypeBar, POI.LocationTypeBakery, POI.LocationTypeMealTakeaway,
+		},
 		POI.PlaceCategoryShopping: {
 			POI.LocationTypeShoppingMall, POI.LocationTypeDepartmentStore,
 			POI.LocationTypeSupermarket, POI.LocationTypeClothingStore, POI.LocationTypeStore,

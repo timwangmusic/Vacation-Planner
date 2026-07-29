@@ -35,6 +35,9 @@ const (
 	LocationTypeAny           = LocationType("")
 	LocationTypeCafe          = LocationType("cafe")
 	LocationTypeRestaurant    = LocationType("restaurant")
+	LocationTypeBar           = LocationType("bar")
+	LocationTypeBakery        = LocationType("bakery")
+	LocationTypeMealTakeaway  = LocationType("meal_takeaway")
 	LocationTypeMuseum        = LocationType("museum")
 	LocationTypeGallery       = LocationType("art_gallery")
 	LocationTypeAmusementPark = LocationType("amusement_park")
@@ -61,7 +64,7 @@ func GetPlaceCategory(placeType LocationType) (placeCategory PlaceCategory) {
 	switch placeType {
 	case LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum:
 		placeCategory = PlaceCategoryVisit
-	case LocationTypeCafe, LocationTypeRestaurant:
+	case LocationTypeCafe, LocationTypeRestaurant, LocationTypeBar, LocationTypeBakery, LocationTypeMealTakeaway:
 		placeCategory = PlaceCategoryEatery
 	case LocationTypeShoppingMall, LocationTypeDepartmentStore, LocationTypeSupermarket, LocationTypeClothingStore, LocationTypeStore:
 		placeCategory = PlaceCategoryShopping
@@ -83,7 +86,7 @@ func GetPlaceTypes(placeCat PlaceCategory) (placeTypes []LocationType) {
 			[]LocationType{LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum}...)
 	case PlaceCategoryEatery:
 		placeTypes = append(placeTypes,
-			[]LocationType{LocationTypeCafe, LocationTypeRestaurant}...)
+			[]LocationType{LocationTypeCafe, LocationTypeRestaurant, LocationTypeBar, LocationTypeBakery, LocationTypeMealTakeaway}...)
 	case PlaceCategoryShopping:
 		placeTypes = append(placeTypes,
 			[]LocationType{LocationTypeShoppingMall, LocationTypeDepartmentStore, LocationTypeSupermarket, LocationTypeClothingStore, LocationTypeStore}...)
