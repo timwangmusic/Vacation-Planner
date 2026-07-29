@@ -1210,8 +1210,14 @@ func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
 		radius = iowrappers.MaxSearchRadius
 	}
 	limit := req.Limit
-	if limit <= 0 || limit > 20 {
+	if limit <= 0 {
 		limit = 5
+	}
+	// Clamp (don't fall back to the tiny default) so a caller can widen the
+	// candidate pool — the merchant endpoint fetches extra so brand-dedup and
+	// distance ranking downstream still yield a full, diverse list.
+	if limit > 40 {
+		limit = 40
 	}
 	day := POI.WeekdayFromTime(time.Now().Weekday())
 	if req.LocalTime != "" {
@@ -1332,8 +1338,14 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 		radius = iowrappers.MaxSearchRadius
 	}
 	limit := req.Limit
-	if limit <= 0 || limit > 20 {
+	if limit <= 0 {
 		limit = 5
+	}
+	// Clamp (don't fall back to the tiny default) so a caller can widen the
+	// candidate pool — the merchant endpoint fetches extra so brand-dedup and
+	// distance ranking downstream still yield a full, diverse list.
+	if limit > 40 {
+		limit = 40
 	}
 	day := POI.WeekdayFromTime(time.Now().Weekday())
 	if req.LocalTime != "" {
@@ -1366,11 +1378,13 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 		go func(idx int, placeCat POI.PlaceCategory) {
 			defer wg.Done()
 			searchReq := &iowrappers.PlaceSearchRequest{
-				PlaceCat:       placeCat,
-				Location:       location,
-				Radius:         radius,
-				MinNumResults:  uint(limit),
-				DetailsLimit:   limit,
+				PlaceCat:      placeCat,
+				Location:      location,
+				Radius:        radius,
+				MinNumResults: uint(limit),
+				// Bound the expensive Place Details calls even when the candidate
+				// pool (limit) is widened for dedup — details cost stays ~today's.
+				DetailsLimit:   min(limit, 20),
 				BusinessStatus: POI.Operational,
 				// Merchant search has no price preference: union all eatery price
 				// buckets so the food category isn't limited to one price tier.
