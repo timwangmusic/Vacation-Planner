@@ -154,9 +154,13 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 
 	var reqTimes uint = 0        // number of queries for each location type
 	var totalPlaceCount uint = 0 // number of results so far, keep this number low
-	// Bail out once every place type has failed once. This was previously computed as
-	// reqTimes * len(placeTypes) while reqTimes was still 0, making the cap 0 and the
-	// break below unreachable, so a fully failing search span every retry round.
+	// Bail out of the whole search once a single round sees every place type fail.
+	// mapsFailuresCount is reset at the top of each round below (it must NOT be hoisted
+	// out here), so reaching maxRetries means every place type failed in THAT round, not
+	// cumulatively across rounds. A per-round counter is required: one persistently-failing
+	// type must not be able to spend down a shared budget and cut off its healthy siblings'
+	// remaining rounds. This was previously computed as reqTimes * len(placeTypes) while
+	// reqTimes was still 0, making the cap 0 and the break below unreachable.
 	maxRetries := uint(len(placeTypes))
 
 	microAddrMap := make(map[string]string) // map place ID to its micro-address
@@ -164,7 +168,6 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 	urlMap := make(map[string]string)       // map place ID to url
 	summaryMap := make(map[string]string)   // map place ID to summary
 
-	var mapsFailuresCount uint = 0
 	detailsBudget := request.DetailsLimit // remaining Place Details calls across all pages; only enforced when DetailsLimit > 0
 
 	// One place type's Nearby Search HTTP result (Phase A). Holds no shared state,
@@ -177,6 +180,10 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 outer:
 	for totalPlaceCount < request.MinNumResults {
 		reqTimes++
+		// Reset every round: this must count failures within the CURRENT round only, so
+		// one place type failing round after round cannot exhaust the shared budget and
+		// cut off healthy sibling types (see maxRetries comment above).
+		var mapsFailuresCount uint = 0
 
 		// Phase A — fetch every eligible place type's Nearby Search CONCURRENTLY.
 		// These are independent, slow HTTP calls and the dominant cold-cache cost;
