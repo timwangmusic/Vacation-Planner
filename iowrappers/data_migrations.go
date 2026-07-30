@@ -2,6 +2,8 @@ package iowrappers
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -9,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/bobg/go-generics/set"
+	"github.com/redis/go-redis/v9"
 	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
@@ -187,6 +190,178 @@ func (s *PoiSearcher) AddUserRatingsTotal(context context.Context) error {
 	}
 	wg.Wait()
 	return nil
+}
+
+// bucketCleanupReadBatchSize is how many place records the bucket scan reads per pipeline
+// round trip, matching the batch size SetPlacesAddGeoLocations uses on the write side.
+const bucketCleanupReadBatchSize = 100
+
+// BucketCleanupReport summarizes a RemoveMisclassifiedPlacesFromCategoryBuckets run.
+// BucketSizes/TotalMembers are measured with ZCARD before the scan begins so a dry-run
+// report states the scale of the job even for buckets an operator has never sized.
+type BucketCleanupReport struct {
+	BucketSizes   map[string]int64 `json:"bucket_sizes"`
+	TotalMembers  int64            `json:"total_members"`
+	Scanned       int              `json:"scanned"`
+	Misclassified int              `json:"misclassified"`
+	Removed       int              `json:"removed"`
+	RemovedIDs    []string         `json:"removed_ids"`
+}
+
+// SetPlace stores a single place record. Exported wrapper over setPlace for migrations and tests.
+func (r *RedisClient) SetPlace(ctx context.Context, place POI.Place) error {
+	return r.setPlace(ctx, place)
+}
+
+// AddGeoLocation adds a place to a geo bucket under an explicit key. Exported for
+// migrations and tests that need to write buckets the normal write path would reject.
+func (r *RedisClient) AddGeoLocation(ctx context.Context, key string, place POI.Place) error {
+	loc := place.GetLocation()
+	_, err := r.client.GeoAdd(ctx, key, &redis.GeoLocation{
+		Name:      place.ID,
+		Latitude:  loc.Latitude,
+		Longitude: loc.Longitude,
+	}).Result()
+	return err
+}
+
+// RemoveMisclassifiedPlacesFromCategoryBuckets removes places from cat's geo buckets whose
+// PRIMARY Google type does not belong to cat. It repairs the fast_food_restaurant incident:
+// two Places-API-(New)-only types were searched against the legacy Nearby Search, which
+// ignored the unenforceable type filter and returned prominence-ranked establishments, and
+// those were stamped with the queried type and written into placeIDs:eatery:level*.
+//
+// The removal rule is the exact inverse of the WRITE rule, not of POI.ReclassifyForCategory.
+// SetPlacesAddGeoLocations files a place under GetPlaceCategory(place.LocationType) and
+// refuses to write anything whose type maps to no category, so this migration removes a
+// member only when its primary type positively maps to a DIFFERENT category (lodging ->
+// Lodging, supermarket -> Shopping). An UNMAPPED primary type is deliberately kept: types
+// like "meal_delivery" and "night_club" are legal legacy types that Google routinely lists
+// first for genuine eateries (a delivery-first restaurant, a bar that is also a club), as are
+// records with no Types at all (cached before Types was captured). Those places carry a
+// stamped LocationType the write path maps straight back to this category, so removing them
+// would only delete rows the next cold search re-creates — while shrinking the trip-planning
+// candidate pool for up to MinMapsResultRefreshDuration, because the trip-planning path
+// (planner/solver.go -> matching.NearbySearchForCategory) reads these buckets with no
+// reclassification at all.
+//
+// Note this is a broader keep-set than POI.ReclassifyForCategory applies on the merchant
+// endpoint: that function keeps a place only when its primary type is one of the category's
+// five search types. Divergence is intended — one function decides what to show in a single
+// response, this one decides what may exist in the shared cache.
+//
+// dryRun reports what would be removed without deleting anything. Always dry-run first.
+func (r *RedisClient) RemoveMisclassifiedPlacesFromCategoryBuckets(ctx context.Context, cat POI.PlaceCategory, dryRun bool) (BucketCleanupReport, error) {
+	report := BucketCleanupReport{RemovedIDs: make([]string, 0), BucketSizes: make(map[string]int64)}
+
+	levels := []POI.PriceLevel{POI.PriceLevelDefault}
+	if cat == POI.PlaceCategoryEatery {
+		levels = POI.AllPriceLevels
+	}
+
+	keys := make([]string, 0, len(levels))
+	for _, level := range levels {
+		keys = append(keys, POI.EncodeNearbySearchRedisKey(cat, level))
+	}
+
+	// Size the job before doing it. The scan cost is linear in bucket membership and the
+	// handler runs under the caller's request context, so an operator needs the member count
+	// to judge whether a dry run can complete inside their client/router timeout.
+	for _, key := range keys {
+		size, err := r.client.ZCard(ctx, key).Result()
+		if err != nil {
+			return report, fmt.Errorf("sizing geo bucket %s: %w", key, err)
+		}
+		report.BucketSizes[key] = size
+		report.TotalMembers += size
+	}
+
+	for _, key := range keys {
+		members, err := r.client.ZRange(ctx, key, 0, -1).Result()
+		if err != nil {
+			return report, fmt.Errorf("reading geo bucket %s: %w", key, err)
+		}
+		// Read place records in pipelined batches rather than one GET per member: a serial
+		// N+1 over a real bucket cannot finish inside a 30s request timeout, which would
+		// make the mandatory dry-run review impossible and defeat the safety property.
+		for start := 0; start < len(members); start += bucketCleanupReadBatchSize {
+			batch := members[start:min(start+bucketCleanupReadBatchSize, len(members))]
+			places, found, err := r.getPlacesPipelined(ctx, batch)
+			if err != nil {
+				return report, fmt.Errorf("reading place records for %s: %w", key, err)
+			}
+			for i, placeID := range batch {
+				report.Scanned++
+				if !found[i] {
+					// no place record backing this bucket member; leave it for RemovePlaces
+					Logger.Debugf("RemoveMisclassifiedPlacesFromCategoryBuckets: no record for %s in %s", placeID, key)
+					continue
+				}
+				place := places[i]
+				primary := POI.PrimaryLocationType(place.Types)
+				// Only remove members whose primary type positively belongs to a DIFFERENT
+				// category. An unmapped primary type (meal_delivery, night_club, or no Types
+				// at all) is not evidence of misclassification — the write path would
+				// legitimately place it here.
+				if c, ok := POI.GetPlaceCategory(primary); !ok || c == cat {
+					continue
+				}
+				report.Misclassified++
+				report.RemovedIDs = append(report.RemovedIDs, placeID)
+				Logger.Infof("RemoveMisclassifiedPlacesFromCategoryBuckets: %s (%q, LocationType=%q, primary=%q, Types=%v) does not belong in %s",
+					placeID, place.Name, place.LocationType, primary, place.Types, key)
+				if dryRun {
+					continue
+				}
+				if _, err := r.client.ZRem(ctx, key, placeID).Result(); err != nil {
+					return report, fmt.Errorf("removing %s from %s: %w", placeID, key, err)
+				}
+				report.Removed++
+			}
+		}
+	}
+	return report, nil
+}
+
+// getPlacesPipelined fetches the place records for placeIDs in a single round trip.
+// found[i] reports whether placeIDs[i] had a usable record: a bucket member with no (or an
+// unparsable) backing record is not this migration's problem to fix, so it is reported as
+// missing rather than failing the whole batch. A transport-level failure is returned as an
+// error, because then nothing in the batch was actually read.
+func (r *RedisClient) getPlacesPipelined(ctx context.Context, placeIDs []string) ([]POI.Place, []bool, error) {
+	cmds := make([]*redis.StringCmd, len(placeIDs))
+	_, err := r.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		for i, placeID := range placeIDs {
+			cmds[i] = pipe.Get(ctx, PlaceDetailsRedisKeyPrefix+placeID)
+		}
+		return nil
+	})
+	// Pipelined surfaces the first non-nil command error, and a missing key is reported as
+	// redis.Nil — an expected outcome here, not a failure.
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return nil, nil, err
+	}
+
+	places := make([]POI.Place, len(placeIDs))
+	found := make([]bool, len(placeIDs))
+	for i, cmd := range cmds {
+		res, cmdErr := cmd.Result()
+		if cmdErr != nil {
+			continue
+		}
+		if unmarshalErr := json.Unmarshal([]byte(res), &places[i]); unmarshalErr != nil {
+			Logger.Debugf("getPlacesPipelined: cannot parse record for %s: %v", placeIDs[i], unmarshalErr)
+			continue
+		}
+		found[i] = true
+	}
+	return places, found, nil
+}
+
+// RemoveMisclassifiedPlacesFromCategoryBuckets forwards to the RedisClient method so the
+// admin handler can call it through the concrete PoiSearcher (p.Solver.Searcher).
+func (s *PoiSearcher) RemoveMisclassifiedPlacesFromCategoryBuckets(ctx context.Context, cat POI.PlaceCategory, dryRun bool) (BucketCleanupReport, error) {
+	return s.redisClient.RemoveMisclassifiedPlacesFromCategoryBuckets(ctx, cat, dryRun)
 }
 
 func (s *PoiSearcher) AddUrl(context context.Context) error {

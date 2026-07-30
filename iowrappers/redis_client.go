@@ -179,7 +179,13 @@ func (r *RedisClient) StorePlacesForLocation(context context.Context, geocodeInS
 	latLng, _ := utils.ParseLocation(geocodeInString)
 	lat, lng := latLng[0], latLng[1]
 	for _, place := range places {
-		sortedSetKey := strings.Join([]string{geocodeInString, string(POI.GetPlaceCategory(place.LocationType))}, "_")
+		placeCategory, ok := POI.GetPlaceCategory(place.LocationType)
+		if !ok {
+			Logger.Errorf("StorePlacesForLocation: place %s has unmapped location type %q, skipping",
+				place.ID, place.LocationType)
+			continue
+		}
+		sortedSetKey := strings.Join([]string{geocodeInString, string(placeCategory)}, "_")
 		dist := utils.HaversineDist([]float64{lat, lng}, []float64{place.GetLocation().Latitude, place.GetLocation().Longitude})
 		_, err := client.ZAdd(context, sortedSetKey, redis.Z{Score: dist, Member: place.ID}).Result()
 		if err != nil {
@@ -219,7 +225,15 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 			defer wg.Done()
 			_, err := r.Get().Pipelined(c, func(pipe redis.Pipeliner) error {
 				for _, place := range placeBatch {
-					placeCategory := POI.GetPlaceCategory(place.LocationType)
+					placeCategory, ok := POI.GetPlaceCategory(place.LocationType)
+					if !ok {
+						// Refuse to guess a bucket. A place whose type maps to no category
+						// came from a search whose type filter Google did not enforce, so
+						// writing it would poison whichever bucket we picked.
+						Logger.Errorf("SetPlacesAddGeoLocations: place %s has unmapped location type %q, skipping geo bucket write",
+							place.ID, place.LocationType)
+						continue
+					}
 					geoLocation := &redis.GeoLocation{
 						Name:      place.ID,
 						Latitude:  place.GetLocation().Latitude,

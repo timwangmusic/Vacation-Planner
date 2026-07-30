@@ -277,6 +277,32 @@ func (p *MyPlanner) removePlacesMigrationHandler(ctx *gin.Context) {
 	}
 }
 
+// reclassifyBucketsMigrationHandler removes places from a category's geo buckets whose
+// primary Google type does not belong to that category. Dry-run unless ?apply=true.
+//
+// Usage: GET /v1/migrate/reclassify-buckets?category=Eatery
+//
+//	GET /v1/migrate/reclassify-buckets?category=Eatery&apply=true
+func (p *MyPlanner) reclassifyBucketsMigrationHandler(ctx *gin.Context) {
+	_, authenticationErr := p.UserAuthentication(ctx, user.LevelAdmin)
+	if authenticationErr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
+	category, ok := POI.ParsePlaceCategory(ctx.DefaultQuery("category", string(POI.PlaceCategoryEatery)))
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "unknown category"})
+		return
+	}
+	dryRun := ctx.Query("apply") != "true"
+	report, err := p.Solver.Searcher.RemoveMisclassifiedPlacesFromCategoryBuckets(ctx.Request.Context(), category, dryRun)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "partial_report": report})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"dry_run": dryRun, "category": category, "report": report})
+}
+
 func (p *MyPlanner) placeStatsHandler(ctx *gin.Context) {
 	var placeCount int
 	var err error
@@ -807,7 +833,14 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 			}
 			resp.LatLongs[i] = [2]float64{place.Location.Latitude, place.Location.Longitude}
 			resp.ShownActive[i] = i == 0
-			resp.PlaceCategories[i] = POI.GetPlaceCategory(place.LocationType)
+			// Saved plans can contain older cached records, including brand-search places
+			// written with an empty LocationType. Preserve the historical Eatery default for
+			// display only — the write path (redis_client.go) is where guessing is unsafe.
+			if placeCategory, ok := POI.GetPlaceCategory(place.LocationType); ok {
+				resp.PlaceCategories[i] = placeCategory
+			} else {
+				resp.PlaceCategories[i] = POI.PlaceCategoryEatery
+			}
 
 			details, err := p.placeDetailsResp(ctx, place)
 			if err != nil {
@@ -1410,7 +1443,10 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 				places = reclassified
 				// drop places explicitly marked closed on the requested day
 				places = iowrappers.Filter(places, func(place POI.Place) bool { return !place.KnownClosedOnDay(day) })
-				// Redis results are sorted by distance ascending; keep the nearest ones
+				// Only the Redis path returns places in distance order. The fresh path
+				// appends each place type's results in Google prominence order, so sort
+				// before truncating or the last place types get dropped wholesale.
+				iowrappers.SortPlacesByDistance(places, req.Location.Latitude, req.Location.Longitude)
 				if len(places) > limit {
 					places = places[:limit]
 				}
@@ -1682,6 +1718,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)
 			migrations.GET("/url", p.UrlMigrationHandler)
 			migrations.GET("/remove-places", p.removePlacesMigrationHandler)
+			migrations.GET("/reclassify-buckets", p.reclassifyBucketsMigrationHandler)
 		}
 
 		v1.GET("/blob_url", p.getBlobObjectURL)

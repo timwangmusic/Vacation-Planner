@@ -72,8 +72,23 @@ func MatchesBrandName(placeName, keyword string) bool {
 	return strings.Contains(POI.NormalizeBrandKey(placeName), normalizedKeyword)
 }
 
-// CreateMapSearchRequest creates a NearbySearchRequest for maps NearbySearch, adjust key settings such as radius and price levels
-func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationType, token string) (reqOut maps.NearbySearchRequest) {
+// CreateMapSearchRequest creates a NearbySearchRequest for maps NearbySearch, adjust key settings such as radius and price levels.
+// It rejects any place type the legacy Places API does not define: POI.LocationType is cast
+// straight to maps.PlaceType and forwarded as ?type=, and Google responds to an unknown value
+// by IGNORING the filter and returning prominence-ranked establishments rather than erroring.
+// Those results are then stamped with the queried type, so an unvalidated type silently
+// poisons the cache. maps.ParsePlaceType is the SDK's own list of legal values.
+func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationType, token string) (maps.NearbySearchRequest, error) {
+	// LocationTypeAny is the keyword (brand) search case: the type is deliberately unset so
+	// Google matches the keyword across all place types.
+	if placeType != POI.LocationTypeAny {
+		if _, err := maps.ParsePlaceType(string(placeType)); err != nil {
+			return maps.NearbySearchRequest{}, fmt.Errorf(
+				"place type %q is not a legacy Places API type (Places API (New) types are not accepted by /maps/api/place/nearbysearch): %w",
+				placeType, err)
+		}
+	}
+
 	// Adjust radius, minPrice and maxPrice settings in search request
 	var radius = reqIn.Radius
 	var exactPriceLevel maps.PriceLevel
@@ -96,7 +111,7 @@ func CreateMapSearchRequest(reqIn *PlaceSearchRequest, placeType POI.LocationTyp
 		RankBy:    maps.RankBy("prominence"),
 		MinPrice:  exactPriceLevel,
 		MaxPrice:  exactPriceLevel,
-	}
+	}, nil
 }
 
 func (c *MapsClient) GoogleMapsNearbySearchWrapper(ctx context.Context, mapsReq maps.NearbySearchRequest) (resp maps.PlacesSearchResponse, err error) {
@@ -139,14 +154,20 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 
 	var reqTimes uint = 0        // number of queries for each location type
 	var totalPlaceCount uint = 0 // number of results so far, keep this number low
-	maxRetries := reqTimes * uint(len(placeTypes))
+	// Bail out of the whole search once a single round sees every place type fail.
+	// mapsFailuresCount is reset at the top of each round below (it must NOT be hoisted
+	// out here), so reaching maxRetries means every place type failed in THAT round, not
+	// cumulatively across rounds. A per-round counter is required: one persistently-failing
+	// type must not be able to spend down a shared budget and cut off its healthy siblings'
+	// remaining rounds. This was previously computed as reqTimes * len(placeTypes) while
+	// reqTimes was still 0, making the cap 0 and the break below unreachable.
+	maxRetries := uint(len(placeTypes))
 
 	microAddrMap := make(map[string]string) // map place ID to its micro-address
 	placeMap := make(map[string]bool)       // remove duplication for place with same ID
 	urlMap := make(map[string]string)       // map place ID to url
 	summaryMap := make(map[string]string)   // map place ID to summary
 
-	var mapsFailuresCount uint = 0
 	detailsBudget := request.DetailsLimit // remaining Place Details calls across all pages; only enforced when DetailsLimit > 0
 
 	// One place type's Nearby Search HTTP result (Phase A). Holds no shared state,
@@ -159,6 +180,10 @@ func (c *MapsClient) extensiveNearbySearch(ctx context.Context, maxRequestTimes 
 outer:
 	for totalPlaceCount < request.MinNumResults {
 		reqTimes++
+		// Reset every round: this must count failures within the CURRENT round only, so
+		// one place type failing round after round cannot exhaust the shared budget and
+		// cut off healthy sibling types (see maxRetries comment above).
+		var mapsFailuresCount uint = 0
 
 		// Phase A — fetch every eligible place type's Nearby Search CONCURRENTLY.
 		// These are independent, slow HTTP calls and the dominant cold-cache cost;
@@ -175,7 +200,11 @@ outer:
 			wg.Add(1)
 			go func(i int, placeType POI.LocationType, token string) {
 				defer wg.Done()
-				searchReq := CreateMapSearchRequest(request, placeType, token)
+				searchReq, reqErr := CreateMapSearchRequest(request, placeType, token)
+				if reqErr != nil {
+					fetched[i].err = reqErr
+					return
+				}
 				select {
 				case c.apiSemaphore <- struct{}{}:
 					defer func() { <-c.apiSemaphore }()
@@ -200,7 +229,7 @@ outer:
 				Logger.Error(fmt.Errorf("places nearby search with Maps failed for place type %s with error: %w",
 					placeType, fetched[i].err))
 				mapsFailuresCount++
-				if mapsFailuresCount == maxRetries {
+				if mapsFailuresCount >= maxRetries {
 					break outer
 				}
 				// we should still retry for the next place type if the number of failures is below maxRetries
