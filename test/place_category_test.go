@@ -118,17 +118,81 @@ func TestParsePlaceCategory(t *testing.T) {
 // TestEncodeNearbySearchRedisKeyDistinct guards against two categories sharing a Redis geo
 // bucket, which would cross-contaminate their cached results.
 func TestEncodeNearbySearchRedisKeyDistinct(t *testing.T) {
-	categories := []POI.PlaceCategory{
-		POI.PlaceCategoryVisit, POI.PlaceCategoryEatery,
-		POI.PlaceCategoryShopping, POI.PlaceCategoryLodging, POI.PlaceCategoryWellness,
-	}
 	seen := make(map[string]POI.PlaceCategory)
-	for _, category := range categories {
-		key := POI.EncodeNearbySearchRedisKey(category, POI.PriceLevelDefault)
+	for _, category := range POI.AllPlaceCategories {
+		key := POI.EncodeNearbySearchRedisKey(category)
 		if other, dup := seen[key]; dup {
 			t.Errorf("categories %s and %s share Redis key %q", other, category, key)
 		}
 		seen[key] = category
+	}
+}
+
+// TestEncodeLastSearchTimeFieldMatchesSearchVariant pins the marker's scoping rule. The original
+// defect was a marker scoped differently from what it guarded: only Visit was special-cased to
+// drop the price segment, so Shopping/Lodging/Wellness carried a price-scoped marker over a
+// price-agnostic bucket. The rule now is that the field identifies the external SEARCH variant.
+func TestEncodeLastSearchTimeFieldMatchesSearchVariant(t *testing.T) {
+	const lat, lng = 37.38, -122.11
+
+	t.Run("non-eatery categories never carry a price segment", func(t *testing.T) {
+		for _, cat := range POI.AllPlaceCategories {
+			if cat == POI.PlaceCategoryEatery {
+				continue
+			}
+			want := POI.EncodeLastSearchTimeField(cat, POI.PriceLevelZero, lat, lng)
+			for _, level := range POI.AllPriceLevels {
+				got := POI.EncodeLastSearchTimeField(cat, level, lat, lng)
+				if got != want {
+					t.Errorf("category %s at price level %d: got %q, want %q", cat, level, got, want)
+				}
+			}
+		}
+	})
+
+	// Levels 0-2 produce an identical, unfiltered Google request, so they must share one marker
+	// or two of every three fan-outs are redundant.
+	t.Run("eatery levels 0-2 share one field", func(t *testing.T) {
+		want := POI.EncodeLastSearchTimeField(POI.PlaceCategoryEatery, POI.PriceLevelZero, lat, lng)
+		for _, level := range []POI.PriceLevel{POI.PriceLevelZero, POI.PriceLevelOne, POI.PriceLevelTwo} {
+			if got := POI.EncodeLastSearchTimeField(POI.PlaceCategoryEatery, level, lat, lng); got != want {
+				t.Errorf("eatery level %d: got %q, want %q", level, got, want)
+			}
+		}
+	})
+
+	// PriceyEatery makes Google apply a real price filter at four times the radius, so a fresh
+	// generic marker must not suppress it.
+	t.Run("eatery levels 3 and 4 each get their own field", func(t *testing.T) {
+		generic := POI.EncodeLastSearchTimeField(POI.PlaceCategoryEatery, POI.PriceLevelZero, lat, lng)
+		three := POI.EncodeLastSearchTimeField(POI.PlaceCategoryEatery, POI.PriceLevelThree, lat, lng)
+		four := POI.EncodeLastSearchTimeField(POI.PlaceCategoryEatery, POI.PriceLevelFour, lat, lng)
+		for _, pair := range [][2]string{{generic, three}, {generic, four}, {three, four}} {
+			if pair[0] == pair[1] {
+				t.Errorf("fields must differ, both are %q", pair[0])
+			}
+		}
+	})
+}
+
+func TestEncodeSearchCell(t *testing.T) {
+	const lat, lng = 37.38, -122.11
+	base := POI.EncodeSearchCell(lat, lng)
+
+	// ~1 km north: well inside a cell sized to the ~8 km cold-search radius, so a second request
+	// nearby must reuse the first one's freshness rather than re-searching.
+	if near := POI.EncodeSearchCell(lat+0.009, lng); near != base {
+		t.Errorf("a point ~1 km away landed in cell %q, want %q", near, base)
+	}
+
+	// ~22 km north: beyond anything the first search populated, so it must be its own cell. This
+	// is the case a city-scoped marker got wrong — claiming coverage over ground no search reached.
+	if far := POI.EncodeSearchCell(lat+0.2, lng); far == base {
+		t.Errorf("a point ~22 km away shares cell %q", far)
+	}
+
+	if crossed := POI.EncodeSearchCell(-lat, -lng); crossed == base {
+		t.Errorf("the opposite hemisphere shares cell %q", crossed)
 	}
 }
 

@@ -144,11 +144,12 @@ const (
 	PriceLevelDefault = 2
 )
 
-// AllPriceLevels enumerates the distinct price buckets an eatery can be filed
-// under. Eateries are partitioned by price on write (EncodeNearbySearchRedisKey
-// appends the level only for the Eatery category), so a merchant/category eatery
-// search — which has no price preference — must union across all of these or it
-// only sees one price tier. Other categories are single-bucket.
+// AllPriceLevels enumerates every price level a place can carry.
+//
+// Eateries used to be partitioned across one geo bucket per level
+// (placeIDs:eatery:level0..4); they no longer are, so this is not a list of buckets. Its
+// remaining use is the migration that unions those retired keys into placeIDs:eatery, which
+// needs to enumerate them. See EncodeNearbySearchRedisKey for why the split was collapsed.
 var AllPriceLevels = []PriceLevel{
 	PriceLevelZero, PriceLevelOne, PriceLevelTwo, PriceLevelThree, PriceLevelFour,
 }
@@ -165,8 +166,24 @@ func (place *Place) GetStatus() BusinessStatus {
 	return place.Status
 }
 
+// DefaultOpeningHours is the placeholder CreatePlace writes for any weekday the source data left
+// blank. Because it is always filled in, a stored place's Hours are never empty and their
+// emptiness cannot be used to detect missing data — use HasRealOpeningHours instead.
+const DefaultOpeningHours = "8:30 am – 9:30 pm"
+
 func (place *Place) GetHour(day Weekday) string {
 	return place.Hours[day]
+}
+
+// HasRealOpeningHours reports whether any weekday carries hours that came from source data
+// rather than the DefaultOpeningHours placeholder.
+func (place *Place) HasRealOpeningHours() bool {
+	for day := DateMonday; day <= DateSunday; day++ {
+		if hour := place.GetHour(day); hour != "" && hour != DefaultOpeningHours {
+			return true
+		}
+	}
+	return false
 }
 
 // KnownClosedOnDay reports whether the place's cached hours explicitly mark it closed on
@@ -365,7 +382,7 @@ func CreatePlace(name, addr, formattedAddr, businessStatus string, locationType 
 	// set default
 	for weekday = DateMonday; weekday <= DateSunday; weekday++ {
 		if place.GetHour(weekday) == "" {
-			place.SetHour(weekday, "8:30 am – 9:30 pm")
+			place.SetHour(weekday, DefaultOpeningHours)
 		}
 	}
 

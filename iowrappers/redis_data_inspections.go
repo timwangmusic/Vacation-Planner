@@ -2,14 +2,12 @@ package iowrappers
 
 import (
 	"context"
-	"strings"
 
 	"github.com/weihesdlegend/Vacation-planner/POI"
 )
 
 const (
 	PlaceDetailsKeyPrefix = "place_details"
-	PlaceIDsKeyPrefix     = "placeIDs"
 )
 
 func (r *RedisClient) GetPlaceCountInRedis(context context.Context) (placeKeys []string, count int, err error) {
@@ -41,10 +39,10 @@ func (r *RedisClient) GetCities(context context.Context) (map[string]string, err
 	return geocodes, nil
 }
 
+// GetPlaceCountByCategory returns how many places sit in a category's geo bucket. It goes
+// through POI.EncodeNearbySearchRedisKey rather than assembling the key locally: the hand-rolled
+// version produced "placeIDs:eatery" while the write path used "placeIDs:eatery:level<N>", so
+// this reported zero eateries no matter how many were stored.
 func (r *RedisClient) GetPlaceCountByCategory(context context.Context, category POI.PlaceCategory) (int64, error) {
-	redisKey := strings.Join([]string{PlaceIDsKeyPrefix, strings.ToLower(string(category))}, ":")
-	var count int64
-	var err error
-	count, err = r.client.ZCard(context, redisKey).Result()
-	return count, err
+	return r.client.ZCard(context, POI.EncodeNearbySearchRedisKey(category)).Result()
 }

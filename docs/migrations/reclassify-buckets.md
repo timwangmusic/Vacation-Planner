@@ -3,7 +3,13 @@
 One-time cleanup for the `fast_food_restaurant` incident (#446). The legacy Nearby
 Search ignores an unknown `?type=` instead of erroring, so searches for two
 Places-API-(New)-only types returned prominence-ranked establishments that were then
-stamped with the queried type — writing hotels into `placeIDs:eatery:level*`.
+stamped with the queried type — writing hotels into the eatery geo bucket.
+
+> **Note:** this document predates the bucket collapse. Eateries were split across
+> `placeIDs:eatery:level0..4` when the incident happened; they are now a single
+> `placeIDs:eatery` bucket. See [collapse-eatery-buckets.md](collapse-eatery-buckets.md).
+> The migration itself is unaffected — it resolves keys through
+> `POI.EncodeNearbySearchRedisKey` — but the member counts below were measured pre-collapse.
 
 `GET /v1/migrate/reclassify-buckets?category=Eatery` — admin only, **dry-run unless
 `apply=true`**. Any other value of `apply` (absent, empty, `TRUE`, `1`) is a dry run.
@@ -57,8 +63,12 @@ eatery buckets. The trip-planning path (`planner/solver.go`) does not reclassify
 remain reachable in generated plans. Broadening `GetPlaceCategory` to cover those types is
 tracked as follow-up work.
 
-Separately, ~328 bucket members have no backing `place_details` record. Pre-existing and
-unrelated; the migration skips them.
+Separately, ~328 bucket members have no backing `place_details` record. The migration skips
+them. Their likely source has since been fixed: `removePlace` deleted the record but ZREMmed
+`placeIDs:eatery:<priceLevel>` — missing the `level` prefix the write path used — and never
+touched the Shopping/Lodging/Wellness buckets at all, so it orphaned every member it meant to
+remove. `RemovePlaces` now clears every category bucket through the shared encoder, so no new
+orphans accumulate; the existing ones still need one `GET /v1/migrate/remove-places` pass.
 
 ## Steps
 
@@ -78,9 +88,20 @@ Repeat per category as needed (`Shopping`, `Wellness`, `Lodging`). Reads are pip
 batches of 100 and the report carries `bucket_sizes`/`total_members`; the full Eatery scan
 completed in ~1.3s against production, well inside Heroku's 30s H12.
 
-To force a cold search when spot-checking a city afterwards, drop its marker field
-(format `<country>:<admin area 1>:<city>:<category>:<price level>`):
+To force a cold search when spot-checking an area afterwards, drop its marker field. The format
+is now `<cell>:<category>`, where `<cell>` is the search coordinates quantized by
+`POI.EncodeSearchCell` — `floor(lat/0.072)_floor(lng/0.072)`. Eatery price levels 3 and 4 add a
+`:pricey<N>` segment; nothing else carries a price segment.
 
 ```bash
-redis-cli HDEL MapsLastSearchTime "united states:ca:los altos:eatery:0"
+# Los Altos (37.3852, -122.1141) -> floor(37.3852/0.072)=519, floor(-122.1141/0.072)=-1697
+redis-cli HDEL MapsLastSearchTime "519_-1697:eatery"
+
+# or find the field for an area you have a request log line for — the debug log emits "cell"
+redis-cli HKEYS MapsLastSearchTime | grep ':eatery'
 ```
+
+⚠️ Marker fields written before the cell change used
+`<country>:<admin area 1>:<city>:<category>:<price level>` and are no longer read by anything.
+`redis-cli DEL MapsLastSearchTime` is safe cleanup once the new code is deployed — it only
+forces one cold search per occupied cell per category, and the geo buckets are untouched.

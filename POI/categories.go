@@ -2,6 +2,7 @@ package POI
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -107,16 +108,29 @@ func GetPlaceTypes(placeCat PlaceCategory) (placeTypes []LocationType) {
 	return
 }
 
+// AllPlaceCategories enumerates every place category. It is the single source of truth for
+// "what categories exist": ParsePlaceCategory validates against it, and callers that must touch
+// every category's geo bucket (e.g. deleting a place that may be filed under several) iterate
+// it rather than hardcoding a subset — which is how Shopping, Lodging, and Wellness came to be
+// missed by cleanup paths written before they existed.
+var AllPlaceCategories = []PlaceCategory{
+	PlaceCategoryVisit,
+	PlaceCategoryEatery,
+	PlaceCategoryShopping,
+	PlaceCategoryLodging,
+	PlaceCategoryWellness,
+}
+
 // ParsePlaceCategory converts a category string (e.g. from an API request) into a known
 // PlaceCategory, reporting whether it matched. Matching is exact against the canonical
 // category names ("Eatery", "Shopping", "Lodging", "Wellness", "Visit").
 func ParsePlaceCategory(s string) (PlaceCategory, bool) {
-	switch PlaceCategory(s) {
-	case PlaceCategoryVisit, PlaceCategoryEatery, PlaceCategoryShopping, PlaceCategoryLodging, PlaceCategoryWellness:
-		return PlaceCategory(s), true
-	default:
-		return PlaceCategory(""), false
+	for _, cat := range AllPlaceCategories {
+		if PlaceCategory(s) == cat {
+			return cat, true
+		}
 	}
+	return PlaceCategory(""), false
 }
 
 // umbrellaLocationTypes are Google's generic feature types that describe almost
@@ -175,15 +189,64 @@ func PriceyEatery(placeCategory PlaceCategory, priceLevel PriceLevel) bool {
 	return (placeCategory == PlaceCategoryEatery) && (priceLevel >= PriceLevelThree)
 }
 
-// EncodeNearbySearchRedisKey generates a Redis Key for Redis nearby search with place category and price info
-// The key includes the price level info for eatery and no price info for visit
-func EncodeNearbySearchRedisKey(placeCategory PlaceCategory, level PriceLevel) string {
-	keys := []string{"placeIDs", strings.ToLower(string(placeCategory))}
-	// add price levels for eatery category
-	if placeCategory == PlaceCategoryEatery {
-		keys = append(keys, fmt.Sprintf("level%d", level))
+// EncodeNearbySearchRedisKey generates the Redis geo-index key for a category's nearby search.
+//
+// One bucket per category, with no price segment. Eateries used to be split into
+// placeIDs:eatery:level0..4 keyed on each place's own price level, which fragmented the index
+// for no benefit: Google omits price_level for most places (so they collapsed into level0) and
+// only accepts a price filter at level >= 3, so searches for levels 0-2 were identical yet each
+// read back a fifth of the data. Callers that care about price already filter after the read
+// (matching.filterPlacesOnPriceLevel). Redis GEO is a sorted set scored by 52-bit geohash and
+// GEORADIUS probes 9 geohash cells at O(log N + M), so one bucket holds millions of members
+// without degrading — which is how placeIDs:visit has always worked.
+func EncodeNearbySearchRedisKey(placeCategory PlaceCategory) string {
+	return strings.Join([]string{"placeIDs", strings.ToLower(string(placeCategory))}, ":")
+}
+
+// searchCellDegrees sizes the freshness grid to iowrappers.ColdStartSearchRadius (~8 km), the
+// area one cold external search actually populates. A fixed-degree grid narrows in meters as
+// latitude rises, which only shrinks cells — erring toward an extra cold search, never toward
+// claiming coverage we do not have.
+const searchCellDegrees = 0.072
+
+// EncodeSearchCell quantizes coordinates to the freshness grid. This is a cache key, not a
+// spatial index: it is never range-queried, so it needs no neighbor probing or Z-order
+// ordering. The only property that matters is that a cell is no larger than the area a cold
+// search populates.
+func EncodeSearchCell(lat, lng float64) string {
+	return fmt.Sprintf("%d_%d",
+		int(math.Floor(lat/searchCellDegrees)),
+		int(math.Floor(lng/searchCellDegrees)))
+}
+
+// EncodeLastSearchTimeField identifies the external search variant that last covered a cell:
+//
+//	<cell>:<category>          the unfiltered search — every category, and eatery levels 0-2
+//	<cell>:eatery:pricey<N>    the price-filtered 4x-radius search, N in {3,4}
+//
+// Note this is scoped to the SEARCH, not to the bucket. Levels 0-2 share one field because
+// Google is issued an identical unfiltered request for all three, so two of every three
+// fan-outs were redundant. Levels 3-4 keep their own field because PriceyEatery makes Google
+// apply a real price filter at four times the radius: a fresh generic marker must not suppress
+// that search, or expensive places beyond the generic search's reach are never fetched.
+//
+// It is keyed on a location cell rather than country/admin1/city because the buckets it guards
+// are geo indexes read from arbitrary coordinates. A city name has no extent, so it cannot
+// answer "did we populate the area this query covers?" — a request 20 km from a city centroid
+// would read a marker claiming freshness over ground no search had reached.
+func EncodeLastSearchTimeField(placeCategory PlaceCategory, level PriceLevel, lat, lng float64) string {
+	segments := []string{EncodeSearchCell(lat, lng), strings.ToLower(string(placeCategory))}
+	if PriceyEatery(placeCategory, level) {
+		segments = append(segments, fmt.Sprintf("pricey%d", level))
 	}
-	return strings.Join(keys, ":")
+	return strings.Join(segments, ":")
+}
+
+// EncodeBrandLastSearchTimeField is the brand-search equivalent of EncodeLastSearchTimeField.
+// Brand buckets are geo indexes read from precise coordinates too, so they need the same cell
+// scoping.
+func EncodeBrandLastSearchTimeField(keyword string, lat, lng float64) string {
+	return strings.Join([]string{EncodeSearchCell(lat, lng), "brand", NormalizeBrandKey(keyword)}, ":")
 }
 
 // NormalizeBrandKey converts a brand keyword into a stable slug used in Redis keys and

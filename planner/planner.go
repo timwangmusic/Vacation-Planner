@@ -303,6 +303,29 @@ func (p *MyPlanner) reclassifyBucketsMigrationHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"dry_run": dryRun, "category": category, "report": report})
 }
 
+// unionEateryBucketsMigrationHandler merges the legacy placeIDs:eatery:level0..4 geo indexes
+// into the single placeIDs:eatery bucket. Run this BEFORE deploying the code that reads the
+// collapsed key — it is additive and invisible to the running code, whereas deploying first
+// points every eatery read at a key that does not exist yet.
+//
+// Usage: GET /v1/migrate/union-eatery-buckets
+//
+//	GET /v1/migrate/union-eatery-buckets?apply=true
+func (p *MyPlanner) unionEateryBucketsMigrationHandler(ctx *gin.Context) {
+	_, authenticationErr := p.UserAuthentication(ctx, user.LevelAdmin)
+	if authenticationErr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
+	dryRun := ctx.Query("apply") != "true"
+	report, err := p.Solver.Searcher.UnionEateryPriceBucketsIntoCategoryBucket(ctx.Request.Context(), dryRun)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "partial_report": report})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"dry_run": dryRun, "report": report})
+}
+
 func (p *MyPlanner) placeStatsHandler(ctx *gin.Context) {
 	var placeCount int
 	var err error
@@ -1419,9 +1442,6 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 				// pool (limit) is widened for dedup — details cost stays ~today's.
 				DetailsLimit:   min(limit, 20),
 				BusinessStatus: POI.Operational,
-				// Merchant search has no price preference: union all eatery price
-				// buckets so the food category isn't limited to one price tier.
-				AllPriceLevels: true,
 			}
 			result := nearbyPlacesByCategoryResult{Category: string(placeCat), Places: []POI.Place{}}
 			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
@@ -1719,6 +1739,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/url", p.UrlMigrationHandler)
 			migrations.GET("/remove-places", p.removePlacesMigrationHandler)
 			migrations.GET("/reclassify-buckets", p.reclassifyBucketsMigrationHandler)
+			migrations.GET("/union-eatery-buckets", p.unionEateryBucketsMigrationHandler)
 		}
 
 		v1.GET("/blob_url", p.getBlobObjectURL)

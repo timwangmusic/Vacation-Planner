@@ -22,17 +22,50 @@ type SearchClient interface {
 	NearbySearch(context.Context, *PlaceSearchRequest) ([]POI.Place, error)  // search nearby places in a category around a central location
 }
 
+// CachedPlaceLookup resolves already-stored place records by ID, returning only the IDs it
+// found. It is injected as a function rather than a RedisClient reference so MapsClient keeps
+// no dependency on the cache and stays constructible without one; a nil lookup means every
+// candidate gets a Place Details call, which is the behaviour before caching was consulted.
+type CachedPlaceLookup func(ctx context.Context, placeIDs []string) (map[string]POI.Place, error)
+
 type MapsClient struct {
 	client               *maps.Client
 	apiKey               string
 	DetailedSearchFields []string
 	apiSemaphore         chan struct{}
+	cachedPlaces         CachedPlaceLookup
 }
 
 func (c *MapsClient) SetDetailedSearchFields(fields []string) {
 	c.DetailedSearchFields = fields
 	Logger.Debugf("Set the following fields for detailed place searches: %s",
 		strings.Join(c.DetailedSearchFields, ", "))
+}
+
+// SetCachedPlaceLookup wires in the cache so a nearby search can skip buying Place Details for
+// places it already has. Place Details is the dominant cost of a cold search — one call per
+// place — so on an area we have already covered this takes that spend to near zero.
+func (c *MapsClient) SetCachedPlaceLookup(lookup CachedPlaceLookup) {
+	c.cachedPlaces = lookup
+}
+
+// lookupCachedPlaces resolves the stored records for a Nearby Search response in one round
+// trip. A lookup failure is not fatal: it only means details we may already have get bought
+// again, so the search continues with an empty result.
+func (c *MapsClient) lookupCachedPlaces(ctx context.Context, results []maps.PlacesSearchResult) map[string]POI.Place {
+	if c.cachedPlaces == nil || len(results) == 0 {
+		return nil
+	}
+	placeIDs := make([]string, 0, len(results))
+	for _, res := range results {
+		placeIDs = append(placeIDs, res.PlaceID)
+	}
+	cached, err := c.cachedPlaces(ctx, placeIDs)
+	if err != nil {
+		Logger.Debugf("cached place lookup failed, falling back to a full Place Details pass: %v", err)
+		return nil
+	}
+	return cached
 }
 
 // CreateMapsClient is a factory method for MapsClient

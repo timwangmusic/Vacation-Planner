@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/bobg/go-generics/set"
 	"github.com/redis/go-redis/v9"
@@ -77,11 +77,47 @@ func (r *RedisClient) removePlace(context context.Context, placeRedisKey string,
 
 	Logger.Debugf("removing place %+v from Redis", place)
 	*count++
-	// remove keys from all categorized sorted lists in case a place belongs to multiple categories
-	_, _ = r.client.ZRem(context, "placeIDs:visit", placeID).Result()
-	_, _ = r.client.ZRem(context, "placeIDs:eatery:"+strconv.Itoa(int(place.PriceLevel)), placeID).Result()
+	// Remove the member from every category bucket, since a place can be filed under more than
+	// one. This used to hardcode "placeIDs:visit" plus "placeIDs:eatery:"+priceLevel — which
+	// produced "placeIDs:eatery:2" while the write path used "placeIDs:eatery:level2", and never
+	// touched the Shopping/Lodging/Wellness buckets at all. The result was a deleted
+	// place_details record with its geo members left behind: orphans that count toward the
+	// MinNumResults radius gate and then resolve to nothing on read. Going through the shared
+	// encoder is what stops the two sides drifting again.
+	for _, cat := range POI.AllPlaceCategories {
+		if _, err := r.client.ZRem(context, POI.EncodeNearbySearchRedisKey(cat), placeID).Result(); err != nil {
+			return fmt.Errorf("removing place %s from bucket %s: %w", placeID, POI.EncodeNearbySearchRedisKey(cat), err)
+		}
+	}
 
 	return r.RemoveKeys(context, []string{placeRedisKey})
+}
+
+// detailsSourcedFields are the stored-record fields that only a Place Details call can supply.
+//
+// URL is the whole list on purpose. Opening hours look like the obvious signal but cannot be
+// used: POI.CreatePlace backfills every missing weekday with a default string
+// ("8:30 am – 9:30 pm"), so hours are never empty on a stored record and the check would always
+// pass. FormattedAddress is also unusable because the Nearby Search response carries one of its
+// own. URL has exactly one source — urlMap, populated only from a Details result — so a
+// non-empty URL is proof a Details call has landed on this record.
+var detailsSourcedFields = []PlaceDetailsFields{PlaceDetailsFieldURL}
+
+// placeDetailsAreCurrent reports whether a stored record can stand in for a Place Details call,
+// so the call can be skipped. Requires both that a Details call has populated the record and
+// that it is recent: skipping on mere existence would freeze a record permanently, since the
+// external-search refresh is the only thing that ever rewrites it.
+func placeDetailsAreCurrent(place POI.Place, now time.Time) bool {
+	if !isPlaceDetailsValid(place, detailsSourcedFields) {
+		return false
+	}
+	lastUpdated, err := time.Parse(time.RFC3339, place.LastUpdatedAt)
+	if err != nil {
+		// Records written before LastUpdatedAt was populated, or with an unparsable value,
+		// cannot be aged — refresh them rather than trusting them forever.
+		return false
+	}
+	return now.Sub(lastUpdated) <= PlaceDetailsRefreshDuration
 }
 
 func isPlaceDetailsValid(place POI.Place, nonEmptyFields []PlaceDetailsFields) bool {
@@ -225,6 +261,113 @@ func (r *RedisClient) AddGeoLocation(ctx context.Context, key string, place POI.
 	return err
 }
 
+// EateryBucketUnionReport describes a run of UnionEateryPriceBucketsIntoCategoryBucket.
+// ExpectedAfter is computed by reading members rather than by writing, so a dry run states the
+// exact resulting size without touching anything.
+type EateryBucketUnionReport struct {
+	SourceKeys    []string         `json:"source_keys"`
+	SourceSizes   map[string]int64 `json:"source_sizes"`
+	SourceTotal   int64            `json:"source_total"`
+	TargetKey     string           `json:"target_key"`
+	TargetBefore  int64            `json:"target_before"`
+	ExpectedAfter int64            `json:"expected_after"`
+	TargetAfter   int64            `json:"target_after"`
+}
+
+// UnionEateryPriceBucketsIntoCategoryBucket merges the legacy per-price eatery geo indexes
+// (placeIDs:eatery:level0..4) into the single placeIDs:eatery bucket that
+// POI.EncodeNearbySearchRedisKey now names.
+//
+// Run this BEFORE deploying the code that reads the collapsed key. It is purely additive and
+// invisible to the running code, whereas deploying first would point every eatery read at a key
+// that does not exist yet and trigger a global cold-search burst.
+//
+// The legacy key format is spelled out literally here on purpose: the encoder no longer emits
+// it, and a migration is the one place a retired format belongs.
+//
+// AGGREGATE MIN is mandatory. redis.ZStore.Aggregate defaults to SUM, and a GEO member's score
+// IS its 52-bit geohash — summing the scores of a place that appears in two source buckets
+// would silently relocate it, in our case to somewhere in the ocean. MIN keeps a real geohash,
+// and since a place's coordinates are identical across buckets, which one survives is
+// immaterial.
+//
+// The target is included in the union sources so the migration is re-runnable and cannot drop
+// members that new code has already written to the collapsed key.
+func (r *RedisClient) UnionEateryPriceBucketsIntoCategoryBucket(ctx context.Context, dryRun bool) (EateryBucketUnionReport, error) {
+	target := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery)
+	sources := make([]string, 0, len(POI.AllPriceLevels))
+	for _, level := range POI.AllPriceLevels {
+		sources = append(sources, fmt.Sprintf("%s:level%d", target, level))
+	}
+
+	report := EateryBucketUnionReport{
+		SourceKeys:  sources,
+		SourceSizes: make(map[string]int64, len(sources)),
+		TargetKey:   target,
+	}
+
+	distinct := set.Of[string]{}
+	for _, key := range sources {
+		size, err := r.client.ZCard(ctx, key).Result()
+		if err != nil {
+			return report, fmt.Errorf("sizing legacy bucket %s: %w", key, err)
+		}
+		report.SourceSizes[key] = size
+		report.SourceTotal += size
+
+		members, err := r.client.ZRange(ctx, key, 0, -1).Result()
+		if err != nil {
+			return report, fmt.Errorf("reading legacy bucket %s: %w", key, err)
+		}
+		distinct.Add(members...)
+	}
+
+	before, err := r.client.ZCard(ctx, target).Result()
+	if err != nil {
+		return report, fmt.Errorf("sizing target bucket %s: %w", target, err)
+	}
+	report.TargetBefore = before
+
+	targetMembers, err := r.client.ZRange(ctx, target, 0, -1).Result()
+	if err != nil {
+		return report, fmt.Errorf("reading target bucket %s: %w", target, err)
+	}
+	distinct.Add(targetMembers...)
+	report.ExpectedAfter = int64(distinct.Len())
+
+	if dryRun {
+		report.TargetAfter = before
+		return report, nil
+	}
+
+	unionKeys := make([]string, 0, len(sources)+1)
+	unionKeys = append(unionKeys, sources...)
+	unionKeys = append(unionKeys, target)
+	if _, err := r.client.ZUnionStore(ctx, target, &redis.ZStore{
+		Keys:      unionKeys,
+		Aggregate: "MIN",
+	}).Result(); err != nil {
+		return report, fmt.Errorf("unioning legacy eatery buckets into %s: %w", target, err)
+	}
+
+	after, err := r.client.ZCard(ctx, target).Result()
+	if err != nil {
+		return report, fmt.Errorf("re-sizing target bucket %s: %w", target, err)
+	}
+	report.TargetAfter = after
+	if after != report.ExpectedAfter {
+		Logger.Errorf("UnionEateryPriceBucketsIntoCategoryBucket: %s has %d members, expected %d",
+			target, after, report.ExpectedAfter)
+	}
+	return report, nil
+}
+
+// UnionEateryPriceBucketsIntoCategoryBucket forwards to the RedisClient method so the admin
+// handler can call it through the concrete PoiSearcher.
+func (s *PoiSearcher) UnionEateryPriceBucketsIntoCategoryBucket(ctx context.Context, dryRun bool) (EateryBucketUnionReport, error) {
+	return s.redisClient.UnionEateryPriceBucketsIntoCategoryBucket(ctx, dryRun)
+}
+
 // RemoveMisclassifiedPlacesFromCategoryBuckets removes places from cat's geo buckets whose
 // PRIMARY Google type does not belong to cat. It repairs the fast_food_restaurant incident:
 // two Places-API-(New)-only types were searched against the legacy Nearby Search, which
@@ -254,15 +397,9 @@ func (r *RedisClient) AddGeoLocation(ctx context.Context, key string, place POI.
 func (r *RedisClient) RemoveMisclassifiedPlacesFromCategoryBuckets(ctx context.Context, cat POI.PlaceCategory, dryRun bool) (BucketCleanupReport, error) {
 	report := BucketCleanupReport{RemovedIDs: make([]string, 0), BucketSizes: make(map[string]int64)}
 
-	levels := []POI.PriceLevel{POI.PriceLevelDefault}
-	if cat == POI.PlaceCategoryEatery {
-		levels = POI.AllPriceLevels
-	}
-
-	keys := make([]string, 0, len(levels))
-	for _, level := range levels {
-		keys = append(keys, POI.EncodeNearbySearchRedisKey(cat, level))
-	}
+	// One bucket per category since the eatery price split was collapsed; the loops below still
+	// take a slice so the shape survives if a category is ever partitioned again.
+	keys := []string{POI.EncodeNearbySearchRedisKey(cat)}
 
 	// Size the job before doing it. The scan cost is linear in bucket membership and the
 	// handler runs under the caller's request context, so an operator needs the member count
