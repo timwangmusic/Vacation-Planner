@@ -38,8 +38,6 @@ const (
 	LocationTypeBar           = LocationType("bar")
 	LocationTypeBakery        = LocationType("bakery")
 	LocationTypeMealTakeaway  = LocationType("meal_takeaway")
-	LocationTypeFastFood      = LocationType("fast_food_restaurant")
-	LocationTypeFoodCourt     = LocationType("food_court")
 	LocationTypeMuseum        = LocationType("museum")
 	LocationTypeGallery       = LocationType("art_gallery")
 	LocationTypeAmusementPark = LocationType("amusement_park")
@@ -58,26 +56,33 @@ const (
 	LocationTypePharmacy = LocationType("pharmacy")
 )
 
-// GetPlaceCategory maps a Google Maps place type back to its category. It is the inverse of
-// GetPlaceTypes and MUST stay consistent with it: the nearby-search cache writes each place
-// under EncodeNearbySearchRedisKey(GetPlaceCategory(place.LocationType), ...), so a type that
+// GetPlaceCategory maps a Google Maps place type back to its category, reporting whether
+// the type is mapped at all. It is the inverse of GetPlaceTypes and MUST stay consistent
+// with it: the nearby-search cache writes each place under
+// EncodeNearbySearchRedisKey(GetPlaceCategory(place.LocationType), ...), so a type that
 // resolves to a different category than the one it was searched under would never cache-hit.
-func GetPlaceCategory(placeType LocationType) (placeCategory PlaceCategory) {
+//
+// It deliberately has NO default category. An earlier version defaulted to Eatery, which
+// silently absorbed place types the legacy Nearby Search does not understand — two
+// Places-API-(New)-only types ("fast_food_restaurant", "food_court") were added to
+// GetPlaceTypes(Eatery), Google ignored the unenforceable filter, and prominence-ranked
+// hotels were written into the eatery geo buckets. Returning ok=false forces every caller
+// to decide what an unmapped type means, and makes TestPlaceCategoryRoundTrip able to fail.
+func GetPlaceCategory(placeType LocationType) (PlaceCategory, bool) {
 	switch placeType {
 	case LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum:
-		placeCategory = PlaceCategoryVisit
+		return PlaceCategoryVisit, true
 	case LocationTypeCafe, LocationTypeRestaurant, LocationTypeBar, LocationTypeBakery, LocationTypeMealTakeaway:
-		placeCategory = PlaceCategoryEatery
+		return PlaceCategoryEatery, true
 	case LocationTypeShoppingMall, LocationTypeDepartmentStore, LocationTypeSupermarket, LocationTypeClothingStore, LocationTypeStore:
-		placeCategory = PlaceCategoryShopping
+		return PlaceCategoryShopping, true
 	case LocationTypeLodging:
-		placeCategory = PlaceCategoryLodging
+		return PlaceCategoryLodging, true
 	case LocationTypeGym, LocationTypeSpa, LocationTypePharmacy:
-		placeCategory = PlaceCategoryWellness
+		return PlaceCategoryWellness, true
 	default:
-		placeCategory = PlaceCategoryEatery
+		return PlaceCategory(""), false
 	}
-	return
 }
 
 // GetPlaceTypes returns a set of types defined in Google Maps API given a location type
@@ -88,7 +93,7 @@ func GetPlaceTypes(placeCat PlaceCategory) (placeTypes []LocationType) {
 			[]LocationType{LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum}...)
 	case PlaceCategoryEatery:
 		placeTypes = append(placeTypes,
-			[]LocationType{LocationTypeCafe, LocationTypeRestaurant, LocationTypeBar, LocationTypeBakery, LocationTypeMealTakeaway, LocationTypeFastFood, LocationTypeFoodCourt}...)
+			[]LocationType{LocationTypeCafe, LocationTypeRestaurant, LocationTypeBar, LocationTypeBakery, LocationTypeMealTakeaway}...)
 	case PlaceCategoryShopping:
 		placeTypes = append(placeTypes,
 			[]LocationType{LocationTypeShoppingMall, LocationTypeDepartmentStore, LocationTypeSupermarket, LocationTypeClothingStore, LocationTypeStore}...)

@@ -807,7 +807,14 @@ func (p *MyPlanner) getUserSavedPlanDetails(ctx *gin.Context) {
 			}
 			resp.LatLongs[i] = [2]float64{place.Location.Latitude, place.Location.Longitude}
 			resp.ShownActive[i] = i == 0
-			resp.PlaceCategories[i] = POI.GetPlaceCategory(place.LocationType)
+			// Saved plans can contain older cached records, including brand-search places
+			// written with an empty LocationType. Preserve the historical Eatery default for
+			// display only — the write path (redis_client.go) is where guessing is unsafe.
+			if placeCategory, ok := POI.GetPlaceCategory(place.LocationType); ok {
+				resp.PlaceCategories[i] = placeCategory
+			} else {
+				resp.PlaceCategories[i] = POI.PlaceCategoryEatery
+			}
 
 			details, err := p.placeDetailsResp(ctx, place)
 			if err != nil {

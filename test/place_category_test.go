@@ -12,7 +12,6 @@ func TestGetPlaceTypesByCategory(t *testing.T) {
 		POI.PlaceCategoryEatery: {
 			POI.LocationTypeCafe, POI.LocationTypeRestaurant,
 			POI.LocationTypeBar, POI.LocationTypeBakery, POI.LocationTypeMealTakeaway,
-			POI.LocationTypeFastFood, POI.LocationTypeFoodCourt,
 		},
 		POI.PlaceCategoryShopping: {
 			POI.LocationTypeShoppingMall, POI.LocationTypeDepartmentStore,
@@ -45,9 +44,59 @@ func TestPlaceCategoryRoundTrip(t *testing.T) {
 	}
 	for _, category := range categories {
 		for _, placeType := range POI.GetPlaceTypes(category) {
-			if got := POI.GetPlaceCategory(placeType); got != category {
+			got, ok := POI.GetPlaceCategory(placeType)
+			if !ok {
+				t.Errorf("round-trip broken: GetPlaceCategory(%q) has no category, want %q", placeType, category)
+				continue
+			}
+			if got != category {
 				t.Errorf("round-trip broken: GetPlaceCategory(%q) = %q, want %q", placeType, got, category)
 			}
+		}
+	}
+}
+
+// TestGetPlaceCategoryRejectsUnknownTypes pins the fix for the fast_food_restaurant
+// incident: GetPlaceCategory must NOT silently absorb unmapped types into Eatery.
+// A default-to-Eatery branch made TestPlaceCategoryRoundTrip un-failable, so two
+// Places-API-(New)-only types were added to GetPlaceTypes(Eatery) and hotels were
+// written into the eatery geo buckets.
+func TestGetPlaceCategoryRejectsUnknownTypes(t *testing.T) {
+	unknown := []POI.LocationType{
+		POI.LocationType("fast_food_restaurant"),
+		POI.LocationType("food_court"),
+		POI.LocationType("lodging_but_not_really"),
+		POI.LocationType(""),
+	}
+	for _, placeType := range unknown {
+		if got, ok := POI.GetPlaceCategory(placeType); ok {
+			t.Errorf("GetPlaceCategory(%q) = (%q, true), want ok=false", placeType, got)
+		}
+	}
+}
+
+// TestGetPlaceCategoryKnownTypes pins that every mapped type still resolves.
+func TestGetPlaceCategoryKnownTypes(t *testing.T) {
+	cases := map[POI.LocationType]POI.PlaceCategory{
+		POI.LocationTypeCafe:         POI.PlaceCategoryEatery,
+		POI.LocationTypeRestaurant:   POI.PlaceCategoryEatery,
+		POI.LocationTypeBar:          POI.PlaceCategoryEatery,
+		POI.LocationTypeBakery:       POI.PlaceCategoryEatery,
+		POI.LocationTypeMealTakeaway: POI.PlaceCategoryEatery,
+		POI.LocationTypePark:         POI.PlaceCategoryVisit,
+		POI.LocationTypeMuseum:       POI.PlaceCategoryVisit,
+		POI.LocationTypeStore:        POI.PlaceCategoryShopping,
+		POI.LocationTypeLodging:      POI.PlaceCategoryLodging,
+		POI.LocationTypeGym:          POI.PlaceCategoryWellness,
+	}
+	for placeType, want := range cases {
+		got, ok := POI.GetPlaceCategory(placeType)
+		if !ok {
+			t.Errorf("GetPlaceCategory(%q) returned ok=false, want %q", placeType, want)
+			continue
+		}
+		if got != want {
+			t.Errorf("GetPlaceCategory(%q) = %q, want %q", placeType, got, want)
 		}
 	}
 }
