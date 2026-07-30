@@ -21,7 +21,7 @@ func TestSortPlacesByDistance(t *testing.T) {
 	lat, lng := 37.38006, -122.11612
 
 	places := []POI.Place{
-		placeAt("far-sunnyvale", 37.3688, -122.0363),  // ~7km east
+		placeAt("far-sunnyvale", 37.3688, -122.0363),    // ~7km east
 		placeAt("mid-mountainview", 37.3861, -122.0839), // ~3km east
 		placeAt("near-state-st", 37.38025, -122.11655),  // ~40m away
 	}
