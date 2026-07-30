@@ -12,6 +12,7 @@ func TestGetPlaceTypesByCategory(t *testing.T) {
 		POI.PlaceCategoryEatery: {
 			POI.LocationTypeCafe, POI.LocationTypeRestaurant,
 			POI.LocationTypeBar, POI.LocationTypeBakery, POI.LocationTypeMealTakeaway,
+			POI.LocationTypeFastFood, POI.LocationTypeFoodCourt,
 		},
 		POI.PlaceCategoryShopping: {
 			POI.LocationTypeShoppingMall, POI.LocationTypeDepartmentStore,
