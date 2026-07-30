@@ -277,6 +277,32 @@ func (p *MyPlanner) removePlacesMigrationHandler(ctx *gin.Context) {
 	}
 }
 
+// reclassifyBucketsMigrationHandler removes places from a category's geo buckets whose
+// primary Google type does not belong to that category. Dry-run unless ?apply=true.
+//
+// Usage: GET /v1/migrate/reclassify-buckets?category=Eatery
+//
+//	GET /v1/migrate/reclassify-buckets?category=Eatery&apply=true
+func (p *MyPlanner) reclassifyBucketsMigrationHandler(ctx *gin.Context) {
+	_, authenticationErr := p.UserAuthentication(ctx, user.LevelAdmin)
+	if authenticationErr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.Error()})
+		return
+	}
+	category, ok := POI.ParsePlaceCategory(ctx.DefaultQuery("category", string(POI.PlaceCategoryEatery)))
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "unknown category"})
+		return
+	}
+	dryRun := ctx.Query("apply") != "true"
+	report, err := p.Solver.Searcher.RemoveMisclassifiedPlacesFromCategoryBuckets(ctx.Request.Context(), category, dryRun)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "partial_report": report})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"dry_run": dryRun, "category": category, "report": report})
+}
+
 func (p *MyPlanner) placeStatsHandler(ctx *gin.Context) {
 	var placeCount int
 	var err error
@@ -1692,6 +1718,7 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 			migrations.GET("/user-ratings-total", p.UserRatingsTotalMigrationHandler)
 			migrations.GET("/url", p.UrlMigrationHandler)
 			migrations.GET("/remove-places", p.removePlacesMigrationHandler)
+			migrations.GET("/reclassify-buckets", p.reclassifyBucketsMigrationHandler)
 		}
 
 		v1.GET("/blob_url", p.getBlobObjectURL)
