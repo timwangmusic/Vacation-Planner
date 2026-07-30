@@ -32,7 +32,7 @@ Verified against the code at `8644199`:
 
 Confirmed non-issues, so nobody wastes time on them:
 
-- These records do **not** consume result slots in the response. `planner/planner.go` reclassifies at `:1406` *before* truncating at `:1414`, and the Redis read is unbounded (`GeoRadius` with no `Count`, `redis_client.go:484-489`).
+- ~~These records do **not** consume result slots in the response.~~ **CORRECTED after final review — this held only for the merchant endpoint, and was the most consequential error in this plan.** It is true that `planner/planner.go` (the `/v1/nearby-places-by-category` merchant handler) calls `POI.ReclassifyForCategory` *before* truncating, and that the Redis read is unbounded (`GeoRadius` with no `Count`, `redis_client.go:484-489`). But `ReclassifyForCategory` has exactly **one** production caller. The trip-planning path — `planner/solver.go:532` → `matching.NearbySearchForCategory` (`matching/matcher.go:76`) → `searcher.NearbySearch` → `matching.CreatePlace(place, req.Category)` (`:93`) — reads the same `placeIDs:eatery:level*` buckets and never reclassifies. The hotels were therefore slotted into generated trip plans as eateries: user-visible bad output, not merely cache residue. This is also why the cleanup migration must not delete aggressively — see Task 4.
 - They did **not** waste Place Details spend. `detailsBudget` (`nearby_search.go:150`) is shared and consumed in `placeTypes` order, so `cafe`/`restaurant` exhaust it before the junk types are processed.
 - Zero `food_court`-tagged places in prod is expected, not a contradiction. `placeMap` dedups by place ID across all types in one search, and `fast_food_restaurant` is processed first, so an identical ignored-filter response for `food_court` is entirely deduped away.
 
@@ -685,6 +685,13 @@ Reuses the established pattern: an admin-authenticated GET under `v1.Group("/mig
 - Consumes: `POI.GetPlaceCategory(placeType) (PlaceCategory, bool)` from Task 1; `POI.PrimaryLocationType`, `POI.GetPlaceTypes` (existing).
 - Produces: `(*RedisClient).RemoveMisclassifiedPlacesFromCategoryBuckets(ctx context.Context, cat POI.PlaceCategory, dryRun bool) (BucketCleanupReport, error)` and `type BucketCleanupReport struct { Scanned, Misclassified, Removed int; RemovedIDs []string }`.
 
+> **CORRECTED after final review — the Step 1/Step 3 code blocks below are superseded; read `iowrappers/data_migrations.go` for what shipped.** Two defects were caught in review:
+>
+> 1. **The removal rule below is wrong and too broad.** Step 3's `if _, keep := POI.ReclassifyForCategory(place, cat); keep` keeps a member only when its primary type is one of the category's five search types, so it deletes legitimate eateries whose primary type is a legal-but-unmapped legacy type (`meal_delivery`, `night_club`). Worse, it *contradicts the write path*, which keys on the stamped `LocationType` — the migration would delete rows the next cold search re-creates. The Interfaces block above is the one that got it right (`GetPlaceCategory` is what it consumes). What shipped is the inverse of the **write** rule: `primary := POI.PrimaryLocationType(place.Types); if c, ok := POI.GetPlaceCategory(primary); !ok || c == cat { continue }` — remove only when the primary type positively maps to a *different* category; keep on unmapped.
+> 2. **`ZRange 0 -1` plus a serial `getPlace` per member is an N+1 that cannot finish inside Heroku's non-configurable 30s H12 router timeout**, and the handler passes `ctx.Request.Context()`, which cancels on client disconnect. For any real bucket the dry run never returns, so the operator cannot perform the review that step 2 of the deployment order mandates — defeating the migration's core safety property. What shipped reads records in pipelined batches of 100 (matching `SetPlacesAddGeoLocations`) and reports `bucket_sizes`/`total_members` from `ZCARD` up front so the operator knows the scale before running.
+>
+> Also note Step 1's `RedisMockSvr.FlushAll()` must NOT be used: `RedisClient`/`RedisMockSvr` are process-wide fixtures shared with every other test in `test/redis_client_mocks`, and flushing wipes sibling files' package-level `init()` fixtures, breaking 4 unrelated tests under the full suite. The shipped test file scopes its reset to its own fixture IDs instead.
+
 - [ ] **Step 1: Write the failing test**
 
 Create `test/redis_client_mocks/bucket_cleanup_test.go`. This follows the existing miniredis harness in that package (`RedisClient`, `RedisContext`, `RedisMockSvr` are package-level fixtures set up by its `TestMain`):
@@ -990,13 +997,21 @@ Remove them using the same primary-type rule, dry-run by default."
 
 ## Deployment order
 
-1. Merge and deploy Tasks 1-3. Verify `go test ./...` green in CI.
+1. Merge and deploy the whole PR — Tasks 1-4 ship together, so after deploy the operator has both the forward fixes (no new bad writes) *and* the cleanup endpoint. The "fix the write path before cleaning the data" ordering property still holds by construction, not by deploy sequencing: the endpoint is dry-run by default, so nothing is deleted until step 3 is run by hand. Verify `go test ./...` green in CI.
 2. Dry-run the cleanup and read the report before applying:
    ```bash
    curl -s -H "Authorization: Bearer $ADMIN_JWT" \
      "https://best-vacation-planner.herokuapp.com/v1/migrate/reclassify-buckets?category=Eatery" | jq
    ```
-   Expect roughly 17 entries in `removed_ids` for the Los Altos hotels, plus any older misclassifications the primary-type rule catches. Review the list before proceeding.
+   Read `bucket_sizes` / `total_members` first — they are measured with `ZCARD` before the scan and tell you the scale of the job.
+
+   Expect roughly 17 entries in `removed_ids` for the Los Altos hotels, plus any older misclassifications the rule catches. Know exactly what the rule does before you review the list:
+
+   - **Removed** — the member's primary Google type (`POI.PrimaryLocationType`: first entry of `types[]` that is not an umbrella type like `food`/`point_of_interest`/`establishment`) maps to a *different* category. `lodging` → `Lodging`, `supermarket` → `Shopping`. These are the incident's hotels.
+   - **Kept: unmapped primary types.** `meal_delivery` (a delivery-first restaurant) and `night_club` (a bar that is also a club) are legal legacy types Google routinely lists first for genuine eateries, and `GetPlaceCategory` maps neither to any category. An unmapped primary type is *not* evidence of misclassification — the fixed write path keys on the stamped `LocationType`, so it would legitimately file these under Eatery, and deleting them would only remove rows the next cold search re-creates while shrinking the trip-planning candidate pool for up to `MinMapsResultRefreshDuration` (14 days) per city/price-level.
+   - **Kept: records with no `types[]` at all** (cached before `Types` was captured), so coverage never regresses on old data.
+
+   Seeing `meal_delivery`/`night_club` places *absent* from `removed_ids` is the rule working, not a miss. Review the list before proceeding.
 3. Apply:
    ```bash
    curl -s -H "Authorization: Bearer $ADMIN_JWT" \
@@ -1013,7 +1028,11 @@ Remove them using the same primary-type rule, dry-run by default."
 
 - [ ] `go build -v .` and `go test -v ./...` pass locally and in CI.
 - [ ] `TestPlaceCategoryRoundTrip` fails if you temporarily re-add `LocationTypeFastFood` to `GetPlaceTypes(Eatery)` — confirm the guard is now real, then revert the experiment.
-- [ ] `grep -rn 'fast_food_restaurant\|food_court' --include='*.go' .` returns nothing.
+- [ ] No `LocationType` constant exists for either New-API-only string. A bare text search is the wrong check — the strings legitimately appear in the guard tests (which must name them to assert they are rejected), in the incident narrative in doc comments, and in the migration fixtures, so `grep -rn 'fast_food_restaurant\|food_court' --include='*.go' .` returns matches by design. Check the actual invariant instead:
+  ```bash
+  # must print nothing: no constant may reintroduce either type
+  grep -nE '=[[:space:]]*LocationType\("(fast_food_restaurant|food_court)"\)' POI/categories.go
+  ```
 - [ ] A category search at State Street Market returns Peet's at 367 State St ahead of results in Sunnyvale.
 - [ ] Dry-run report reviewed before any `apply=true` call.
 
