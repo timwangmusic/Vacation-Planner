@@ -60,19 +60,25 @@ func TestBrandNearbySearch_shouldOnlyReturnPlacesFromBrandBucket(t *testing.T) {
 }
 
 func TestBrandMapsLastSearchTime_roundTrip(t *testing.T) {
-	location := POI.Location{City: "New York", AdminAreaLevelOne: "NY", Country: "USA"}
+	const lat, lng = 40.7128, -74.0060 // New York
 	currentTime := time.Now()
 
-	if err := RedisClient.SetBrandMapsLastSearchTime(RedisContext, location, "Dunkin'", currentTime.Format(time.RFC3339)); err != nil {
+	if err := RedisClient.SetBrandMapsLastSearchTime(RedisContext, lat, lng, "Dunkin'", currentTime.Format(time.RFC3339)); err != nil {
 		t.Fatal(err)
 	}
 
-	gotLastSearchTime, err := RedisClient.GetBrandMapsLastSearchTime(RedisContext, location, "Dunkin'")
+	gotLastSearchTime, err := RedisClient.GetBrandMapsLastSearchTime(RedisContext, lat, lng, "Dunkin'")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if gotLastSearchTime.Format(time.RFC3339) != currentTime.Format(time.RFC3339) {
 		t.Errorf("expect last search time %v, got %v", currentTime, gotLastSearchTime)
+	}
+
+	// Brand buckets are geo indexes read from precise coordinates too, so their marker is
+	// cell-scoped for the same reason the category markers are.
+	if _, err := RedisClient.GetBrandMapsLastSearchTime(RedisContext, lat+0.2, lng, "Dunkin'"); err == nil {
+		t.Error("expected a brand marker miss ~22 km away, got a hit")
 	}
 }
 

@@ -119,3 +119,54 @@ func TestRemovePlaces(t *testing.T) {
 		return
 	}
 }
+
+// TestRemovePlacesClearsEveryCategoryBucket covers the orphan bug: removePlace used to ZREM a
+// hardcoded "placeIDs:visit" plus "placeIDs:eatery:"+priceLevel — which produced
+// "placeIDs:eatery:2" while writes used "placeIDs:eatery:level2" — and never touched the
+// Shopping, Lodging, or Wellness buckets. The record was deleted while its geo members stayed
+// behind, leaving members that count toward the radius gate and then resolve to nothing.
+func TestRemovePlacesClearsEveryCategoryBucket(t *testing.T) {
+	RedisMockSvr, _ := miniredis.Run()
+	defer RedisMockSvr.Close()
+
+	redisURL, _ := url.Parse("redis://" + RedisMockSvr.Addr())
+	redisClient := CreateRedisClient(redisURL)
+	ctx := context.Background()
+	_ = CreateLogger()
+
+	// One place filed under every category's bucket, as a place matching several searches would
+	// be. It has no URL, so the URL requirement below marks it for removal.
+	place := POI.Place{
+		ID:           "multi-bucket-1",
+		Name:         "Everything Emporium",
+		LocationType: POI.LocationTypeStore,
+		Location:     POI.Location{Latitude: 12.5635, Longitude: 14.7834},
+		Photo:        POI.PlacePhoto{Reference: "photo-ref"},
+	}
+	if err := redisClient.SetPlace(ctx, place); err != nil {
+		t.Fatalf("SetPlace: %v", err)
+	}
+	for _, cat := range POI.AllPlaceCategories {
+		key := POI.EncodeNearbySearchRedisKey(cat)
+		if err := redisClient.AddGeoLocation(ctx, key, place); err != nil {
+			t.Fatalf("AddGeoLocation(%s): %v", key, err)
+		}
+	}
+
+	if err := redisClient.RemovePlaces(ctx, []PlaceDetailsFields{PlaceDetailsFieldURL}); err != nil {
+		t.Fatalf("RemovePlaces: %v", err)
+	}
+
+	for _, cat := range POI.AllPlaceCategories {
+		key := POI.EncodeNearbySearchRedisKey(cat)
+		members, err := redisClient.Get().ZRange(ctx, key, 0, -1).Result()
+		if err != nil {
+			t.Fatalf("ZRange(%s): %v", key, err)
+		}
+		for _, member := range members {
+			if member == place.ID {
+				t.Errorf("%s left behind in bucket %s as an orphan", place.ID, key)
+			}
+		}
+	}
+}

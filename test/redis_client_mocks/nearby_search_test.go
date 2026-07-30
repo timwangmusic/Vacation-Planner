@@ -98,24 +98,51 @@ func TestGetPlaces_shouldExcludePlacesOutsideOfSearchRadius(t *testing.T) {
 	}
 }
 
-func TestGetPlaces_resultShouldBeEmptyAfterPriceMatch(t *testing.T) {
-	// expect result should be empty, because mock data has no PriceLevelTwo places.
-	placeSearchRequest := iowrappers.PlaceSearchRequest{
-		Location:   POI.Location{Longitude: -74.0060, Latitude: 40.7128},
-		PlaceCat:   POI.PlaceCategoryEatery,
-		Radius:     uint(5000),
-		PriceLevel: POI.PriceLevelTwo,
+// TestGetPlaces_readsEveryPriceLevel pins that the geo read is price-agnostic.
+//
+// This replaces a test that asserted a PriceLevelTwo eatery search returned nothing because no
+// fixture place carries price level 2. That only held while eateries were split across
+// placeIDs:eatery:level0..4, and the split was the defect: Google omits price_level for most
+// places (so they all landed in level0) and only accepts a price filter at level >= 3, so
+// searches for levels 0-2 issued identical requests yet each read back a fifth of the data.
+//
+// Price selection is the caller's job — matching.MatcherForPriceRange applies
+// filterPlacesOnPriceLevel to these results (planner/solver.go). The cache's contract is
+// "everything of this category near here", nothing narrower.
+func TestGetPlaces_readsEveryPriceLevel(t *testing.T) {
+	requestAt := func(level POI.PriceLevel) []POI.Place {
+		t.Helper()
+		req := iowrappers.PlaceSearchRequest{
+			Location:   POI.Location{Longitude: -74.0060, Latitude: 40.7128},
+			PlaceCat:   POI.PlaceCategoryEatery,
+			Radius:     uint(5000),
+			PriceLevel: level,
+		}
+		got, err := RedisClient.NearbySearch(RedisContext, &req)
+		if err != nil {
+			t.Fatalf("RedisClient.NearbySearch at price level %d: %v", level, err)
+		}
+		return got
 	}
 
-	cachedEateryPlaces, err := RedisClient.NearbySearch(RedisContext, &placeSearchRequest)
-	if err != nil {
-		t.Error(err)
-		return
+	// Keens Steakhouse (price level 4) is the one eatery inside the radius.
+	atLevelFour := requestAt(POI.PriceLevelFour)
+	if len(atLevelFour) != 1 || atLevelFour[0].ID != places[2].ID {
+		t.Fatalf("expected only %s in radius, got %+v", places[2].Name, atLevelFour)
 	}
 
-	if len(cachedEateryPlaces) != 0 {
-		t.Errorf("Expect to have 0 place, but got %d instead", len(cachedEateryPlaces))
-		return
+	// A level-2 search must see it too: no fixture place has price level 2, yet the read is not
+	// scoped by price.
+	for _, level := range POI.AllPriceLevels {
+		got := requestAt(level)
+		if len(got) != len(atLevelFour) {
+			t.Errorf("price level %d returned %d places, want %d — the read must not be price-scoped",
+				level, len(got), len(atLevelFour))
+			continue
+		}
+		if got[0].ID != atLevelFour[0].ID {
+			t.Errorf("price level %d returned place %s, want %s", level, got[0].ID, atLevelFour[0].ID)
+		}
 	}
 }
 

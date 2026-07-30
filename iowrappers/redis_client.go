@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -140,12 +139,14 @@ func (r *RedisClient) setPlace(context context.Context, place POI.Place) error {
 	return err
 }
 
-func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel) (lastSearchTime time.Time, err error) {
-	redisField := strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category), strconv.Itoa(int(priceLevel))}, ":"))
-	// for places in Visit category Google Maps do not provide pricing info, this is subject to change in the future
-	if category == POI.PlaceCategoryVisit {
-		redisField = strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category)}, ":"))
-	}
+// GetMapsLastSearchTime reports when an external maps search last covered the location cell
+// containing (lat, lng) for this category and price level. The field is keyed on the cell
+// rather than the city because the geo buckets it guards are read from arbitrary coordinates —
+// see POI.EncodeLastSearchTimeField. There is no longer a per-category exception: the price
+// segment is derived from PriceyEatery, so Visit needing none is a consequence of the rule
+// rather than a special case that the newer categories were never added to.
+func (r *RedisClient) GetMapsLastSearchTime(context context.Context, lat, lng float64, category POI.PlaceCategory, priceLevel POI.PriceLevel) (lastSearchTime time.Time, err error) {
+	redisField := POI.EncodeLastSearchTimeField(category, priceLevel, lat, lng)
 	lst, cacheErr := r.client.HGet(context, MapsLastSearchTimeRedisKey, redisField).Result()
 	if cacheErr != nil {
 		err = cacheErr
@@ -160,12 +161,8 @@ func (r *RedisClient) GetMapsLastSearchTime(context context.Context, location PO
 	return
 }
 
-func (r *RedisClient) SetMapsLastSearchTime(context context.Context, location POI.Location, category POI.PlaceCategory, priceLevel POI.PriceLevel, requestTime string) (err error) {
-	redisField := strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category), strconv.Itoa(int(priceLevel))}, ":"))
-	// for places in Visit category Google Maps do not provide pricing info, this is subject to change in the future
-	if category == POI.PlaceCategoryVisit {
-		redisField = strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, string(category)}, ":"))
-	}
+func (r *RedisClient) SetMapsLastSearchTime(context context.Context, lat, lng float64, category POI.PlaceCategory, priceLevel POI.PriceLevel, requestTime string) (err error) {
+	redisField := POI.EncodeLastSearchTimeField(category, priceLevel, lat, lng)
 	_, err = r.client.HSet(context, MapsLastSearchTimeRedisKey, redisField, requestTime).Result()
 	return
 }
@@ -240,7 +237,7 @@ func (r *RedisClient) SetPlacesAddGeoLocations(c context.Context, places []POI.P
 						Longitude: place.GetLocation().Longitude,
 					}
 
-					redisKey := POI.EncodeNearbySearchRedisKey(placeCategory, place.PriceLevel)
+					redisKey := POI.EncodeNearbySearchRedisKey(placeCategory)
 					pipe.GeoAdd(c, redisKey, geoLocation)
 
 					json_, err := json.Marshal(place)
@@ -292,13 +289,10 @@ func (r *RedisClient) SetPlacesAddGeoLocationsForBrand(c context.Context, keywor
 	}
 }
 
-func brandLastSearchTimeRedisField(location POI.Location, keyword string) string {
-	return strings.ToLower(strings.Join([]string{location.Country, location.AdminAreaLevelOne, location.City, "brand", POI.NormalizeBrandKey(keyword)}, ":"))
-}
-
-// GetBrandMapsLastSearchTime returns the last time an external maps search ran for a brand keyword in a city
-func (r *RedisClient) GetBrandMapsLastSearchTime(context context.Context, location POI.Location, keyword string) (lastSearchTime time.Time, err error) {
-	lst, cacheErr := r.client.HGet(context, MapsLastSearchTimeRedisKey, brandLastSearchTimeRedisField(location, keyword)).Result()
+// GetBrandMapsLastSearchTime returns the last time an external maps search ran for a brand
+// keyword in the location cell containing (lat, lng)
+func (r *RedisClient) GetBrandMapsLastSearchTime(context context.Context, lat, lng float64, keyword string) (lastSearchTime time.Time, err error) {
+	lst, cacheErr := r.client.HGet(context, MapsLastSearchTimeRedisKey, POI.EncodeBrandLastSearchTimeField(keyword, lat, lng)).Result()
 	if cacheErr != nil {
 		err = cacheErr
 		return
@@ -312,9 +306,10 @@ func (r *RedisClient) GetBrandMapsLastSearchTime(context context.Context, locati
 	return
 }
 
-// SetBrandMapsLastSearchTime records the last time an external maps search ran for a brand keyword in a city
-func (r *RedisClient) SetBrandMapsLastSearchTime(context context.Context, location POI.Location, keyword string, requestTime string) (err error) {
-	_, err = r.client.HSet(context, MapsLastSearchTimeRedisKey, brandLastSearchTimeRedisField(location, keyword), requestTime).Result()
+// SetBrandMapsLastSearchTime records the last time an external maps search ran for a brand
+// keyword in the location cell containing (lat, lng)
+func (r *RedisClient) SetBrandMapsLastSearchTime(context context.Context, lat, lng float64, keyword string, requestTime string) (err error) {
+	_, err = r.client.HSet(context, MapsLastSearchTimeRedisKey, POI.EncodeBrandLastSearchTimeField(keyword, lat, lng), requestTime).Result()
 	return
 }
 
@@ -447,6 +442,26 @@ func (r *RedisClient) NearbyCities(ctx context.Context, lat, lng, radius float64
 	return nearbyCities, nil
 }
 
+// CachedPlaces resolves stored place records for the given IDs in one round trip, omitting IDs
+// with no usable record. Used by the maps client to avoid re-buying Place Details for places we
+// already have; see MapsClient.SetCachedPlaceLookup.
+func (r *RedisClient) CachedPlaces(ctx context.Context, placeIDs []string) (map[string]POI.Place, error) {
+	if len(placeIDs) == 0 {
+		return nil, nil
+	}
+	fetched, found, err := r.getPlacesPipelined(ctx, placeIDs)
+	if err != nil {
+		return nil, err
+	}
+	cached := make(map[string]POI.Place, len(placeIDs))
+	for i, ok := range found {
+		if ok {
+			cached[placeIDs[i]] = fetched[i]
+		}
+	}
+	return cached, nil
+}
+
 // obtain place info from Redis based with key place_details:place_ID:placeID
 func (r *RedisClient) getPlace(context context.Context, placeId string) (place POI.Place, err error) {
 	res, err := r.client.Get(context, PlaceDetailsRedisKeyPrefix+placeId).Result()
@@ -458,27 +473,25 @@ func (r *RedisClient) getPlace(context context.Context, placeId string) (place P
 	return
 }
 
-// nearbySearchRedisKeys returns the geo-index keys a nearby search reads. Usually
-// one key, but an Eatery search with AllPriceLevels set unions every price bucket
-// (placeIDs:eatery:level0..4). Eateries are partitioned by price on write, so a
-// category/merchant search that has no price preference must read them all or it
-// only sees the tier named by req.PriceLevel (e.g. only price-unknown eateries).
-func nearbySearchRedisKeys(req *PlaceSearchRequest) []string {
+// nearbySearchRedisKey returns the single geo-index key a nearby search reads: the brand bucket
+// for a keyword search, otherwise the category's one bucket. Eateries were previously split
+// across placeIDs:eatery:level0..4, which forced callers with no price preference to union five
+// keys; see POI.EncodeNearbySearchRedisKey for why that split is gone.
+func nearbySearchRedisKey(req *PlaceSearchRequest) string {
 	if req.Keyword != "" {
-		return []string{POI.EncodeBrandNearbySearchRedisKey(req.Keyword)}
+		return POI.EncodeBrandNearbySearchRedisKey(req.Keyword)
 	}
-	if req.AllPriceLevels && req.PlaceCat == POI.PlaceCategoryEatery {
-		keys := make([]string, 0, len(POI.AllPriceLevels))
-		for _, lvl := range POI.AllPriceLevels {
-			keys = append(keys, POI.EncodeNearbySearchRedisKey(req.PlaceCat, lvl))
-		}
-		return keys
-	}
-	return []string{POI.EncodeNearbySearchRedisKey(req.PlaceCat, req.PriceLevel)}
+	return POI.EncodeNearbySearchRedisKey(req.PlaceCat)
 }
 
+// geoCandidateMultiplier sizes the GEORADIUS COUNT above MinNumResults. Headroom is needed
+// because a single bucket now holds every price level and callers filter on price after the
+// read (matching.filterPlacesOnPriceLevel), so the nearest MinNumResults members are not
+// necessarily MinNumResults usable results.
+const geoCandidateMultiplier = 5
+
 func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest) ([]POI.Place, error) {
-	redisKeys := nearbySearchRedisKeys(req)
+	redisKey := nearbySearchRedisKey(req)
 	requestLat, requestLng := req.Location.Latitude, req.Location.Longitude
 	searchRadius := req.Radius
 
@@ -486,49 +499,22 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 		searchRadius = MaxSearchRadius
 	}
 
-	// The multi-key union path (WithDist merge-sort) is used ONLY when reading more
-	// than one bucket — i.e. an AllPriceLevels eatery category search. The common
-	// single-key path (plan generation, non-eatery categories, brand searches) is
-	// left exactly as it was: one GeoRadius call, its native ASC order, no re-sort.
-	singleKey := len(redisKeys) == 1
-
 	var cachedQualifiedPlaces []redis.GeoLocation
 	for searchRadius <= MaxSearchRadius {
 		Logger.Debugf("[request_id: %s] Redis geo radius is using search radius of %d meters", ctx.Value(ContextRequestIdKey), searchRadius)
-		geoQuery := &redis.GeoRadiusQuery{
-			Radius:   float64(searchRadius),
-			Unit:     "m",
-			Sort:     "ASC",      // sort ascending
-			WithDist: !singleKey, // only needed to merge-sort across multiple buckets
-		}
-
-		if singleKey {
-			var err error
-			if cachedQualifiedPlaces, err = r.client.GeoRadius(ctx, redisKeys[0], requestLng, requestLat, geoQuery).Result(); err != nil {
-				return nil, err
-			}
-		} else {
-			// Union across buckets by member, keeping the nearest sighting of a place
-			// that appears in more than one, then merge-sort by distance.
-			merged := make(map[string]redis.GeoLocation)
-			for _, key := range redisKeys {
-				locs, err := r.client.GeoRadius(ctx, key, requestLng, requestLat, geoQuery).Result()
-				if err != nil {
-					return nil, err
-				}
-				for _, loc := range locs {
-					if existing, seen := merged[loc.Name]; !seen || loc.Dist < existing.Dist {
-						merged[loc.Name] = loc
-					}
-				}
-			}
-			cachedQualifiedPlaces = make([]redis.GeoLocation, 0, len(merged))
-			for _, loc := range merged {
-				cachedQualifiedPlaces = append(cachedQualifiedPlaces, loc)
-			}
-			sort.SliceStable(cachedQualifiedPlaces, func(i, j int) bool {
-				return cachedQualifiedPlaces[i].Dist < cachedQualifiedPlaces[j].Dist
-			})
+		var err error
+		cachedQualifiedPlaces, err = r.client.GeoRadius(ctx, redisKey, requestLng, requestLat, &redis.GeoRadiusQuery{
+			Radius: float64(searchRadius),
+			Unit:   "m",
+			Sort:   "ASC", // sort ascending
+			// Bound the candidate set. Without this a wide radius in a dense area returns
+			// every member in range and we fetch a record for each, only for the caller to
+			// truncate to a handful. go-redis omits COUNT entirely when this is 0, so a
+			// caller that leaves MinNumResults unset is unbounded exactly as before.
+			Count: int(req.MinNumResults) * geoCandidateMultiplier,
+		}).Result()
+		if err != nil {
+			return nil, err
 		}
 
 		if len(cachedQualifiedPlaces) >= int(req.MinNumResults) {
@@ -537,13 +523,30 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 		searchRadius *= 2
 	}
 
-	req.Radius = searchRadius
+	placeIDs := make([]string, len(cachedQualifiedPlaces))
+	for i, placeInfo := range cachedQualifiedPlaces {
+		placeIDs[i] = placeInfo.Name
+	}
 
-	places := make([]POI.Place, 0)
-	for _, placeInfo := range cachedQualifiedPlaces {
-		if place, err := r.getPlace(ctx, placeInfo.Name); err == nil {
-			places = append(places, place)
+	// One pipelined round trip rather than a GET per member: a wide radius in a dense area
+	// returns hundreds of members, and serial round trips there dwarf the geo lookup itself.
+	fetched, found, err := r.getPlacesPipelined(ctx, placeIDs)
+	if err != nil {
+		return nil, err
+	}
+	places := make([]POI.Place, 0, len(fetched))
+	for i, ok := range found {
+		if ok {
+			places = append(places, fetched[i])
 		}
+	}
+
+	// A bucket member with no backing place_details record is an orphan. It still counts toward
+	// the MinNumResults radius gate above but resolves to nothing here, so a bucket full of
+	// orphans is indistinguishable from an empty one unless the gap is logged.
+	if orphans := len(placeIDs) - len(places); orphans > 0 {
+		Logger.Debugf("(RedisClient)NearbySearch: [request_id: %s] key %s had %d geo members with no place_details record",
+			ctx.Value(ContextRequestIdKey), redisKey, orphans)
 	}
 
 	if req.BusinessStatus == POI.Operational {

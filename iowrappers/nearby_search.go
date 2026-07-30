@@ -53,13 +53,6 @@ type PlaceSearchRequest struct {
 	// DetailsLimit caps how many places get the expensive Place Details API call, chosen
 	// by proximity to the request location. Zero means no cap (previous behavior).
 	DetailsLimit int
-
-	// AllPriceLevels, for an Eatery search with no price preference (merchant /
-	// category endpoint), unions every price bucket on read. Eateries are
-	// partitioned by price in the geo index, so without this a category read only
-	// returns the single PriceLevel bucket named by the request. No effect on
-	// non-Eatery categories (they are not price-partitioned) or keyword searches.
-	AllPriceLevels bool
 }
 
 // MatchesBrandName reports whether a place name matches a brand keyword after normalization,
@@ -239,19 +232,25 @@ outer:
 			processingStartTime := time.Now()
 			searchResp := fetched[i].resp
 
+			// What we already hold for these places, in one round trip. Place Details is the
+			// dominant cost of a cold search (one call per place), so this is what keeps a
+			// re-search over already-covered ground from re-buying all of it.
+			cached := c.lookupCachedPlaces(ctx, searchResp.Results)
+
 			// places for Google Maps place details search (https://developers.google.com/maps/documentation/places/web-service/details)
 			// the original purpose of doing a details search is getting opening hours info
 			// later on we added more fields of interest as specified in the config/config.yaml file
-			placeIdMap := selectPlacesForDetails(request, &searchResp, &detailsBudget)
+			placeIdMap := selectPlacesForDetails(request, &searchResp, &detailsBudget, cached, processingStartTime)
 
-			// placeholder for filtering places that do no need updates
 			placesToUpdate := set.Of[string]{}
 			for _, placeId := range placeIdMap {
 				placesToUpdate.Add(placeId)
 			}
 			searchDuration := c.searchPlaceDetails(ctx, placeIdMap, processingStartTime, &searchResp, summaryMap, microAddrMap, urlMap, placesToUpdate)
 
-			*places = append(*places, parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap, summaryMap)...)
+			parsed := parsePlacesSearchResponse(searchResp, placeType, microAddrMap, placeMap, urlMap, summaryMap)
+			restoreCachedDetails(parsed, cached)
+			*places = append(*places, parsed...)
 			totalPlaceCount += uint(len(searchResp.Results))
 			placeCountPerPlaceType[placeType] += len(searchResp.Results)
 			nextPageTokenMap[placeType] = searchResp.NextPageToken
@@ -281,9 +280,13 @@ outer:
 
 // selectPlacesForDetails picks the search results worth a Place Details API call: places
 // missing opening hours, excluding results a strict brand-name match would later drop
-// (details on those are wasted spend), and — when the request sets DetailsLimit — capped
-// to the remaining budget by proximity to the request location.
-func selectPlacesForDetails(request *PlaceSearchRequest, searchResp *maps.PlacesSearchResponse, detailsBudget *int) map[int]string {
+// (details on those are wasted spend), excluding places whose stored record already carries
+// current Details data, and — when the request sets DetailsLimit — capped to the remaining
+// budget by proximity to the request location.
+//
+// The cache check runs BEFORE the budget cap, not after, so a limited budget is spent entirely
+// on places we do not already have instead of being consumed by ones we do.
+func selectPlacesForDetails(request *PlaceSearchRequest, searchResp *maps.PlacesSearchResponse, detailsBudget *int, cached map[string]POI.Place, now time.Time) map[int]string {
 	type candidate struct {
 		idx  int
 		dist float64
@@ -294,6 +297,9 @@ func selectPlacesForDetails(request *PlaceSearchRequest, searchResp *maps.Places
 			continue
 		}
 		if request.Keyword != "" && request.StrictNameMatch && !MatchesBrandName(res.Name, request.Keyword) {
+			continue
+		}
+		if place, ok := cached[res.PlaceID]; ok && placeDetailsAreCurrent(place, now) {
 			continue
 		}
 		dist := utils.HaversineDist(
@@ -315,6 +321,47 @@ func selectPlacesForDetails(request *PlaceSearchRequest, searchResp *maps.Places
 		placeIdMap[cand.idx] = searchResp.Results[cand.idx].PlaceID
 	}
 	return placeIdMap
+}
+
+// restoreCachedDetails puts back the Details-sourced fields of places we already had stored,
+// for any place that did not come away from this search with fresh ones.
+//
+// Required because the write path is a blind upsert: SetPlacesAddGeoLocations unconditionally
+// Sets every place handed to it. Without this, a place whose Details call was skipped would be
+// rebuilt from the bare Nearby result — CreatePlace backfilling default opening hours
+// ("8:30 am – 9:30 pm") and leaving URL empty — and then overwrite the very record that caused
+// it to be skipped, so the optimisation would quietly destroy the data it was exploiting.
+//
+// Restoring is per field and only ever fills a gap, never overwrites something this search
+// obtained. That matters most for hours: a place whose hours arrived with the Nearby response is
+// skipped for Details and so has no URL, and a blanket copy would replace those real hours with
+// the stored record's DefaultOpeningHours placeholder. Hours cannot be tested for emptiness
+// because CreatePlace always fills them, hence HasRealOpeningHours.
+func restoreCachedDetails(places []POI.Place, cached map[string]POI.Place) {
+	if len(cached) == 0 {
+		return
+	}
+	for i := range places {
+		stored, ok := cached[places[i].ID]
+		if !ok {
+			continue
+		}
+		if places[i].URL == "" {
+			places[i].URL = stored.URL
+		}
+		if places[i].Summary == "" {
+			places[i].Summary = stored.Summary
+		}
+		if places[i].FormattedAddress == "" {
+			places[i].FormattedAddress = stored.FormattedAddress
+		}
+		if places[i].Address == (POI.Address{}) {
+			places[i].Address = stored.Address
+		}
+		if !places[i].HasRealOpeningHours() && stored.HasRealOpeningHours() {
+			places[i].Hours = stored.Hours
+		}
+	}
 }
 
 func (c *MapsClient) searchPlaceDetails(

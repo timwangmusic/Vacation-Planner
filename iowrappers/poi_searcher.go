@@ -2,6 +2,7 @@ package iowrappers
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -21,9 +22,18 @@ const (
 	MaxSearchRadius              = 16000               // 10 miles, upper bound for radius requested by callers
 	ColdStartSearchRadius        = 8000                // 5 miles, radius used for external maps searches that populate the cache
 	MinMapsResultRefreshDuration = time.Hour * 24 * 14 // 14 days
-	GoogleSearchHomePageURL      = "https://www.google.com/"
-	ContextRequestIdKey          = ContextKey("request_id")
-	ContextRequestUserId         = ContextKey("user_id")
+	// MinEmptyResultRefreshDuration is the refresh window for a search that came back with
+	// nothing. Shorter than MinMapsResultRefreshDuration so an area that has just been built
+	// out is retried within a day, rather than being frozen for the full two weeks.
+	MinEmptyResultRefreshDuration = time.Hour * 24 // 1 day
+	// PlaceDetailsRefreshDuration is how long a stored place's Details-sourced fields (opening
+	// hours, formatted address, URL, editorial summary) are trusted before a cold search buys
+	// them again. Business status arrives with every Nearby Search, so closures are still caught
+	// by the Operational filter regardless of this window.
+	PlaceDetailsRefreshDuration = time.Hour * 24 * 90 // 90 days
+	GoogleSearchHomePageURL     = "https://www.google.com/"
+	ContextRequestIdKey         = ContextKey("request_id")
+	ContextRequestUserId        = ContextKey("user_id")
 )
 
 type PoiSearcher struct {
@@ -61,6 +71,10 @@ func CreatePoiSearcher(mapsApiKey string, redisUrl *url.URL) *PoiSearcher {
 		mapsClient:  CreateMapsClient(mapsApiKey),
 		redisClient: CreateRedisClient(redisUrl),
 	}
+	// Let external searches consult the cache before buying Place Details for a place we already
+	// have. Wired here rather than in CreateMapsClient so the maps client keeps no dependency on
+	// Redis.
+	poiSearcher.mapsClient.SetCachedPlaceLookup(poiSearcher.redisClient.CachedPlaces)
 	return &poiSearcher
 }
 
@@ -139,11 +153,36 @@ func (s *PoiSearcher) ReverseGeocode(ctx context.Context, lat, lng float64) (*Ge
 	return s.mapsClient.ReverseGeocode(ctx, lat, lng)
 }
 
+// canServeFromCache decides whether cached places can satisfy a request without an external
+// search. cachedCount is how many places the geo read returned, readErr its failure if any,
+// markerMiss whether this cell has no freshness marker, and markerAge how long ago the marker
+// says an external search last covered the cell.
+//
+// A fresh marker is honoured even at cachedCount == 0: it records that we already asked Google
+// about this cell, including when the honest answer was "nothing here". The previous version
+// additionally required cachedCount > 0, which left the marker unable to suppress anything — a
+// bucket that read back zero fell through to Google, re-stamped the marker, and did the same
+// again on the very next request, forever rather than once. That is what made sparse categories
+// re-search on every single request.
+//
+// An empty result gets a shorter window than a populated one so an area that has just been built
+// out is retried within a day instead of being frozen for the full refresh period.
+func canServeFromCache(cachedCount int, readErr, markerMiss error, markerAge time.Duration) bool {
+	if readErr != nil || markerMiss != nil {
+		return false
+	}
+	refreshWindow := MinMapsResultRefreshDuration
+	if cachedCount == 0 {
+		refreshWindow = MinEmptyResultRefreshDuration
+	}
+	return markerAge <= refreshWindow
+}
+
 func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearchRequest) ([]POI.Place, error) {
 	if err := s.processLocation(context, request); err != nil {
 		return nil, err
 	}
-	location := request.Location
+	lat, lng := request.Location.Latitude, request.Location.Longitude
 
 	var savedPlaces, places []POI.Place
 	var placesErr error
@@ -152,24 +191,38 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 		Logger.Error(placesErr)
 	}
 
-	Logger.Debugf("(PoiSearcher)NearbySearch: [request_id: %s] the number of results from redis is %d", context.Value(ContextRequestIdKey), len(savedPlaces))
-
-	// update last search time for the city
+	// when an external search last covered this location cell
 	var lastSearchTime time.Time
 	var lastSearchTimeMiss error
 	if request.Keyword != "" {
-		lastSearchTime, lastSearchTimeMiss = s.redisClient.GetBrandMapsLastSearchTime(context, location, request.Keyword)
+		lastSearchTime, lastSearchTimeMiss = s.redisClient.GetBrandMapsLastSearchTime(context, lat, lng, request.Keyword)
 	} else {
-		lastSearchTime, lastSearchTimeMiss = s.redisClient.GetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel)
+		lastSearchTime, lastSearchTimeMiss = s.redisClient.GetMapsLastSearchTime(context, lat, lng, request.PlaceCat, request.PriceLevel)
 	}
 
 	currentTime := time.Now()
 
-	isSavedPlacesFresh := func() bool {
-		return currentTime.Sub(lastSearchTime) <= MinMapsResultRefreshDuration && lastSearchTimeMiss == nil
-	}
-	// use place data from the database if it is fresh and at least one saved place satisfies the request
-	if isSavedPlacesFresh() && placesErr == nil && len(savedPlaces) > 0 {
+	markerAge := currentTime.Sub(lastSearchTime)
+	isFresh := canServeFromCache(len(savedPlaces), placesErr, lastSearchTimeMiss, markerAge)
+
+	// Log everything needed to tell an empty bucket from a stale marker from a wrong key. The
+	// count alone cannot distinguish them.
+	Logger.Debugw("(PoiSearcher)NearbySearch: redis lookup",
+		"request_id", context.Value(ContextRequestIdKey),
+		"places_from_redis", len(savedPlaces),
+		"bucket_key", nearbySearchRedisKey(request),
+		"category", request.PlaceCat,
+		"price_level", request.PriceLevel,
+		"keyword", request.Keyword,
+		"search_center", fmt.Sprintf("%.4f,%.4f", lat, lng),
+		"cell", POI.EncodeSearchCell(lat, lng),
+		"radius", request.Radius,
+		"marker_age", markerAge,
+		"marker_missing", lastSearchTimeMiss != nil,
+		"fresh", isFresh,
+	)
+
+	if isFresh {
 		Logger.Infof("(PoiSearcher)NearbySearch: [request_id: %s] Using Redis to fulfill request for location %+v with category %s, keyword %q and price level %d",
 			context.Value(ContextRequestIdKey),
 			request.Location,
@@ -180,16 +233,19 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 		return places, nil
 	}
 
-	if request.Keyword != "" {
-		utils.LogErrorWithLevel(s.redisClient.SetBrandMapsLastSearchTime(context, location, request.Keyword, currentTime.Format(time.RFC3339)), utils.LogError)
-	} else {
-		utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, location, request.PlaceCat, request.PriceLevel, currentTime.Format(time.RFC3339)), utils.LogError)
-	}
-
 	// initiate a new external search
 	newPlaces, searchErr := s.searchPlacesWithMaps(context, request)
 	if searchErr != nil {
 		return nil, searchErr
+	}
+
+	// Stamp the marker only after a search that actually succeeded. Stamping before the call
+	// was harmless while empty results were ignored, but now that a fresh marker suppresses the
+	// call, a failed search would silence retries for a full day.
+	if request.Keyword != "" {
+		utils.LogErrorWithLevel(s.redisClient.SetBrandMapsLastSearchTime(context, lat, lng, request.Keyword, currentTime.Format(time.RFC3339)), utils.LogError)
+	} else {
+		utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, lat, lng, request.PlaceCat, request.PriceLevel, currentTime.Format(time.RFC3339)), utils.LogError)
 	}
 
 	if request.Keyword != "" && request.StrictNameMatch {

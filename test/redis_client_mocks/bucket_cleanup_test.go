@@ -30,15 +30,13 @@ func resetBucketCleanupFixtures(t *testing.T) {
 	if err := RedisClient.RemoveKeys(RedisContext, detailKeys); err != nil {
 		t.Fatalf("RemoveKeys: %v", err)
 	}
-	for _, lvl := range POI.AllPriceLevels {
-		key := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery, lvl)
-		if !RedisMockSvr.Exists(key) {
-			continue
-		}
-		for _, id := range bucketCleanupFixtureIDs {
-			if _, err := RedisMockSvr.ZRem(key, id); err != nil && err != miniredis.ErrKeyNotFound {
-				t.Fatalf("ZRem(%s, %s): %v", key, id, err)
-			}
+	key := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery)
+	if !RedisMockSvr.Exists(key) {
+		return
+	}
+	for _, id := range bucketCleanupFixtureIDs {
+		if _, err := RedisMockSvr.ZRem(key, id); err != nil && err != miniredis.ErrKeyNotFound {
+			t.Fatalf("ZRem(%s, %s): %v", key, id, err)
 		}
 	}
 }
@@ -221,7 +219,7 @@ func TestRemoveMisclassifiedPlacesToleratesMissingRecords(t *testing.T) {
 
 	// a geo-bucket member whose place record is deliberately never written
 	orphan := newPlaceWithTypes("tt-orphan", "Vanished Diner", POI.LocationTypeRestaurant, nil)
-	key := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery, orphan.PriceLevel)
+	key := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery)
 	if err := RedisClient.AddGeoLocation(RedisContext, key, orphan); err != nil {
 		t.Fatalf("AddGeoLocation(%s): %v", key, err)
 	}
@@ -265,16 +263,13 @@ func TestRemoveMisclassifiedPlacesReportsBucketSizes(t *testing.T) {
 		t.Fatalf("RemoveMisclassifiedPlacesFromCategoryBuckets error: %v", err)
 	}
 
-	// one entry per eatery price bucket, whether or not the key exists yet
-	if len(report.BucketSizes) != len(POI.AllPriceLevels) {
-		t.Errorf("BucketSizes has %d entries, want %d: %+v",
-			len(report.BucketSizes), len(POI.AllPriceLevels), report.BucketSizes)
+	// one entry for the category's single bucket, whether or not the key exists yet
+	if len(report.BucketSizes) != 1 {
+		t.Errorf("BucketSizes has %d entries, want 1: %+v", len(report.BucketSizes), report.BucketSizes)
 	}
-	for _, lvl := range POI.AllPriceLevels {
-		key := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery, lvl)
-		if _, ok := report.BucketSizes[key]; !ok {
-			t.Errorf("BucketSizes missing key %s: %+v", key, report.BucketSizes)
-		}
+	key := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery)
+	if _, ok := report.BucketSizes[key]; !ok {
+		t.Errorf("BucketSizes missing key %s: %+v", key, report.BucketSizes)
 	}
 	if report.TotalMembers < 1 {
 		t.Errorf("TotalMembers = %d, want at least the 1 seeded place", report.TotalMembers)
@@ -306,7 +301,7 @@ func seedGeoBucket(t *testing.T, cat POI.PlaceCategory, place POI.Place) {
 	if err := RedisClient.SetPlace(RedisContext, place); err != nil {
 		t.Fatalf("SetPlace(%s): %v", place.GetID(), err)
 	}
-	key := POI.EncodeNearbySearchRedisKey(cat, place.PriceLevel)
+	key := POI.EncodeNearbySearchRedisKey(cat)
 	if err := RedisClient.AddGeoLocation(RedisContext, key, place); err != nil {
 		t.Fatalf("AddGeoLocation(%s): %v", key, err)
 	}
@@ -315,12 +310,12 @@ func seedGeoBucket(t *testing.T, cat POI.PlaceCategory, place POI.Place) {
 func countInEateryBuckets(t *testing.T, placeID string) int {
 	t.Helper()
 	count := 0
-	for _, lvl := range POI.AllPriceLevels {
-		key := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery, lvl)
+	{
+		key := POI.EncodeNearbySearchRedisKey(POI.PlaceCategoryEatery)
 		if RedisMockSvr.Exists(key) {
 			members, err := RedisMockSvr.ZMembers(key)
 			if err != nil {
-				continue
+				return count
 			}
 			for _, m := range members {
 				if m == placeID {
