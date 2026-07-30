@@ -3,17 +3,35 @@
 One-time merge of `placeIDs:eatery:level0..4` into a single `placeIDs:eatery` geo index, so every
 category has exactly one bucket the way `placeIDs:visit` always has.
 
-`GET /v1/migrate/union-eatery-buckets` — admin only, **dry-run unless `apply=true`**.
+Two ways to run it:
 
-## Run this BEFORE deploying
+- **`redis-cli ZUNIONSTORE`** — the pre-deploy path. One command, no application code involved.
+- **`GET /v1/migrate/union-eatery-buckets`** — admin only, dry-run unless `apply=true`. Reports
+  sizes and predicts the result, and is re-runnable. Only available *after* this change ships.
 
-The union is purely additive and invisible to the running code: it creates a key nothing reads
-yet. Deploying first would instead point every eatery read at a key that does not exist and
-trigger a global cold-search burst.
+## Ordering
+
+The union must land before the collapsed-key read goes live, or eatery reads hit a key that does
+not exist yet and every request returns empty until organic traffic refills it.
+
+But the HTTP endpoint **is part of the code being deployed**, so it cannot be the pre-deploy step
+— it does not exist until the deploy that introduces it. Use `redis-cli` for that step:
 
 ```
-1. dry run          →  2. apply  →  3. deploy  →  4. verify  →  5. delete the level* keys
+1. redis-cli union  →  2. deploy  →  3. verify (endpoint dry run)  →  4. delete the level* keys
 ```
+
+The union is purely additive and invisible to the running code — it creates a key nothing reads
+yet — so step 1 is safe to run at any point beforehand.
+
+If you deploy first by mistake it is recoverable, not fatal: the new write path populates
+`placeIDs:eatery` organically and the union later merges the legacy members in (the target is
+included in the union sources, so nothing is lost). The cost is degraded eatery results until
+each area gets re-searched, plus the Google spend for those searches.
+
+Note what the ordering does **not** buy you: the marker re-key (see below) forces one cold search
+per occupied cell per category regardless of migration order. What running the union first
+protects is the ~8.5k existing eatery members staying readable in the meantime.
 
 ## Why the split is going away
 
@@ -49,30 +67,46 @@ members that already-deployed code has written to the collapsed key.
 
 ```bash
 BASE=https://best-vacation-planner.herokuapp.com
+# Heroku: eval $(heroku config:get REDIS_URL -a <app>) or use `heroku redis:cli -a <app>`
+R="redis-cli -u $REDIS_URL"
 
-# 1. Dry run. Reports each source bucket's size, their total, and the exact resulting
-#    member count (computed by reading members — a dry run writes nothing).
+# --- 1. Union, before deploying. -------------------------------------------------
+# Record the starting sizes so step 3 has something to check against.
+for L in 0 1 2 3 4; do echo -n "level$L "; $R ZCARD "placeIDs:eatery:level$L"; done
+$R ZCARD placeIDs:eatery   # expected 0 on a first run
+
+# Note the SIX keys: the target is included so the command is idempotent and cannot
+# drop members already written to the collapsed key. AGGREGATE MIN is mandatory.
+$R ZUNIONSTORE placeIDs:eatery 6 \
+  placeIDs:eatery:level0 placeIDs:eatery:level1 placeIDs:eatery:level2 \
+  placeIDs:eatery:level3 placeIDs:eatery:level4 placeIDs:eatery AGGREGATE MIN
+
+$R ZCARD placeIDs:eatery   # <= the sum above; lower means a place was in two buckets
+
+# Spot-check that a geohash score survived, against that place's own record.
+# These two must agree to within a few metres.
+ID=$($R ZRANGE placeIDs:eatery 0 0 | head -1)
+$R GEOPOS placeIDs:eatery "$ID"
+$R GET "place_details:place_ID:$ID" | jq '.Location'
+
+# --- 2. Deploy. -----------------------------------------------------------------
+
+# --- 3. Verify. -----------------------------------------------------------------
+# The endpoint exists now. A dry run re-reports the sizes and predicts the same count,
+# which confirms the deployed code resolves the key you just populated.
 curl -s -H "Authorization: Bearer $ADMIN_JWT" \
   "$BASE/v1/migrate/union-eatery-buckets" | jq
 
-# 2. Apply. expected_after and target_after must match.
-curl -s -H "Authorization: Bearer $ADMIN_JWT" \
-  "$BASE/v1/migrate/union-eatery-buckets?apply=true" | jq
-
-# 3. Deploy.
-
-# 4. Verify: a non-zero eatery count, which /stats/places could never report before
-#    (it built "placeIDs:eatery", a key nothing wrote).
+# A non-zero eatery count — which /stats/places could never report before, because it
+# built "placeIDs:eatery", a key nothing wrote.
 curl -s -H "Authorization: Bearer $ADMIN_JWT" "$BASE/stats/places" | jq
 
-#    Spot-check that scores survived, against the place's own stored coordinates:
-redis-cli GEOPOS placeIDs:eatery "<some-place-id>"
-redis-cli GET "place_details:place_ID:<some-place-id>" | jq '.Location'
-
-# 5. Only once the deploy is healthy:
-redis-cli DEL placeIDs:eatery:level0 placeIDs:eatery:level1 placeIDs:eatery:level2 \
-               placeIDs:eatery:level3 placeIDs:eatery:level4
+# --- 4. Only once the deploy is healthy. ----------------------------------------
+$R DEL placeIDs:eatery:level0 placeIDs:eatery:level1 placeIDs:eatery:level2 \
+       placeIDs:eatery:level3 placeIDs:eatery:level4
 ```
+
+To roll back before step 4, `DEL placeIDs:eatery` — the legacy keys are untouched until then.
 
 `expected_after` is the deduped union size, so it will be **lower** than `source_total` whenever a
 place appears in more than one price bucket. That is the intended outcome, not data loss.
