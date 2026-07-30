@@ -106,7 +106,53 @@ $R DEL placeIDs:eatery:level0 placeIDs:eatery:level1 placeIDs:eatery:level2 \
        placeIDs:eatery:level3 placeIDs:eatery:level4
 ```
 
-To roll back before step 4, `DEL placeIDs:eatery` — the legacy keys are untouched until then.
+To roll back before step 4, restore from the backup taken in step 1 — the `level*` keys are
+untouched until then, so `ZUNIONSTORE` can also simply be re-run.
+
+## Five source keys, not six — and why the target needs a backup
+
+`placeIDs:eatery` **already existed in production** when this ran, holding 7,113 members. It is a
+pre-2023 artefact: the price split was introduced in `20c1eb7` (2023-02-20), and before that
+eateries were written to exactly this un-suffixed name. Nothing has read it since, so it sat as
+dead data for roughly three years — until this change made that name the live read key again.
+
+4,634 of those members existed in no `level*` bucket. Sampling 300 of them:
+
+| | |
+| --- | --- |
+| no `place_details` record (orphans) | 13 (4.3%) |
+| records with **no `Types` field at all** | 286 of 287 |
+| primary type detectably non-Eatery | 1 (a hotel) |
+
+The missing `Types` is what settles it: those records predate the field, and both
+`POI.ReclassifyForCategory` and the purge migration deliberately *keep* no-Types records, so
+neither can audit them. Spot checks turned up a horse racing track filed as an eatery. Merging
+~4,600 unauditable three-year-old records into the live eatery bucket — right after an incident
+about misclassified places in eatery buckets — invites a repeat.
+
+So the pre-deploy union uses **five** source keys and lets `ZUNIONSTORE` overwrite the target,
+producing exactly the 8,500 members production already serves. No coverage regression, because
+those 4,634 were not being served. Their `place_details` records are untouched, so reviving them
+later stays possible as a deliberate decision.
+
+Because that overwrites the target, **back it up first**:
+
+```bash
+$R COPY placeIDs:eatery placeIDs:eatery:pre-collapse-backup   # preserves scores exactly
+```
+
+Use the **six**-key form (target included) only for re-runs *after* the deploy, where the new
+write path is filling the target and an overwrite would drop members it has already written.
+
+## Expect a small number of members in two price buckets
+
+34 members were in more than one `level*` bucket — the same place written under different price
+levels as Google's answer changed over time, which is the fragmentation this change removes. For
+those, `AGGREGATE MIN` picks one of the two real positions, which may differ from the coordinates
+in the `place_details` record by tens of metres. That is pre-existing inconsistency surfacing, not
+migration damage: verified 33 exact matches and one 82 m difference that was present in the source
+buckets beforehand. A `SUM` corruption looks nothing like this — it roughly doubles the score and
+throws the place thousands of kilometres.
 
 `expected_after` is the deduped union size, so it will be **lower** than `source_total` whenever a
 place appears in more than one price bucket. That is the intended outcome, not data loss.
