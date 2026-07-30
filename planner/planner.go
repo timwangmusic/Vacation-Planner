@@ -1417,7 +1417,10 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 				places = reclassified
 				// drop places explicitly marked closed on the requested day
 				places = iowrappers.Filter(places, func(place POI.Place) bool { return !place.KnownClosedOnDay(day) })
-				// Redis results are sorted by distance ascending; keep the nearest ones
+				// Only the Redis path returns places in distance order. The fresh path
+				// appends each place type's results in Google prominence order, so sort
+				// before truncating or the last place types get dropped wholesale.
+				iowrappers.SortPlacesByDistance(places, req.Location.Latitude, req.Location.Longitude)
 				if len(places) > limit {
 					places = places[:limit]
 				}
