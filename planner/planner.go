@@ -1518,8 +1518,8 @@ func (p *MyPlanner) searchPlacesByText(ctx *gin.Context) {
 	if limit <= 0 {
 		limit = 10
 	}
-	if limit > 20 {
-		limit = 20
+	if limit > iowrappers.PlaceTextSearchMaxResults {
+		limit = iowrappers.PlaceTextSearchMaxResults
 	}
 
 	searchContext := context.WithValue(ctx.Request.Context(), iowrappers.ContextRequestIdKey, requestid.Get(ctx))

@@ -62,9 +62,9 @@ type PlaceSearchCandidate struct {
 
 // AddSearchedPlaceResult is the outcome of confirming a search candidate into the shared cache.
 type AddSearchedPlaceResult struct {
-	Place         POI.Place
-	Category      POI.PlaceCategory
-	AlreadyCached bool
+	Place         POI.Place         `json:"place"`
+	Category      POI.PlaceCategory `json:"category"`
+	AlreadyCached bool              `json:"alreadyCached"`
 }
 
 // placeDetailsEnricher fetches Place Details for a place ID. It exists as an injectable seam so

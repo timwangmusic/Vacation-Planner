@@ -139,8 +139,8 @@ With the expanded `placeTypeToCategory` map, this splits three ways:
 - **Removable (5):** `shoe_store` ×2 and `furniture_store` ×1 are now positively mapped to
   Shopping, the same `*_store` → Shopping expansion that also added `hardware_store` ×1
   (a strict specialization of the already-mapped `store` type); `stadium` ×1 is now positively
-  mapped to Visit. These 4 records — 5 counting both `shoe_store` instances — become removable
-  candidates the next time this migration runs against `category=Eatery`.
+  mapped to Visit. These 4 primary types — 5 records, counting both `shoe_store` instances —
+  become removable candidates the next time this migration runs against `category=Eatery`.
 - **Legitimized (1):** `night_club` ×1 (Cain's Ballroom) is now positively mapped to Eatery —
   the same category its bucket already files it under — so it is no longer unresolved residue
   at all, just a correctly-classified place.

@@ -49,7 +49,7 @@ Request:
 no default — same as the nearby-places endpoints' own zero-location rejection — because an
 unbiased text query like "konjoe" can resolve to the wrong continent without a coordinate to
 anchor it. `radius` is in meters and is clamped to the service's max search radius (16,000 m /
-~10 miles) when zero or larger. `limit` defaults to 10 and is capped at 20.
+~10 miles) when zero or larger than that maximum. `limit` defaults to 10 and is capped at 20.
 
 Response (`200`, fields elided for brevity):
 
@@ -109,6 +109,25 @@ Error responses:
   its 30-minute stash entry expired.
 * `422` `{"error": "...", "code": "unsupported_place_type", "placeType": "<google type>"}` —
   the candidate's primary Google type does not map to any category; nothing is written.
+
+#### Visibility
+
+Confirming a place writes it into the shared Redis cache immediately — you can verify this
+directly, without waiting on any other endpoint: the confirm response itself echoes the
+written place, and `ZSCORE placeIDs:<category> <placeID>` against Redis returns a score right
+away.
+
+Whether the place then shows up in `/v1/nearby-places-by-category` depends on that cell's
+search freshness, not on the write above. In a **warm** cell (one whose `MapsLastSearchTime`
+marker is still fresh), the confirmed place appears on the very next read. In a **cold or
+stale** cell, the next read triggers a background Google search whose results replace — not
+merge with — the cached bucket in that response, so the newly confirmed place is briefly
+missing from that one response and only appears from the following read onward. When
+verifying a confirm in a cell you are not sure is warm, check `ZSCORE` first and expect to
+need up to two reads of `/v1/nearby-places-by-category` before the place shows up.
+
+Never manually stamp a cell's `MapsLastSearchTime` to force this — doing so marks the cell
+"searched" for 14 days and would suppress a real cold search the cell still needs.
 
 ### Authentication
 

@@ -1,6 +1,7 @@
 package iowrappers
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -259,4 +260,92 @@ func TestParseTextSearchResponse_NoRealOpeningHours(t *testing.T) {
 
 func placeIDFor(i int) string {
 	return "place-" + string(rune('a'+i%26)) + string(rune('0'+i/26))
+}
+
+// TestPlaceSearchCandidate_MarshalsExpectedTopLevelKeys and
+// TestAddSearchedPlaceResult_MarshalsExpectedTopLevelKeys pin the wire contract the external
+// Convex client depends on: PlaceSearchCandidate/AddSearchedPlaceResult must serialize with
+// exactly the documented camelCase top-level keys, and the nested Place object must keep
+// POI.Place's own (capitalized, untagged) field names, since POI.Place deliberately carries no
+// json tags of its own — tagging it would change every endpoint's wire shape at once, not just
+// these two. Purely in-memory json.Marshal/Unmarshal: no HTTP, no network, no Redis.
+func TestPlaceSearchCandidate_MarshalsExpectedTopLevelKeys(t *testing.T) {
+	candidate := PlaceSearchCandidate{
+		Place:      POI.Place{ID: "p1", Name: "History Museum", LocationType: POI.LocationTypeMuseum, Types: []string{"museum", "point_of_interest"}},
+		Category:   POI.PlaceCategoryVisit,
+		Insertable: true,
+	}
+
+	data, err := json.Marshal(candidate)
+	if err != nil {
+		t.Fatalf("json.Marshal(PlaceSearchCandidate): %v", err)
+	}
+
+	assertTopLevelKeys(t, data, []string{"place", "category", "insertable"})
+	assertPlaceKeysPresent(t, data)
+}
+
+func TestAddSearchedPlaceResult_MarshalsExpectedTopLevelKeys(t *testing.T) {
+	result := AddSearchedPlaceResult{
+		Place:         POI.Place{ID: "p1", Name: "History Museum", LocationType: POI.LocationTypeMuseum, Types: []string{"museum", "point_of_interest"}},
+		Category:      POI.PlaceCategoryVisit,
+		AlreadyCached: false,
+	}
+
+	data, err := json.Marshal(result)
+	if err != nil {
+		t.Fatalf("json.Marshal(AddSearchedPlaceResult): %v", err)
+	}
+
+	assertTopLevelKeys(t, data, []string{"place", "category", "alreadyCached"})
+	assertPlaceKeysPresent(t, data)
+}
+
+// assertTopLevelKeys asserts that data's top-level JSON object has exactly the given key set —
+// not a subset, not a superset, so an accidental new/dropped field on either struct fails here.
+func assertTopLevelKeys(t *testing.T, data []byte, want []string) {
+	t.Helper()
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("json.Unmarshal top level: %v", err)
+	}
+	if len(raw) != len(want) {
+		t.Fatalf("got %d top-level keys %v, want %d %v", len(raw), keysOf(raw), len(want), want)
+	}
+	for _, k := range want {
+		if _, ok := raw[k]; !ok {
+			t.Errorf("missing top-level key %q, got keys %v", k, keysOf(raw))
+		}
+	}
+}
+
+// assertPlaceKeysPresent asserts the nested "place" object carries POI.Place's untagged
+// (capitalized) field names, pinning that POI.Place itself stays free of json tags.
+func assertPlaceKeysPresent(t *testing.T, data []byte) {
+	t.Helper()
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("json.Unmarshal top level: %v", err)
+	}
+	placeRaw, ok := raw["place"]
+	if !ok {
+		t.Fatal(`missing "place" top-level key`)
+	}
+	var placeFields map[string]json.RawMessage
+	if err := json.Unmarshal(placeRaw, &placeFields); err != nil {
+		t.Fatalf("json.Unmarshal nested place object: %v", err)
+	}
+	for _, key := range []string{"ID", "Name", "LocationType", "Types"} {
+		if _, ok := placeFields[key]; !ok {
+			t.Errorf("place object missing capitalized key %q (external Convex client wire contract); got keys %v", key, keysOf(placeFields))
+		}
+	}
+}
+
+func keysOf(m map[string]json.RawMessage) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }
