@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/weihesdlegend/Vacation-planner/POI"
@@ -385,5 +386,145 @@ func TestAddSearchedPlaceToCache_EnricherSuccessFoldsDetails(t *testing.T) {
 	}
 	if result.Place.Summary != details.EditorialSummary.Overview {
 		t.Errorf("Summary = %q, want %q", result.Place.Summary, details.EditorialSummary.Overview)
+	}
+}
+
+// TestAddSearchedPlaceToCache_AlreadyCachedPhotoPreserved pins the Finding-1 fix: restoreCachedDetails
+// (iowrappers/nearby_search.go) restores URL/Summary/FormattedAddress/Address/Hours but NOT Photo,
+// because it is shared with the nearby-search write path and this task must not touch it. Without a
+// local gap-fill, a lean re-confirm of an already-cached place (e.g. a text search result that
+// carried no photos, combined with a failed Details enrich) would silently overwrite a real
+// Photo.Reference with the zero value while still reporting success.
+func TestAddSearchedPlaceToCache_AlreadyCachedPhotoPreserved(t *testing.T) {
+	s, ctx := newAddSearchedPlaceFixture(t)
+
+	placeID := "museum-photo-1"
+	existing := POI.Place{
+		ID:           placeID,
+		Name:         "City History Museum",
+		LocationType: POI.LocationType("museum"),
+		Types:        []string{"museum", "point_of_interest", "establishment"},
+		Location:     POI.Location{Latitude: 37.4, Longitude: -122.1},
+		Photo:        POI.PlacePhoto{Reference: "existing-photo-ref", Height: 400, Width: 600},
+	}
+	s.redisClient.SetPlacesAddGeoLocations(ctx, []POI.Place{existing})
+
+	// The stashed candidate is lean: no photo, as a text-search result commonly has none.
+	candidate := POI.Place{
+		ID:       placeID,
+		Name:     "City History Museum",
+		Types:    []string{"museum", "point_of_interest", "establishment"},
+		Location: POI.Location{Latitude: 37.4, Longitude: -122.1},
+	}
+	stashCandidate(t, s, ctx, candidate)
+
+	// Enrich fails too (Google down), so nothing supplies a fresh photo either — the only source
+	// of truth for a photo here is the previously-cached record.
+	result, err := s.addSearchedPlaceToCache(ctx, placeID, failingEnricher(errors.New("enrich down")))
+	if err != nil {
+		t.Fatalf("addSearchedPlaceToCache: %v", err)
+	}
+	if result.Place.Photo != existing.Photo {
+		t.Errorf("result.Place.Photo = %+v, want the preserved %+v", result.Place.Photo, existing.Photo)
+	}
+
+	cached, err := s.redisClient.CachedPlaces(ctx, []string{placeID})
+	if err != nil {
+		t.Fatalf("CachedPlaces: %v", err)
+	}
+	stored, ok := cached[placeID]
+	if !ok {
+		t.Fatal("place_details record missing after confirm")
+	}
+	if stored.Photo != existing.Photo {
+		t.Errorf("stored.Photo = %+v, want the preserved %+v (a lean confirm silently clobbered it)", stored.Photo, existing.Photo)
+	}
+}
+
+// TestAddSearchedPlaceToCache_EnricherPhotoFoldedWhenCandidateHasNone pins the second half of the
+// Finding-1 fix: "photos" is already requested in config/config.yml's detailed_search_fields, so
+// the confirm path already pays for it in the enrich call; a candidate with no photo of its own
+// should pick up the Details photo rather than the call's cost being thrown away.
+func TestAddSearchedPlaceToCache_EnricherPhotoFoldedWhenCandidateHasNone(t *testing.T) {
+	s, ctx := newAddSearchedPlaceFixture(t)
+
+	placeID := "museum-photo-2"
+	candidate := POI.Place{
+		ID:       placeID,
+		Name:     "City History Museum",
+		Types:    []string{"museum", "point_of_interest", "establishment"},
+		Location: POI.Location{Latitude: 37.4, Longitude: -122.1},
+	}
+	stashCandidate(t, s, ctx, candidate)
+
+	details := maps.PlaceDetailsResult{
+		Photos: []maps.Photo{{PhotoReference: "fresh-photo-ref", Height: 300, Width: 500}},
+	}
+
+	result, err := s.addSearchedPlaceToCache(ctx, placeID, succeedingEnricher(details))
+	if err != nil {
+		t.Fatalf("addSearchedPlaceToCache: %v", err)
+	}
+	want := POI.PlacePhoto{Reference: "fresh-photo-ref", Height: 300, Width: 500}
+	if result.Place.Photo != want {
+		t.Errorf("result.Place.Photo = %+v, want %+v (Details photo should be folded in when the candidate had none)", result.Place.Photo, want)
+	}
+}
+
+// TestNewPlaceDetailsEnricher_BoundsContextWithDeadline pins the Finding-2 fix: the real Google
+// Place Details call must be bounded by GoogleMapsSearchTimeout before the semaphore is acquired.
+// The maps SDK's HTTP client has no timeout of its own and an inbound request context carries no
+// deadline by default, so without this bound a single hung call would park a process-wide
+// apiSemaphore slot indefinitely. Uses a stub search func rather than a real client or a hang
+// harness — CreatePoiSearcher always builds a real maps.Client even with a fake key, so there is
+// no way to observe this via the real enricher without either a live network call or an actual
+// hang.
+func TestNewPlaceDetailsEnricher_BoundsContextWithDeadline(t *testing.T) {
+	sem := make(chan struct{}, 1)
+	var sawDeadline bool
+	var sawWithin time.Duration
+	stub := func(ctx context.Context, placeID string, fields []string) (maps.PlaceDetailsResult, error) {
+		deadline, ok := ctx.Deadline()
+		sawDeadline = ok
+		if ok {
+			sawWithin = time.Until(deadline)
+		}
+		return maps.PlaceDetailsResult{}, nil
+	}
+
+	enrich := newPlaceDetailsEnricher(sem, []string{"name"}, stub)
+	if _, err := enrich(context.Background(), "some-id"); err != nil {
+		t.Fatalf("enrich: %v", err)
+	}
+
+	if !sawDeadline {
+		t.Fatal("search func's ctx had no deadline; a hung Google call could hold the semaphore slot forever")
+	}
+	if sawWithin <= 0 || sawWithin > GoogleMapsSearchTimeout {
+		t.Errorf("ctx deadline is %v from now, want in (0, %v]", sawWithin, GoogleMapsSearchTimeout)
+	}
+}
+
+// TestNewPlaceDetailsEnricher_AcquiresAndReleasesSemaphore pins that the semaphore is held for the
+// duration of the search call and released afterward, preserving the existing rate-limiting
+// behavior across the refactor that extracted newPlaceDetailsEnricher for testability.
+func TestNewPlaceDetailsEnricher_AcquiresAndReleasesSemaphore(t *testing.T) {
+	sem := make(chan struct{}, 1)
+	var sawSemaphoreHeld bool
+	stub := func(ctx context.Context, placeID string, fields []string) (maps.PlaceDetailsResult, error) {
+		sawSemaphoreHeld = len(sem) == 1
+		return maps.PlaceDetailsResult{}, nil
+	}
+
+	enrich := newPlaceDetailsEnricher(sem, nil, stub)
+	if _, err := enrich(context.Background(), "some-id"); err != nil {
+		t.Fatalf("enrich: %v", err)
+	}
+
+	if !sawSemaphoreHeld {
+		t.Error("semaphore was not held while the search call was in flight")
+	}
+	if len(sem) != 0 {
+		t.Errorf("semaphore not released after enrich returned, len(sem) = %d, want 0", len(sem))
 	}
 }

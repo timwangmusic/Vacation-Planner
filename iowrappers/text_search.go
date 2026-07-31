@@ -207,12 +207,33 @@ func (s *PoiSearcher) TextSearchPlaces(ctx context.Context, req *TextSearchReque
 // cache. See addSearchedPlaceToCache for the step-by-step behavior; this exported form supplies
 // the real Google Place Details enricher.
 func (s *PoiSearcher) AddSearchedPlaceToCache(ctx context.Context, placeID string) (AddSearchedPlaceResult, error) {
-	enrich := func(ctx context.Context, placeID string) (maps.PlaceDetailsResult, error) {
-		s.mapsClient.apiSemaphore <- struct{}{}
-		defer func() { <-s.mapsClient.apiSemaphore }()
-		return s.mapsClient.PlaceDetailedSearch(ctx, placeID, s.mapsClient.DetailedSearchFields)
-	}
+	enrich := newPlaceDetailsEnricher(s.mapsClient.apiSemaphore, s.mapsClient.DetailedSearchFields, s.mapsClient.PlaceDetailedSearch)
 	return s.addSearchedPlaceToCache(ctx, placeID, enrich)
+}
+
+// placeDetailsSearchFunc matches MapsClient.PlaceDetailedSearch's signature. Factored out purely
+// so newPlaceDetailsEnricher's context-bounding and semaphore-acquiring behavior can be pinned by
+// a test with a stub in place of a real Google call — CreatePoiSearcher always builds a real
+// maps.Client even with a fake key, so there is no way to exercise this seam with a real client
+// without either a live call or an actual hang.
+type placeDetailsSearchFunc func(ctx context.Context, placeID string, fields []string) (maps.PlaceDetailsResult, error)
+
+// newPlaceDetailsEnricher builds the placeDetailsEnricher used against a real Google client. It
+// bounds every call to GoogleMapsSearchTimeout BEFORE acquiring the semaphore: the maps SDK's HTTP
+// client has no timeout of its own, and an inbound request context (e.g. a gin request context)
+// carries no deadline by default. Without this bound, a single hung Google call would park one of
+// the process-wide apiSemaphore slots indefinitely, and a handful of those starves every other
+// Google call — including nearby search — service-wide. Every other call site in this package
+// bounds itself with GoogleMapsSearchTimeout the same way.
+func newPlaceDetailsEnricher(sem chan struct{}, fields []string, search placeDetailsSearchFunc) placeDetailsEnricher {
+	return func(ctx context.Context, placeID string) (maps.PlaceDetailsResult, error) {
+		ctx, cancel := context.WithTimeout(ctx, GoogleMapsSearchTimeout)
+		defer cancel()
+
+		sem <- struct{}{}
+		defer func() { <-sem }()
+		return search(ctx, placeID, fields)
+	}
 }
 
 // addSearchedPlaceToCache does the real work, taking the Place Details lookup as a seam so tests
@@ -266,6 +287,18 @@ func (s *PoiSearcher) addSearchedPlaceToCache(ctx context.Context, placeID strin
 	restoreCachedDetails(places, cached)
 	place = places[0]
 
+	// restoreCachedDetails (iowrappers/nearby_search.go) restores URL/Summary/FormattedAddress/
+	// Address/Hours but deliberately NOT Photo — that helper is shared with the nearby-search
+	// write path and is not being touched here. Do the same gap-fill locally: a text search
+	// result commonly omits photos, and without this a lean re-confirm of an already-cached place
+	// would silently overwrite a real Photo.Reference with the zero value while still reporting
+	// success.
+	if place.Photo == (POI.PlacePhoto{}) {
+		if stored, ok := cached[placeID]; ok {
+			place.Photo = stored.Photo
+		}
+	}
+
 	// Re-tag with the true primary type (never trust candidate.LocationType, which may reflect
 	// whatever the original search happened to be querying for).
 	place.LocationType = primary
@@ -303,5 +336,12 @@ func foldPlaceDetailsIntoPlace(place *POI.Place, details maps.PlaceDetailsResult
 	}
 	if details.EditorialSummary != nil {
 		place.Summary = details.EditorialSummary.Overview
+	}
+	// "photos" is already requested in config/config.yml's detailed_search_fields, so this call
+	// is already paying for it; fold it in rather than discarding it. Only fills a gap — a photo
+	// the text search result itself carried (or a previously-cached one, restored afterward by
+	// addSearchedPlaceToCache) is never replaced by this.
+	if place.Photo == (POI.PlacePhoto{}) && len(details.Photos) > 0 {
+		place.SetPhoto(&details.Photos[0])
 	}
 }
