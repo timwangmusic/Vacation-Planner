@@ -374,24 +374,28 @@ func (s *PoiSearcher) UnionEateryPriceBucketsIntoCategoryBucket(ctx context.Cont
 // ignored the unenforceable type filter and returned prominence-ranked establishments, and
 // those were stamped with the queried type and written into placeIDs:eatery:level*.
 //
-// The removal rule is the exact inverse of the WRITE rule, not of POI.ReclassifyForCategory.
-// SetPlacesAddGeoLocations files a place under GetPlaceCategory(place.LocationType) and
-// refuses to write anything whose type maps to no category, so this migration removes a
-// member only when its primary type positively maps to a DIFFERENT category (lodging ->
-// Lodging, supermarket -> Shopping). An UNMAPPED primary type is deliberately kept: types
-// like "meal_delivery" and "night_club" are legal legacy types that Google routinely lists
-// first for genuine eateries (a delivery-first restaurant, a bar that is also a club), as are
-// records with no Types at all (cached before Types was captured). Those places carry a
-// stamped LocationType the write path maps straight back to this category, so removing them
-// would only delete rows the next cold search re-creates — while shrinking the trip-planning
-// candidate pool for up to MinMapsResultRefreshDuration, because the trip-planning path
-// (planner/solver.go -> matching.NearbySearchForCategory) reads these buckets with no
-// reclassification at all.
+// The removal rule is the exact inverse of the WRITE rule. SetPlacesAddGeoLocations files a
+// place under GetPlaceCategory(place.LocationType) and refuses to write anything whose type
+// maps to no category, so this migration removes a member only when its primary type
+// positively maps to a DIFFERENT category (lodging -> Lodging, supermarket -> Shopping). An
+// UNMAPPED primary type is deliberately kept: types like "university", "airport", and
+// "real_estate_agency" are legal legacy types placeTypeToCategory (POI/categories.go) does not
+// classify, as are records with no Types at all (cached before Types was captured). Those
+// places carry a stamped LocationType the write path maps straight back to this category, so
+// removing them would only delete rows the next cold search re-creates — while shrinking the
+// trip-planning candidate pool for up to MinMapsResultRefreshDuration, because the
+// trip-planning path (planner/solver.go -> matching.NearbySearchForCategory) reads these
+// buckets with no reclassification at all.
 //
-// Note this is a broader keep-set than POI.ReclassifyForCategory applies on the merchant
-// endpoint: that function keeps a place only when its primary type is one of the category's
-// five search types. Divergence is intended — one function decides what to show in a single
-// response, this one decides what may exist in the shared cache.
+// Since the place-text-search PR unified POI.ReclassifyForCategory (the merchant-endpoint read
+// filter) onto the same placeTypeToCategory table via GetPlaceCategory, both this migration and
+// that read filter now agree on the case that matters: a primary type that positively resolves
+// to a different category is excluded by both. They are not identical in every case — the read
+// filter also drops a place whose primary type is present but still unmapped, while this
+// migration treats that same case as "not evidence of misclassification" and leaves it in the
+// bucket (see docs/migrations/reclassify-buckets.md) — but that divergence is intentional: one
+// function decides what to show in a single response, this one decides what may exist in the
+// shared cache.
 //
 // dryRun reports what would be removed without deleting anything. Always dry-run first.
 func (r *RedisClient) RemoveMisclassifiedPlacesFromCategoryBuckets(ctx context.Context, cat POI.PlaceCategory, dryRun bool) (BucketCleanupReport, error) {
@@ -437,9 +441,9 @@ func (r *RedisClient) RemoveMisclassifiedPlacesFromCategoryBuckets(ctx context.C
 				place := places[i]
 				primary := POI.PrimaryLocationType(place.Types)
 				// Only remove members whose primary type positively belongs to a DIFFERENT
-				// category. An unmapped primary type (meal_delivery, night_club, or no Types
-				// at all) is not evidence of misclassification — the write path would
-				// legitimately place it here.
+				// category. An unmapped primary type (university, airport,
+				// real_estate_agency, or no Types at all) is not evidence of
+				// misclassification — the write path would legitimately place it here.
 				if c, ok := POI.GetPlaceCategory(primary); !ok || c == cat {
 					continue
 				}
