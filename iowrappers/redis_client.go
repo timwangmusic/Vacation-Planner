@@ -139,6 +139,38 @@ func (r *RedisClient) setPlace(context context.Context, place POI.Place) error {
 	return err
 }
 
+// SetPlaceSearchCandidate stashes a text-search result under its place ID with a TTL, so a later
+// confirm (PoiSearcher.AddSearchedPlaceToCache) can resolve it by ID alone without trusting any
+// place data an HTTP caller might send back. Plain SET with expiration, mirroring setPlace's
+// style but never overwriting the permanent place_details record it lives beside.
+func (r *RedisClient) SetPlaceSearchCandidate(ctx context.Context, place POI.Place, ttl time.Duration) error {
+	json_, err := json.Marshal(place)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.client.Set(ctx, PlaceSearchCandidateRedisKeyPrefix+place.ID, json_, ttl).Result()
+	return err
+}
+
+// PlaceSearchCandidate resolves a stashed text-search result by place ID. A miss (never stashed,
+// or the TTL expired) wraps ErrSearchCandidateNotFound so callers can distinguish it from other
+// Redis failures.
+func (r *RedisClient) PlaceSearchCandidate(ctx context.Context, placeID string) (POI.Place, error) {
+	var place POI.Place
+	res, err := r.client.Get(ctx, PlaceSearchCandidateRedisKeyPrefix+placeID).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return place, fmt.Errorf("%w: place_id %q", ErrSearchCandidateNotFound, placeID)
+		}
+		return place, err
+	}
+	if err := json.Unmarshal([]byte(res), &place); err != nil {
+		return place, err
+	}
+	return place, nil
+}
+
 // GetMapsLastSearchTime reports when an external maps search last covered the location cell
 // containing (lat, lng) for this category and price level. The field is keyed on the cell
 // rather than the city because the geo buckets it guards are read from arbitrary coordinates —

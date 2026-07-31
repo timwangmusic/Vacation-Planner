@@ -17,6 +17,7 @@ var bucketCleanupFixtureIDs = []string{
 	"hotel-1", "cafe-1", "hotel-2", "cafe-2", "legacy-1",
 	"tt-lodging", "tt-supermarket", "tt-meal-delivery", "tt-night-club", "tt-no-types", "tt-cafe",
 	"tt-orphan",
+	"tt-movie-theater", "tt-stadium", "tt-hardware-store", "tt-university",
 }
 
 // resetBucketCleanupFixtures gives each test in this file a clean slate for its own fixture
@@ -115,11 +116,14 @@ func TestRemoveMisclassifiedPlacesKeepsUntypedRecords(t *testing.T) {
 
 // TestRemoveMisclassifiedPlacesPrimaryTypeTruthTable pins the exact rule the cleanup applies:
 // a bucket member is removed only when its PRIMARY Google type positively maps to a DIFFERENT
-// category. An unmapped primary type is NOT evidence of misclassification — the fixed write
-// path keys on the stamped LocationType, so it would legitimately file a delivery-first
-// restaurant ("meal_delivery" first in Types) or a bar/club ("night_club" first) under Eatery.
-// Purging those would make the migration delete rows the write path immediately re-creates,
-// while shrinking the trip-planning candidate pool for up to MinMapsResultRefreshDuration.
+// category. Two distinct reasons keep a member in place, and this table covers both: (1) the
+// primary type positively maps to the SAME category — since Task 1 expanded placeTypeToCategory,
+// this now includes a delivery-first restaurant ("meal_delivery" first in Types) and a bar/club
+// ("night_club" first), both of which resolve straight to Eatery; (2) the primary type is still
+// unmapped residue (e.g. "university"), which is NOT evidence of misclassification because the
+// write path refuses to file an unmapped type anywhere in the first place. Purging either case
+// would make the migration delete rows the write path would legitimately re-create, while
+// shrinking the trip-planning candidate pool for up to MinMapsResultRefreshDuration.
 func TestRemoveMisclassifiedPlacesPrimaryTypeTruthTable(t *testing.T) {
 	resetBucketCleanupFixtures(t)
 	t.Cleanup(func() { resetBucketCleanupFixtures(t) })
@@ -151,15 +155,48 @@ func TestRemoveMisclassifiedPlacesPrimaryTypeTruthTable(t *testing.T) {
 			id: "tt-meal-delivery", name: "Wok This Way Delivery",
 			stamped: POI.LocationTypeRestaurant,
 			types:   []string{"meal_delivery", "restaurant", "food", "point_of_interest"},
-			// GetPlaceCategory("meal_delivery") == ("", false): legal legacy type, unmapped
-			wantRemove: false, why: "primary type meal_delivery maps to no category",
+			// GetPlaceCategory("meal_delivery") == (Eatery, true) == cat: kept because it
+			// positively matches the bucket's category, not because it's unmapped (Task 1
+			// added meal_delivery as an Eatery entry in placeTypeToCategory).
+			wantRemove: false, why: "primary type meal_delivery maps to Eatery, matches cat",
 		},
 		{
 			id: "tt-night-club", name: "The Basement",
 			stamped: POI.LocationTypeBar,
 			types:   []string{"night_club", "bar", "point_of_interest", "establishment"},
-			// GetPlaceCategory("night_club") == ("", false): legal legacy type, unmapped
-			wantRemove: false, why: "primary type night_club maps to no category",
+			// GetPlaceCategory("night_club") == (Eatery, true) == cat: kept because it
+			// positively matches the bucket's category, not because it's unmapped (Task 1
+			// added night_club as an Eatery entry in placeTypeToCategory).
+			wantRemove: false, why: "primary type night_club maps to Eatery, matches cat",
+		},
+		{
+			id: "tt-movie-theater", name: "Downtown Cineplex",
+			stamped: POI.LocationTypeRestaurant,
+			types:   []string{"movie_theater", "point_of_interest", "establishment"},
+			// GetPlaceCategory("movie_theater") == (Visit, true) != Eatery (Task 1 entry)
+			wantRemove: true, why: "primary type movie_theater maps to Visit",
+		},
+		{
+			id: "tt-stadium", name: "Civic Arena",
+			stamped: POI.LocationTypeRestaurant,
+			types:   []string{"stadium", "point_of_interest", "establishment"},
+			// GetPlaceCategory("stadium") == (Visit, true) != Eatery (Task 1 entry)
+			wantRemove: true, why: "primary type stadium maps to Visit",
+		},
+		{
+			id: "tt-hardware-store", name: "Ace Hardware",
+			stamped: POI.LocationTypeRestaurant,
+			types:   []string{"hardware_store", "point_of_interest", "establishment"},
+			// GetPlaceCategory("hardware_store") == (Shopping, true) != Eatery (Task 1 entry)
+			wantRemove: true, why: "primary type hardware_store maps to Shopping",
+		},
+		{
+			id: "tt-university", name: "State University Dining Hall",
+			stamped: POI.LocationTypeRestaurant,
+			types:   []string{"university", "point_of_interest", "establishment"},
+			// GetPlaceCategory("university") == ("", false): legal legacy type, still
+			// unmapped after Task 1 — kept as unmapped residue, same as before.
+			wantRemove: false, why: "primary type university maps to no category (still unmapped residue)",
 		},
 		{
 			id: "tt-no-types", name: "Old Cached Diner",

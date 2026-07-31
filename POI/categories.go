@@ -3,6 +3,7 @@ package POI
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 )
 
@@ -33,34 +34,137 @@ type LocationType string
 
 const (
 	// LocationTypeAny leaves the Google Maps place type unset, used by keyword (brand) searches
-	LocationTypeAny           = LocationType("")
-	LocationTypeCafe          = LocationType("cafe")
-	LocationTypeRestaurant    = LocationType("restaurant")
-	LocationTypeBar           = LocationType("bar")
-	LocationTypeBakery        = LocationType("bakery")
-	LocationTypeMealTakeaway  = LocationType("meal_takeaway")
-	LocationTypeMuseum        = LocationType("museum")
-	LocationTypeGallery       = LocationType("art_gallery")
-	LocationTypeAmusementPark = LocationType("amusement_park")
-	LocationTypePark          = LocationType("park")
+	LocationTypeAny = LocationType("")
+	// Eatery place types
+	LocationTypeCafe         = LocationType("cafe")
+	LocationTypeRestaurant   = LocationType("restaurant")
+	LocationTypeBar          = LocationType("bar")
+	LocationTypeBakery       = LocationType("bakery")
+	LocationTypeMealTakeaway = LocationType("meal_takeaway")
+	LocationTypeMealDelivery = LocationType("meal_delivery")
+	LocationTypeNightClub    = LocationType("night_club")
+	// Visit place types
+	LocationTypeMuseum            = LocationType("museum")
+	LocationTypeGallery           = LocationType("art_gallery")
+	LocationTypeAmusementPark     = LocationType("amusement_park")
+	LocationTypePark              = LocationType("park")
+	LocationTypeTouristAttraction = LocationType("tourist_attraction")
+	LocationTypeZoo               = LocationType("zoo")
+	LocationTypeAquarium          = LocationType("aquarium")
+	LocationTypeMovieTheater      = LocationType("movie_theater")
+	LocationTypeStadium           = LocationType("stadium")
+	LocationTypeBowlingAlley      = LocationType("bowling_alley")
 	// Shopping place types
 	LocationTypeShoppingMall    = LocationType("shopping_mall")
 	LocationTypeDepartmentStore = LocationType("department_store")
 	LocationTypeSupermarket     = LocationType("supermarket")
 	LocationTypeClothingStore   = LocationType("clothing_store")
 	LocationTypeStore           = LocationType("store")
+	// LocationTypeGroceryOrSupermarket is a types[]-only value: it appears in a place's
+	// Types list but is NOT a legal ?type= value for the legacy Nearby Search
+	// (maps.ParsePlaceType rejects it). Never pass it to CreateMapSearchRequest or add it to
+	// GetPlaceTypes; it is matched only via PrimaryLocationType/GetPlaceCategory.
+	LocationTypeGroceryOrSupermarket = LocationType("grocery_or_supermarket")
+	// Any type that is a strict specialization of the already-mapped `store` goes to Shopping.
+	LocationTypeConvenienceStore = LocationType("convenience_store")
+	LocationTypeHardwareStore    = LocationType("hardware_store")
+	LocationTypeHomeGoodsStore   = LocationType("home_goods_store")
+	LocationTypeElectronicsStore = LocationType("electronics_store")
+	LocationTypeFurnitureStore   = LocationType("furniture_store")
+	LocationTypeBookStore        = LocationType("book_store")
+	LocationTypeShoeStore        = LocationType("shoe_store")
+	LocationTypeJewelryStore     = LocationType("jewelry_store")
+	LocationTypePetStore         = LocationType("pet_store")
+	LocationTypeBicycleStore     = LocationType("bicycle_store")
+	LocationTypeFlorist          = LocationType("florist")
+	LocationTypeLiquorStore      = LocationType("liquor_store")
+	LocationTypeGasStation       = LocationType("gas_station")
 	// Lodging place types
 	LocationTypeLodging = LocationType("lodging")
 	// Wellness place types
-	LocationTypeGym      = LocationType("gym")
-	LocationTypeSpa      = LocationType("spa")
-	LocationTypePharmacy = LocationType("pharmacy")
+	LocationTypeGym         = LocationType("gym")
+	LocationTypeSpa         = LocationType("spa")
+	LocationTypePharmacy    = LocationType("pharmacy")
+	LocationTypeDrugstore   = LocationType("drugstore")
+	LocationTypeBeautySalon = LocationType("beauty_salon")
+	LocationTypeHairCare    = LocationType("hair_care")
 )
 
+// placeTypeToCategory is the reverse map from a Google place type to its category. It backs
+// both GetPlaceCategory (the write path / classification rule) and ReclassifyForCategory (the
+// read filter) below, so there is exactly one table that decides "what category does this
+// Google type belong to" anywhere in the service.
+//
+// It is a SUPERSET of GetPlaceTypes' inverse: it covers every Google primary type (see
+// PrimaryLocationType) this service knows how to classify, not only the types the nearby-search
+// endpoints actively query for (GetPlaceTypes' 18 searched types are all present here too).
+// Widening this map only ever makes ReclassifyForCategory keep MORE places, never fewer — see
+// TestReclassifyForCategoryKeepsAllFormerlySearchedTypes.
+var placeTypeToCategory = map[LocationType]PlaceCategory{
+	// Eatery
+	LocationTypeCafe:         PlaceCategoryEatery,
+	LocationTypeRestaurant:   PlaceCategoryEatery,
+	LocationTypeBar:          PlaceCategoryEatery,
+	LocationTypeBakery:       PlaceCategoryEatery,
+	LocationTypeMealTakeaway: PlaceCategoryEatery,
+	LocationTypeMealDelivery: PlaceCategoryEatery,
+	LocationTypeNightClub:    PlaceCategoryEatery,
+
+	// Visit
+	LocationTypePark:              PlaceCategoryVisit,
+	LocationTypeAmusementPark:     PlaceCategoryVisit,
+	LocationTypeGallery:           PlaceCategoryVisit,
+	LocationTypeMuseum:            PlaceCategoryVisit,
+	LocationTypeTouristAttraction: PlaceCategoryVisit,
+	LocationTypeZoo:               PlaceCategoryVisit,
+	LocationTypeAquarium:          PlaceCategoryVisit,
+	LocationTypeMovieTheater:      PlaceCategoryVisit,
+	LocationTypeStadium:           PlaceCategoryVisit,
+	LocationTypeBowlingAlley:      PlaceCategoryVisit,
+
+	// Shopping. Any type that is a strict specialization of the already-mapped `store` goes
+	// to Shopping.
+	LocationTypeShoppingMall:         PlaceCategoryShopping,
+	LocationTypeDepartmentStore:      PlaceCategoryShopping,
+	LocationTypeSupermarket:          PlaceCategoryShopping,
+	LocationTypeClothingStore:        PlaceCategoryShopping,
+	LocationTypeStore:                PlaceCategoryShopping,
+	LocationTypeGroceryOrSupermarket: PlaceCategoryShopping,
+	LocationTypeConvenienceStore:     PlaceCategoryShopping,
+	LocationTypeHardwareStore:        PlaceCategoryShopping,
+	LocationTypeHomeGoodsStore:       PlaceCategoryShopping,
+	LocationTypeElectronicsStore:     PlaceCategoryShopping,
+	LocationTypeFurnitureStore:       PlaceCategoryShopping,
+	LocationTypeBookStore:            PlaceCategoryShopping,
+	LocationTypeShoeStore:            PlaceCategoryShopping,
+	LocationTypeJewelryStore:         PlaceCategoryShopping,
+	LocationTypePetStore:             PlaceCategoryShopping,
+	LocationTypeBicycleStore:         PlaceCategoryShopping,
+	LocationTypeFlorist:              PlaceCategoryShopping,
+	LocationTypeLiquorStore:          PlaceCategoryShopping,
+	LocationTypeGasStation:           PlaceCategoryShopping,
+
+	// Lodging
+	LocationTypeLodging: PlaceCategoryLodging,
+
+	// Wellness
+	LocationTypeGym:         PlaceCategoryWellness,
+	LocationTypeSpa:         PlaceCategoryWellness,
+	LocationTypePharmacy:    PlaceCategoryWellness,
+	LocationTypeDrugstore:   PlaceCategoryWellness,
+	LocationTypeBeautySalon: PlaceCategoryWellness,
+	LocationTypeHairCare:    PlaceCategoryWellness,
+
+	// LocationTypeAny ("") is deliberately NOT a key: GetPlaceCategory("") must stay
+	// ("", false), the same as any other unmapped type.
+}
+
 // GetPlaceCategory maps a Google Maps place type back to its category, reporting whether
-// the type is mapped at all. It is the inverse of GetPlaceTypes and MUST stay consistent
-// with it: the nearby-search cache writes each place under
-// EncodeNearbySearchRedisKey(GetPlaceCategory(place.LocationType), ...), so a type that
+// the type is mapped at all. placeTypeToCategory (above) is now a SUPERSET of GetPlaceTypes'
+// inverse, not its exact inverse — it classifies every primary type this service recognizes,
+// while GetPlaceTypes still only lists the subset each category's Nearby Search issues as
+// ?type=. The write path relies on the shared subset: the nearby-search cache writes each place
+// under EncodeNearbySearchRedisKey(GetPlaceCategory(place.LocationType), ...), so a type that
 // resolves to a different category than the one it was searched under would never cache-hit.
 //
 // It deliberately has NO default category. An earlier version defaulted to Eatery, which
@@ -69,24 +173,34 @@ const (
 // GetPlaceTypes(Eatery), Google ignored the unenforceable filter, and prominence-ranked
 // hotels were written into the eatery geo buckets. Returning ok=false forces every caller
 // to decide what an unmapped type means, and makes TestPlaceCategoryRoundTrip able to fail.
+//
+// DO NOT ADD: fast_food_restaurant, food_court. Both are Places API (New)-only values that
+// never appear in a legacy Nearby Search result's types[], so adding them re-opens the exact
+// guard class TestGetPlaceCategoryRejectsUnknownTypes exists for.
 func GetPlaceCategory(placeType LocationType) (PlaceCategory, bool) {
-	switch placeType {
-	case LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum:
-		return PlaceCategoryVisit, true
-	case LocationTypeCafe, LocationTypeRestaurant, LocationTypeBar, LocationTypeBakery, LocationTypeMealTakeaway:
-		return PlaceCategoryEatery, true
-	case LocationTypeShoppingMall, LocationTypeDepartmentStore, LocationTypeSupermarket, LocationTypeClothingStore, LocationTypeStore:
-		return PlaceCategoryShopping, true
-	case LocationTypeLodging:
-		return PlaceCategoryLodging, true
-	case LocationTypeGym, LocationTypeSpa, LocationTypePharmacy:
-		return PlaceCategoryWellness, true
-	default:
-		return PlaceCategory(""), false
-	}
+	cat, ok := placeTypeToCategory[placeType]
+	return cat, ok
 }
 
-// GetPlaceTypes returns a set of types defined in Google Maps API given a location type
+// MappedLocationTypes returns every LocationType classified by GetPlaceCategory, sorted for
+// deterministic iteration. Exported for tests (e.g. TestGetPlaceCategoryKeysAreGoogleTypes),
+// which need to walk the full map without depending on Go's randomized map iteration order.
+func MappedLocationTypes() []LocationType {
+	keys := make([]LocationType, 0, len(placeTypeToCategory))
+	for t := range placeTypeToCategory {
+		keys = append(keys, t)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	return keys
+}
+
+// GetPlaceTypes returns a set of types defined in Google Maps API given a location type. This
+// is the SEARCHED subset: the exact place types each category's Nearby Search issues as ?type=.
+// It is intentionally unchanged by the classification-map expansion above — widening it changes
+// the outbound Google query for every existing search, not just how a result gets classified,
+// and is how the fast_food_restaurant incident happened (a type the legacy API doesn't
+// understand, silently ignored by Google, poisoning the eatery cache). Add new types to
+// placeTypeToCategory / GetPlaceCategory instead of here.
 func GetPlaceTypes(placeCat PlaceCategory) (placeTypes []LocationType) {
 	switch placeCat {
 	case PlaceCategoryVisit:
@@ -161,25 +275,35 @@ func PrimaryLocationType(types []string) LocationType {
 	return LocationType("")
 }
 
-// ReclassifyForCategory decides whether a place belongs in cat based on its
-// PRIMARY function, and returns the place re-tagged with that primary type.
+// ReclassifyForCategory decides whether a place belongs in cat based on its PRIMARY function,
+// and returns the place re-tagged with that primary type. It now keys on the same
+// placeTypeToCategory map as GetPlaceCategory — the same map the nearby-search write path
+// (SetPlacesAddGeoLocations) and the bucket-cleanup migration
+// (RemoveMisclassifiedPlacesFromCategoryBuckets) key on — so there is one rule everywhere for
+// "does this place belong in this category":
 //
-//   - primary type is one of cat's search types  → keep, LocationType := primary
+//   - primary type maps to cat                  → keep, LocationType := primary
 //     (e.g. a "cafe"-searched result that is really a restaurant is re-tagged).
-//   - primary type is known but NOT in cat        → drop (keep=false): its main
+//   - primary type maps to a DIFFERENT category   → drop (keep=false): its main
 //     function is something else (a supermarket the food search returned).
-//   - no Types on the place (older cached records) → keep unchanged, so coverage
-//     never regresses on data written before Types was captured.
+//   - no Types at all (empty primary)             → keep unchanged (older cached records), so
+//     coverage never regresses on data written before Types was captured.
+//   - primary type is present but unmapped        → drop (keep=false), same as the old rule:
+//     an unmapped primary was never a member of GetPlaceTypes(cat) either, so this is not a
+//     behavior change from before the placeTypeToCategory unification.
+//
+// Because placeTypeToCategory is a strict superset of GetPlaceTypes' searched types (see
+// GetPlaceCategory's docstring), this keeps every place the old primary-in-GetPlaceTypes(cat)
+// rule kept, plus more — never fewer. TestReclassifyForCategoryKeepsAllFormerlySearchedTypes
+// pins that monotonicity.
 func ReclassifyForCategory(place Place, cat PlaceCategory) (Place, bool) {
 	primary := PrimaryLocationType(place.Types)
 	if primary == LocationType("") {
-		return place, true
+		return place, true // records with no Types stay kept (older cache entries)
 	}
-	for _, t := range GetPlaceTypes(cat) {
-		if t == primary {
-			place.LocationType = primary
-			return place, true
-		}
+	if c, ok := GetPlaceCategory(primary); ok && c == cat {
+		place.LocationType = primary // re-tag with the true type
+		return place, true
 	}
 	return place, false
 }
