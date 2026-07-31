@@ -1480,6 +1480,127 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"results": results})
 }
 
+type placeTextSearchRequest struct {
+	Query    string       `json:"query" binding:"required,min=2,max=120"`
+	Location POI.Location `json:"location"`
+	Radius   uint         `json:"radius"`
+	Limit    int          `json:"limit"`
+}
+
+// searchPlacesByText runs a free-text Google Places search around a coordinate and returns every
+// result as a confirmable candidate. Requires authentication (PAT Bearer header or JWT cookie):
+// each request buys a billed Google Text Search call, so the endpoint must not be open. Location is
+// required (not optional, unlike nearby search's default) because an unbiased text query like
+// "konjoe" can resolve to the wrong continent without a coordinate to anchor it.
+func (p *MyPlanner) searchPlacesByText(ctx *gin.Context) {
+	_, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
+	if authenticationErr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.GetErrorMessage()})
+		return
+	}
+
+	req := &placeTextSearchRequest{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.Location.Latitude == 0 && req.Location.Longitude == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "location with latitude and longitude is required"})
+		return
+	}
+
+	radius := req.Radius
+	if radius == 0 || radius > iowrappers.MaxSearchRadius {
+		radius = iowrappers.MaxSearchRadius
+	}
+	limit := req.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 20 {
+		limit = 20
+	}
+
+	searchContext := context.WithValue(ctx.Request.Context(), iowrappers.ContextRequestIdKey, requestid.Get(ctx))
+
+	candidates, err := p.Solver.Searcher.TextSearchPlaces(searchContext, &iowrappers.TextSearchRequest{
+		Query:    req.Query,
+		Location: req.Location,
+		Radius:   radius,
+		Limit:    limit,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"results": candidates})
+}
+
+type confirmSearchedPlaceRequest struct {
+	PlaceId string `json:"placeId" binding:"required"`
+}
+
+// unsupportedPlaceTypeFromError extracts the quoted primary place type from an
+// iowrappers.ErrUnsupportedPlaceType error, whose message has the form
+// `place type does not map to a supported category: "<type>"` (see
+// iowrappers.addSearchedPlaceToCache: `fmt.Errorf("%w: %q", ErrUnsupportedPlaceType, primary)`).
+// Falls back to the raw suffix if it is ever not a valid quoted Go string, so a formatting change
+// upstream degrades to a slightly-off value here instead of an empty one.
+func unsupportedPlaceTypeFromError(err error) string {
+	msg := err.Error()
+	idx := strings.LastIndex(msg, ": ")
+	if idx == -1 {
+		return ""
+	}
+	suffix := msg[idx+2:]
+	if unquoted, unquoteErr := strconv.Unquote(suffix); unquoteErr == nil {
+		return unquoted
+	}
+	return suffix
+}
+
+// confirmSearchedPlace inserts a previously text-searched candidate (by place ID) into the shared
+// place cache. Requires authentication (PAT Bearer header or JWT cookie), matching searchPlacesByText.
+func (p *MyPlanner) confirmSearchedPlace(ctx *gin.Context) {
+	_, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
+	if authenticationErr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": authenticationErr.GetErrorMessage()})
+		return
+	}
+
+	req := &confirmSearchedPlaceRequest{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	searchContext := context.WithValue(ctx.Request.Context(), iowrappers.ContextRequestIdKey, requestid.Get(ctx))
+
+	result, err := p.Solver.Searcher.AddSearchedPlaceToCache(searchContext, req.PlaceId)
+	if err != nil {
+		switch {
+		case errors.Is(err, iowrappers.ErrSearchCandidateNotFound):
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error(), "code": "candidate_expired"})
+		case errors.Is(err, iowrappers.ErrUnsupportedPlaceType):
+			ctx.JSON(http.StatusUnprocessableEntity, gin.H{
+				"error":     err.Error(),
+				"code":      "unsupported_place_type",
+				"placeType": unsupportedPlaceTypeFromError(err),
+			})
+		default:
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"place":         result.Place,
+		"category":      result.Category,
+		"alreadyCached": result.AlreadyCached,
+	})
+}
+
 func (p *MyPlanner) GetPlaceDetails(ctx *gin.Context) {
 	id := ctx.Param("id")
 	if id == "" {
@@ -1729,6 +1850,8 @@ func (p *MyPlanner) SetupRouter(serverPort string) *http.Server {
 		v1.POST("/nearby-cities", p.getNearbyCities)
 		v1.POST("/nearby-places", p.getNearbyPlaces)
 		v1.POST("/nearby-places-by-category", p.getNearbyPlacesByCategory)
+		v1.POST("/place-search", p.searchPlacesByText)
+		v1.POST("/place-search/confirm", p.confirmSearchedPlace)
 		v1.POST("/optimal-plan", p.getOptimalPlan)
 		v1.POST("/create-token", p.createNewPAT)
 		v1.DELETE("/revoke-token", p.RevokePAT)
