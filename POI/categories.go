@@ -282,13 +282,15 @@ func PrimaryLocationType(types []string) LocationType {
 // (RemoveMisclassifiedPlacesFromCategoryBuckets) key on — so there is one rule everywhere for
 // "does this place belong in this category":
 //
-//   - primary type maps to cat                     → keep, LocationType := primary
+//   - primary type maps to cat                  → keep, LocationType := primary
 //     (e.g. a "cafe"-searched result that is really a restaurant is re-tagged).
-//   - primary type maps to a DIFFERENT category      → drop (keep=false): its main
+//   - primary type maps to a DIFFERENT category   → drop (keep=false): its main
 //     function is something else (a supermarket the food search returned).
-//   - primary type is unmapped, or there is no Types → keep unchanged (older cached records,
-//     or a legal-but-uninteresting type), so coverage never regresses on data written before
-//     Types was captured.
+//   - no Types at all (empty primary)             → keep unchanged (older cached records), so
+//     coverage never regresses on data written before Types was captured.
+//   - primary type is present but unmapped        → drop (keep=false), same as the old rule:
+//     an unmapped primary was never a member of GetPlaceTypes(cat) either, so this is not a
+//     behavior change from before the placeTypeToCategory unification.
 //
 // Because placeTypeToCategory is a strict superset of GetPlaceTypes' searched types (see
 // GetPlaceCategory's docstring), this keeps every place the old primary-in-GetPlaceTypes(cat)

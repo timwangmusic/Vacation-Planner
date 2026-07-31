@@ -1489,9 +1489,10 @@ type placeTextSearchRequest struct {
 
 // searchPlacesByText runs a free-text Google Places search around a coordinate and returns every
 // result as a confirmable candidate. Requires authentication (PAT Bearer header or JWT cookie):
-// each request buys a billed Google Text Search call, so the endpoint must not be open. Location is
-// required (not optional, unlike nearby search's default) because an unbiased text query like
-// "konjoe" can resolve to the wrong continent without a coordinate to anchor it.
+// each request buys a billed Google Text Search call, so the endpoint must not be open. Location
+// is required (same zero-location rejection getNearbyPlaces/getNearbyPlacesByCategory apply)
+// because an unbiased text query like "konjoe" can resolve to the wrong continent without a
+// coordinate to anchor it.
 func (p *MyPlanner) searchPlacesByText(ctx *gin.Context) {
 	_, authenticationErr := p.UserAuthentication(ctx, user.LevelRegular)
 	if authenticationErr != nil {

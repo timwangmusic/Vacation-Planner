@@ -33,9 +33,10 @@ evidence of misclassification, because the write path would legitimately place i
 | `supermarket`, `department_store` | Shopping | removed |
 | `cafe`, `restaurant` | Eatery | kept |
 | `meal_delivery`, `night_club` | Eatery (positively mapped) | kept |
-| `movie_theater`, `stadium` (found in the Eatery bucket) | Visit | removed |
-| `hardware_store` (found in the Eatery bucket) | Shopping | removed |
-| `university`, `airport`, `real_estate_agency`, `doctor` | unmapped | kept |
+| `stadium` (found in the Eatery bucket, per the production audit below) | Visit | removed |
+| `hardware_store`, `shoe_store`, `furniture_store` (found in the Eatery bucket, per the production audit below) | Shopping | removed |
+| `movie_theater` (rule example only — pinned by the test truth table; never observed in the production Eatery bucket, see Known residue) | Visit | removed |
+| `university`, `airport`, `real_estate_agency`, `doctor`, `finance`, `local_government_office`, `general_contractor`, `veterinary_care` | unmapped | kept |
 | no `types[]` at all | unmapped | kept |
 
 `meal_delivery` and `night_club` used to fall in the "unmapped, kept" row above: the map had
@@ -44,10 +45,16 @@ lack of any evidence of misclassification. The place-type map expansion (`POI/ca
 `placeTypeToCategory`) added them as positive Eatery entries, so a `night_club`-primaried
 member of the Eatery bucket is no longer residue by omission — it is now recognized as
 correctly filed. The verdict (kept) is unchanged; the reason changed from "unmapped, benefit
-of the doubt" to "positively belongs here." Conversely, `movie_theater`, `stadium`, and
-`hardware_store` used to be unmapped-and-kept too; they are now positively mapped to a
-category *other than* Eatery, so a bucket member primaried with one of them is newly
-REMOVABLE when this migration runs against `category=Eatery`.
+of the doubt" to "positively belongs here." Conversely, `stadium`, `hardware_store`,
+`shoe_store`, and `furniture_store` used to be unmapped-and-kept too; they are now positively
+mapped to a category *other than* Eatery (Visit for `stadium`; Shopping for the other three —
+`shoe_store` and `furniture_store` are two more instances of the `*_store` → Shopping
+expansion that also added `hardware_store`), so a bucket member primaried with one of them is
+newly REMOVABLE when this migration runs against `category=Eatery`. `movie_theater` follows
+the identical rule (it maps to Visit) but, unlike the four types above, was never actually
+found in the production Eatery bucket — it appears only as a synthetic fixture in
+`TestRemoveMisclassifiedPlacesPrimaryTypeTruthTable`, included there to pin the rule generally
+rather than to model an observed record.
 `TestRemoveMisclassifiedPlacesPrimaryTypeTruthTable` (`test/redis_client_mocks/bucket_cleanup_test.go`)
 pins all of these verdicts, including the newly-removable types.
 
@@ -93,29 +100,63 @@ stamped `bakery`).
 
 ⚠️ The numbers above (145/0/12/4/3, 164 total) predate the place-type map expansion. The next
 dry run must be diffed against *these* baseline numbers, and the counts are **expected to
-change** — the removal rule now recognizes primary types (`movie_theater`, `stadium`,
-`hardware_store`, and others) it used to treat as unmapped-and-kept, so the Eatery candidate
-count in particular should go up. A jump versus this baseline is not by itself a red flag; it
-is what widening the map is supposed to do. What it does mean: **do not apply blind**. Spot-check
-each newly-appearing candidate class (i.e. each distinct primary type showing up in
-`RemovedIDs` that wasn't there before) against a few real records before running with
-`apply=true`, the same way `123 fast_food_restaurant` vs `41 pre-existing` was broken out above.
+change** — the removal rule now recognizes primary types (`stadium`, `hardware_store`,
+`shoe_store`, `furniture_store`, and others) it used to treat as unmapped-and-kept, so the
+Eatery candidate count in particular should go up by (at least) the 5 records itemized below.
+A jump versus this baseline is not by itself a red flag; it is what widening the map is
+supposed to do. What it does mean: **do not apply blind**. Spot-check each newly-appearing
+candidate class (i.e. each distinct primary type showing up in `RemovedIDs` that wasn't there
+before) against a few real records before running with `apply=true`, the same way
+`123 fast_food_restaurant` vs `41 pre-existing` was broken out above.
 
-**Known residue:** as of the numbers above, 27 incident records were *not* removed because
-their primary type mapped to no category — `university` ×5, `airport` ×2,
-`real_estate_agency` ×2, `stadium`, `night_club`, `hardware_store`, `doctor`, and 7 with no
-`types[]`. With the expanded `placeTypeToCategory` map, three of those records change status:
-`stadium` (→ Visit) and `hardware_store` (→ Shopping) are now positively mapped to a
-*different* category, so they become removable candidates instead of residue; `night_club`
-(Cain's Ballroom) is now positively mapped to Eatery — the same category its bucket already
-files it under — so it is no longer unresolved residue at all, just a correctly-classified
-place. Expected residue after this PR: **~24** (27 − 3), still `university` ×5, `airport` ×2,
-`real_estate_agency` ×2, `doctor`, and 7 with no `types[]`, unchanged because none of those
-types were added to the map. These stay in the eatery buckets. The trip-planning path
-(`planner/solver.go`) does not reclassify, so they remain reachable in generated plans.
-Broadening `GetPlaceCategory` to cover those types is tracked as follow-up work. As always,
-treat ~24 as an estimate to confirm with the next dry run, not a number to assert without
-running it — this migration has not been re-run against production since the map expanded.
+**Known residue:** complete production audit (2026-07-30) of all 27 records in `placeIDs:eatery`
+whose primary type mapped to no category under the pre-expansion map:
+
+| Primary type | Count | Example |
+| --- | ---: | --- |
+| (no `types[]`) | 7 | Williams Co Inc, The Tulsa Theater, Oktoberfest Main Office, Sun Valley Music Festival |
+| `university` | 5 | Ohlone College, The University of Tulsa, Boise State University, Concordia College |
+| `shoe_store` | 2 | LOFT, JoS. A. Bank |
+| `airport` | 2 | Boise Airport, Sun Valley Gun Club |
+| `real_estate_agency` | 2 | Avalon Mountain View, Mission Peaks Apartments |
+| `furniture_store` | 1 | Topnotch Fine Furnishings & Interior Design |
+| `hardware_store` | 1 | The Home Depot |
+| `finance` | 1 | The UPS Store |
+| `doctor` | 1 | Ricardo Delgado, MD |
+| `local_government_office` | 1 | Tulsa County Assessor |
+| `stadium` | 1 | BOK Center |
+| `night_club` | 1 | Cain's Ballroom |
+| `general_contractor` | 1 | Pella Windows and Doors Showroom of Ketchum, ID |
+| `veterinary_care` | 1 | Sun Valley Animal Center |
+
+(An earlier version of this table elided 7 of these records — `shoe_store` ×2,
+`furniture_store`, `finance`, `local_government_office`, `general_contractor`, and
+`veterinary_care` — which is why its stated "27" total didn't match its own itemization. The
+table above is the complete audit.)
+
+With the expanded `placeTypeToCategory` map, this splits three ways:
+
+- **Removable (5):** `shoe_store` ×2 and `furniture_store` ×1 are now positively mapped to
+  Shopping, the same `*_store` → Shopping expansion that also added `hardware_store` ×1
+  (a strict specialization of the already-mapped `store` type); `stadium` ×1 is now positively
+  mapped to Visit. These 4 records — 5 counting both `shoe_store` instances — become removable
+  candidates the next time this migration runs against `category=Eatery`.
+- **Legitimized (1):** `night_club` ×1 (Cain's Ballroom) is now positively mapped to Eatery —
+  the same category its bucket already files it under — so it is no longer unresolved residue
+  at all, just a correctly-classified place.
+- **Still residue (21):** `university` ×5, `airport` ×2, `real_estate_agency` ×2, `doctor` ×1,
+  `finance` ×1, `local_government_office` ×1, `general_contractor` ×1, `veterinary_care` ×1,
+  and the 7 records with no `types[]` at all remain unmapped and kept, for lack of any evidence
+  of misclassification — none of those types were added to the map.
+
+**27 → 5 removable + 1 legitimized + 21 residue.** The 21 still-residue records stay in the
+eatery buckets. The trip-planning path (`planner/solver.go`) does not reclassify, so they
+remain reachable in generated plans. Broadening `GetPlaceCategory` to cover `university`,
+`airport`, `real_estate_agency`, `doctor`, `finance`, `local_government_office`,
+`general_contractor`, and `veterinary_care` is tracked as follow-up work. This migration has
+not been re-run against production since the map expanded; the split above is derived from the
+audited pre-expansion snapshot, not from a fresh dry run — re-confirm with one before relying on
+it operationally.
 
 Separately, ~328 bucket members have no backing `place_details` record. The migration skips
 them. Their likely source has since been fixed: `removePlace` deleted the record but ZREMmed

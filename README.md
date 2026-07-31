@@ -46,10 +46,10 @@ Request:
 ```
 
 `query` is required (2-120 characters). `location` (`latitude`/`longitude`) is required, with
-no default — unlike nearby search, an unbiased text query like "konjoe" can resolve to the
-wrong continent without a coordinate to anchor it. `radius` is in meters and is clamped to the
-service's max search radius (16,000 m / ~10 miles) when zero or larger. `limit` defaults to 10
-and is capped at 20.
+no default — same as the nearby-places endpoints' own zero-location rejection — because an
+unbiased text query like "konjoe" can resolve to the wrong continent without a coordinate to
+anchor it. `radius` is in meters and is clamped to the service's max search radius (16,000 m /
+~10 miles) when zero or larger. `limit` defaults to 10 and is capped at 20.
 
 Response (`200`, fields elided for brevity):
 
@@ -84,7 +84,8 @@ caller can see it), but with `category: ""` and `insertable: false`.
 
 Inserts a previously returned candidate into the shared cache — `placeIDs:<category>` plus a
 `place_details:place_ID:*` record — making one Place Details call to fill in hours, address,
-URL, and summary before writing.
+URL, summary, and (as a gap-fill only, never overwriting an existing photo) photo before
+writing.
 
 Request:
 
