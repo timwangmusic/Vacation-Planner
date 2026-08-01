@@ -152,7 +152,6 @@ func TestGetPlaces_shouldExcludePlacesNotOperational(t *testing.T) {
 		Location:       POI.Location{Longitude: -74.0060, Latitude: 40.7128},
 		PlaceCat:       POI.PlaceCategoryVisit,
 		Radius:         uint(20000),
-		BusinessStatus: POI.Operational,
 	}
 
 	cachedVisitPlaces, _ := RedisClient.NearbySearch(RedisContext, &placeSearchRequest)

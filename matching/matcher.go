@@ -79,7 +79,6 @@ func NearbySearchForCategory(ctx context.Context, searcher iowrappers.SearchClie
 		Location:           req.Location,
 		Radius:             req.Radius,
 		MinNumResults:      MinResultsForTimePeriodMatching,
-		BusinessStatus:     POI.Operational,
 		UsePreciseLocation: req.UsePreciseLocation,
 		PriceLevel:         req.PriceLevel,
 	}

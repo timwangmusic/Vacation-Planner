@@ -288,7 +288,7 @@ func (s *PoiSearcher) persistAndFilterSearchResults(ctx context.Context, req *Pl
 		}
 	}
 
-	if req.BusinessStatus == POI.Operational {
+	if !req.IncludeClosedPlaces {
 		totalPlacesCount := len(newPlaces)
 		newPlaces = Filter(newPlaces, func(place POI.Place) bool { return place.Status == POI.Operational })
 		Logger.Debugf("%d places out of %d left after business status filtering", len(newPlaces), totalPlacesCount)

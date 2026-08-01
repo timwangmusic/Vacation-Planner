@@ -581,7 +581,7 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 			ctx.Value(ContextRequestIdKey), redisKey, orphans)
 	}
 
-	if req.BusinessStatus == POI.Operational {
+	if !req.IncludeClosedPlaces {
 		totalPlacesCount := len(places)
 		places = Filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
 		Logger.Debugf("(RedisClient)NearbySearch -> %d places out of %d left after business status filtering", len(places), totalPlacesCount)

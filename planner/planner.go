@@ -1312,7 +1312,6 @@ func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
 				Radius:          radius,
 				MinNumResults:   uint(limit),
 				DetailsLimit:    limit,
-				BusinessStatus:  POI.Operational,
 			}
 			result := nearbyPlacesBrandResult{Brand: keyword, Places: []POI.Place{}}
 			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
@@ -1441,7 +1440,6 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 				// Bound the expensive Place Details calls even when the candidate
 				// pool (limit) is widened for dedup — details cost stays ~today's.
 				DetailsLimit:   min(limit, 20),
-				BusinessStatus: POI.Operational,
 			}
 			result := nearbyPlacesByCategoryResult{Category: string(placeCat), Places: []POI.Place{}}
 			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
