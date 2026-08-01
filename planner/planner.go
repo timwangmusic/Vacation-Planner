@@ -232,7 +232,7 @@ func (p *MyPlanner) Destroy() {
 func (p *MyPlanner) reverseGeocodingHandler(ctx *gin.Context) {
 	latitude, _ := strconv.ParseFloat(ctx.Query("lat"), 64)
 	longitude, _ := strconv.ParseFloat(ctx.Query("lng"), 64)
-	result, err := p.Solver.Searcher.GetMapsClient().ReverseGeocode(ctx, latitude, longitude)
+	result, err := p.Solver.Searcher.ReverseGeocode(ctx, latitude, longitude)
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError, err.Error())

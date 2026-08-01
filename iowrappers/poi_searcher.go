@@ -148,9 +148,20 @@ func (s *PoiSearcher) Geocode(context context.Context, query *GeocodeQuery) (lat
 	return
 }
 
+// ReverseGeocode resolves city-level info for a coordinate, consulting the per-cell Redis cache
+// before Google. This runs on EVERY nearby scan (processLocation), and on a warm place cache it
+// was the only Google call left — caching it takes a warm scan's Google spend to zero.
 func (s *PoiSearcher) ReverseGeocode(ctx context.Context, lat, lng float64) (*GeocodeQuery, error) {
 	Logger.Debugf("PoiSearcher ->ReverseGeocode: decoding latitude %.2f, longitude %.2f", lat, lng)
-	return s.mapsClient.ReverseGeocode(ctx, lat, lng)
+	if cached, err := s.redisClient.ReverseGeocode(ctx, lat, lng); err == nil {
+		return cached, nil
+	}
+	query, err := s.mapsClient.ReverseGeocode(ctx, lat, lng)
+	if err != nil {
+		return nil, err
+	}
+	s.redisClient.SetReverseGeocode(ctx, lat, lng, *query)
+	return query, nil
 }
 
 // canServeFromCache decides whether cached places can satisfy a request without an external
@@ -248,27 +259,50 @@ func (s *PoiSearcher) NearbySearch(context context.Context, request *PlaceSearch
 		utils.LogErrorWithLevel(s.redisClient.SetMapsLastSearchTime(context, lat, lng, request.PlaceCat, request.PriceLevel, currentTime.Format(time.RFC3339)), utils.LogError)
 	}
 
-	if request.Keyword != "" && request.StrictNameMatch {
+	places = append(places, s.persistAndFilterSearchResults(context, request, newPlaces)...)
+
+	return places, nil
+}
+
+// persistAndFilterSearchResults writes a cold search's results to the cache and returns the slice
+// the caller may serve. The write deliberately includes non-Operational places: a permanent
+// closure reported by Google is a signal we must PERSIST (so the read-side Operational filters
+// retire the stale record everywhere), not discard — the previous pre-write filter meant a closed
+// place kept its OPERATIONAL record and cache membership forever. The response filter then keeps
+// closures out of what the caller sees, same as before.
+func (s *PoiSearcher) persistAndFilterSearchResults(ctx context.Context, req *PlaceSearchRequest, newPlaces []POI.Place) []POI.Place {
+	if req.Keyword != "" && req.StrictNameMatch {
 		// drop keyword-search results that are merely related to the brand (Google Maps
 		// matches keywords against reviews and other content, not just names) before they
 		// reach the brand-scoped cache
-		newPlaces = Filter(newPlaces, func(place POI.Place) bool { return MatchesBrandName(place.Name, request.Keyword) })
+		newPlaces = Filter(newPlaces, func(place POI.Place) bool { return MatchesBrandName(place.Name, req.Keyword) })
 	}
 
 	// safeguard on accessing elements in a nil slice
 	if len(newPlaces) > 0 {
-		// update Redis with all the new places obtained
-		if request.Keyword != "" {
-			s.redisClient.SetPlacesAddGeoLocationsForBrand(context, request.Keyword, newPlaces)
+		// update Redis with all the new places obtained, closures included
+		if req.Keyword != "" {
+			s.redisClient.SetPlacesAddGeoLocationsForBrand(ctx, req.Keyword, newPlaces)
 		} else {
-			s.UpdateRedis(context, newPlaces)
+			s.UpdateRedis(ctx, newPlaces)
 		}
-
-		// include places from cache in the result
-		places = append(places, newPlaces...)
 	}
 
-	return places, nil
+	if req.BusinessStatus == POI.Operational {
+		totalPlacesCount := len(newPlaces)
+		newPlaces = Filter(newPlaces, func(place POI.Place) bool { return place.Status == POI.Operational })
+		Logger.Debugf("%d places out of %d left after business status filtering", len(newPlaces), totalPlacesCount)
+	}
+
+	if uint(len(newPlaces)) < req.MinNumResults {
+		Logger.Debugf("Found %d POI results for place type %s, less than requested number of %d",
+			len(newPlaces), req.PlaceCat, req.MinNumResults)
+	}
+	if len(newPlaces) == 0 {
+		Logger.Debugf("No qualified POI result found in the given location %v, radius %d, and place type: %s. The location may be invalid",
+			req.Location, req.Radius, req.PlaceCat)
+	}
+	return newPlaces
 }
 
 // processLocation performs reverse geocoding for precise location to find city-level information and performs geocoding to find precise latitude and longitude values
@@ -281,7 +315,7 @@ func (s *PoiSearcher) processLocation(ctx context.Context, req *PlaceSearchReque
 	}
 	if req.UsePreciseLocation {
 		Logger.Debugf("->NearbySearch: using precise location")
-		geoQuery, err := s.GetMapsClient().ReverseGeocode(ctx, req.Location.Latitude, req.Location.Longitude)
+		geoQuery, err := s.ReverseGeocode(ctx, req.Location.Latitude, req.Location.Longitude)
 		if err != nil {
 			return err
 		}
@@ -319,20 +353,8 @@ func (s *PoiSearcher) searchPlacesWithMaps(ctx context.Context, req *PlaceSearch
 		return nil, err
 	}
 
-	if req.BusinessStatus == POI.Operational {
-		totalPlacesCount := len(places)
-		places = Filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
-		Logger.Debugf("%d places out of %d left after business status filtering", len(places), totalPlacesCount)
-	}
-
-	if uint(len(places)) < req.MinNumResults {
-		Logger.Debugf("Found %d POI results for place type %s, less than requested number of %d",
-			len(places), req.PlaceCat, req.MinNumResults)
-	}
-	if len(places) == 0 {
-		Logger.Debugf("No qualified POI result found in the given location %v, radius %d, and place type: %s. The location may be invalid",
-			req.Location, req.Radius, req.PlaceCat)
-	}
+	// No status filtering here: closures must reach the cache write so they are persisted —
+	// persistAndFilterSearchResults owns both the write and the response-side filter.
 	return places, nil
 }
 
