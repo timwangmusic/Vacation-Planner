@@ -205,7 +205,12 @@ func GetPlaceTypes(placeCat PlaceCategory) (placeTypes []LocationType) {
 	switch placeCat {
 	case PlaceCategoryVisit:
 		placeTypes = append(placeTypes,
-			[]LocationType{LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum}...)
+			[]LocationType{
+				LocationTypePark, LocationTypeAmusementPark, LocationTypeGallery, LocationTypeMuseum,
+				LocationTypeMovieTheater, LocationTypeBowlingAlley,
+				LocationTypeZoo, LocationTypeAquarium,
+				LocationTypeStadium, LocationTypeTouristAttraction,
+			}...)
 	case PlaceCategoryEatery:
 		placeTypes = append(placeTypes,
 			[]LocationType{LocationTypeCafe, LocationTypeRestaurant, LocationTypeBar, LocationTypeBakery, LocationTypeMealTakeaway}...)

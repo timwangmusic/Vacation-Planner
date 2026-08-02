@@ -13,6 +13,9 @@ func TestGetPlaceTypesByCategory(t *testing.T) {
 		POI.PlaceCategoryVisit: {
 			POI.LocationTypePark, POI.LocationTypeAmusementPark,
 			POI.LocationTypeGallery, POI.LocationTypeMuseum,
+			POI.LocationTypeMovieTheater, POI.LocationTypeBowlingAlley,
+			POI.LocationTypeZoo, POI.LocationTypeAquarium,
+			POI.LocationTypeStadium, POI.LocationTypeTouristAttraction,
 		},
 		POI.PlaceCategoryEatery: {
 			POI.LocationTypeCafe, POI.LocationTypeRestaurant,
