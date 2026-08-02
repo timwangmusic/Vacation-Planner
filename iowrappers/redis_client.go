@@ -581,7 +581,7 @@ func (r *RedisClient) NearbySearch(ctx context.Context, req *PlaceSearchRequest)
 			ctx.Value(ContextRequestIdKey), redisKey, orphans)
 	}
 
-	if req.BusinessStatus == POI.Operational {
+	if !req.IncludeClosedPlaces {
 		totalPlacesCount := len(places)
 		places = Filter(places, func(place POI.Place) bool { return place.Status == POI.Operational })
 		Logger.Debugf("(RedisClient)NearbySearch -> %d places out of %d left after business status filtering", len(places), totalPlacesCount)
@@ -673,8 +673,41 @@ func (r *RedisClient) Geocode(context context.Context, query *GeocodeQuery) (lat
 	return
 }
 
-func (r *RedisClient) ReverseGeocode(context.Context, float64, float64) (*GeocodeQuery, error) {
-	return nil, errors.New("->ReverseGeocode: not implemented for the RedisClient")
+// ReverseGeocodeExpiration bounds how long a cached reverse-geocode result is served. City-level
+// info is effectively static, but Google's Geocoding terms only allow temporary caching — 30 days
+// keeps the cache self-cleaning and policy-friendly.
+const ReverseGeocodeExpiration = 30 * 24 * time.Hour
+
+// reverseGeocodeRedisKey keys reverse-geocode results by the same ~8 km search cell the
+// MapsLastSearchTime markers use: the result only carries country/admin1/locality, which is
+// stable at that granularity.
+func reverseGeocodeRedisKey(lat, lng float64) string {
+	return "geocode:reverse:" + POI.EncodeSearchCell(lat, lng)
+}
+
+func (r *RedisClient) ReverseGeocode(ctx context.Context, lat, lng float64) (*GeocodeQuery, error) {
+	res, err := r.client.Get(ctx, reverseGeocodeRedisKey(lat, lng)).Result()
+	if err != nil {
+		return nil, err
+	}
+	var query GeocodeQuery
+	if err = json.Unmarshal([]byte(res), &query); err != nil {
+		return nil, err
+	}
+	return &query, nil
+}
+
+// SetReverseGeocode caches a reverse-geocode result for the cell containing (lat, lng).
+// Best-effort like SetGeocode: a write failure only means the next request buys the geocode again.
+func (r *RedisClient) SetReverseGeocode(ctx context.Context, lat, lng float64, query GeocodeQuery) {
+	payload, err := json.Marshal(query)
+	if err != nil {
+		utils.LogErrorWithLevel(err, utils.LogError)
+		return
+	}
+	utils.LogErrorWithLevel(
+		r.client.Set(ctx, reverseGeocodeRedisKey(lat, lng), payload, ReverseGeocodeExpiration).Err(),
+		utils.LogError)
 }
 
 func (r *RedisClient) SetGeocode(context context.Context, query GeocodeQuery, lat float64, lng float64, originalQuery GeocodeQuery) {

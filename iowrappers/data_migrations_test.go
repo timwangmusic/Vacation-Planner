@@ -72,7 +72,8 @@ func TestRemovePlaces(t *testing.T) {
 	var err error
 	redisClient.SetPlacesAddGeoLocations(ctx, []POI.Place{placeA, placeB, placeC})
 	places, _ = redisClient.NearbySearch(ctx, &PlaceSearchRequest{
-		PlaceCat: POI.PlaceCategoryVisit,
+		PlaceCat:            POI.PlaceCategoryVisit,
+		IncludeClosedPlaces: true, // migration test reads raw bucket contents; fixtures carry no Status
 		Location: POI.Location{
 			Latitude:  12.5636,
 			Longitude: 14.7813,
@@ -92,7 +93,8 @@ func TestRemovePlaces(t *testing.T) {
 	}
 
 	places, _ = redisClient.NearbySearch(ctx, &PlaceSearchRequest{
-		PlaceCat: POI.PlaceCategoryVisit,
+		PlaceCat:            POI.PlaceCategoryVisit,
+		IncludeClosedPlaces: true, // migration test reads raw bucket contents; fixtures carry no Status
 		Location: POI.Location{
 			Latitude:  12.5636,
 			Longitude: 14.7813,
@@ -106,6 +108,7 @@ func TestRemovePlaces(t *testing.T) {
 	}
 
 	places, _ = redisClient.NearbySearch(ctx, &PlaceSearchRequest{PlaceCat: POI.PlaceCategoryEatery,
+		IncludeClosedPlaces: true, // migration test reads raw bucket contents; fixtures carry no Status
 		Location: POI.Location{
 			Latitude:  12.5636,
 			Longitude: 14.7813,

@@ -139,7 +139,9 @@ func (c *MapsPhotoClient) GetPhotoURL(ctx context.Context, photoRef string, plac
 
 			// Acquire semaphore for API rate limiting
 			c.mapsClient.apiSemaphore <- struct{}{}
-			r, err = c.mapsClient.PlaceDetailedSearch(ctx, placeId, c.mapsClient.DetailedSearchFields)
+			// Only the photo reference is needed here — the full DetailedSearchFields mask
+			// would bill the Contact/Atmosphere field tiers for data this path throws away.
+			r, err = c.mapsClient.PlaceDetailedSearch(ctx, placeId, []string{"photos"})
 			<-c.mapsClient.apiSemaphore // Release semaphore
 			if err != nil {
 				return "", err

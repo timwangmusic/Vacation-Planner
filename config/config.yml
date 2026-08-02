@@ -1,12 +1,14 @@
 server:
   google_maps:
+    # Every field is billed per Details call, tiered by field group — see
+    # TestDetailedSearchFieldsMask for why name and user_ratings_total are
+    # deliberately absent (nothing reads them from a Details response; both
+    # arrive free with every Nearby/Text Search result).
     detailed_search_fields:
-      - name
       - opening_hours
       - formatted_address
       - adr_address
       - url
-      - user_ratings_total
       - editorial_summary
       - photos
   plan_solver:

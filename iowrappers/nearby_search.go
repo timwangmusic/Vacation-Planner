@@ -35,7 +35,13 @@ type PlaceSearchRequest struct {
 	// suppose a location has more places established over time, this field would help trigger new searches to get those new establishments.
 	MinNumResults uint
 
-	BusinessStatus POI.BusinessStatus
+	// IncludeClosedPlaces opts a caller INTO receiving non-Operational places. The zero value
+	// filters them from both cache reads and cold-search responses: closed places are persisted
+	// in the cache (their closure is the signal that retires them), so a request that forgot to
+	// ask for filtering must never serve one — planners consume these results directly. This
+	// replaces the old BusinessStatus field, whose zero value was the UNFILTERED behavior and
+	// therefore one forgotten assignment away from leaking closures.
+	IncludeClosedPlaces bool
 	// true if using precise geolocation instead of using a grander administrative area
 	UsePreciseLocation bool
 

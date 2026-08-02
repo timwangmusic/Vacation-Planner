@@ -246,8 +246,10 @@ func newPlaceDetailsEnricher(sem chan struct{}, fields []string, search placeDet
 //     no geo bucket member, no place_details record.
 //  3. Read whether the place was already cached, BEFORE this confirm writes anything, so
 //     AlreadyCached reflects prior state.
-//  4. Best-effort enrich via Place Details for hours/address/URL/summary; a failure here is
-//     logged and the lean (stash-only) record is used instead of failing the confirm.
+//  4. Best-effort enrich via Place Details for hours/address/URL/summary — SKIPPED entirely when
+//     the already-cached record's details are current (placeDetailsAreCurrent), since step 5
+//     restores those fields anyway and the call is the most expensive Google request we make. A
+//     failure is logged and the lean (stash-only) record is used instead of failing the confirm.
 //  5. Restore any Details-sourced fields (esp. real opening hours) a previously cached record had
 //     that this pass didn't obtain, so confirming an already-cached place can never regress it to
 //     placeholder data.
@@ -276,11 +278,19 @@ func (s *PoiSearcher) addSearchedPlaceToCache(ctx context.Context, placeID strin
 	alreadyCached := len(cached) > 0
 
 	place := candidate
-	details, enrichErr := enrich(ctx, placeID)
-	if enrichErr != nil {
-		Logger.Errorf("addSearchedPlaceToCache: Place Details enrich failed for %s, continuing with the lean stashed record: %v", placeID, enrichErr)
+	// Skip the (max-tier) Place Details call when the stored record already carries current
+	// Details-sourced fields — the same placeDetailsAreCurrent rule the nearby-search path
+	// trusts. restoreCachedDetails below copies those fields onto the confirmed place, so the
+	// skip loses nothing; re-confirming a place we already hold must not re-buy its details.
+	if stored, ok := cached[placeID]; ok && placeDetailsAreCurrent(stored, time.Now()) {
+		Logger.Debugf("addSearchedPlaceToCache: skipping Place Details for %s — cached record is current", placeID)
 	} else {
-		foldPlaceDetailsIntoPlace(&place, details)
+		details, enrichErr := enrich(ctx, placeID)
+		if enrichErr != nil {
+			Logger.Errorf("addSearchedPlaceToCache: Place Details enrich failed for %s, continuing with the lean stashed record: %v", placeID, enrichErr)
+		} else {
+			foldPlaceDetailsIntoPlace(&place, details)
+		}
 	}
 
 	places := []POI.Place{place}

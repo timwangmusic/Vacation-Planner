@@ -232,7 +232,7 @@ func (p *MyPlanner) Destroy() {
 func (p *MyPlanner) reverseGeocodingHandler(ctx *gin.Context) {
 	latitude, _ := strconv.ParseFloat(ctx.Query("lat"), 64)
 	longitude, _ := strconv.ParseFloat(ctx.Query("lng"), 64)
-	result, err := p.Solver.Searcher.GetMapsClient().ReverseGeocode(ctx, latitude, longitude)
+	result, err := p.Solver.Searcher.ReverseGeocode(ctx, latitude, longitude)
 	if err != nil {
 		log.Error(err)
 		ctx.JSON(http.StatusInternalServerError, err.Error())
@@ -1312,7 +1312,6 @@ func (p *MyPlanner) getNearbyPlaces(ctx *gin.Context) {
 				Radius:          radius,
 				MinNumResults:   uint(limit),
 				DetailsLimit:    limit,
-				BusinessStatus:  POI.Operational,
 			}
 			result := nearbyPlacesBrandResult{Brand: keyword, Places: []POI.Place{}}
 			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
@@ -1441,7 +1440,6 @@ func (p *MyPlanner) getNearbyPlacesByCategory(ctx *gin.Context) {
 				// Bound the expensive Place Details calls even when the candidate
 				// pool (limit) is widened for dedup — details cost stays ~today's.
 				DetailsLimit:   min(limit, 20),
-				BusinessStatus: POI.Operational,
 			}
 			result := nearbyPlacesByCategoryResult{Category: string(placeCat), Places: []POI.Place{}}
 			places, searchErr := p.Solver.Searcher.NearbySearch(searchContext, searchReq)
