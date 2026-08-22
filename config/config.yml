@@ -1,16 +1,17 @@
 server:
   google_maps:
     # Every field is billed per Details call, tiered by field group — see
-    # TestDetailedSearchFieldsMask for why name and user_ratings_total are
-    # deliberately absent (nothing reads them from a Details response; both
-    # arrive free with every Nearby/Text Search result).
+    # TestDetailedSearchFieldsMask for why name, user_ratings_total,
+    # editorial_summary and photos are deliberately absent: the first two
+    # arrive free with every Nearby/Text Search result, editorial_summary
+    # alone bills the Atmosphere tier, and photos feeds separately-billed
+    # image fetches — all readers of the latter two are nil-guarded. This
+    # matches what the production GCP instance already runs.
     detailed_search_fields:
       - opening_hours
       - formatted_address
       - adr_address
       - url
-      - editorial_summary
-      - photos
   plan_solver:
     same_place_dedupe_count_limit: 2
     nearby_cities_count_limit: 3
